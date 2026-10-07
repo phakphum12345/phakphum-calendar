@@ -71,8 +71,15 @@ class DriveOwnershipService implements DriveOwnershipGateway {
       'application/vnd.google-apps.spreadsheet';
 
   static const accessibleSpreadsheetsQuery =
-      "mimeType = '$googleSheetMimeType' and trashed = false";
+    "mimeType = '$googleSheetMimeType' and trashed = false";
 
+/// Backward-compatible name retained for existing tests/callers.
+///
+/// Despite the historical name, this query does NOT require ownership.
+/// It returns Google Sheets that are accessible to the authenticated
+/// account, including Sheets shared by another account.
+static const recentOwnedSheetsQuery =
+    accessibleSpreadsheetsQuery;
   @override
   Future<List<RecentOwnedSheet>> listOwnedSpreadsheets(
     http.Client client, {
