@@ -1,13 +1,13 @@
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 
-enum AccessibleSheetOrder {
+enum OwnedSheetOrder {
   firstCreated,
   recentlyModified,
 }
 
-class RecentAccessibleSheet {
-  const RecentAccessibleSheet({
+class RecentOwnedSheet {
+  const RecentOwnedSheet({
     required this.id,
     required this.name,
     required this.url,
@@ -22,41 +22,50 @@ class RecentAccessibleSheet {
   final DateTime? modifiedAt;
 }
 
-/// Google Drive access boundary for Google Sheets.
+/// Compatibility API for Google Drive spreadsheet access.
 ///
 /// IMPORTANT:
-/// A Google Sheet does NOT need to be owned by the signed-in account.
-/// The authenticated account only needs sufficient read access.
+/// The historical class name contains "Ownership" for API compatibility.
+/// It MUST NOT be interpreted as a requirement that the Google Sheet is
+/// owned by the currently authenticated Google account.
 ///
-/// This service deliberately does NOT use `ownedByMe` as an authorization
-/// condition.
-abstract interface class DriveSpreadsheetAccessGateway {
+/// Authorization boundary:
+///
+///   authenticated account can READ the Google Sheet
+///
+/// NOT:
+///
+///   authenticated account owns the Google Sheet
+abstract interface class DriveOwnershipGateway {
   /// Lists Google Sheets accessible to the authenticated account.
-  Future<List<RecentAccessibleSheet>> listAccessibleSpreadsheets(
+  ///
+  /// Shared Sheets are valid. `ownedByMe` is NOT an access filter.
+  Future<List<RecentOwnedSheet>> listOwnedSpreadsheets(
     http.Client client, {
     int limit = 20,
-    AccessibleSheetOrder order =
-        AccessibleSheetOrder.recentlyModified,
+    OwnedSheetOrder order = OwnedSheetOrder.recentlyModified,
   });
 
-  /// Returns the first accessible Google Sheet created in each calendar month.
-  Future<List<RecentAccessibleSheet>> listFirstSpreadsheetOfEachMonth(
+  /// Returns the first readable Google Sheet created in each calendar month.
+  ///
+  /// The historical method name is retained for compatibility.
+  Future<List<RecentOwnedSheet>> listFirstSpreadsheetOfEachMonth(
     http.Client client, {
     int limit = 1000,
   });
 
-  /// Verifies that [fileId] is a readable Google Sheet.
+  /// Verifies that the authenticated account can read the Google Sheet.
   ///
-  /// Ownership is intentionally NOT required.
-  Future<drive.File> requireReadableSpreadsheet(
+  /// Despite the historical method name, Google Sheet ownership is NOT
+  /// required.
+  Future<drive.File> requireOwnedSpreadsheet(
     http.Client client,
     String fileId,
   );
 }
 
-class DriveSpreadsheetAccessService
-    implements DriveSpreadsheetAccessGateway {
-  const DriveSpreadsheetAccessService();
+class DriveOwnershipService implements DriveOwnershipGateway {
+  const DriveOwnershipService();
 
   static const googleSheetMimeType =
       'application/vnd.google-apps.spreadsheet';
@@ -65,18 +74,16 @@ class DriveSpreadsheetAccessService
       "mimeType = '$googleSheetMimeType' and trashed = false";
 
   @override
-  Future<List<RecentAccessibleSheet>> listAccessibleSpreadsheets(
+  Future<List<RecentOwnedSheet>> listOwnedSpreadsheets(
     http.Client client, {
     int limit = 20,
-    AccessibleSheetOrder order =
-        AccessibleSheetOrder.recentlyModified,
+    OwnedSheetOrder order = OwnedSheetOrder.recentlyModified,
   }) async {
     final response = await drive.DriveApi(client).files.list(
       q: accessibleSpreadsheetsQuery,
       orderBy: switch (order) {
-        AccessibleSheetOrder.firstCreated =>
-          'createdTime,name',
-        AccessibleSheetOrder.recentlyModified =>
+        OwnedSheetOrder.firstCreated => 'createdTime,name',
+        OwnedSheetOrder.recentlyModified =>
           'modifiedTime desc,name',
       },
       corpora: 'user',
@@ -87,14 +94,13 @@ class DriveSpreadsheetAccessService
           'createdTime,modifiedTime,modifiedByMeTime,webViewLink)',
     );
 
-    return accessibleSheetsFromFiles(
+    return recentOwnedSheetsFromFiles(
       response.files ?? const <drive.File>[],
     );
   }
 
   @override
-  Future<List<RecentAccessibleSheet>>
-      listFirstSpreadsheetOfEachMonth(
+  Future<List<RecentOwnedSheet>> listFirstSpreadsheetOfEachMonth(
     http.Client client, {
     int limit = 1000,
   }) async {
@@ -166,7 +172,7 @@ class DriveSpreadsheetAccessService
     }
 
     final results = firstByMonth.values
-        .map(_toRecentAccessibleSheet)
+        .map(_toRecentOwnedSheet)
         .toList()
       ..sort((left, right) {
         final leftDate = left.createdAt;
@@ -190,25 +196,25 @@ class DriveSpreadsheetAccessService
     return results;
   }
 
-  Future<List<RecentAccessibleSheet>>
-      listRecentlyModifiedAccessibleSpreadsheets(
+  Future<List<RecentOwnedSheet>>
+      listRecentlyModifiedOwnedSpreadsheets(
     http.Client client, {
     int limit = 20,
   }) {
-    return listAccessibleSpreadsheets(
+    return listOwnedSpreadsheets(
       client,
       limit: limit,
-      order: AccessibleSheetOrder.recentlyModified,
+      order: OwnedSheetOrder.recentlyModified,
     );
   }
 
-  static List<RecentAccessibleSheet> accessibleSheetsFromFiles(
+  static List<RecentOwnedSheet> recentOwnedSheetsFromFiles(
     Iterable<drive.File> files,
   ) {
     return [
       for (final file in files)
         if (_isReadableGoogleSheet(file))
-          _toRecentAccessibleSheet(file),
+          _toRecentOwnedSheet(file),
     ];
   }
 
@@ -219,12 +225,12 @@ class DriveSpreadsheetAccessService
         file.mimeType == googleSheetMimeType;
   }
 
-  static RecentAccessibleSheet _toRecentAccessibleSheet(
+  static RecentOwnedSheet _toRecentOwnedSheet(
     drive.File file,
   ) {
     final id = file.id!;
 
-    return RecentAccessibleSheet(
+    return RecentOwnedSheet(
       id: id,
       name: (file.name?.trim().isNotEmpty ?? false)
           ? file.name!.trim()
@@ -239,7 +245,7 @@ class DriveSpreadsheetAccessService
   }
 
   @override
-  Future<drive.File> requireReadableSpreadsheet(
+  Future<drive.File> requireOwnedSpreadsheet(
     http.Client client,
     String fileId,
   ) async {
@@ -267,7 +273,7 @@ class DriveSpreadsheetAccessService
                 'id,name,mimeType,ownedByMe,trashed,webViewLink',
           ) as drive.File;
 
-      validateReadableSpreadsheet(file);
+      validateOwnedSpreadsheet(file);
 
       return file;
     } on drive.DetailedApiRequestError catch (error) {
@@ -285,14 +291,14 @@ class DriveSpreadsheetAccessService
     }
   }
 
-  /// Validates Google Sheets type and readability boundary.
+  /// Compatibility method name retained intentionally.
   ///
   /// IMPORTANT:
-  /// `ownedByMe` is intentionally NOT checked.
+  /// `ownedByMe` is NOT checked.
   ///
-  /// A shared Google Sheet is valid when the authenticated account
-  /// can read it.
-  static void validateReadableSpreadsheet(
+  /// A Sheet owned by another Google account is valid when the
+  /// authenticated account can read it.
+  static void validateOwnedSpreadsheet(
     drive.File file,
   ) {
     if (file.id == null || file.id!.isEmpty) {
@@ -313,10 +319,10 @@ class DriveSpreadsheetAccessService
       );
     }
 
-    // DO NOT check file.ownedByMe.
+    // DO NOT add:
     //
-    // Ownership is not the authorization boundary.
-    // Successful files.get() already proves that the authenticated
-    // account can access the file metadata.
+    // if (file.ownedByMe != true) ...
+    //
+    // Google Sheet ownership is NOT the authorization boundary.
   }
 }
