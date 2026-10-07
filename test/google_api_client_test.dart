@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 
-import '../lib/services/google_api_client.dart';
+import 'package:phakphum_calendar/services/google_api_client.dart';
 
 class _HangingClient extends http.BaseClient {
   final Completer<http.StreamedResponse> completer =
@@ -88,3 +88,4 @@ void main() {
     expect(inner.closed, isTrue);
   });
 }
+
