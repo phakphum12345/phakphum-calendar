@@ -10,8 +10,10 @@ import 'calendar_sync_service.dart';
 /// repository boundary.
 class CalendarSyncProtocolService implements CalendarSyncProtocol {
   const CalendarSyncProtocolService({
-    required CalendarSyncService service,
-  }) : _service = service;
+  required this._service,
+});
+
+final CalendarSyncService _service;
 
   final CalendarSyncService _service;
 
