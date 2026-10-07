@@ -1,4 +1,3 @@
-```dart
 import '../../diff_engine/domain/calendar_event_candidate.dart';
 import '../domain/calendar_sync_protocol.dart';
 import '../domain/calendar_sync_run_result.dart';
@@ -104,4 +103,4 @@ class CalendarSyncProtocolService implements CalendarSyncProtocol {
     return CalendarSyncProtocolStatus.failed;
   }
 }
-```
+
