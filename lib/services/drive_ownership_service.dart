@@ -71,15 +71,16 @@ class DriveOwnershipService implements DriveOwnershipGateway {
       'application/vnd.google-apps.spreadsheet';
 
   static const accessibleSpreadsheetsQuery =
-    "mimeType = '$googleSheetMimeType' and trashed = false";
+      "mimeType = '$googleSheetMimeType' and trashed = false";
 
-/// Backward-compatible name retained for existing tests/callers.
-///
-/// Despite the historical name, this query does NOT require ownership.
-/// It returns Google Sheets that are accessible to the authenticated
-/// account, including Sheets shared by another account.
-static const recentOwnedSheetsQuery =
-    accessibleSpreadsheetsQuery;
+  /// Backward-compatible name retained for existing tests/callers.
+  ///
+  /// Despite the historical name, this query does NOT require ownership.
+  /// It returns Google Sheets accessible to the authenticated account,
+  /// including Sheets shared by another account.
+  static const recentOwnedSheetsQuery =
+      accessibleSpreadsheetsQuery;
+
   @override
   Future<List<RecentOwnedSheet>> listOwnedSpreadsheets(
     http.Client client, {
@@ -290,7 +291,7 @@ static const recentOwnedSheetsQuery =
           'บัญชี Google ที่เข้าสู่ระบบไม่มีสิทธิ์อ่าน '
           'Google Sheets ไฟล์นี้ '
           'กรุณาตรวจสอบสิทธิ์การแชร์ '
-          'หรือเลือกไฟล์ใหม่จาก Google Drive',
+          'กรุณาเลือกไฟล์ใหม่จาก Google Drive',
         );
       }
 
@@ -305,15 +306,13 @@ static const recentOwnedSheetsQuery =
   ///
   /// A Sheet owned by another Google account is valid when the
   /// authenticated account can read it.
+  ///
+  /// This validator checks only the properties of the returned Drive
+  /// resource itself. File-ID validation belongs to
+  /// requireOwnedSpreadsheet() before the Drive API request.
   static void validateOwnedSpreadsheet(
     drive.File file,
   ) {
-    if (file.id == null || file.id!.isEmpty) {
-      throw StateError(
-        'ไม่พบรหัสไฟล์ Google Sheets',
-      );
-    }
-
     if (file.trashed == true) {
       throw StateError(
         'ไฟล์ต้นฉบับอยู่ในถังขยะของ Google Drive',
@@ -326,10 +325,17 @@ static const recentOwnedSheetsQuery =
       );
     }
 
-    // DO NOT add:
+    // DO NOT check:
     //
-    // if (file.ownedByMe != true) ...
+    // file.ownedByMe == true
     //
     // Google Sheet ownership is NOT the authorization boundary.
+    //
+    // DO NOT require file.id here either.
+    //
+    // The Drive API request in requireOwnedSpreadsheet() already uses
+    // the normalized spreadsheet ID. This validator intentionally
+    // validates only the returned resource's type/state.
   }
 }
+
