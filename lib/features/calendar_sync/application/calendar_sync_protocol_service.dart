@@ -3,20 +3,23 @@ import '../domain/calendar_sync_protocol.dart';
 import '../domain/calendar_sync_run_result.dart';
 import 'calendar_sync_service.dart';
 
-/// Application-level adapter that exposes the existing CalendarSyncService
-/// through the stable CalendarSyncProtocol contract.
+/// Application adapter that exposes the existing calendar synchronization
+/// service through the stable [CalendarSyncProtocol] contract.
 ///
-/// Provider-specific behavior remains inside CalendarSyncService and its
-/// repository boundary.
+/// Provider-specific behavior remains behind [CalendarSyncService] and its
+/// repository boundary. This keeps the protocol suitable as a long-lived
+/// application boundary while the synchronization implementation evolves.
+///
+/// The current protocol request contains pre-planned commands. The adapter
+/// translates those commands into the desired-event input expected by the
+/// existing service, while keeping planning and provider execution inside
+/// the established application layer.
 class CalendarSyncProtocolService implements CalendarSyncProtocol {
   const CalendarSyncProtocolService({
-    required this._service,
-  });
+    required CalendarSyncService service,
+  }) : _service = service;
 
   final CalendarSyncService _service;
-
-  // ...
-}
 
   @override
   Future<CalendarSyncProtocolResult> synchronize(
@@ -24,18 +27,34 @@ class CalendarSyncProtocolService implements CalendarSyncProtocol {
   ) async {
     request.validate();
 
-    final result = await _service.sync(
-      desiredEvents: _desiredEventsFromRequest(request),
-      timeMin: request.timeMin,
-      timeMax: request.timeMax,
-      dryRun: request.dryRun,
-      continueOnError: request.continueOnError,
-    );
+    try {
+      final result = await _service.sync(
+        desiredEvents: _desiredEventsFromRequest(request),
+        timeMin: request.timeMin,
+        timeMax: request.timeMax,
+        dryRun: request.dryRun,
+        continueOnError: request.continueOnError,
+      );
 
-    return _toProtocolResult(
-      request: request,
-      result: result,
-    );
+      return _toProtocolResult(
+        request: request,
+        result: result,
+      );
+    } on Object catch (error) {
+      return CalendarSyncProtocolResult(
+        syncId: request.syncId,
+        status: CalendarSyncProtocolStatus.failed,
+        commandsPlanned: request.commands.length,
+        commandsExecuted: 0,
+        commandsSkipped: request.commands.length,
+        errors: <CalendarSyncProtocolError>[
+          CalendarSyncProtocolError(
+            code: 'SYNC_EXECUTION_ERROR',
+            message: error.toString(),
+          ),
+        ],
+      );
+    }
   }
 
   List<CalendarEventCandidate> _desiredEventsFromRequest(
@@ -68,17 +87,17 @@ class CalendarSyncProtocolService implements CalendarSyncProtocol {
         )
         .toList(growable: false);
 
-    final status = _status(
-      request: request,
-      result: result,
-      errors: errors,
-    );
-
     return CalendarSyncProtocolResult(
       syncId: request.syncId,
-      status: status,
+      status: _status(
+        request: request,
+        result: result,
+        errors: errors,
+      ),
       commandsPlanned: result.commands.length,
-      commandsExecuted: result.executionResults.length,
+      commandsExecuted: result.executionResults
+          .where((execution) => execution.applied)
+          .length,
       commandsSkipped: result.executionResults
           .where((execution) => !execution.applied)
           .length,
