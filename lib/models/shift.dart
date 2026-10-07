@@ -36,25 +36,25 @@ extension ShiftCategoryInfo on ShiftCategory {
   };
 
   String get googleColorId => switch (this) {
-    ShiftCategory.own => '8',
+    ShiftCategory.own => '9',
     ShiftCategory.other => '11',
-    ShiftCategory.clinic => '7',
-    ShiftCategory.specialClinic => '10',
-    ShiftCategory.off => '1',
-    ShiftCategory.majorSwap => '11',
-    ShiftCategory.given => '1',
+    ShiftCategory.clinic => '5',
+    ShiftCategory.specialClinic => '6',
+    ShiftCategory.off => '8',
+    ShiftCategory.majorSwap => '9',
+    ShiftCategory.given => '10',
     ShiftCategory.borrowedUnpaid => '5',
     ShiftCategory.borrowedPaid => '10',
   };
 
   int get colorValue => switch (this) {
-    ShiftCategory.own => 0xFF616161,
+    ShiftCategory.own => 0xFF3F51B5,
     ShiftCategory.other => 0xFFD50000,
-    ShiftCategory.clinic => 0xFF039BE5,
-    ShiftCategory.specialClinic => 0xFF0B8043,
-    ShiftCategory.off => 0xFF7986CB,
-    ShiftCategory.majorSwap => 0xFFD50000,
-    ShiftCategory.given => 0xFF7986CB,
+    ShiftCategory.clinic => 0xFFF6BF26,
+    ShiftCategory.specialClinic => 0xFFF4511E,
+    ShiftCategory.off => 0xFF616161,
+    ShiftCategory.majorSwap => 0xFF3F51B5,
+    ShiftCategory.given => 0xFF0B8043,
     ShiftCategory.borrowedUnpaid => 0xFFF6BF26,
     ShiftCategory.borrowedPaid => 0xFF0B8043,
   };

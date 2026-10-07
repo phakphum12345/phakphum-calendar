@@ -35,15 +35,15 @@ void main() {
   });
 
   test('uses the requested Google Calendar target color IDs', () {
-    expect(ShiftCategory.own.googleColorId, '8');
+    expect(ShiftCategory.own.googleColorId, '9');
     expect(ShiftCategory.other.googleColorId, '11');
-    expect(ShiftCategory.clinic.googleColorId, '7');
-    expect(ShiftCategory.specialClinic.googleColorId, '10');
-    expect(ShiftCategory.majorSwap.googleColorId, '11');
-    expect(ShiftCategory.given.googleColorId, '1');
+    expect(ShiftCategory.clinic.googleColorId, '5');
+    expect(ShiftCategory.specialClinic.googleColorId, '6');
+    expect(ShiftCategory.majorSwap.googleColorId, '9');
+    expect(ShiftCategory.given.googleColorId, '10');
     expect(ShiftCategory.borrowedUnpaid.googleColorId, '5');
     expect(ShiftCategory.borrowedPaid.googleColorId, '10');
-    expect(ShiftCategory.off.googleColorId, '1');
+    expect(ShiftCategory.off.googleColorId, '8');
   });
 
   test('extracts effective background RGB from the original sheet grid', () {
