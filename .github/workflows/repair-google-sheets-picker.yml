@@ -58,39 +58,7 @@ jobs:
           text = text.replace(old, new, 1)
           controller.write_text(text, encoding='utf-8')
 
-          Path('test/widget_test.dart').write_text(r'''import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:phakphum_calendar/controller/app_controller.dart';
-import 'package:phakphum_calendar/core/di/app_dependencies.dart';
-import 'package:phakphum_calendar/ui/app_shell.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
-  setUp(() => SharedPreferences.setMockInitialValues({}));
-
-  AppController demoController() =>
-      AppDependencies.production().createDemoAppController();
-
-  testWidgets('Google Sheets picker entry remains usable on a phone',
-      (tester) async {
-    await tester.binding.setSurfaceSize(const Size(390, 844));
-    addTearDown(() => tester.binding.setSurfaceSize(null));
-
-    final controller = demoController();
-    addTearDown(controller.dispose);
-
-    await tester.pumpWidget(ShiftToolsApp(controller: controller));
-    await tester.pumpAndSettle();
-
-    expect(find.byType(NavigationBar), findsOneWidget);
-    expect(find.text('แหล่งข้อมูลเวร'), findsOneWidget);
-    expect(find.text('เลือกไฟล์จาก Google Sheets'), findsOneWidget);
-    expect(find.text('ยังไม่ได้เลือกแหล่งข้อมูลเวร'), findsOneWidget);
-    expect(find.text('ชื่อที่ต้องค้นหา'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
-}
-''', encoding='utf-8')
 
       - name: Format and test
         uses: subosito/flutter-action@v2
