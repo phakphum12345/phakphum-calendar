@@ -93,8 +93,8 @@
     },
     {
       "path": ".github/workflows/generate-diskpath-md.yml",
-      "size": 2743,
-      "sha256": "70176a3db6e4c20fa0ab5f6ab1d04892ce5dc65684919aff4e5d0ae5ccdf3ed9"
+      "size": 1479,
+      "sha256": "8d418e100aacf4c9959aa1cebd211cc74116decd284b2b30aa9bc5989e8b464a"
     },
     {
       "path": ".github/workflows/web.yml",
@@ -3538,8 +3538,8 @@
     },
     {
       "path": "tools/diskpath/validate_diskpath.py",
-      "size": 7385,
-      "sha256": "97e1491e203e96e87232745a528cfae5d35e30353c1af817359ad309c7ca477e"
+      "size": 7386,
+      "sha256": "fa12b8739246d6bfac8ebeef7aaae4caf7ddbc6805ff88f0a768c33596214b51"
     },
     {
       "path": "web/favicon.png",
