@@ -1,0 +1,3670 @@
+{
+  "schema_version": 1,
+  "generator": {
+    "name": "phakphum-calendar-diskpath",
+    "version": "1.0.0"
+  },
+  "manifest_scope": "git-tracked-regular-files",
+  "excluded_paths": [
+    "DISKPATH.json",
+    "DISKPATH.md"
+  ],
+  "file_count": 731,
+  "files": [
+    {
+      "path": ".ai/memory/architecture.md",
+      "size": 155,
+      "sha256": "c2e3765e8d8913200f45f3a6c888b5f6b3cfe749ba8433ed54cd9cff20562a63"
+    },
+    {
+      "path": ".ai/memory/business_rules.md",
+      "size": 135,
+      "sha256": "010dcd4618a9b09e34ce0b4df8d176557d1c1cb407ae67937753c398a5607316"
+    },
+    {
+      "path": ".ai/memory/decisions.md",
+      "size": 235,
+      "sha256": "ee769b3be30b4b2bc90b4fc144863178f9e3cd4e72667bb760ef709c9f89fbf7"
+    },
+    {
+      "path": ".ai/memory/hospital_profile.md",
+      "size": 267,
+      "sha256": "194bd26c606c73cbe6a8f52009f673c652b55099adabb234e8ae5b22cbce0a86"
+    },
+    {
+      "path": ".ai/prompts/create_feature.md",
+      "size": 243,
+      "sha256": "957def5a9ac859a67b9aab342db534cda1563cd2972952bb57dd7a30735a57a8"
+    },
+    {
+      "path": ".ai/prompts/fix_bug.md",
+      "size": 200,
+      "sha256": "7b04df3763ea07961cd946b29f272cd45169865c5f18606c48cf8c86a88ad5c6"
+    },
+    {
+      "path": ".ai/prompts/review.md",
+      "size": 210,
+      "sha256": "4ca019f5450bf0afc96b7b406cdd253c2946632ae86f98c545172b718f2672f6"
+    },
+    {
+      "path": ".ai/templates/adr_template.md",
+      "size": 111,
+      "sha256": "2ee606c5472384af64c6f707516a13da58e28c9938ce7ffd392ff1f21f652955"
+    },
+    {
+      "path": ".codex/coding_rules.md",
+      "size": 5096,
+      "sha256": "ebf90020aa5f9705e56d9215d7060d6ebf1f8fa7f5298c89a8dda5fb34f66191"
+    },
+    {
+      "path": ".codex/domain.md",
+      "size": 4252,
+      "sha256": "4e8e706fe9569ad7d77db6928eb397b7e33d3baf72a568183e54628127f4f895"
+    },
+    {
+      "path": ".codex/project.md",
+      "size": 4964,
+      "sha256": "535b4a50a65823d5c3cbb933d5340f54fd9bd8eb995a8ba47bd8247e92ac0b2d"
+    },
+    {
+      "path": ".codex/prompts.md",
+      "size": 3504,
+      "sha256": "1dec39a5591dec97c329c43266add5c9e492436a9826bcc9ca0fa0d6bb18f5bd"
+    },
+    {
+      "path": ".codex/roadmap.md",
+      "size": 3272,
+      "sha256": "201819ebdf4e490a2c7e31d0b3b7cae4d9c1f7eef3190f92ca8b698c7430d696"
+    },
+    {
+      "path": ".github/workflows/README.md",
+      "size": 4740,
+      "sha256": "51638d5e46f83dc17f392ae04d8dd2999a898468c50bf0be31baab30c9969c1a"
+    },
+    {
+      "path": ".github/workflows/ci-auto-detect.yml",
+      "size": 3719,
+      "sha256": "c0a5d84f10b3ba4901fd3856ed87c1b3364d07729d8b9dacd15ac48a18f453f7"
+    },
+    {
+      "path": ".github/workflows/final-gate.yml",
+      "size": 3408,
+      "sha256": "1de8e3e51bfd7f128ebc37161229a1a36007f450cde2f6f8f319c7127d961914"
+    },
+    {
+      "path": ".github/workflows/generate-diskpath-md.yml",
+      "size": 1479,
+      "sha256": "8d418e100aacf4c9959aa1cebd211cc74116decd284b2b30aa9bc5989e8b464a"
+    },
+    {
+      "path": ".github/workflows/web.yml",
+      "size": 1976,
+      "sha256": "0ec0716928e090ef398aecfa8b36aeb4a899474b75eecb23e8c09b85ddf5cad1"
+    },
+    {
+      "path": ".github/workflows/windows.yml",
+      "size": 3105,
+      "sha256": "fdfdaf76b97529b5f5eb1d70d53f57c189e3b6772e8d3306bcd7a177bf901636"
+    },
+    {
+      "path": ".gitignore",
+      "size": 885,
+      "sha256": "ef2df2e38b6ccf9af7295cb26bd630a71101fef2ffed5eae26c51b23eb09440c"
+    },
+    {
+      "path": ".metadata",
+      "size": 1706,
+      "sha256": "acfbaea52ff601014457c28ebe80ffc1b52132c4041b5896a82636ef1be6c6c5"
+    },
+    {
+      "path": "AI_GUIDE.md",
+      "size": 764,
+      "sha256": "a371137228538147759c16eeed0dcff6543d500db269cf62d564374e8d0578b3"
+    },
+    {
+      "path": "ARCHITECTURE.md",
+      "size": 4196,
+      "sha256": "1f7aa6dd70c192d12097cea5ca86f36ef21772aef88d48861e8ff4705547f7d5"
+    },
+    {
+      "path": "BUSINESS_RULES.md",
+      "size": 2040,
+      "sha256": "e306788b5233f1f8f88417287da199d721a168d594e2b8304fb3874253e61788"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "size": 4484,
+      "sha256": "1b44bd25821bbaa4ad2bb4f0dea69a3f7c1d4433761cfd7b9c1fe1232e1ed490"
+    },
+    {
+      "path": "CODE_STYLE.md",
+      "size": 3238,
+      "sha256": "876174cecd8d0474f35335a34133d5415c36b676ecf1d146bcd144bd6dee0613"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "size": 3267,
+      "sha256": "8a62c5ffd0ccca9c39e4b24a0db5e0d463ebb80634a492aa927038f19aa408a0"
+    },
+    {
+      "path": "DATA_MODEL.md",
+      "size": 828,
+      "sha256": "ec8b06bab5ccb403559c201117c99d558c40fced412675d682f225aae6bfdd73"
+    },
+    {
+      "path": "LICENSE",
+      "size": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "MASTER_PLAN.md",
+      "size": 5376,
+      "sha256": "9d287248c6ba070027086b3f998f83886041d5deb14aeea8eac515653fa04a62"
+    },
+    {
+      "path": "NOTICE",
+      "size": 101,
+      "sha256": "466fa508291567626fb52fdf58e15ce228338a594f9c368d0324af3b9b9087b5"
+    },
+    {
+      "path": "PROJECT_CONSTITUTION.md",
+      "size": 866,
+      "sha256": "eedb48be10263e7911a13132efca01abb75086c5fcc8e1eb713961777c10ccba"
+    },
+    {
+      "path": "PROJECT_RULES.md",
+      "size": 659,
+      "sha256": "71fe177e689a61a01ede7fcc30f329beaead72aef84815440a364f7a540d51d6"
+    },
+    {
+      "path": "README.md",
+      "size": 49299,
+      "sha256": "7ffbca2d102e0303019c49f6a2c58bcdb46f8fc08ae83452f666519de7a86417"
+    },
+    {
+      "path": "ROADMAP.md",
+      "size": 304,
+      "sha256": "82dba86d50a0a334e77f748a6f68863aa8a03d79f1e47dfe76297a8cb1c509dc"
+    },
+    {
+      "path": "SDD.md",
+      "size": 975,
+      "sha256": "bf5598e72477d8f1bf4845589b720dfb7ac9f7de5d7ada9a1158800d7a593be5"
+    },
+    {
+      "path": "SECURITY.md",
+      "size": 3392,
+      "sha256": "a98cac784973ee96ed39e04d7e03730a8f22b1dd3b6892f10d5a008fde9cbe1c"
+    },
+    {
+      "path": "SPRINT_1_STATUS.md",
+      "size": 1257,
+      "sha256": "392e8f6101b792934fa9cfda334326664c48ca6d878e34e4c947024a4b8f9397"
+    },
+    {
+      "path": "SPRINT_2_1_STATUS.md",
+      "size": 1118,
+      "sha256": "403e9d1b24ac4748833be0eb4f6a6c050b97b36c5ab4747148bae9f7da2cfcd4"
+    },
+    {
+      "path": "SPRINT_2_STATUS.md",
+      "size": 1122,
+      "sha256": "ad4868a3f92feb416ed1040600c9568961743efc7643cc4b4118b1d80d361737"
+    },
+    {
+      "path": "SPRINT_3_1_STATUS.md",
+      "size": 1050,
+      "sha256": "b3f50e38074ae145d48bfa803cb8a2a2d66a91f4ab87af4c7329d06ef4b85b28"
+    },
+    {
+      "path": "SPRINT_3_STATUS.md",
+      "size": 1182,
+      "sha256": "6bbef322b5d057540aa5954dc3953171e18677da3935d17e60736b2baa0b9b75"
+    },
+    {
+      "path": "SPRINT_4_STATUS.md",
+      "size": 406,
+      "sha256": "79f03b6451ed222dd18b5eca8885071dc8ff55afaa30adb0a250be5b53cadbe0"
+    },
+    {
+      "path": "SPRINT_5_STATUS.md",
+      "size": 592,
+      "sha256": "8902d6a55f203cfc4667be2e9941c63d9e2071928d3aff627447d8b4b9979b42"
+    },
+    {
+      "path": "SPRINT_6_STATUS.md",
+      "size": 703,
+      "sha256": "91118d016752c5373a072191c8da67ef2e6eb1a0d2d07acaa0f6217d43e647d5"
+    },
+    {
+      "path": "TESTING.md",
+      "size": 2671,
+      "sha256": "e295cc8a2cfc592a4b4d3b3d5ec353f4b7b4b0558e4bb794d195d5caa83059f8"
+    },
+    {
+      "path": "VERSION_2_0_STATUS.md",
+      "size": 1107,
+      "sha256": "1a3265cb0b873fdda5a5ccbd990de5b70beee839220359109d41c7c0922636f8"
+    },
+    {
+      "path": "VERSION_3_0_STATUS.md",
+      "size": 1650,
+      "sha256": "342b1067c053e616af214a8ab836fc2ba951858f13b8091557cb26851a49e9dd"
+    },
+    {
+      "path": "VERSION_4_0_STATUS.md",
+      "size": 1342,
+      "sha256": "701e9c3b3f0d585dd6c84bc5287b76f16e1e4eee6263e4460056aa8b9636b947"
+    },
+    {
+      "path": "analysis_options.yaml",
+      "size": 1887,
+      "sha256": "e63e50ff5edc29233384ffbda6008416eb1d6a0a9d7246bd8b94d918e8ead5eb"
+    },
+    {
+      "path": "android/.gitignore",
+      "size": 253,
+      "sha256": "b027c9de1011765c015e5819bf857c0d75bfcd0886fb01721c091159012e50f1"
+    },
+    {
+      "path": "android/app/build.gradle.kts",
+      "size": 1291,
+      "sha256": "d196a7fd57d3109ce6e6642fb9d8c1f203b5b206cb4117d176eb2b06992c918e"
+    },
+    {
+      "path": "android/app/src/debug/AndroidManifest.xml",
+      "size": 378,
+      "sha256": "30b0832ed8b92dfbd6ae2abfa939ccf26333d37600056b1572bd4a397a18a74b"
+    },
+    {
+      "path": "android/app/src/main/AndroidManifest.xml",
+      "size": 2416,
+      "sha256": "ddb7c4156d4c43239ffd3a31666962470f57cc17af83f83c06fc9c7baeef7862"
+    },
+    {
+      "path": "android/app/src/main/kotlin/com/phakphoum/phakphum_calendar/MainActivity.kt",
+      "size": 133,
+      "sha256": "44dcaa291a330d719f97570028bb32dfb6211921eb05fe497438de2948177e39"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-v21/launch_background.xml",
+      "size": 438,
+      "sha256": "7ca6d5cec2169c5a98661a119db23a6f3399c8fef2256ff04f3a642831282478"
+    },
+    {
+      "path": "android/app/src/main/res/drawable/launch_background.xml",
+      "size": 434,
+      "sha256": "94433756fe10005ddd6fc55cc5c0b1e9f3c10b66a08ceac795ece6713d34e28a"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "size": 3902,
+      "sha256": "5b02edb1f538d5030909bc2fee497a9b6a2e47b2153201f6e5629e7c5e8d2c00"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "size": 2061,
+      "sha256": "6d58eb1d98bab8d94578b58436d73b567d7c67f38a0f8fd73226ff216ef092cc"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "size": 6385,
+      "sha256": "e46da64d93e1f83f6720f346a8f361cdedf8760fb7f76e934aeda44012b43924"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "size": 13778,
+      "sha256": "00ca34a6d537b9d89574b6cbfa0cabb88696935268e3f7e119146e5db62c97de"
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "size": 24513,
+      "sha256": "54b454fef92c7ed8d0d02b942416c131937c95d843ee19dfc77acab5c1f02a74"
+    },
+    {
+      "path": "android/app/src/main/res/values-night/styles.xml",
+      "size": 995,
+      "sha256": "8c5bad5152f217e837519f9c15211d19f39bd45f5f67faf6dd81cb4b299e518f"
+    },
+    {
+      "path": "android/app/src/main/res/values/styles.xml",
+      "size": 996,
+      "sha256": "937d7c82f539c72eb94fd3a3773f29b3d3fef1997213c92cb632298cedf4bda9"
+    },
+    {
+      "path": "android/app/src/profile/AndroidManifest.xml",
+      "size": 378,
+      "sha256": "30b0832ed8b92dfbd6ae2abfa939ccf26333d37600056b1572bd4a397a18a74b"
+    },
+    {
+      "path": "android/build.gradle.kts",
+      "size": 537,
+      "sha256": "6a26dba2cb8dfba1e74f540b0d17a89d96c1301d3c3bfda14348bed257fddcba"
+    },
+    {
+      "path": "android/gradle.properties",
+      "size": 457,
+      "sha256": "abf5a6fdadbd2420d8f10da4fa75e9469e7802c7d4e2c9cec9e86ba8a5e553c8"
+    },
+    {
+      "path": "android/gradle/wrapper/gradle-wrapper.properties",
+      "size": 202,
+      "sha256": "3221993eac1057198d652b7437105e2953ca4850d415eb0eb2b9625874fd059e"
+    },
+    {
+      "path": "android/settings.gradle.kts",
+      "size": 771,
+      "sha256": "b76d554153a63772dddbe2ee91abdf582f5f871af40698b80a2ef7b70903d96f"
+    },
+    {
+      "path": "assets/app_icon_master.png",
+      "size": 874012,
+      "sha256": "b8e81b47ba02626f4fd572560150129718bb5df5496cd49e0ceb4e6be676cd6d"
+    },
+    {
+      "path": "backend/.editorconfig",
+      "size": 275,
+      "sha256": "fe39e0ad06edea8e256e44f1fc4f319a8acfa785a7470af5cf6b9ed12dc34406"
+    },
+    {
+      "path": "backend/.env.example",
+      "size": 1096,
+      "sha256": "7521e5f490dd728d443580a25764558832e836ea196bba92e3967ce03adb85c9"
+    },
+    {
+      "path": "backend/.gitattributes",
+      "size": 186,
+      "sha256": "a40eb27ee0b545ca5b5542daaf99fec51f84f23b3766a6353864ef2a115bc51c"
+    },
+    {
+      "path": "backend/.gitignore",
+      "size": 341,
+      "sha256": "3ee1060a695b64e763d8a438ac1fe87494ff00d92680c3f63ca56bc103ed4142"
+    },
+    {
+      "path": "backend/.npmrc",
+      "size": 31,
+      "sha256": "e968d1d336604e9986ea31306a4d9e1442f4312fca262f444384baf928d6560e"
+    },
+    {
+      "path": "backend/README.md",
+      "size": 1464,
+      "sha256": "3afe303d3d3e4318a4d8e33c46175ce52ae6cc9a16d132f36e8b78ebb92243a1"
+    },
+    {
+      "path": "backend/app/Http/Controllers/Api/V1/ClientErrorController.php",
+      "size": 863,
+      "sha256": "524d84119f5a185983ada0429edbda0932c837b84964a126084f35e7e8a64d7e"
+    },
+    {
+      "path": "backend/app/Http/Controllers/Api/V1/HealthController.php",
+      "size": 1088,
+      "sha256": "6fdb6f7f29232f719a6eb74c0cb88d808d0af6e2cf4d558fc796cdd4df0743e2"
+    },
+    {
+      "path": "backend/app/Http/Controllers/Controller.php",
+      "size": 77,
+      "sha256": "25d1c1ef8e6cc8a376553faacfba2b07d9dfaee9bdbb84f14f77517580e9deb1"
+    },
+    {
+      "path": "backend/app/Http/Middleware/AttachRequestId.php",
+      "size": 660,
+      "sha256": "919f769504d7d13db0f7e483f7cf9aae7823bc74371f62aca8461b8316ed6615"
+    },
+    {
+      "path": "backend/app/Http/Requests/StoreClientErrorRequest.php",
+      "size": 1000,
+      "sha256": "7994e6a98b0ad63248b358e5dbe221c8f7e891190dda8d4f0d512afc1531953f"
+    },
+    {
+      "path": "backend/app/Models/User.php",
+      "size": 840,
+      "sha256": "1dca1344e88308fe405ae050f02bd65081a649de65ec86f2ee2beabbb4706afa"
+    },
+    {
+      "path": "backend/app/Providers/AppServiceProvider.php",
+      "size": 361,
+      "sha256": "caf306ef6a25a547bbb7edd5508a39b51c365083eb6dd58378cf2242018e94c7"
+    },
+    {
+      "path": "backend/artisan",
+      "size": 425,
+      "sha256": "f91a517c0c5d3a904c3f390933964a5e08ec1fc68146882730daac4aca4ffcec"
+    },
+    {
+      "path": "backend/backend/composer-setup.php",
+      "size": 59524,
+      "sha256": "aad0c40a36d9938664f5a34eb2ed39dbc1021792f9706dbcb9cd6d8001227c99"
+    },
+    {
+      "path": "backend/bootstrap/app.php",
+      "size": 814,
+      "sha256": "3437c38fc699b5dbb18f66dad2554490980885425bffe46e808171a29d2af03c"
+    },
+    {
+      "path": "backend/bootstrap/cache/.gitignore",
+      "size": 14,
+      "sha256": "240a3e0d37d2e86b614063f5347eb02d4f99ca6c254de6b82871ff8d95532a7d"
+    },
+    {
+      "path": "backend/bootstrap/providers.php",
+      "size": 89,
+      "sha256": "f720e185207a343d4c19fc99dbb317a4187efbcd7d38a303a695bbdd77ffb943"
+    },
+    {
+      "path": "backend/composer.json",
+      "size": 2909,
+      "sha256": "7c2888703b3959f3ab7d00eef21b16dcbe90d8b482f815f32b90b67e53f8fd88"
+    },
+    {
+      "path": "backend/composer.lock",
+      "size": 306110,
+      "sha256": "f8a54dc5c0978ab95da435b8f50830c00584347f8400e8d5c228c638bd3e2c68"
+    },
+    {
+      "path": "backend/config/app.php",
+      "size": 4272,
+      "sha256": "78dcd36b226fd7b24057cb95f567cb6e96561c2406653892d8aef6dcea8461e4"
+    },
+    {
+      "path": "backend/config/auth.php",
+      "size": 4040,
+      "sha256": "c7e204e9785c9f596d66fb884b493f658f2327f157646bdb4088efd6b3a7773f"
+    },
+    {
+      "path": "backend/config/cache.php",
+      "size": 4369,
+      "sha256": "ee4ad2bba1edfcff52e9599f37371f2370d0b167cc226ce72d46cdf6edf2dc55"
+    },
+    {
+      "path": "backend/config/database.php",
+      "size": 6876,
+      "sha256": "02cd62f589b43d33f9ceac740705dac1dec9740eb2bb9e6e202d4b66a15244cf"
+    },
+    {
+      "path": "backend/config/filesystems.php",
+      "size": 2532,
+      "sha256": "ba7060d7a23e490c3ce830656f6d24ad3ccf5b868e3293f2a12e411959dc5635"
+    },
+    {
+      "path": "backend/config/logging.php",
+      "size": 4340,
+      "sha256": "299ec1ba5b5a803c8e20f666ae7628e442e856cc2ff7ac9e2adb17b97e8ad63b"
+    },
+    {
+      "path": "backend/config/mail.php",
+      "size": 3631,
+      "sha256": "c43ff49a31c5f32ce21eb7159f2a4b3cd2f4074eaed5838d265646dbfedd3474"
+    },
+    {
+      "path": "backend/config/queue.php",
+      "size": 4199,
+      "sha256": "6101774da7c8b79af46d0028f2b8b31a484c3f7eda10b76e5b27b6093ad364a4"
+    },
+    {
+      "path": "backend/config/services.php",
+      "size": 1039,
+      "sha256": "8258c4487eb1d73a97e569eb0e411e3f25368044812df4cba807860432be1d92"
+    },
+    {
+      "path": "backend/config/session.php",
+      "size": 8423,
+      "sha256": "64272cfbef6f47c65bf857f1c5b1e853700c0d0278de46b86663fd83ef4aeed8"
+    },
+    {
+      "path": "backend/database/.gitignore",
+      "size": 10,
+      "sha256": "e758642d95e83e907e010b6e46b07b3f953c7cef11fe5ebefc2a77b9d7b4d5f7"
+    },
+    {
+      "path": "backend/database/factories/UserFactory.php",
+      "size": 1044,
+      "sha256": "50bdc543f1b09d1a57260be55ad0e1a68aee4b34f63e1109dc94d9bcd3080526"
+    },
+    {
+      "path": "backend/database/migrations/0001_01_01_000000_create_users_table.php",
+      "size": 1473,
+      "sha256": "10d79883bc08ce46510f9ad8b1830b4d06d586dc56ae2c8bac3b3e491f69a90f"
+    },
+    {
+      "path": "backend/database/migrations/0001_01_01_000001_create_cache_table.php",
+      "size": 873,
+      "sha256": "fbb4665e5a977e71df4e74ec75b3c06ca4f17ad0de7138fe9786639189978e77"
+    },
+    {
+      "path": "backend/database/migrations/0001_01_01_000002_create_jobs_table.php",
+      "size": 1883,
+      "sha256": "df4910687180313a14a3f96a8bddd808ae145ed1b107cd772caf865c0dc2b746"
+    },
+    {
+      "path": "backend/database/seeders/DatabaseSeeder.php",
+      "size": 482,
+      "sha256": "cf8e4b6e48360218bb5534f66419c955288f78338eb8a3dba9d8ac3394ec3dbc"
+    },
+    {
+      "path": "backend/package.json",
+      "size": 384,
+      "sha256": "10a54d6736b26384ac68636e11f958360e6d18fb9c41e91e05707a918ad58622"
+    },
+    {
+      "path": "backend/phpunit.xml",
+      "size": 1322,
+      "sha256": "493369cfb7feea104da4bec214c2cc6526ca2f1b9d937c50a2961fc59cb61aaf"
+    },
+    {
+      "path": "backend/public/.htaccess",
+      "size": 740,
+      "sha256": "b7e379c77639fd56144947dbae84c84eb466d9c686ea81f2f013ae85421da923"
+    },
+    {
+      "path": "backend/public/favicon.ico",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/public/index.php",
+      "size": 543,
+      "sha256": "eba77cba39695b6bd091fe5211d481f7ebb2ce2d8d26230b5a609465d0a4aff9"
+    },
+    {
+      "path": "backend/public/robots.txt",
+      "size": 24,
+      "sha256": "e5c4b84484ee4216e9373be99380320c25dd94805f99f0a805846f087636553f"
+    },
+    {
+      "path": "backend/resources/css/app.css",
+      "size": 339,
+      "sha256": "02db84e827e06d8349293e9797eb8d81465e109e91976775964c4bf873b6fab5"
+    },
+    {
+      "path": "backend/resources/js/app.js",
+      "size": 3,
+      "sha256": "101ead936a2281d53dcc064b7e2a2ab0d53b92ef3ef7b34b668673007895c860"
+    },
+    {
+      "path": "backend/resources/views/welcome.blade.php",
+      "size": 349,
+      "sha256": "a616a5feb437bba9ec40d33f9eb2e7179a78ddd021fea1a0fc25bac5c9e1d34f"
+    },
+    {
+      "path": "backend/routes/api.php",
+      "size": 566,
+      "sha256": "1fc314be4a7ba58e1ea65f3236c549ada30ee00b4ba7338009bf5f44606fb8eb"
+    },
+    {
+      "path": "backend/routes/console.php",
+      "size": 210,
+      "sha256": "9adccc33e7dd400683e434774077c7fdb2f299c5712cedf16a43fdf56f2850fa"
+    },
+    {
+      "path": "backend/routes/web.php",
+      "size": 108,
+      "sha256": "248c7eeeb43bb61ee4fb6603e52b44843c64f72a841d671bcd41871aab23f970"
+    },
+    {
+      "path": "backend/storage/app/.gitignore",
+      "size": 33,
+      "sha256": "993b9e3709d7b5189da331725d1169d79e561a509db2490b722b525073d2d976"
+    },
+    {
+      "path": "backend/storage/app/private/.gitignore",
+      "size": 14,
+      "sha256": "240a3e0d37d2e86b614063f5347eb02d4f99ca6c254de6b82871ff8d95532a7d"
+    },
+    {
+      "path": "backend/storage/app/public/.gitignore",
+      "size": 14,
+      "sha256": "240a3e0d37d2e86b614063f5347eb02d4f99ca6c254de6b82871ff8d95532a7d"
+    },
+    {
+      "path": "backend/storage/framework/.gitignore",
+      "size": 119,
+      "sha256": "2d452d65596636197757afa17df52331c84da7bb74ee0f3462fd5be4eb6afdc6"
+    },
+    {
+      "path": "backend/storage/framework/cache/.gitignore",
+      "size": 21,
+      "sha256": "32f79194633ddb34f013c6ee8819d112104ff822357adf308ec385b46a7f42f6"
+    },
+    {
+      "path": "backend/storage/framework/cache/data/.gitignore",
+      "size": 14,
+      "sha256": "240a3e0d37d2e86b614063f5347eb02d4f99ca6c254de6b82871ff8d95532a7d"
+    },
+    {
+      "path": "backend/storage/framework/sessions/.gitignore",
+      "size": 14,
+      "sha256": "240a3e0d37d2e86b614063f5347eb02d4f99ca6c254de6b82871ff8d95532a7d"
+    },
+    {
+      "path": "backend/storage/framework/testing/.gitignore",
+      "size": 14,
+      "sha256": "240a3e0d37d2e86b614063f5347eb02d4f99ca6c254de6b82871ff8d95532a7d"
+    },
+    {
+      "path": "backend/storage/framework/views/.gitignore",
+      "size": 14,
+      "sha256": "240a3e0d37d2e86b614063f5347eb02d4f99ca6c254de6b82871ff8d95532a7d"
+    },
+    {
+      "path": "backend/storage/logs/.gitignore",
+      "size": 14,
+      "sha256": "240a3e0d37d2e86b614063f5347eb02d4f99ca6c254de6b82871ff8d95532a7d"
+    },
+    {
+      "path": "backend/tests/Feature/ClientErrorApiTest.php",
+      "size": 1508,
+      "sha256": "59a605498ae1b2309e8ab39ff3e521921a783f765ca3d8dc09b1d520fcd47d6b"
+    },
+    {
+      "path": "backend/tests/Feature/HealthApiTest.php",
+      "size": 782,
+      "sha256": "cb0e1d7129c5a4b45a5a1c38821aa3909177a1659fcf0532a3c8f9d4bc19a42b"
+    },
+    {
+      "path": "backend/tests/TestCase.php",
+      "size": 142,
+      "sha256": "c7c209f5579c42647c1f7b2a79ac828e8b54ac62a98442045a6e94fa2c0d0ebc"
+    },
+    {
+      "path": "backend/tests/Unit/ExampleTest.php",
+      "size": 243,
+      "sha256": "ffacae5c1a2a44c809420af5b3b404910da1b12167d58764dac6d10b8ba8cfaf"
+    },
+    {
+      "path": "backend/vite.config.js",
+      "size": 632,
+      "sha256": "f413e14379e2db8b200c63a6326b925f6d47cc0df458c77bfe188cfc23e8081f"
+    },
+    {
+      "path": "docs/AI_ROSTER_ANALYZER_LOGIC_TH.md",
+      "size": 8389,
+      "sha256": "e175d44fe3d3148fe2b007196834843fd7028bbecca7e927770505670c6d01f0"
+    },
+    {
+      "path": "docs/API_FOUNDATION.md",
+      "size": 851,
+      "sha256": "e2fad2e3f128f0c6c3a20479148b0b603c15634ad22a6b877c5e6bb1fc3a6d8d"
+    },
+    {
+      "path": "docs/CALENDAR_PREVIEW_AND_SYNC.md",
+      "size": 1252,
+      "sha256": "4515247cfce12b61cbb77765f992aa063516b0bbd27827cf303aba8499a13503"
+    },
+    {
+      "path": "docs/CI_AUTO_DETECTION.md",
+      "size": 1336,
+      "sha256": "8b7812e0e85690c2ee1caf352890a8eeb9b2fdea541769aa1c15e404e9810495"
+    },
+    {
+      "path": "docs/COMPARISON_FOUNDATION.md",
+      "size": 1087,
+      "sha256": "c51936347c65c7f6e8019d18d653d530c01dacd763d702779ad76117847f208f"
+    },
+    {
+      "path": "docs/DELIVERY_STATUS.md",
+      "size": 2160,
+      "sha256": "c6557167c8deb355b3cc10195cf89115e96ef341b9aac80b329c818d73cf4960"
+    },
+    {
+      "path": "docs/DURABLE_HISTORY_AND_RESUME.md",
+      "size": 693,
+      "sha256": "0608bc829ecc5a7c2b8001d75aefc8644817b7377884e7607716c72537418cfc"
+    },
+    {
+      "path": "docs/END_TO_END_WORKFLOW.md",
+      "size": 925,
+      "sha256": "2514d7222962cf9fa564f9acfa4181dea02d290ecf57e49ebac153232569a95a"
+    },
+    {
+      "path": "docs/GOOGLE_SETUP.md",
+      "size": 1414,
+      "sha256": "ab9595d530eee7a59edc5b4c0baef0d9858f9e57d67adee07d69ac7497a87cde"
+    },
+    {
+      "path": "docs/INSTALLATION_AND_USER_GUIDE.md",
+      "size": 20150,
+      "sha256": "e4aab257ef8df48a697883895ca6acbd44747faf829dc9d4082e6904fee241f6"
+    },
+    {
+      "path": "docs/INTEGRATION_STATUS.md",
+      "size": 1213,
+      "sha256": "3f1f58a1b84f313c7685d82761f6d8dcb2768f3b8a24428894425b54343cbcab"
+    },
+    {
+      "path": "docs/NEW_APP_STRUCTURE_TH.md",
+      "size": 9311,
+      "sha256": "d5ac9ae4f7ecd84082008da5506af13729ef81450d3c31e1a8bc214e4550f6ff"
+    },
+    {
+      "path": "docs/PARSER_FOUNDATION.md",
+      "size": 1548,
+      "sha256": "b8d62f7396066e46f9c2c74a75448c23e78acc3f0ddfe625eac1af9d396295c9"
+    },
+    {
+      "path": "docs/PLATFORM_SUPPORT.md",
+      "size": 2155,
+      "sha256": "35c8631217c9c3f356096e02ced902a39f692ef118927c1623328c9a6952e701"
+    },
+    {
+      "path": "docs/PROJECT_AUDIT.md",
+      "size": 23667,
+      "sha256": "c833f9d4e5b55e994bf82a4656240e60bc75257407f917c9673995d62c4fc46f"
+    },
+    {
+      "path": "docs/REAL_ROSTER_PROFILE.md",
+      "size": 1316,
+      "sha256": "29c63cc02f2a49550489c35649dd265ec9114a9518c4d600ce4dad5be1913e5d"
+    },
+    {
+      "path": "docs/SCE_3_0_IMPLEMENTATION_MAP.md",
+      "size": 3052,
+      "sha256": "e969fdc2a6e9507781782db27df28e9c75cb5979479c14d26bdbcfdbc1b67432"
+    },
+    {
+      "path": "docs/SCE_3_0_SYSTEM_DESIGN.md",
+      "size": 13671,
+      "sha256": "2aa35351076bde8a31194239619050bfa6b22dc4014e0d52c734638e39263b06"
+    },
+    {
+      "path": "docs/SYNC_RELIABILITY.md",
+      "size": 1388,
+      "sha256": "bf1da1c7346ae8dac8a0cee0d56bac6d545b4dd9e3b3d6e6e1ecf48e1b454b1c"
+    },
+    {
+      "path": "docs/adr/ADR-0001-project-structure.md",
+      "size": 561,
+      "sha256": "c308f72d365dcc18de908148f5ff335dd00cc822a8e3f0f4f298917a9297ce9f"
+    },
+    {
+      "path": "docs/adr/ADR-0002-state-management.md",
+      "size": 408,
+      "sha256": "1923c9e6e55047a54a8de57637a869e46e8e38cc9ec55c0a4b26e4c5db2d83fd"
+    },
+    {
+      "path": "docs/adr/ADR-0003-local-storage.md",
+      "size": 425,
+      "sha256": "2adfd55c31e03c78a7a85ae731acd0ff0a95aca8241e97710b1d739368093d00"
+    },
+    {
+      "path": "docs/adr/ADR-0004-calendar-sync.md",
+      "size": 445,
+      "sha256": "f25b6b2c9e02a751d778e4075334fdf32a3326c020e15acdc9b058537e86c7b1"
+    },
+    {
+      "path": "docs/adr/ADR-0005-google-authentication.md",
+      "size": 710,
+      "sha256": "d75f4dc7aa8af77e42eb7f877a1a01e39c9b2015a24e9df58dc0e8e75ce89dc8"
+    },
+    {
+      "path": "docs/adr/ADR-0006-drive-file-selection.md",
+      "size": 946,
+      "sha256": "626ac1bb39dda53d3bceb666ad83e28f8c3d3d09fd294ddd3411defbf25ac16b"
+    },
+    {
+      "path": "docs/adr/ADR-0007-sheet-normalization.md",
+      "size": 818,
+      "sha256": "054d105ee271fb28e96bfe3113b1c1b330bf6ab69575147f4b34c996d7fe10bd"
+    },
+    {
+      "path": "docs/adr/ADR-0008-comparison-before-sync.md",
+      "size": 718,
+      "sha256": "7f165b99adde5563e52832fda80960cea8f0f46929c6a891737abeeab85dd741"
+    },
+    {
+      "path": "docs/adr/ADR-0009-managed-calendar-events.md",
+      "size": 727,
+      "sha256": "3f9f69843e94315c9814974864c44ecba9eeb6b101392d2517de96939a51d5ad"
+    },
+    {
+      "path": "docs/adr/ADR-0010-sync-reliability.md",
+      "size": 637,
+      "sha256": "db90088b22e0c305c0739b0033f2ff1a47c68eb36543e4e818d91d26c011aa90"
+    },
+    {
+      "path": "docs/adr/ADR-0011-durable-history-storage.md",
+      "size": 326,
+      "sha256": "4aa58fd4a76ff92a0c5a02f7e3005a5c943744f11558079149b26cd3e5a8533f"
+    },
+    {
+      "path": "docs/adr/ADR-0012-text-first-roster-comparison.md",
+      "size": 845,
+      "sha256": "239cbf3677b2831a91c0eecc99ea2fe27bbc5f8685e48d1f24f49c1e09f71656"
+    },
+    {
+      "path": "docs/adr/ADR-0013-block-on-unknown-shift-time.md",
+      "size": 445,
+      "sha256": "5c7b32feb0d1b6e418d9dc09144ed5aa6b87e991b1900e548467234c96235cd4"
+    },
+    {
+      "path": "docs/adr/ADR-0014-multi-source-multi-period-review.md",
+      "size": 1376,
+      "sha256": "ddad342731c19761300348cf7e7590ab7253e9b4836c93baad4bb72a949285db"
+    },
+    {
+      "path": "docs/wiki/ARCHITECTURE.md",
+      "size": 2497,
+      "sha256": "983ca3b8f7959c48972089643d0fa0ee7f9e4e757311e3a70306c4d23b308968"
+    },
+    {
+      "path": "docs/wiki/CODING_STANDARDS.md",
+      "size": 2058,
+      "sha256": "97d31c48ff09dce90cba2ff513136a94f2abde37eb2249dd0bbc804b1f569ffb"
+    },
+    {
+      "path": "docs/wiki/CONTRIBUTING.md",
+      "size": 1597,
+      "sha256": "c16a41dfda1df8f06f400c784b02d4baac0ac2c1c4e20cd3a6a12aaadb2adb3e"
+    },
+    {
+      "path": "docs/wiki/PLUGIN_SDK_V3.md",
+      "size": 489,
+      "sha256": "de16b7a9e1b88304fab0eec91f12336120394028aa050bc873d09ed6bd1d6a5a"
+    },
+    {
+      "path": "docs/wiki/PUBLIC_API_V3.md",
+      "size": 627,
+      "sha256": "5233293cfb7ab30e07416d30cf0486d69c738d760643bfec8f74d4976ed8efa2"
+    },
+    {
+      "path": "docs/wiki/README.md",
+      "size": 1693,
+      "sha256": "bfe29c34ca35ce6b1ae05b7d5474bfdd4d167a25ff06ac7755bbf10d21f9f4cd"
+    },
+    {
+      "path": "docs/wiki/RELEASE_PROCESS.md",
+      "size": 1612,
+      "sha256": "429ec49a56f57dee144c60b646e58d4cf3f72542ffd25c7e076a538b5c53652c"
+    },
+    {
+      "path": "docs/wiki/RULE_ENGINE_SPEC.md",
+      "size": 2892,
+      "sha256": "b8da377da2575e0c7dec3afa258b9fce0c2e4cd9af1f70bcdc3ecc42240fb62c"
+    },
+    {
+      "path": "docs/wiki/SECURITY_AND_PRIVACY.md",
+      "size": 1826,
+      "sha256": "049070bd861c57b8b4558e7db9d3cb1dc3e6f0de3d8c1ddd2943c996b4802e27"
+    },
+    {
+      "path": "docs/wiki/TESTING_GUIDE.md",
+      "size": 1537,
+      "sha256": "22c8b938ad7dbb0806eef5f454150f308c73b3a0fc625eb41cfd8114cc4e5328"
+    },
+    {
+      "path": "docs/wiki/VERSION_3_ARCHITECTURE.md",
+      "size": 1292,
+      "sha256": "4c3130b9f7b47cf05e748fd975665d492644fd71197ab5375e3ca14a59ba7afd"
+    },
+    {
+      "path": "docs/wiki/v2/README.md",
+      "size": 2058,
+      "sha256": "8bd07ac2fa2942fc65b50b4604f20c2f35278e7214c224d5c226436035dd044e"
+    },
+    {
+      "path": "ios/.gitignore",
+      "size": 569,
+      "sha256": "37380775aeb2499662b7aca80f4ac4c95ae827c3ba2bfa179aa3e9af4812c623"
+    },
+    {
+      "path": "ios/Flutter/AppFrameworkInfo.plist",
+      "size": 720,
+      "sha256": "da12038f9b2688a8a26160fea2609fa8fcb11421448c109f09c0f573efe7698d"
+    },
+    {
+      "path": "ios/Flutter/Debug.xcconfig",
+      "size": 30,
+      "sha256": "a82d7765b37116ee4821d2cd1d65942febf8032353757ffb0826eabde785b4a6"
+    },
+    {
+      "path": "ios/Flutter/Release.xcconfig",
+      "size": 30,
+      "sha256": "a82d7765b37116ee4821d2cd1d65942febf8032353757ffb0826eabde785b4a6"
+    },
+    {
+      "path": "ios/Runner.xcodeproj/project.pbxproj",
+      "size": 25668,
+      "sha256": "2c81de377ac40e7b184323bde6220e6fb639625690304c8dd7f2d90afa226778"
+    },
+    {
+      "path": "ios/Runner.xcodeproj/project.xcworkspace/contents.xcworkspacedata",
+      "size": 135,
+      "sha256": "7f3b00b5c3fdb45242d7b87e1e5c4e25d1fa8129a16c94295ecc4e8ea2235c5f"
+    },
+    {
+      "path": "ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "size": 238,
+      "sha256": "dfa0f9bb85b95ccba9c6811adadf8cb407fb5d52088e89db83ebc308ec448542"
+    },
+    {
+      "path": "ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings",
+      "size": 226,
+      "sha256": "11b247bc6796892d67c9a821d18604db4dd6a880981b34f38460b9866e6b247f"
+    },
+    {
+      "path": "ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme",
+      "size": 4717,
+      "sha256": "9fbce429f56243561dd437a527136c9f9ed77165e3b271b923faf236cfcd0484"
+    },
+    {
+      "path": "ios/Runner.xcworkspace/contents.xcworkspacedata",
+      "size": 152,
+      "sha256": "46c3c9702ff7c5584e11c954d943cfb6e07fb26e3fbd072ddbc0f388aa352de1"
+    },
+    {
+      "path": "ios/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "size": 238,
+      "sha256": "dfa0f9bb85b95ccba9c6811adadf8cb407fb5d52088e89db83ebc308ec448542"
+    },
+    {
+      "path": "ios/Runner.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings",
+      "size": 226,
+      "sha256": "11b247bc6796892d67c9a821d18604db4dd6a880981b34f38460b9866e6b247f"
+    },
+    {
+      "path": "ios/Runner/AppDelegate.swift",
+      "size": 539,
+      "sha256": "451c6d9ba0a2b3ff43092ea349c60fa79a91f1158b915eb29dbdd357cb95d7b8"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "size": 2097,
+      "sha256": "59aee64f32dab46ad775da6ea2f3fc4efe6e8a78289a9185cd0d2d7e055845dd"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-1024x1024@1x.png",
+      "size": 596595,
+      "sha256": "a6dfe985b5c1aecc746a69e3fd9448d5fa19708a09f25b22e1fc97c3a018ddc1"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@1x.png",
+      "size": 647,
+      "sha256": "dbc9928fc99ac174bd62e0d7e855f949f4fa169415802afc7de9d6d40678fbed"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@2x.png",
+      "size": 1614,
+      "sha256": "73b99c156e1634bb2a07c5cf29032ca912029f470a52fb6146294982dbbd6c32"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-20x20@3x.png",
+      "size": 2922,
+      "sha256": "40cf86561849eff8a24b507ba8fda47e151cd156ccb36ef939580210e7243258"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@1x.png",
+      "size": 1081,
+      "sha256": "b192d4c1b79a779ffaa5d92425ae181c5c383d419cad1ffb864ae6b849dbd1f2"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@2x.png",
+      "size": 2844,
+      "sha256": "5344e5aa675e8d0de3139cc1da1f432e4286d8905e04c0b56f9a234c80ccce64"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-29x29@3x.png",
+      "size": 5434,
+      "sha256": "a9e0a7edb7f398019f92d6350e8c4da7fcbc873cb50658ecf1ed9d05b3f900d4"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@1x.png",
+      "size": 1614,
+      "sha256": "73b99c156e1634bb2a07c5cf29032ca912029f470a52fb6146294982dbbd6c32"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@2x.png",
+      "size": 4675,
+      "sha256": "89ab5db79e28ca7100fffff6468fe929f49c0c978fce40eed0fed7f9b9806fd5"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-40x40@3x.png",
+      "size": 9798,
+      "sha256": "7fe9479a8e10b5153ce6eea0158c3a3691a0376a2bbf1a65b8ffbc5d3c2179da"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-50x50@1x.png",
+      "size": 2161,
+      "sha256": "b7a27d0b01d58f4baab520e9397e7ea367afa438f9c24eec8c968562e9d963b9"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-50x50@2x.png",
+      "size": 6987,
+      "sha256": "859d311d1ce8b89683a2e674044e7f9188c8c498d2a4d3ad901c69339f72f7bf"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-57x57@1x.png",
+      "size": 2638,
+      "sha256": "75e84d32a65432bba5c5957ff6e9cb0b8d541839aa89d667ab8c33bc35475c5c"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-57x57@2x.png",
+      "size": 8800,
+      "sha256": "1d3a43bfe9ea825eaca0913582aa7164a66dad1bab73f5aa27104d97eeff7867"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@2x.png",
+      "size": 9798,
+      "sha256": "7fe9479a8e10b5153ce6eea0158c3a3691a0376a2bbf1a65b8ffbc5d3c2179da"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-60x60@3x.png",
+      "size": 20536,
+      "sha256": "1daa954172be3e3efcb102a15fd0e0f324ae0b2a9d95a014d87aa729119fe751"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-72x72@1x.png",
+      "size": 3902,
+      "sha256": "5b02edb1f538d5030909bc2fee497a9b6a2e47b2153201f6e5629e7c5e8d2c00"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-72x72@2x.png",
+      "size": 13778,
+      "sha256": "00ca34a6d537b9d89574b6cbfa0cabb88696935268e3f7e119146e5db62c97de"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@1x.png",
+      "size": 4207,
+      "sha256": "f074f83dc2117dfe2dab1adc346e5dffc5257dd1c47e8868791ae6a1b5e9f55c"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-76x76@2x.png",
+      "size": 15419,
+      "sha256": "2fdfde387d876168df988e25bbaaeed5d58d74e62a9970636a8db39a092cd074"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-83.5x83.5@2x.png",
+      "size": 18433,
+      "sha256": "5aee71be5466ea089cbd6db828c934550877e4b720d922dd871bf70c355113c9"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json",
+      "size": 391,
+      "sha256": "ccc7950fd5f5b82067c85f667940a9d59189151460761ece8098ca78daa19469"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage.png",
+      "size": 68,
+      "sha256": "93ae7d494fad0fb30cbf3ae746a39c4bc7a0f8bbf87fbb587a3f3c01f3c5ce20"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@2x.png",
+      "size": 68,
+      "sha256": "93ae7d494fad0fb30cbf3ae746a39c4bc7a0f8bbf87fbb587a3f3c01f3c5ce20"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage@3x.png",
+      "size": 68,
+      "sha256": "93ae7d494fad0fb30cbf3ae746a39c4bc7a0f8bbf87fbb587a3f3c01f3c5ce20"
+    },
+    {
+      "path": "ios/Runner/Assets.xcassets/LaunchImage.imageset/README.md",
+      "size": 336,
+      "sha256": "a985b626c4f7546a8ba392d135e9226c3547c8e2b46895f5f2bdf40d7b14ef9f"
+    },
+    {
+      "path": "ios/Runner/Base.lproj/LaunchScreen.storyboard",
+      "size": 2377,
+      "sha256": "857e61203b3deafb05766d8fcda898b86a7cb6f3d5e385ecc9926c4d698215e9"
+    },
+    {
+      "path": "ios/Runner/Base.lproj/Main.storyboard",
+      "size": 1605,
+      "sha256": "fd367b6c43006d61b730f674970dd48b9f662c8f2264e52ffc1558102a2c9f2d"
+    },
+    {
+      "path": "ios/Runner/Info.plist",
+      "size": 2822,
+      "sha256": "2aa716c402fb5482ededc5b4f0fbe57b88f17cd6f56558e95c6378c27768a682"
+    },
+    {
+      "path": "ios/Runner/Runner-Bridging-Header.h",
+      "size": 38,
+      "sha256": "1a8d11d01d1cc92c650c9c9ed35299240052d4683a15a719a2315ef44185e074"
+    },
+    {
+      "path": "ios/Runner/SceneDelegate.swift",
+      "size": 76,
+      "sha256": "add68b905971dedfcc0d0b5b7118030de5925ba8c081ad9815463699e3a444ad"
+    },
+    {
+      "path": "ios/RunnerTests/RunnerTests.swift",
+      "size": 285,
+      "sha256": "5e8f4908dacea6f29b2a790e4d38bf5fded69096063f9a27a2f21584d62b30c0"
+    },
+    {
+      "path": "l10n.yaml",
+      "size": 151,
+      "sha256": "c3ce52cbd012e898f809811d21f21ead3bb3afd08b49a4efe4da74080248664d"
+    },
+    {
+      "path": "lib/app.dart",
+      "size": 7679,
+      "sha256": "599df85fd9c6a6abaa17e5646dd59969ef67bbe5a9d722030c1c5d4c83247ce1"
+    },
+    {
+      "path": "lib/bootstrap/app_bootstrap.dart",
+      "size": 380,
+      "sha256": "cada71fb830d954d0bd4df8e8892b7e0b62a5844a01d00daf1cd0007c9f23cb0"
+    },
+    {
+      "path": "lib/controller/app_controller.dart",
+      "size": 80020,
+      "sha256": "30e9a60f162e7043a5c8962f146e8468ed40e6273cb1238ef6e01aa591017a81"
+    },
+    {
+      "path": "lib/core/di/app_dependencies.dart",
+      "size": 21861,
+      "sha256": "beaf06e83dfe1c2a78f0ca20b2cfe5671777f700ab36bfeaa96c34a4aa60ee13"
+    },
+    {
+      "path": "lib/core/google/authorized_google_client_factory.dart",
+      "size": 971,
+      "sha256": "8a5504571f4d8e93d096d3f3bb3140564e58729510ac66c021a95361b2d362c8"
+    },
+    {
+      "path": "lib/core/google/google_scopes.dart",
+      "size": 458,
+      "sha256": "b31555c1d517a2575bd50b31431debaa30fda4a8ce17ac6442aa21fb573801e5"
+    },
+    {
+      "path": "lib/core/models/shift_record.dart",
+      "size": 1254,
+      "sha256": "f6928e81e81a8558900186ef621eb73a74cbcdaae78a4d7eeb38b258635559bb"
+    },
+    {
+      "path": "lib/core/result/result.dart",
+      "size": 1674,
+      "sha256": "d59c9382237ee66d53a6fcbf9be386491c22fb7b80be533e1ab143ae0df724b5"
+    },
+    {
+      "path": "lib/core/startup/app_startup_coordinator.dart",
+      "size": 1590,
+      "sha256": "29e9c8183aeff1f4a8272a6100b27ed3bf28873aeb877eaaf62f7a6ee457fdd2"
+    },
+    {
+      "path": "lib/core/state/controller_state.dart",
+      "size": 129,
+      "sha256": "5a94164417092065fca30d4ed4b1bd7c529a23af4004c1aca8ca1bb0311e469b"
+    },
+    {
+      "path": "lib/core/utils/calendar_event_matcher.dart",
+      "size": 2690,
+      "sha256": "52eeca42074846edd071f7211d06d803bff27740e3cabe5d06b87dfeef665ca2"
+    },
+    {
+      "path": "lib/core/utils/excel_column_name.dart",
+      "size": 924,
+      "sha256": "b237ee9054143ec46fed624ab85cefe306aa992388545e1dfec7dbedafee8130"
+    },
+    {
+      "path": "lib/core/validation/rule_evaluator.dart",
+      "size": 1626,
+      "sha256": "0af80cc5a90fbcc777dde47d985e37c5a4e0b45945a74baf2e4273e65fae04f9"
+    },
+    {
+      "path": "lib/domain/entities/department.dart",
+      "size": 427,
+      "sha256": "7e378449d8d66018e4c1d1406ab5671261d168af5d09d7719b585899c5bcdcf9"
+    },
+    {
+      "path": "lib/domain/entities/employee.dart",
+      "size": 1843,
+      "sha256": "613ae18d41d536d7bd675e8d69316e8111b79db7bb6de498a288009635d1a0e4"
+    },
+    {
+      "path": "lib/domain/entities/import_profile.dart",
+      "size": 800,
+      "sha256": "42fdc32bc04a0c11d35cfb5d68c704feccace8b42eefef3b64d46dd8279fea6b"
+    },
+    {
+      "path": "lib/domain/entities/schedule.dart",
+      "size": 1470,
+      "sha256": "976f3dc21100235d2b1ea1268cf07d9139391baa04650a63b6bcea0a898175b9"
+    },
+    {
+      "path": "lib/domain/entities/schedule_day.dart",
+      "size": 821,
+      "sha256": "25a3699701c072975c38e5b4e2882c1da56b09b6047e402314268bcf8c8d466b"
+    },
+    {
+      "path": "lib/domain/entities/schedule_month.dart",
+      "size": 1126,
+      "sha256": "c77ad2280e40dde68a69effef169f442389529f20219b17456de1fe284493293"
+    },
+    {
+      "path": "lib/domain/entities/shift_assignment.dart",
+      "size": 1074,
+      "sha256": "0f96570a7d78cfd4555eb33b0f5c190e0bf2a19491ae339e7f247716a0915377"
+    },
+    {
+      "path": "lib/domain/entities/shift_template.dart",
+      "size": 2421,
+      "sha256": "dfd15eeb808ad498e25479028933d72b09e4c0bddb39f39e8e5921354b5848c0"
+    },
+    {
+      "path": "lib/domain/entities/shift_type.dart",
+      "size": 906,
+      "sha256": "4f5ac271c5ada1367dfebb25f0f066a26b486fc3fdd4f2f87baf38d2655b736d"
+    },
+    {
+      "path": "lib/domain/repositories/employee_repository.dart",
+      "size": 391,
+      "sha256": "7a09cd1583847e9cda8e2660f2f7068ee16cde2a7c2e0f5d9a03e917ae544be0"
+    },
+    {
+      "path": "lib/domain/repositories/import_repository.dart",
+      "size": 357,
+      "sha256": "c5cf9a9384b40e095472843b537f464fe4edaa1cc2e880a0441fa15271fd9be0"
+    },
+    {
+      "path": "lib/domain/repositories/schedule_repository.dart",
+      "size": 389,
+      "sha256": "1f730b899cb622e24b3a4f597ee6ab399132302a792112b863b1f3b23ad44023"
+    },
+    {
+      "path": "lib/domain/repositories/settings_repository.dart",
+      "size": 228,
+      "sha256": "86b14e7b6a688b2746d8e7c423581af1f85d78dc3d19c2b3abec1fdd3621e94d"
+    },
+    {
+      "path": "lib/domain/repositories/shift_template_repository.dart",
+      "size": 429,
+      "sha256": "c1ff1ec37e6ee6ca767090fa8b1503ca5eee63d8060bad5a10becefe8dc053a0"
+    },
+    {
+      "path": "lib/domain/services/calendar_sync_service.dart",
+      "size": 181,
+      "sha256": "4ac5464b2bb52856ffbcf220765351746067896f4a2613f09f6392cc11878081"
+    },
+    {
+      "path": "lib/domain/services/export_service.dart",
+      "size": 202,
+      "sha256": "551ccf87070932d402956c20b6fdcaa3d5105970cbcfd533ebe9c8e6300e094a"
+    },
+    {
+      "path": "lib/domain/services/google_sheets_service.dart",
+      "size": 216,
+      "sha256": "ec420b4f87f3400106470879119b0488c411a76c7eb10cb1bcee4834561c0413"
+    },
+    {
+      "path": "lib/domain/services/import_service.dart",
+      "size": 333,
+      "sha256": "f1d954dfecd57eb2eced7428a40104ac4049dd5da80ac39cceae12cc25226970"
+    },
+    {
+      "path": "lib/domain/services/notification_service.dart",
+      "size": 439,
+      "sha256": "75f51d1554a9cf6cb6d7bacd14220466a81e7bb997f29ce58b88344f3bc5bfe4"
+    },
+    {
+      "path": "lib/features/access_control/domain/access_control.dart",
+      "size": 1196,
+      "sha256": "c4e8ed6711c42ce042956cb1abffec4738dff06250fdd7de50bc1a81083b1c64"
+    },
+    {
+      "path": "lib/features/admin/application/admin_dashboard_service.dart",
+      "size": 801,
+      "sha256": "c5187bff99d3e3809fc055ddeceed3f35abb169e253176868141363d1c12f40e"
+    },
+    {
+      "path": "lib/features/admin/domain/admin_access_config.dart",
+      "size": 2933,
+      "sha256": "7fd23bef1d54301b313661f1ded92ca9a2f5583efef5c39c4b65b4a36614a0de"
+    },
+    {
+      "path": "lib/features/admin/domain/admin_metrics.dart",
+      "size": 638,
+      "sha256": "57cea12dbe35e48a751b47b6d7d5ec290eb25c34df1f2bad8c9cc9685b827d11"
+    },
+    {
+      "path": "lib/features/admin/presentation/admin_access_page.dart",
+      "size": 9679,
+      "sha256": "29bd84631b96671b5793328f6998251cf3fb2d01a6ef7b2b4c5af5db377bf04e"
+    },
+    {
+      "path": "lib/features/ai_roster_analyzer/ai_roster_analyzer.dart",
+      "size": 91,
+      "sha256": "34fa5cd68d732dbb4e4e99ff0d47db77d669cec21589ff6482bd646bddef8c42"
+    },
+    {
+      "path": "lib/features/ai_roster_analyzer/application/ai_roster_analyzer.dart",
+      "size": 13421,
+      "sha256": "a4c283425cb6c0c23c2c6318433a009aaf7256da94d009fb65c9797f51becc41"
+    },
+    {
+      "path": "lib/features/ai_roster_analyzer/domain/roster_analysis_models.dart",
+      "size": 4569,
+      "sha256": "ae172707a44ecef1c9b98d3d4eb925142ad0cf1f0a2ad8f5691bd55871ba9163"
+    },
+    {
+      "path": "lib/features/api/application/idempotency_service.dart",
+      "size": 894,
+      "sha256": "e1cf8afbc8e0e0a005362d97e7caacf95e1482a5c390be6a163b89bf07202cae"
+    },
+    {
+      "path": "lib/features/api/domain/api_contract.dart",
+      "size": 1130,
+      "sha256": "a529875ae93c7fc0fba2d5b7ceaad5fd710c890edf5fd8fa3318eefd41c4cfe4"
+    },
+    {
+      "path": "lib/features/audit/domain/audit_event.dart",
+      "size": 900,
+      "sha256": "d2c60196081c21d2e4c6868d4cbcd5df3f4c9314eb0e55ebf1d64056729e082f"
+    },
+    {
+      "path": "lib/features/authentication/application/authentication_controller.dart",
+      "size": 2500,
+      "sha256": "aff9c3625ac209ec41e73b32b3911e259706c257ccd518e1a91311d4150f78fe"
+    },
+    {
+      "path": "lib/features/authentication/domain/authentication_service.dart",
+      "size": 238,
+      "sha256": "ff3d6e72fa883edc7fafa24c368d8d2b91db3a8c0edc1579abb2ccbdb5488972"
+    },
+    {
+      "path": "lib/features/authentication/domain/authentication_state.dart",
+      "size": 423,
+      "sha256": "3cbb18906231383499b0203855a8f5d649f2872c2ff2174a046663f375c191ff"
+    },
+    {
+      "path": "lib/features/authentication/domain/google_user.dart",
+      "size": 233,
+      "sha256": "ed6d1c416c928189b97e4f21c9b02c1b0d2f83aa57990b6764c82a115b7d1b57"
+    },
+    {
+      "path": "lib/features/authentication/infrastructure/google_authentication_service.dart",
+      "size": 2281,
+      "sha256": "d41cbc0d838b7422286beb82b099cf79662f431eeedca9384db174346a4c3820"
+    },
+    {
+      "path": "lib/features/calendar_engine/application/calendar_sync_executor.dart",
+      "size": 1427,
+      "sha256": "8b022d725632df99cb29c33493d58137d5ca15462663302423206cbc86d7af95"
+    },
+    {
+      "path": "lib/features/calendar_engine/application/calendar_sync_plan.dart",
+      "size": 826,
+      "sha256": "b90a6e147b1f529cb0900c76357902ab22a4a6332460e53814fa3b592fc285a7"
+    },
+    {
+      "path": "lib/features/calendar_engine/application/calendar_sync_plan_builder.dart",
+      "size": 2098,
+      "sha256": "9f4e48e89d3ad5f7659c64cdb67b3d0a91cc6b3b73ae5852fac247b0a599ea52"
+    },
+    {
+      "path": "lib/features/calendar_engine/application/resilient_calendar_sync_executor.dart",
+      "size": 5826,
+      "sha256": "2ca8b8f9dfd6455dd260c8c350e77dcb3a7587faa781ac1d777341c9ab8c7e92"
+    },
+    {
+      "path": "lib/features/calendar_engine/application/resume_sync_service.dart",
+      "size": 3747,
+      "sha256": "ca12c6979da270ca2dafd226460342bad187a230f14a24ae546a66c9754071a7"
+    },
+    {
+      "path": "lib/features/calendar_engine/domain/calendar_gateway.dart",
+      "size": 76,
+      "sha256": "fbe758672dd8d3e00ee37c3d179c26dd31eb73cc7d3f8d288e07a489803d81f7"
+    },
+    {
+      "path": "lib/features/calendar_engine/domain/calendar_sync_command.dart",
+      "size": 411,
+      "sha256": "c56b828654514c72f70813d5835a04b4f5ccda4890ad584150e0b4f6d011d37f"
+    },
+    {
+      "path": "lib/features/calendar_engine/domain/calendar_sync_gateway.dart",
+      "size": 863,
+      "sha256": "62fa37a0c597379006755a1321c7f10efd5a206ab82624e149a3a3d1f274fa79"
+    },
+    {
+      "path": "lib/features/calendar_engine/domain/calendar_sync_operation_result.dart",
+      "size": 357,
+      "sha256": "316085c156dfe488c434c4112ba530524be3e54302358b7bd64e88928b7faa97"
+    },
+    {
+      "path": "lib/features/calendar_engine/domain/failed_sync_operation.dart",
+      "size": 581,
+      "sha256": "f6afe9dfc59cec02ee8aad115b22ee308ea955fdf4447da4d139d925e174ff15"
+    },
+    {
+      "path": "lib/features/calendar_engine/domain/failed_sync_repository.dart",
+      "size": 308,
+      "sha256": "3183037f57f9112f915493ffd48b9dd6d943269724fa14031058e300718a6140"
+    },
+    {
+      "path": "lib/features/calendar_engine/domain/managed_calendar_event.dart",
+      "size": 404,
+      "sha256": "1aa25e11ae6e4ab0b326c01ad3cfbae6cfe515f66f4699d764126ad564afdeb3"
+    },
+    {
+      "path": "lib/features/calendar_engine/domain/sync_id_factory.dart",
+      "size": 908,
+      "sha256": "bee76054664b076365ff62d85022f323f538c43b5b41cc82d70be92c3f14771f"
+    },
+    {
+      "path": "lib/features/calendar_engine/infrastructure/failed_sync_json_codec.dart",
+      "size": 2993,
+      "sha256": "1772f9ea46e2fbbf36d591f4e4ba6be3fb9d5ae79df55c143f5966a6fd8cb74c"
+    },
+    {
+      "path": "lib/features/calendar_engine/infrastructure/google_calendar_gateway.dart",
+      "size": 439,
+      "sha256": "ed6a7ed0d66aab3fe6364f14ff9b3521b36d792a14925ed9401124c1fa0e4fc6"
+    },
+    {
+      "path": "lib/features/calendar_engine/infrastructure/google_calendar_sync_gateway.dart",
+      "size": 6176,
+      "sha256": "6cf0bbd85edd7c2a7222bda0d36cb0a563c7b4b4f80b79c4e4279c066bfddd0f"
+    },
+    {
+      "path": "lib/features/calendar_engine/infrastructure/shared_preferences_failed_sync_repository.dart",
+      "size": 1217,
+      "sha256": "2ae9a13ef8b650360bf70089d4a686c10fa1a78f5b1701f5fdeb52a306d02b61"
+    },
+    {
+      "path": "lib/features/calendar_sync/application/calendar_sync_executor.dart",
+      "size": 4087,
+      "sha256": "8d736e0e83f5dc6ab69c7837c120fcc421b90452f5d7b7fe7787c3cead71b5a4"
+    },
+    {
+      "path": "lib/features/calendar_sync/application/calendar_sync_planner.dart",
+      "size": 2981,
+      "sha256": "093e3ef15357f1a7a0db93d7fd6f097bfc6aa6b02ca1d9b9e888816a4cd96522"
+    },
+    {
+      "path": "lib/features/calendar_sync/application/calendar_sync_protocol_service.dart",
+      "size": 3986,
+      "sha256": "23886877e04f371d61422515dbcf5d1cb4dfac28f3ea88d399f8a49cb0138f6f"
+    },
+    {
+      "path": "lib/features/calendar_sync/application/calendar_sync_service.dart",
+      "size": 3283,
+      "sha256": "34a9551f97cdbb7d62f0d0fe9c40bbcb9d10bf854fb6296c1b835bcaa808d86e"
+    },
+    {
+      "path": "lib/features/calendar_sync/domain/calendar_event_record.dart",
+      "size": 271,
+      "sha256": "f5aa81828b695dc350c871ea4a21d0e8ded786a87b653fc8699ef509ef0595aa"
+    },
+    {
+      "path": "lib/features/calendar_sync/domain/calendar_event_repository.dart",
+      "size": 529,
+      "sha256": "aa4d4548b3547b4f5f06e020d942f56bec6d46aaf27b993b3b2d27341448361a"
+    },
+    {
+      "path": "lib/features/calendar_sync/domain/calendar_sync_command.dart",
+      "size": 2203,
+      "sha256": "746aa6f49bdea310ec6d3a3e2a12bafb6a9281e1a8965405288abb8e4084ef10"
+    },
+    {
+      "path": "lib/features/calendar_sync/domain/calendar_sync_execution_result.dart",
+      "size": 1294,
+      "sha256": "fe87d7272fe46fadb3b813b0e87295cd1f048658d9894ca4839b5a0e790f28d2"
+    },
+    {
+      "path": "lib/features/calendar_sync/domain/calendar_sync_progress.dart",
+      "size": 708,
+      "sha256": "97b864a548ed14e5798f49c86d1ed3156f01324dd19aeb8ac83858d06e736401"
+    },
+    {
+      "path": "lib/features/calendar_sync/domain/calendar_sync_protocol.dart",
+      "size": 3228,
+      "sha256": "aaaef0c69bf0008a81723931d26005072aa221b1342ad8320d56ed1806650af7"
+    },
+    {
+      "path": "lib/features/calendar_sync/domain/calendar_sync_run_result.dart",
+      "size": 1784,
+      "sha256": "7791cbefe9c365885b22a46d47ef2c46ff4062d5c1710a96e63229e8c28892d7"
+    },
+    {
+      "path": "lib/features/calendar_sync/domain/calendar_sync_summary.dart",
+      "size": 957,
+      "sha256": "493a52594fa1ae6166192799c583da55a3f13e9494046825e9b9ec9315e2513e"
+    },
+    {
+      "path": "lib/features/calendar_sync/infrastructure/google_calendar_event_mapper.dart",
+      "size": 2023,
+      "sha256": "759a4e910f4830bf4a90c7e4f932cc0997f16039e0dc27d55b5d5ae99b6bbe62"
+    },
+    {
+      "path": "lib/features/calendar_sync/infrastructure/google_calendar_event_repository.dart",
+      "size": 3615,
+      "sha256": "c649e3f3899cc61c7cb86a693c6b4ccbda7a2eaa1a8402610b96cb1961ae6c27"
+    },
+    {
+      "path": "lib/features/calendar_sync/presentation/controllers/calendar_sync_controller.dart",
+      "size": 5286,
+      "sha256": "b81a7c0ee316abbf7da741d00f371c2d1292c740af1469261c5b930889387411"
+    },
+    {
+      "path": "lib/features/calendar_sync/presentation/screens/calendar_sync_screen.dart",
+      "size": 8750,
+      "sha256": "704d080b3d3e2eed572ef28fd1edf96e32e2eb79b5295531691ab84e3408db2a"
+    },
+    {
+      "path": "lib/features/calendar_sync/presentation/screens/controlled_calendar_sync_screen.dart",
+      "size": 3340,
+      "sha256": "c0fc7ce3b26ae3c643bc60b2ddaa8682bad6616e2cf6512f1762be1c4d31d48c"
+    },
+    {
+      "path": "lib/features/calendar_sync/presentation/widgets/account_card.dart",
+      "size": 1952,
+      "sha256": "7902753251d672ec584579c2a14b3a89e110547f0667f2e5eca4761b47204a9c"
+    },
+    {
+      "path": "lib/features/calendar_sync/presentation/widgets/calendar_selector.dart",
+      "size": 1495,
+      "sha256": "a9e8368bef08932fa0160401333e72cd9d822307135fae509dbf3ace00420e25"
+    },
+    {
+      "path": "lib/features/calendar_sync/presentation/widgets/calendar_sync_error_card.dart",
+      "size": 941,
+      "sha256": "8ce2bf474396e3c779b0eb7b402927130a9cccddb7b1f0b0741df5c564fb2c32"
+    },
+    {
+      "path": "lib/features/calendar_sync/presentation/widgets/calendar_sync_progress_card.dart",
+      "size": 1796,
+      "sha256": "d8899e83a47c09a546a6ebbafe0a6652d5dad114394b10fc7b9db09e19ea2fa3"
+    },
+    {
+      "path": "lib/features/calendar_sync/presentation/widgets/calendar_sync_result_card.dart",
+      "size": 4529,
+      "sha256": "b94d7949e1b13e19cbde417ef79b1894d7f12edf27a19a7314f9d324cce476a7"
+    },
+    {
+      "path": "lib/features/calendar_sync/presentation/widgets/month_selector.dart",
+      "size": 2140,
+      "sha256": "be03e0c460649d6c79d989db9e90058f74bccdb9748fd8588cc793b4e8a07c0e"
+    },
+    {
+      "path": "lib/features/calendar_sync/presentation/widgets/shift_summary_card.dart",
+      "size": 899,
+      "sha256": "1ba747893172cdc958ff81f8d3fb5171883c7d630ef0f3c5891705752e43998b"
+    },
+    {
+      "path": "lib/features/calendar_sync/presentation/widgets/sync_action_buttons.dart",
+      "size": 1913,
+      "sha256": "5788e88e300adfc5785d88b04acd5a0efb21c37466b6b0da1f0155b9c8299af2"
+    },
+    {
+      "path": "lib/features/dashboard/README.md",
+      "size": 301,
+      "sha256": "5906b25bc190134f77b9f01f77d710fd254b508cd89048ebc6481d8659a71ec7"
+    },
+    {
+      "path": "lib/features/dashboard/application/dashboard_summary_service.dart",
+      "size": 1906,
+      "sha256": "7b188156577297f196d5f19cc8c303c585f8a5d5e6459f0c63584d0d7d5a04f0"
+    },
+    {
+      "path": "lib/features/dashboard/domain/dashboard_summary.dart",
+      "size": 623,
+      "sha256": "e6fc432abc0e3400706a5ceeb84de1654b44dee39184c6fc2d99d26c98e49b8e"
+    },
+    {
+      "path": "lib/features/dashboard/presentation/widgets/dashboard_summary_grid.dart",
+      "size": 4710,
+      "sha256": "d49b3042d5d73b360e3ae35ca8673e165e963976f12f72cceb204c18d54bc973"
+    },
+    {
+      "path": "lib/features/diff_engine/application/calendar_diff_engine.dart",
+      "size": 2426,
+      "sha256": "2f47c9162fd2acdf1b08e202f840dd6d585ed3539fbf4c2b00fd46d71ab9966a"
+    },
+    {
+      "path": "lib/features/diff_engine/domain/calendar_diff.dart",
+      "size": 486,
+      "sha256": "2ee9322408daab088779abd8d585674e121ee7eb829066407c621e419b8273a4"
+    },
+    {
+      "path": "lib/features/diff_engine/domain/calendar_event_candidate.dart",
+      "size": 689,
+      "sha256": "5d7d341fd64d5caa6fa890a802cb7faab42ca1afc9a8c5a3f8ec43d5688dd8e9"
+    },
+    {
+      "path": "lib/features/edition/domain/app_edition.dart",
+      "size": 1542,
+      "sha256": "be9f589c2c708d340638ba703d02c6cb187da31e45e929b51fcab6e479784d55"
+    },
+    {
+      "path": "lib/features/employees/README.md",
+      "size": 710,
+      "sha256": "8580694e3c08654d9787bcdeee6854c98250ef506174e38bd19c0dcb0870da86"
+    },
+    {
+      "path": "lib/features/employees/application/employee_directory_service.dart",
+      "size": 1253,
+      "sha256": "719c5b3b0382e7806d7def0f6a1ca81a1de0e839081a623c9179bfa95ed0c742"
+    },
+    {
+      "path": "lib/features/employees/infrastructure/employee_json_codec.dart",
+      "size": 4274,
+      "sha256": "60f6443de077430ffd2dd4c6c61dbe445d48688dc0edeca0b6ce471549a8d216"
+    },
+    {
+      "path": "lib/features/employees/infrastructure/shared_preferences_employee_repository.dart",
+      "size": 8076,
+      "sha256": "a8f17b915ed411c4d13ebdf06909369d200048ef0b393e20f2a191e13701ca38"
+    },
+    {
+      "path": "lib/features/employees/presentation/controllers/employee_directory_controller.dart",
+      "size": 5452,
+      "sha256": "925d761485bf6ffbfb9071871d184a124b9d3301d5b605e86ee1ea4c8210b754"
+    },
+    {
+      "path": "lib/features/employees/presentation/pages/employee_directory_page.dart",
+      "size": 13385,
+      "sha256": "540f0635047c5283b4731bdab3b806649e3690b0e6bddfef2e711a5323d19438"
+    },
+    {
+      "path": "lib/features/excel_import/application/import_engine.dart",
+      "size": 5314,
+      "sha256": "f4ac87f5790b9cdc700a06885e450c5673d45bef03f4cb596031224e0b3cc785"
+    },
+    {
+      "path": "lib/features/excel_import/data/excel_reader_service.dart",
+      "size": 5967,
+      "sha256": "90a6f0e844645d9313fbb6d11c2de8feb931fe68dafa58d01d1758d202e9de42"
+    },
+    {
+      "path": "lib/features/excel_import/data/google_sheets_import_data_source.dart",
+      "size": 4499,
+      "sha256": "67378f36ef6ea0c54026c30b7f138ba639a1977ddb967ce4df7d21d8b56bf784"
+    },
+    {
+      "path": "lib/features/excel_import/data/spreadsheet_ownership_verifier.dart",
+      "size": 883,
+      "sha256": "da7261193fac4bc1b8d6b555d27f75f684a02562d47efd9e6577731fa07fac0f"
+    },
+    {
+      "path": "lib/features/excel_import/domain/column_mapping.dart",
+      "size": 2759,
+      "sha256": "60f6b1a490866acdbd980e6d60c7042ae57de3d2d73f71ea9fd2b083842fed9a"
+    },
+    {
+      "path": "lib/features/excel_import/domain/excel_cell.dart",
+      "size": 256,
+      "sha256": "e47811ba1d1bdc1a004a3e26f6899bb2c42cd752d0237c9b43fadb55b7108853"
+    },
+    {
+      "path": "lib/features/excel_import/domain/excel_row.dart",
+      "size": 283,
+      "sha256": "c98f2f9c94dcd2e201173bffb204a91d55e3966a4e2b7b02f31cc50aec69aed6"
+    },
+    {
+      "path": "lib/features/excel_import/domain/google_sheets_import_info.dart",
+      "size": 910,
+      "sha256": "0dfc578482e96efa1ca7a72a0bc04955482300cac4609f01a2359edc25918562"
+    },
+    {
+      "path": "lib/features/excel_import/domain/import_engine_result.dart",
+      "size": 290,
+      "sha256": "0dc497cd875f7fc85da96bb825c684fe757536417313fbe577f3c3270f774de6"
+    },
+    {
+      "path": "lib/features/excel_import/domain/import_error.dart",
+      "size": 308,
+      "sha256": "a3f192811f41f31cff413f1faf3012145f93675ebefc9cdc141bba8ed55bf564"
+    },
+    {
+      "path": "lib/features/excel_import/domain/import_file.dart",
+      "size": 353,
+      "sha256": "b94bd7d6c808090aa415a43e884e584d4bb659bc85e713762ad2d506140d4405"
+    },
+    {
+      "path": "lib/features/excel_import/domain/import_issue.dart",
+      "size": 314,
+      "sha256": "45c24963ec4ddca6fe966298dee9e07b5de4cd271f2fd685fd2d2f1b96b0f149"
+    },
+    {
+      "path": "lib/features/excel_import/domain/import_summary.dart",
+      "size": 738,
+      "sha256": "47d43b41f2085fda240d3cb61c70ea6f46f4705ea0bda6ca81375b33321b499c"
+    },
+    {
+      "path": "lib/features/excel_import/domain/shift_record.dart",
+      "size": 384,
+      "sha256": "f93738969758e8220a53885ebcee25a4dbd0a663e7eb08f2b9eb3a3d6d3070bb"
+    },
+    {
+      "path": "lib/features/excel_import/domain/workbook_info.dart",
+      "size": 323,
+      "sha256": "651142a94448d502bbb20b6bd2e53cdd38b9b87f2f081c24295833a665865786"
+    },
+    {
+      "path": "lib/features/excel_import/domain/worksheet_info.dart",
+      "size": 206,
+      "sha256": "43b49d2db76e5e2c2eaed638b127c112c729fa06f965a4d72681d2af4386e237"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/controllers/column_mapping_controller.dart",
+      "size": 5051,
+      "sha256": "5fc8162c49be1c46e49c56babc402ea72550467943d57fe27c13d65ed5441a03"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/controllers/excel_import_controller.dart",
+      "size": 4981,
+      "sha256": "c81af275c91e452e24726e9da20872996067a5b85e366cf0520aeea2662947f4"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/pages/column_mapping_page.dart",
+      "size": 3966,
+      "sha256": "f392845e285f40f168643e69b785694771f68f9e8accad5274248a71e8bec3b5"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/pages/import_excel_page.dart",
+      "size": 17836,
+      "sha256": "6d96a3dc21091e8c8913350194681abce083905e31a7b65bff177ae0ddb80563"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/pages/import_summary_page.dart",
+      "size": 3811,
+      "sha256": "d4fd932b411e9c55197c6a6a7a5277b03269c429848b5ebad2d29fd7d41c4b6a"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/widgets/column_dropdown.dart",
+      "size": 1163,
+      "sha256": "5b0f1c5e908aa8f648534f1b1c7be266d9e7fb3e3a31e54a508ee0c8efaeebd1"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/widgets/duplicate_warning_card.dart",
+      "size": 938,
+      "sha256": "a89801a1a28aa6e262077230dc3f7602032d864d57ffd4f95925d2c8e4f37413"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/widgets/empty_import_view.dart",
+      "size": 1326,
+      "sha256": "38e043abdcc80faae14e3865eb1810852cd57c1aef369dc0c23f3969dfd2aa45"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/widgets/excel_import_button.dart",
+      "size": 913,
+      "sha256": "5a3c6217e528b8bbc307264647676425232591db14a1585a5adf040f1ad4ca2b"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/widgets/excel_preview_table.dart",
+      "size": 5998,
+      "sha256": "6af87ceac03d07318466b1e8d2cffad436b8092951198a74f570e198fd88ed83"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/widgets/google_sheets_import_widgets.dart",
+      "size": 3959,
+      "sha256": "69308d3643efe26aa5ffc3a576848312a8fe64cf8feab358a28fdaec61d34375"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/widgets/import_error_card.dart",
+      "size": 982,
+      "sha256": "139b2bd3a4c0748f36200dd63e4b4675f7ec2a56ecfa2fc95e70d41b1dcc40f7"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/widgets/import_statistics.dart",
+      "size": 2540,
+      "sha256": "7ddab58b7a389699f05dea42cb3ecf0420964610a43d6a0e425b06a6d4e8441b"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/widgets/import_status_card.dart",
+      "size": 2277,
+      "sha256": "3dbfac91fd9c48dd1ef093e8632a5c457756f52fb6fc30b0274130eeebde93ef"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/widgets/issue_list.dart",
+      "size": 963,
+      "sha256": "cbed76f889de540cf7dbef594025f6db1c2013f5617aabcf8f3815070192b7bc"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/widgets/issue_tile.dart",
+      "size": 803,
+      "sha256": "dad7f010db51688240c2fba967b4ffa93a968efd0e6b0cd8d0e0c9f3873c53c3"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/widgets/mapping_card.dart",
+      "size": 736,
+      "sha256": "2f82e65cd0a287ca7ca3a8051b53e8bb3089c5c156585827d817595f0f428056"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/widgets/summary_card.dart",
+      "size": 1247,
+      "sha256": "419a47303a7c5b7a4f151058cdb93b763db5c0968ed56ae08722a1dc070fc344"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/widgets/validation_banner.dart",
+      "size": 1540,
+      "sha256": "9cbca587ca4c9b3175997d3b65a935642ec209bccbcd05e2bf5e419c49e1db2a"
+    },
+    {
+      "path": "lib/features/excel_import/presentation/widgets/worksheet_list.dart",
+      "size": 1793,
+      "sha256": "4f7f1713d61150b7b3ea6b753aceedb883047dc2e874ffe0544d26c34650c616"
+    },
+    {
+      "path": "lib/features/google_drive/README.md",
+      "size": 536,
+      "sha256": "5f7ad5c975c37f2c557dc52c24717b2f92ae3f7ec9cd84f9f9b3e692d6f1604f"
+    },
+    {
+      "path": "lib/features/google_drive/application/roster_selection_controller.dart",
+      "size": 1951,
+      "sha256": "015bc1b319ba6ed5b665e682c461cb51c51631fd843bf40e52f1493aea5610e7"
+    },
+    {
+      "path": "lib/features/google_drive/application/roster_selection_state.dart",
+      "size": 665,
+      "sha256": "e97be027ec4c0a36d365e260743d34149d4efcf57a1c0fe76ef4c29fa0948750"
+    },
+    {
+      "path": "lib/features/google_drive/domain/drive_gateway.dart",
+      "size": 168,
+      "sha256": "0e04cb9f13e023e6fc5e852ad658c83f8d73aa1e2249123818ed82e44153b010"
+    },
+    {
+      "path": "lib/features/google_drive/domain/roster_file.dart",
+      "size": 241,
+      "sha256": "25a182e5f55c169f25ea3eb237efece196bed4ac9a2332a2bb1891f3ee89dcd1"
+    },
+    {
+      "path": "lib/features/google_drive/domain/roster_file_picker.dart",
+      "size": 115,
+      "sha256": "5c43da376048e05efcca1f9151d8d9c4d8ded5611fbb3e2cd4094bd74be3c4cb"
+    },
+    {
+      "path": "lib/features/google_drive/infrastructure/google_drive_gateway.dart",
+      "size": 1286,
+      "sha256": "cd2079f386ad896432daedc90ce7ec52a9b274c388c2ddfca4db1b9e8c4ccc8a"
+    },
+    {
+      "path": "lib/features/google_drive/presentation/roster_selection_panel.dart",
+      "size": 6071,
+      "sha256": "1b5bec57608e2bf0e4fc31a75b77216904e24713447a42d5e8fdeec374c31d82"
+    },
+    {
+      "path": "lib/features/google_sheets/domain/grid_range.dart",
+      "size": 753,
+      "sha256": "d0105bacc893ca3049967638ce42c9d63ffc2d08ca7ea5755e8433d1d2cfe141"
+    },
+    {
+      "path": "lib/features/google_sheets/domain/sheet_cell.dart",
+      "size": 930,
+      "sha256": "63a60669343d9afb39147f1426ee1fcaa0908445910073b3ab34eb4be1615414"
+    },
+    {
+      "path": "lib/features/google_sheets/domain/sheet_color.dart",
+      "size": 1240,
+      "sha256": "206c8f8f4ec118ca00de7d4a04553c87af999fae4e21f848fc3f607efef30d94"
+    },
+    {
+      "path": "lib/features/google_sheets/domain/sheets_gateway.dart",
+      "size": 202,
+      "sha256": "0fb434537bc8b7eb5ca9bdbd91cbc93014837a8a1804339f4355851cc6ba5c9f"
+    },
+    {
+      "path": "lib/features/google_sheets/domain/spreadsheet_snapshot.dart",
+      "size": 1232,
+      "sha256": "6c0ec192f31cc2f2cf74bf206bc0d1e767545aab78daec3667483eb47e1b8ecb"
+    },
+    {
+      "path": "lib/features/google_sheets/infrastructure/google_sheets_gateway.dart",
+      "size": 6025,
+      "sha256": "958c0f3c14126f9fe21e41e01d3bb99d35239b1060a05c74ee5d352885a9f212"
+    },
+    {
+      "path": "lib/features/history/application/sync_history_controller.dart",
+      "size": 1117,
+      "sha256": "b74014191ac32c096c19da8597d4fced9fb7eaa327657fe333756aa4f6a241d2"
+    },
+    {
+      "path": "lib/features/history/domain/sync_history_entry.dart",
+      "size": 1131,
+      "sha256": "a69151ce6297036d3ac9a91d99c05e73e667a3014d895243950ddb82a8bd5610"
+    },
+    {
+      "path": "lib/features/history/domain/sync_history_repository.dart",
+      "size": 240,
+      "sha256": "beb5d6ed49c563ef4748b30344b8f37aec76e7bd0e7289aea14d6c4089d7bc89"
+    },
+    {
+      "path": "lib/features/history/infrastructure/in_memory_sync_history_repository.dart",
+      "size": 701,
+      "sha256": "3f817c9a18d0e489927e6b22b6603b7dc3f897498c1b3206da982e260028b2bd"
+    },
+    {
+      "path": "lib/features/history/infrastructure/shared_preferences_sync_history_repository.dart",
+      "size": 1518,
+      "sha256": "e4e898d8ed77eb232b3ae30d058bf706a86f90e0f67de57f3364cb52c14b26d9"
+    },
+    {
+      "path": "lib/features/history/infrastructure/sync_history_json_codec.dart",
+      "size": 1838,
+      "sha256": "84a28ab2cca6cdbcecbda7d4b245b9ed452716b09099683b23a969ae51f4b694"
+    },
+    {
+      "path": "lib/features/history/presentation/sync_history_screen.dart",
+      "size": 2792,
+      "sha256": "50a56bce167270059be64644b70e894bd4d5da2696ce30d9ed4a769ebf23aa62"
+    },
+    {
+      "path": "lib/features/organization/domain/hospital_organization.dart",
+      "size": 841,
+      "sha256": "977774d0fcd920dfe3498e6ef92db6c82fbe4c67c8afb16e5af9da26b641e2c3"
+    },
+    {
+      "path": "lib/features/plugin_system/application/plugin_registry.dart",
+      "size": 1258,
+      "sha256": "d4e96756ec707a80fc0fc98cac2df4c43f21e17476732aec0ad6e18d9c68d6e5"
+    },
+    {
+      "path": "lib/features/plugin_system/domain/platform_plugin.dart",
+      "size": 1308,
+      "sha256": "cbac6bf84b80564fb125ef90b4d435a2ed134df1d60a0a68403ce39b68c9f0c0"
+    },
+    {
+      "path": "lib/features/relationship_engine/application/default_relationship_resolver.dart",
+      "size": 3299,
+      "sha256": "a020d69c68d01462d406b4be03a3b4c6d003bc2be06ed9fd91128bb7e372e683"
+    },
+    {
+      "path": "lib/features/relationship_engine/application/roster_comparison_engine.dart",
+      "size": 2283,
+      "sha256": "1385fa99e29a7a12d300d61dc83217a088a35c49968adda9bebde783fb73aaae"
+    },
+    {
+      "path": "lib/features/relationship_engine/application/user_shift_change_classifier.dart",
+      "size": 1381,
+      "sha256": "963760bb23f552b165cda0e7aded592eb011498c3f02f130833470099b5f1791"
+    },
+    {
+      "path": "lib/features/relationship_engine/domain/relationship_resolution.dart",
+      "size": 718,
+      "sha256": "4e2afe9514a6b7e793e90646c9577b2d7817ab5d7cd97e0a93b33105f1fcdfd9"
+    },
+    {
+      "path": "lib/features/relationship_engine/domain/relationship_resolver.dart",
+      "size": 159,
+      "sha256": "105d012f50b97cc29e323581a6a5af74a955fbb1a19d7aa5d63a77325fbb5592"
+    },
+    {
+      "path": "lib/features/relationship_engine/domain/user_shift_change.dart",
+      "size": 454,
+      "sha256": "1eec0b59f20dbb648ea3f8aab0febe831ffd8b70f7ea62aad68d1ad80a8e4f82"
+    },
+    {
+      "path": "lib/features/reports/application/monthly_schedule_report_mapper.dart",
+      "size": 10622,
+      "sha256": "5dae7263c0f41aefc6fa6f25872b212e2d0fce40dfbe1b4e986f607119d8b677"
+    },
+    {
+      "path": "lib/features/reports/domain/monthly_report_options.dart",
+      "size": 1666,
+      "sha256": "d4b7bd40db17d11026c0c414fdf62c710818523a291bf722016d4f046434ba0e"
+    },
+    {
+      "path": "lib/features/reports/domain/monthly_schedule_report.dart",
+      "size": 3248,
+      "sha256": "b5d153e0909256a0663c3d335443d473597bfbb06c94722c7b358d7a09b2652f"
+    },
+    {
+      "path": "lib/features/reports/domain/report_labels.dart",
+      "size": 1925,
+      "sha256": "f98b9d2d0ae3e85ed3b3584af69d3ffe0214616816bb1a121ed5f7e16dc84254"
+    },
+    {
+      "path": "lib/features/reports/domain/report_service.dart",
+      "size": 834,
+      "sha256": "1a3bcb02ebbdca2fc0d779ce7cd6aca5b185140572704cd8d9b5567d592162ef"
+    },
+    {
+      "path": "lib/features/reports/infrastructure/monthly_schedule_pdf_service.dart",
+      "size": 11556,
+      "sha256": "ab57a21533ebb348a74f8e8eeeac216503c0afc5d28b8b0cd497b34346ede57b"
+    },
+    {
+      "path": "lib/features/reports/infrastructure/printing_report_output_gateway.dart",
+      "size": 1596,
+      "sha256": "40103b5268f7841b63a78558075d2f698950997c32acf071d4af0d9b34add05c"
+    },
+    {
+      "path": "lib/features/reports/presentation/controllers/monthly_schedule_report_controller.dart",
+      "size": 6148,
+      "sha256": "c80203a61bff83778cf1a1cae2664027e0d2ff4cecb3b5c8c014288eee464bd3"
+    },
+    {
+      "path": "lib/features/reports/presentation/pages/monthly_schedule_report_page.dart",
+      "size": 7747,
+      "sha256": "2f16005951526f529ae01e81f181698433e88826a7425c80ff16d21fb9c719f1"
+    },
+    {
+      "path": "lib/features/roster_names/domain/roster_name_entry.dart",
+      "size": 2284,
+      "sha256": "d1811cf1d0c7479b4c7547af802c90f707c76902d9ffd7cf0f7befd219454f1c"
+    },
+    {
+      "path": "lib/features/roster_names/presentation/roster_name_list_page.dart",
+      "size": 21545,
+      "sha256": "18c38d775fd9fa33c4a564a084ea6b252d4a6115cc9463f297eeae6239ec3a87"
+    },
+    {
+      "path": "lib/features/rule_engine/application/rule_engine.dart",
+      "size": 1165,
+      "sha256": "f4e45e79e2639ae97272c886d7e020657ba7165ced6d5f74159669534fcd8749"
+    },
+    {
+      "path": "lib/features/rule_engine/domain/default_schedule_rules.dart",
+      "size": 3933,
+      "sha256": "80a9bb65dd45f2885407bfece28fd18293939971f3d9dbbe2f45dea5c5e4ca87"
+    },
+    {
+      "path": "lib/features/rule_engine/domain/schedule_rule.dart",
+      "size": 846,
+      "sha256": "e632a0713a0f5e66ecbc29123883ceab596e1fae9d049de14933b2028ff5782f"
+    },
+    {
+      "path": "lib/features/rules/application/rule_engine.dart",
+      "size": 2267,
+      "sha256": "1d2793ad903c68017e6dc4598fce9103a4ec1a69e998671b66b70cb675e05887"
+    },
+    {
+      "path": "lib/features/rules/application/schedule_validation_service.dart",
+      "size": 994,
+      "sha256": "71b26d27fbca3b0f1aa92bf58ea7ed60c84447148b3e1e54a2f424101bb013b2"
+    },
+    {
+      "path": "lib/features/rules/domain/rule.dart",
+      "size": 299,
+      "sha256": "21d57ad7b16c462d7d438192ce4d188706c62df41f680d7994821a001a026e7f"
+    },
+    {
+      "path": "lib/features/rules/domain/rule_category.dart",
+      "size": 114,
+      "sha256": "a983fe9da16e6edd91003051026803fbf424665272cd7407560effda57a15556"
+    },
+    {
+      "path": "lib/features/rules/domain/rule_context.dart",
+      "size": 1421,
+      "sha256": "7d61374467d853f09f5fe919cb741bab0a24334712eb7877fb4aee25f3e56a61"
+    },
+    {
+      "path": "lib/features/rules/domain/rule_result.dart",
+      "size": 681,
+      "sha256": "2138b0d828d2244dd5be523fd4603e0b779c46ee844de7f91ff0badb46a6e259"
+    },
+    {
+      "path": "lib/features/rules/domain/rule_severity.dart",
+      "size": 37,
+      "sha256": "48bc16639b7d7e49ecf3256dcecaceec3df3dd0c0cfb426c2ccc77b9e50b53f2"
+    },
+    {
+      "path": "lib/features/rules/domain/rule_violation.dart",
+      "size": 486,
+      "sha256": "30a8ac7966c154c56cb99d72ce3b753563abf6a8c605f006510b0ed1e4bf1409"
+    },
+    {
+      "path": "lib/features/rules/domain/schedule_rules.dart",
+      "size": 12221,
+      "sha256": "c8a445ba85838b8011deace575d75c8f8126f441723e3ecca0bf958ca5df160f"
+    },
+    {
+      "path": "lib/features/rules/presentation/pages/rule_validation_page.dart",
+      "size": 2371,
+      "sha256": "4f32b3558971c78e248bc66f7547ddf64aa5ff2a49a2fe92214fb6653f047c12"
+    },
+    {
+      "path": "lib/features/rules/presentation/widgets/rule_card.dart",
+      "size": 829,
+      "sha256": "8b47a860ce225316107649fedb7ccd768bab1d757b148d265dbdaa25ccd09f40"
+    },
+    {
+      "path": "lib/features/rules/presentation/widgets/validation_summary_card.dart",
+      "size": 1860,
+      "sha256": "dbc8f76cedd40f91855992533deb4904c7c3f4cf404cd7ea4d4103e675bb01f6"
+    },
+    {
+      "path": "lib/features/rules/presentation/widgets/violation_tile.dart",
+      "size": 1165,
+      "sha256": "4414b4fe3f78b7072ee274ca5c5fb53896085979436f0bb2e1c287fe759c4435"
+    },
+    {
+      "path": "lib/features/schedule/data/imported_schedule_adapter.dart",
+      "size": 5006,
+      "sha256": "0d86a4db79ed4aeaa87b5ce6d3cae709e929646fccc1cfe1d68bb0f49149a695"
+    },
+    {
+      "path": "lib/features/schedule/data/legacy_schedule_adapter.dart",
+      "size": 7677,
+      "sha256": "eda9d10c82c7efa6e8a8cd08d569a43428a55890087d03997fa9d2270fda42b2"
+    },
+    {
+      "path": "lib/features/schedule/data/schedule_json_codec.dart",
+      "size": 14377,
+      "sha256": "eecf91c899a2cbc3970a4ba8653646ef473f0bd8990840ba021bf1a859969f09"
+    },
+    {
+      "path": "lib/features/schedule/data/schedule_service.dart",
+      "size": 7509,
+      "sha256": "eab96a2538bc3f5d0ad27ca243df7a64f999fd0bb3592f6273102f91f5e830e6"
+    },
+    {
+      "path": "lib/features/schedule/data/shared_preferences_schedule_repository.dart",
+      "size": 7392,
+      "sha256": "2fd020c5234e9bf6c844aa1e05aefdb329a44606d8b492a7891882257f731494"
+    },
+    {
+      "path": "lib/features/schedule/domain/department.dart",
+      "size": 51,
+      "sha256": "40f7efe9cc3b564bb6d54e38b129ae3fbff6f9525000c3720fe6e237ae3a4584"
+    },
+    {
+      "path": "lib/features/schedule/domain/employee.dart",
+      "size": 49,
+      "sha256": "b275a77d7ededbc82cd23286de18736480c33603d12bb93df3cc805e0e4e296d"
+    },
+    {
+      "path": "lib/features/schedule/domain/schedule_day.dart",
+      "size": 53,
+      "sha256": "02905ca780f59f848a72ea81f8f01857b0c4c4f5d13636453ef943f0d68b15b1"
+    },
+    {
+      "path": "lib/features/schedule/domain/schedule_drag_payload.dart",
+      "size": 462,
+      "sha256": "22092a746d8c6fa398e6712d428e54c3e34d52c936d7e420cdd81a7302d96f49"
+    },
+    {
+      "path": "lib/features/schedule/domain/schedule_month.dart",
+      "size": 55,
+      "sha256": "ce589c689965d8281f571ec37760b40b40c72d2e4579a3edcd480a20c70309ee"
+    },
+    {
+      "path": "lib/features/schedule/domain/schedule_statistics.dart",
+      "size": 429,
+      "sha256": "6df74650e15ac8b0aa6708aa7c4a6bb101d96c1a2a47bf4b2f2d1d250225b725"
+    },
+    {
+      "path": "lib/features/schedule/domain/shift.dart",
+      "size": 131,
+      "sha256": "c1d36ceed87e525dc55dc61f78da4d4daaceadbe12a72c84ac4fc1d7abf871ad"
+    },
+    {
+      "path": "lib/features/schedule/domain/shift_assignment.dart",
+      "size": 57,
+      "sha256": "20c02c8da723353d99915493037e391f2a2d686cda914804aef66c2c523925a2"
+    },
+    {
+      "path": "lib/features/schedule/presentation/controllers/schedule_controller.dart",
+      "size": 10895,
+      "sha256": "4a473c5d1cc2395a2e6b116f7b5bb7430ab3809c513bdfefb30331ac4b612f7b"
+    },
+    {
+      "path": "lib/features/schedule/presentation/pages/daily_schedule_page.dart",
+      "size": 2995,
+      "sha256": "8c6f17f5405eaffc3c2d64daaee93c925e7e4ff3797a3456c8cad66b29606680"
+    },
+    {
+      "path": "lib/features/schedule/presentation/pages/imported_month_calendar_page.dart",
+      "size": 1948,
+      "sha256": "6abbfbc5c0c2707f20467ed6880564e29bb7d75eff14c7024e5b2f9ad62f097b"
+    },
+    {
+      "path": "lib/features/schedule/presentation/pages/monthly_schedule_page.dart",
+      "size": 2197,
+      "sha256": "6fe2de34d5d25f7c7c8e0bc85e7beff09260eb97e8c1d5f63d13991058399d3b"
+    },
+    {
+      "path": "lib/features/schedule/presentation/pages/schedule_workspace_page.dart",
+      "size": 12292,
+      "sha256": "1c37da36d33d755eb8f8de7654df0c6815e443c834bb16eac27f291ac727d303"
+    },
+    {
+      "path": "lib/features/schedule/presentation/pages/weekly_schedule_page.dart",
+      "size": 1641,
+      "sha256": "2f29c760b93c300e66ac8dc8b69d28244e53b1f7801a66f16c3a43d7e77e2680"
+    },
+    {
+      "path": "lib/features/schedule/presentation/widgets/employee_chip.dart",
+      "size": 549,
+      "sha256": "bd987ff1479e80101e2c9dbe436258bb61394c8e685d12eac90a5a9baa2997b6"
+    },
+    {
+      "path": "lib/features/schedule/presentation/widgets/legend.dart",
+      "size": 918,
+      "sha256": "6ee503a20e313944e52d1c0631e59befcdc5b2967d60baa00cec01836280393b"
+    },
+    {
+      "path": "lib/features/schedule/presentation/widgets/month_header.dart",
+      "size": 1073,
+      "sha256": "ff84beb8d415f9daf1cf89a293933eabaad043c04297be12eeec532bdee21bed"
+    },
+    {
+      "path": "lib/features/schedule/presentation/widgets/schedule_cell.dart",
+      "size": 6155,
+      "sha256": "35ccea0635005df54f527d89f8fbec3aff9a6420813beba8d2fa0bdded3e87cf"
+    },
+    {
+      "path": "lib/features/schedule/presentation/widgets/schedule_controller_host.dart",
+      "size": 1015,
+      "sha256": "3f43f317ff9f37a71f01f430ec41b2dce0983f2c4e411d8466f040fa622fa7b2"
+    },
+    {
+      "path": "lib/features/schedule/presentation/widgets/schedule_filters.dart",
+      "size": 5047,
+      "sha256": "05daf6d2af081c5f9094055d153e5a73948387c8167ea576f6e81b83c5732d7c"
+    },
+    {
+      "path": "lib/features/schedule/presentation/widgets/schedule_grid.dart",
+      "size": 5456,
+      "sha256": "a34454239d5dd0597a8d5c05fb1364fe6e8516c949173db9b4f621e39a5e0cd6"
+    },
+    {
+      "path": "lib/features/schedule/presentation/widgets/schedule_statistics_panel.dart",
+      "size": 1565,
+      "sha256": "2cbcbc27814c7848ce0366ada7e6e6aea728dcd184e5bc0e9252f08f97b01659"
+    },
+    {
+      "path": "lib/features/schedule/presentation/widgets/schedule_view_scaffold.dart",
+      "size": 1441,
+      "sha256": "bfa1fa82012243ab9841e95537b5fe8861f084e78b3acd8cb0a00733e81f716d"
+    },
+    {
+      "path": "lib/features/schedule/presentation/widgets/schedule_view_selector.dart",
+      "size": 1056,
+      "sha256": "7c4c6b45b7218cb15441d9a569792a5e7600a3b1e85c7de194fedd4e4873293f"
+    },
+    {
+      "path": "lib/features/schedule/presentation/widgets/shift_chip.dart",
+      "size": 626,
+      "sha256": "bba083b0013c9565a5d41913a43af4b3823ae0d85c01c56afeca5acb53b9e80c"
+    },
+    {
+      "path": "lib/features/schedule_generation/application/auto_assignment_service.dart",
+      "size": 5947,
+      "sha256": "46847efff8fb070ea5873f915883c6098311a44fb6325b96b073d9f290021024"
+    },
+    {
+      "path": "lib/features/schedule_generation/application/conflict_detection_service.dart",
+      "size": 4854,
+      "sha256": "f1def2e2ccfe0abaab3c16f8ddf24b5a94f6448bb5c2185a26c3313a4a118705"
+    },
+    {
+      "path": "lib/features/schedule_generation/application/coverage_checking_service.dart",
+      "size": 1024,
+      "sha256": "e3233db6b77bd766afb2b0ebf3788648b9f1a55cb32d6f284946de3b112cf4e5"
+    },
+    {
+      "path": "lib/features/schedule_generation/application/department_capacity_service.dart",
+      "size": 970,
+      "sha256": "088348cd4d7b344fb3dafc0267b309f8d5d6c04c156ae31a0d223dd01b90868d"
+    },
+    {
+      "path": "lib/features/schedule_generation/application/employee_availability_service.dart",
+      "size": 750,
+      "sha256": "c2d4ef5ef2ffc935547564b5bbd4efd27b756ddf0e0887ffd2204df11ce34c54"
+    },
+    {
+      "path": "lib/features/schedule_generation/application/manual_schedule_service.dart",
+      "size": 1955,
+      "sha256": "c7e92a247ed6abe3533bca40584ceda98837956fcd40d8be98f42d0937c065ab"
+    },
+    {
+      "path": "lib/features/schedule_generation/application/monthly_roster_request_builder.dart",
+      "size": 2603,
+      "sha256": "91505c61a81e3759bf65acd2b04b6651c95b3571327825b152e7fb2a662bddb9"
+    },
+    {
+      "path": "lib/features/schedule_generation/application/radiology_roster_blueprint.dart",
+      "size": 3013,
+      "sha256": "a514c5d841a6a7e0043ed3e71d3b531fca0a3a368955e6f2a835782df4acafe4"
+    },
+    {
+      "path": "lib/features/schedule_generation/application/schedule_assignment_writer.dart",
+      "size": 706,
+      "sha256": "3608441f79dd11dcb3d0fdf60b292d07fd7c8669a963a51ac53aa8d6eb96ef4a"
+    },
+    {
+      "path": "lib/features/schedule_generation/application/schedule_generator.dart",
+      "size": 1319,
+      "sha256": "0c023b61b86d3f316befbefbb8a222a2cb79024260bbe5d5e20f592855c4597c"
+    },
+    {
+      "path": "lib/features/schedule_generation/data/radiology_staff_directory_parser.dart",
+      "size": 3156,
+      "sha256": "11de1bf9af5704681396943704fa9d7d43f24ec70e1fb7f23ce430c68f462a2b"
+    },
+    {
+      "path": "lib/features/schedule_generation/domain/coverage_requirement.dart",
+      "size": 476,
+      "sha256": "e5a11ea06a671e349f04c719a456a655d6b60671fd209224a7f2491fc0beb3ab"
+    },
+    {
+      "path": "lib/features/schedule_generation/domain/department_capacity.dart",
+      "size": 332,
+      "sha256": "43bd571cbad8fe9663d0174683c563ee59a93bdc2f8d1ecb29812aaffd89fd56"
+    },
+    {
+      "path": "lib/features/schedule_generation/domain/employee_availability.dart",
+      "size": 521,
+      "sha256": "406d4877747805b66ab6147041bdcaa4edbb7351ec31ea48a51e84cb2cd4da81"
+    },
+    {
+      "path": "lib/features/schedule_generation/domain/generation_request.dart",
+      "size": 1427,
+      "sha256": "d96f964652a17b83fdb360edf3b0f318570bbd631d24292daefabb999fc6adbf"
+    },
+    {
+      "path": "lib/features/schedule_generation/domain/generation_result.dart",
+      "size": 793,
+      "sha256": "d9098c7ef768533e682d96203d0114445bc31045c5c915f072ab5f839b14f0dd"
+    },
+    {
+      "path": "lib/features/schedule_generation/domain/monthly_roster_blueprint.dart",
+      "size": 696,
+      "sha256": "f831ca56f42d89306db77584efa95e4213ceac68bfe6f563cb0056577ce6c680"
+    },
+    {
+      "path": "lib/features/schedule_generation/domain/roster_staffing_rule.dart",
+      "size": 380,
+      "sha256": "5eae1566323aa58cb58c04316811080b47c2896af0c7d3754d0d5f349a991d56"
+    },
+    {
+      "path": "lib/features/schedule_generation/domain/schedule_conflict.dart",
+      "size": 578,
+      "sha256": "da67f95e832e47628fca23bead42fc3dc2b41e3a08fce43ad6d427179eb27286"
+    },
+    {
+      "path": "lib/features/schedule_generation/domain/staff_directory.dart",
+      "size": 1222,
+      "sha256": "e0f756cc95737d49e7af76327132909cca9c248e69d9f83b4034e188a0ff16b8"
+    },
+    {
+      "path": "lib/features/schedule_generation/domain/staff_group.dart",
+      "size": 1290,
+      "sha256": "5dad67c49495b04c36c87fb1e24bbae05a3b7ce20668d70ec25a076f028a44e7"
+    },
+    {
+      "path": "lib/features/shift_exchange/README.md",
+      "size": 390,
+      "sha256": "28ba7e0ea3d07a4bd897bb509eaadd526e00282ba48ee74096405e72af3e9799"
+    },
+    {
+      "path": "lib/features/shift_exchange/application/shift_exchange_service.dart",
+      "size": 1868,
+      "sha256": "efbbf7b109bfffd10920a6c90c9b74e0b4a569d9af6468448a76d1c182f208a8"
+    },
+    {
+      "path": "lib/features/shift_exchange/domain/shift_exchange_request.dart",
+      "size": 2689,
+      "sha256": "ae22bf595ce28b1f312005be5435fe576473ede04303f72f3771e06c907a990a"
+    },
+    {
+      "path": "lib/features/shift_exchange/presentation/controllers/shift_exchange_controller.dart",
+      "size": 1393,
+      "sha256": "0c53e696383ba7e668e2b0317f98c49995b5d0003e6feda007f92577116c2b66"
+    },
+    {
+      "path": "lib/features/shift_exchange/presentation/pages/shift_exchange_page.dart",
+      "size": 4094,
+      "sha256": "fd5473594d17fec03331e548a3e1123335e888621b226255bab77d486c93f57e"
+    },
+    {
+      "path": "lib/features/shift_parser/application/hospital_roster_parser.dart",
+      "size": 5495,
+      "sha256": "8ca60d01705bb52e4faa478ad61c28a0f67d104291fd3165ef3e8dfd30f10168"
+    },
+    {
+      "path": "lib/features/shift_parser/application/monthly_roster_section_parser.dart",
+      "size": 8269,
+      "sha256": "a91c621e5749ebe76cfb74ae08597fcc37907e32fc56379bfa0eaa7ae19697ca"
+    },
+    {
+      "path": "lib/features/shift_parser/application/snapshot_normalizer.dart",
+      "size": 1809,
+      "sha256": "ad12901e35e5e9f33ed815547ecc051d117e0e3fddcc9f5b0f567e99a16e36f6"
+    },
+    {
+      "path": "lib/features/shift_parser/domain/a1_notation.dart",
+      "size": 631,
+      "sha256": "264700bc1ec9e89932ad9f17dca3811b15595dd8c392f3cd44a5efa8b29d4746"
+    },
+    {
+      "path": "lib/features/shift_parser/domain/color_mapping.dart",
+      "size": 958,
+      "sha256": "a2ffc6aac1ba4aee64a1afefebf659328ab4bb579b3459f02330b7e4a0321f36"
+    },
+    {
+      "path": "lib/features/shift_parser/domain/monthly_roster_section.dart",
+      "size": 5596,
+      "sha256": "f080e0a7ba309468dbc4b0a7441b2e258553d6f6df1b0bc5ed6e0ae3ed0bfee3"
+    },
+    {
+      "path": "lib/features/shift_parser/domain/monthly_roster_template.dart",
+      "size": 4314,
+      "sha256": "45b758bd5712c2c3d1e18d3098b898817768b8c2faa29c9ea25b86ab7c438edf"
+    },
+    {
+      "path": "lib/features/shift_parser/domain/normalized_cell.dart",
+      "size": 616,
+      "sha256": "d793718577123fff5323180d9ffacb8fc722d6b1e8c04b8554c6008f70fc60de"
+    },
+    {
+      "path": "lib/features/shift_parser/domain/parse_warning.dart",
+      "size": 415,
+      "sha256": "86a08865776b930f2887f7a77691e012586b622b152fc39af1cda18c40c5715c"
+    },
+    {
+      "path": "lib/features/shift_parser/domain/roster_cell_assignment.dart",
+      "size": 875,
+      "sha256": "c352977bc8d910b571b876cfd6bd3462f46f32cd8396e08945e3d20f52e40d10"
+    },
+    {
+      "path": "lib/features/shift_parser/domain/roster_layout_profile.dart",
+      "size": 788,
+      "sha256": "43a4b44089e50d8e99809cce2b700426f2e4f096c28aad3a2c06faa42fab9b08"
+    },
+    {
+      "path": "lib/features/shift_parser/domain/roster_parse_report.dart",
+      "size": 358,
+      "sha256": "71907b2d4e5c0285a7b07183601d5939227973adde0df3bf67f03b6683503359"
+    },
+    {
+      "path": "lib/features/shift_parser/domain/shift_catalog.dart",
+      "size": 3483,
+      "sha256": "1ddaaf5ac7d0c1aaa485076e57b6cb46c8d2328b0660d1db76d173ee2bee561d"
+    },
+    {
+      "path": "lib/features/shift_parser/domain/shift_definition.dart",
+      "size": 725,
+      "sha256": "2a97a4ec42d13714163d1ac14f28b370ec217a73db11786e283005310672dc27"
+    },
+    {
+      "path": "lib/features/shift_parser/domain/shift_parser.dart",
+      "size": 345,
+      "sha256": "e3afb0184be4e32a0d1579da3de2f433308a22643f70b60e04eef9596453fca6"
+    },
+    {
+      "path": "lib/features/shift_parser/domain/shift_parser_input.dart",
+      "size": 445,
+      "sha256": "43407a491b9989f452cdc1ee10299bcc259ff87099886746f687e7928bc18896"
+    },
+    {
+      "path": "lib/features/shift_parser/domain/thai_roster_period_parser.dart",
+      "size": 7464,
+      "sha256": "1dc13a60c9058399e143ec5f4d508b0805742ecaf1c2edda09ede4d9b3d12332"
+    },
+    {
+      "path": "lib/features/shift_templates/README.md",
+      "size": 1011,
+      "sha256": "00d61cb297445bc4e4ece51386122056f8e4d521d60f10516cc2758c5d780200"
+    },
+    {
+      "path": "lib/features/shift_templates/application/shift_template_controller.dart",
+      "size": 4049,
+      "sha256": "2c1c1d1ecedb135c93d47da11d267adad357ea75778e5ea5c50abab425c8300f"
+    },
+    {
+      "path": "lib/features/shift_templates/infrastructure/shared_preferences_shift_template_repository.dart",
+      "size": 4724,
+      "sha256": "f069c228b7630ef0b8491f7b9ff5d6d30166252b4a4fbb36548038df05d6c53b"
+    },
+    {
+      "path": "lib/features/shift_templates/infrastructure/shift_template_json_codec.dart",
+      "size": 5087,
+      "sha256": "75e316a81d27c032aa7f1878c06eb20b3d7586498d6baa565d323ce14313ca85"
+    },
+    {
+      "path": "lib/features/shift_templates/presentation/shift_templates_page.dart",
+      "size": 9636,
+      "sha256": "37415c9003d0964f1d19562ac2312ff3c293a2b598f71ed4154fb3b01e9f888d"
+    },
+    {
+      "path": "lib/features/simulation/application/simulation_controller.dart",
+      "size": 2030,
+      "sha256": "034bc00fda5689ef148f887042ddd339a61559de9f8702a8a862b5deb82d9239"
+    },
+    {
+      "path": "lib/features/simulation/application/simulation_engine.dart",
+      "size": 1366,
+      "sha256": "2bb78522169dfe4331f89d350e2300d9f69e0f05ad493d8c013686f525f14357"
+    },
+    {
+      "path": "lib/features/simulation/application/simulation_plan_builder.dart",
+      "size": 2096,
+      "sha256": "9fbd68c91a450ff74e7ecaa018ffd626635a91044e6c7a86d27d95c39bb8c581"
+    },
+    {
+      "path": "lib/features/simulation/domain/simulation_item.dart",
+      "size": 565,
+      "sha256": "6af7ab1670ebe41fbf770c289234d1ffe92f4be69b5c6b92ecd1247bf81c2e4d"
+    },
+    {
+      "path": "lib/features/simulation/domain/simulation_plan.dart",
+      "size": 427,
+      "sha256": "bc7bb385e802f3327f8d46983c822abfc925e172a7afdb1c0539d17ef64f5916"
+    },
+    {
+      "path": "lib/features/simulation/domain/simulation_result.dart",
+      "size": 696,
+      "sha256": "65bef5b8fd1a6ad0997bc0035d43304780b03f7162834d3cfd7bdd801de9edad"
+    },
+    {
+      "path": "lib/features/simulation/domain/simulation_summary.dart",
+      "size": 452,
+      "sha256": "74605e17450dbebe23adca8b59abfd50cd76742717c4e90b435c7ce8ffdea2c7"
+    },
+    {
+      "path": "lib/features/simulation/presentation/simulation_preview_screen.dart",
+      "size": 5776,
+      "sha256": "f9740525fca3690e9cb8b0c261925827171fb36973508a4ab8d3ec76b8837149"
+    },
+    {
+      "path": "lib/features/tenancy/application/tenant_guard.dart",
+      "size": 995,
+      "sha256": "2eda0e4faab8899ae8e72e640f1a94fa08faa9a31fc4ef9da4d902e64ab17635"
+    },
+    {
+      "path": "lib/features/tenancy/domain/tenant.dart",
+      "size": 1331,
+      "sha256": "d75b200d30d1592982f6778c778c6754f20d491e33dcdcd8c46518977053ec8c"
+    },
+    {
+      "path": "lib/features/workflow/application/calendar_sync_coordinator.dart",
+      "size": 8955,
+      "sha256": "bffd7b3ed15b52245dcc48a59af9a6ab0ae9c3d9f49367242dadd58294efa09e"
+    },
+    {
+      "path": "lib/features/workflow/application/calendar_workflow_facade.dart",
+      "size": 5039,
+      "sha256": "7d90a4ea47f9be941a807bd31abbe3343eb071ea7649f1a9722580e9a381ba09"
+    },
+    {
+      "path": "lib/features/workflow/application/calendar_workflow_factory.dart",
+      "size": 1899,
+      "sha256": "0639e6d9a6dc6d729540bc940931bb958dbb5e41f44d9c21373dbc04d8bc7b07"
+    },
+    {
+      "path": "lib/features/workflow/application/canonical_schedule_event_mapper.dart",
+      "size": 3547,
+      "sha256": "f8926cc6ccf3fa7ad55c1bb49fb919be69a78ff7bf91c19027f396ef3d125a76"
+    },
+    {
+      "path": "lib/features/workflow/application/shift_calendar_workflow_controller.dart",
+      "size": 8051,
+      "sha256": "57c53374543c272ecf9e0fe3c03d39d03682d29df771776ac317eb2760d62f52"
+    },
+    {
+      "path": "lib/features/workflow/application/user_shift_event_mapper.dart",
+      "size": 4447,
+      "sha256": "cf27093f8649bffdacca36ca5ef127bc868c8a8cbfd28ea4c2d0b8af5d663544"
+    },
+    {
+      "path": "lib/features/workflow/application/workflow_preview_builder.dart",
+      "size": 3012,
+      "sha256": "a3a146635221bbacaed2d90527cbf7e2d7ae252f3d6b74a8478ad52c59577122"
+    },
+    {
+      "path": "lib/features/workflow/domain/workflow_preview.dart",
+      "size": 523,
+      "sha256": "4f07b1d948587a69fc58e0eb7710954ed0870b82fec115857c8bef70c7b8e2fc"
+    },
+    {
+      "path": "lib/features/workflow/presentation/workflow_dashboard_screen.dart",
+      "size": 3374,
+      "sha256": "1de5b87be975bd9612bffe9b77b0bb101af54b19fb48e94309b30a458e45fbe9"
+    },
+    {
+      "path": "lib/l10n/app_en.arb",
+      "size": 8092,
+      "sha256": "2d3571c2224f156c1dab295445831ab0e1d863c70faa64531e3b0262b7c7752c"
+    },
+    {
+      "path": "lib/l10n/app_localizations.dart",
+      "size": 29851,
+      "sha256": "df57e38383721b28ea459df427cdbe290b4d84e16d4131b7b8dc1dc1f563d60d"
+    },
+    {
+      "path": "lib/l10n/app_localizations_en.dart",
+      "size": 12433,
+      "sha256": "820389832f085f2abd9c1219476af6d90b9214bcfa1bbc568f5a2383467c04b4"
+    },
+    {
+      "path": "lib/l10n/app_localizations_th.dart",
+      "size": 17304,
+      "sha256": "8ef1f91e752653b9f189273c81a7f05e04ca1cc9c5264fdc5d7cf671db80d7d7"
+    },
+    {
+      "path": "lib/l10n/app_th.arb",
+      "size": 12647,
+      "sha256": "3d3971d1748c39e4bd19cf611a020ebec1e718ec2648d2ebabbffa2c471c6e54"
+    },
+    {
+      "path": "lib/l10n/l10n.dart",
+      "size": 1308,
+      "sha256": "5d62a056c5de4c2309bb7b6399a577d768cbba35b238ac1c3075df141867d22e"
+    },
+    {
+      "path": "lib/main.dart",
+      "size": 75,
+      "sha256": "2981c5cc33eb705b1cec9d4631de854cb029f9f641ba244b893456665a2d3cb0"
+    },
+    {
+      "path": "lib/models/app_settings.dart",
+      "size": 2347,
+      "sha256": "3506c35cdab07ba93e8478972ce2bfa0afe2a5c6d8161e7ff3c3a76465c2f779"
+    },
+    {
+      "path": "lib/models/audit_entry.dart",
+      "size": 755,
+      "sha256": "434b2712916db1be9121560039c1add1df893c18c97988abbca8720fb218327b"
+    },
+    {
+      "path": "lib/models/calendar_busy_period.dart",
+      "size": 552,
+      "sha256": "ef2dc05ae45a0a17f74478b7931deae7f740cdeef56fd6c106cb84e2389d0dd6"
+    },
+    {
+      "path": "lib/models/roster_assignment_timeline.dart",
+      "size": 2394,
+      "sha256": "28dfea9099c6f4485f97027dec67072564ac7dae161a601a032cd06f9485239c"
+    },
+    {
+      "path": "lib/models/roster_period.dart",
+      "size": 452,
+      "sha256": "6075bd0d304ed6a242aaff73ea9276ab43227312ad4ff24f76b09f7916071f32"
+    },
+    {
+      "path": "lib/models/roster_reference_comparison.dart",
+      "size": 1888,
+      "sha256": "94f9afc5588eacfbfb57ec07f105d1b06f65b30a5a777817cabeda93475c810f"
+    },
+    {
+      "path": "lib/models/saved_sheet.dart",
+      "size": 2423,
+      "sha256": "2bab48eaa2fbea8d167de698fce1194360eb2e3216dd110322caf92b179ee413"
+    },
+    {
+      "path": "lib/models/shift.dart",
+      "size": 5780,
+      "sha256": "658b89a13c918e9685746394b45515824e3250a0a9ed2b2e90725d7f9f5962ef"
+    },
+    {
+      "path": "lib/models/shift_alert.dart",
+      "size": 1473,
+      "sha256": "91d42f3e53e1ac9d55f553bd325ec19436d82fa6feb4d9fcd0760e33706795ff"
+    },
+    {
+      "path": "lib/models/swap_request.dart",
+      "size": 1253,
+      "sha256": "1cb1b80512e3ceb84f2e55e5321bcd59d91275d28fc4c7343af56cd8a95b75d4"
+    },
+    {
+      "path": "lib/models/tool_definition.dart",
+      "size": 4983,
+      "sha256": "15339590972d63e803fb492a294cc40d8dc6ccd880888e9f4fbfbfc282db6dbc"
+    },
+    {
+      "path": "lib/services/calendar_color_service.dart",
+      "size": 3013,
+      "sha256": "3d4899b6b91683002069c7371b199e3f0519bdd84a87db2986d063b5cd474f03"
+    },
+    {
+      "path": "lib/services/calendar_service.dart",
+      "size": 12343,
+      "sha256": "ca0bcb23a432ac63f48bc6d705894aaf1952dcd412550e9f4610271805947152"
+    },
+    {
+      "path": "lib/services/drive_archive_service.dart",
+      "size": 2913,
+      "sha256": "37ce39a437c4c889b98d413ddd6de4f6e2f9499766531ffad6803ba7dd16e570"
+    },
+    {
+      "path": "lib/services/drive_ownership_service.dart",
+      "size": 9290,
+      "sha256": "e30489316965e91f008baf31d6fe2f1f3c592643257399117462e125c2d6f9e1"
+    },
+    {
+      "path": "lib/services/google_api_client.dart",
+      "size": 589,
+      "sha256": "95d32f2e3bd5f722201e0440d9545de40424b67ad56d264c1dd62a7742d0ae49"
+    },
+    {
+      "path": "lib/services/google_auth_service.dart",
+      "size": 9662,
+      "sha256": "a85087ec29d85fd3be5fed0c586ae7dee065fa2aaf2d567642fcea9b4432b076"
+    },
+    {
+      "path": "lib/services/local_roster_file_service.dart",
+      "size": 5387,
+      "sha256": "db5336a2eb195d18c0027528d0ef0f167fb02b5c558919e98d861614da6b83db"
+    },
+    {
+      "path": "lib/services/roster_revision_service.dart",
+      "size": 7063,
+      "sha256": "bf17dfcf83bc6ad09637dcc81d9a03a303854390a20a25a3157f0a41be1c7d5b"
+    },
+    {
+      "path": "lib/services/roster_timeline_generator.dart",
+      "size": 1531,
+      "sha256": "7ed54286153b0075d6d979a82ea0cecd72aec47b3cea150fef2fdf152acc683e"
+    },
+    {
+      "path": "lib/services/settings_service.dart",
+      "size": 6645,
+      "sha256": "daddd02bf7b6b6b1e0e1ec40676a50f98f54e3a45a754bb3060ac3c558fc3d2c"
+    },
+    {
+      "path": "lib/services/sheets_service.dart",
+      "size": 8196,
+      "sha256": "b960cbdbc0f2ebbd82b8a7e7b0bb855ef023e2211055cf7386663e05dbd95461"
+    },
+    {
+      "path": "lib/services/shift_alert_service.dart",
+      "size": 9323,
+      "sha256": "681366fa6eaf18b1d1d940b1a68058ea4138855e473bd769111e158d11c958b1"
+    },
+    {
+      "path": "lib/services/shift_color_service.dart",
+      "size": 3429,
+      "sha256": "8385c92e56d2438944daaa9286de441944896467fd3f2f010b5dd98a31cbcc70"
+    },
+    {
+      "path": "lib/services/shift_parser.dart",
+      "size": 13192,
+      "sha256": "ef0d9ce912d0fcd8d3eb05d6bd8f1c9411fd2653b98fd407a758d9211b522520"
+    },
+    {
+      "path": "lib/services/shift_time_service.dart",
+      "size": 2193,
+      "sha256": "612c7b2f23bb5c5405ff64455cb9a1172a0ac3e4a5a852b6b43eca9e16d31495"
+    },
+    {
+      "path": "lib/services/swap_request_service.dart",
+      "size": 1857,
+      "sha256": "84df2fac3ba6319c7fbbd7e16a757aeeac3041b2cedf6d3bbb926dc361b48f45"
+    },
+    {
+      "path": "lib/shared/presentation/app_status_page.dart",
+      "size": 2355,
+      "sha256": "632e9de1c6f386b0ef04fdc15e0870c0ac633859493fa2acea07e8c7926dabfd"
+    },
+    {
+      "path": "lib/ui/app_shell.dart",
+      "size": 186097,
+      "sha256": "191ffcbe193bc6c92a4f50ed1f9382a40632167de77aaee850ee4a3d526ad69e"
+    },
+    {
+      "path": "lib/ui/audit_log_page.dart",
+      "size": 1240,
+      "sha256": "550aa1ac28816344c928a4335ed337e4224a7442df5ecdd8d433bcb627eb362b"
+    },
+    {
+      "path": "lib/ui/google_sign_in_button.dart",
+      "size": 102,
+      "sha256": "250dcb07d7da55efdcbe2f2f164ef395050f5b635e044e48f16575dc035ad2b7"
+    },
+    {
+      "path": "lib/ui/google_sign_in_button_stub.dart",
+      "size": 485,
+      "sha256": "a7dc983f3b084047340e7899c25abe7f89fc45401653e3a41ecc83f868504656"
+    },
+    {
+      "path": "lib/ui/google_sign_in_button_web.dart",
+      "size": 600,
+      "sha256": "b817de5a6e8960ca5e42cc386c7f85f0a41c75e01c350ed783dedc1d8cedb9ca"
+    },
+    {
+      "path": "lib/ui/preview_changes.dart",
+      "size": 13166,
+      "sha256": "1215deb946d07927c6106f1a33dc8689f46a154e81a1fdaa2bba677a503ffad9"
+    },
+    {
+      "path": "linux/.gitignore",
+      "size": 18,
+      "sha256": "5ded4f1a9d10d34bf6ee5beb0711d88ee2ef07b0f07ace9ed77935a246e8eb82"
+    },
+    {
+      "path": "linux/CMakeLists.txt",
+      "size": 4936,
+      "sha256": "a43721e26e39fd37d9e6720118ceed3fae38296dbca1e00e4911db0fd7738622"
+    },
+    {
+      "path": "linux/flutter/CMakeLists.txt",
+      "size": 2815,
+      "sha256": "787189e2623313cfee590a0b553338eb9fc68b3af922ddd77c5d39c75f989aeb"
+    },
+    {
+      "path": "linux/flutter/generated_plugin_registrant.cc",
+      "size": 1188,
+      "sha256": "8ce01bccee3350d0f0f636632637ca84bab12cfe2c6c7e7dd224e0bc142ac2dc"
+    },
+    {
+      "path": "linux/flutter/generated_plugin_registrant.h",
+      "size": 303,
+      "sha256": "00f93bb5b1faefdede8f6065df327522900fb0b8efee86bacf424fd947ed14bb"
+    },
+    {
+      "path": "linux/flutter/generated_plugins.cmake",
+      "size": 812,
+      "sha256": "c7b0cb490c87e2a6ab1a82ee4403810629a4d5321f9f5ce4abf877b7feee6e89"
+    },
+    {
+      "path": "linux/runner/CMakeLists.txt",
+      "size": 974,
+      "sha256": "8cdcfd911e770fd7d511c97c7bce6559486a815352a47c953f7ef632e236d2cc"
+    },
+    {
+      "path": "linux/runner/main.cc",
+      "size": 180,
+      "sha256": "ea23f7cdf74091d63bba29ef60486370b766157b848f0cfe62bd8b1c1695a0c1"
+    },
+    {
+      "path": "linux/runner/my_application.cc",
+      "size": 6032,
+      "sha256": "11c3b0b3f2a4770cd2c9a3c23f3898dc11708e46fb16e178d9c9d0ff8125aa45"
+    },
+    {
+      "path": "linux/runner/my_application.h",
+      "size": 451,
+      "sha256": "a4218d7ac0db8a9a6716daf216b2d4fc6bdc7ac647e3183078b2c962ebdfcf70"
+    },
+    {
+      "path": "macos/.gitignore",
+      "size": 89,
+      "sha256": "ffec1a0bbd70547186b82ad4e49089bafab2de309b89de97c776d70debb179fa"
+    },
+    {
+      "path": "macos/Flutter/Flutter-Debug.xcconfig",
+      "size": 48,
+      "sha256": "62290ad8e938bf410206d8c7e131262696b58a6df110d39faf3399396ffe61b1"
+    },
+    {
+      "path": "macos/Flutter/Flutter-Release.xcconfig",
+      "size": 48,
+      "sha256": "62290ad8e938bf410206d8c7e131262696b58a6df110d39faf3399396ffe61b1"
+    },
+    {
+      "path": "macos/Flutter/GeneratedPluginRegistrant.swift",
+      "size": 935,
+      "sha256": "aa33f188578b41051dca0bed1061e8ed288acd7404d9e827730fb551887b31ac"
+    },
+    {
+      "path": "macos/Runner.xcodeproj/project.pbxproj",
+      "size": 27977,
+      "sha256": "389e7cb52cf2fca18c0d5fec5138e3e092f0be5c479f12a5fd78c451f6ca503d"
+    },
+    {
+      "path": "macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "size": 238,
+      "sha256": "dfa0f9bb85b95ccba9c6811adadf8cb407fb5d52088e89db83ebc308ec448542"
+    },
+    {
+      "path": "macos/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme",
+      "size": 4615,
+      "sha256": "f31eaaca70f4401ef1f6f71f730ae9bad296686d1c7ce7e686422f5d2c671a5f"
+    },
+    {
+      "path": "macos/Runner.xcworkspace/contents.xcworkspacedata",
+      "size": 152,
+      "sha256": "46c3c9702ff7c5584e11c954d943cfb6e07fb26e3fbd072ddbc0f388aa352de1"
+    },
+    {
+      "path": "macos/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist",
+      "size": 238,
+      "sha256": "dfa0f9bb85b95ccba9c6811adadf8cb407fb5d52088e89db83ebc308ec448542"
+    },
+    {
+      "path": "macos/Runner/AppDelegate.swift",
+      "size": 311,
+      "sha256": "ce9dbe45a57c59e85519da50a26c471615b9c8cdd85a8f4a39d2e480e62a4af4"
+    },
+    {
+      "path": "macos/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json",
+      "size": 1582,
+      "sha256": "2f6d47350f39cde7d3fabf1dc8109e0ed6638d0ca353c20d3f70b0ad43e5c102"
+    },
+    {
+      "path": "macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png",
+      "size": 596595,
+      "sha256": "a6dfe985b5c1aecc746a69e3fd9448d5fa19708a09f25b22e1fc97c3a018ddc1"
+    },
+    {
+      "path": "macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_128.png",
+      "size": 11065,
+      "sha256": "9d4d0542a0376fd20bb997e716f4bf2e20f03760d50b7b8b0460a415ef43be1f"
+    },
+    {
+      "path": "macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_16.png",
+      "size": 485,
+      "sha256": "fffdc8a0b1d523bedd692ece9542b994b062f9a48fbeb8481bb09822b5fe93bf"
+    },
+    {
+      "path": "macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_256.png",
+      "size": 43989,
+      "sha256": "e5454b789cceca986c95ef04baa0fef8eb98be6ee3955ed40560d0b517a28b95"
+    },
+    {
+      "path": "macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_32.png",
+      "size": 1211,
+      "sha256": "a3774bb3541180a944284d8ab0e64d4512fe99811ccb334662444c2e158d7125"
+    },
+    {
+      "path": "macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_512.png",
+      "size": 177891,
+      "sha256": "4cdd129b10738dc9b3964842c0903503db53e8e062d53f81a21843215d924d78"
+    },
+    {
+      "path": "macos/Runner/Assets.xcassets/AppIcon.appiconset/app_icon_64.png",
+      "size": 3214,
+      "sha256": "d78a1bb855a16bdb8526a2c63d51a818e0f7923ce3afd68a5a57b96413a36644"
+    },
+    {
+      "path": "macos/Runner/Base.lproj/MainMenu.xib",
+      "size": 23729,
+      "sha256": "be9e9ef8469d3262370e0f0b855ed163cbf9c8362c59e330b2ffe63b86fa42f4"
+    },
+    {
+      "path": "macos/Runner/Configs/AppInfo.xcconfig",
+      "size": 624,
+      "sha256": "c79fc67c40b4fcc229a37a79ee0b6335f630425309f6b65764de7283cc54431e"
+    },
+    {
+      "path": "macos/Runner/Configs/Debug.xcconfig",
+      "size": 77,
+      "sha256": "8067d533ef6593760baad9a9855a786a7a77470fcc3f0925ec04fe43bc1ac4b0"
+    },
+    {
+      "path": "macos/Runner/Configs/Release.xcconfig",
+      "size": 79,
+      "sha256": "7a6a4b4d973a23052fa0a0388dd261e32d311d7b66ba1bfc3b914b361808ac61"
+    },
+    {
+      "path": "macos/Runner/Configs/Warnings.xcconfig",
+      "size": 580,
+      "sha256": "0e341a392b16ad302d12890aa3dac9257a6c10ece685437604259a85341645a3"
+    },
+    {
+      "path": "macos/Runner/DebugProfile.entitlements",
+      "size": 519,
+      "sha256": "969e5edc870d0e389ef5b22e6ebb924387fcd40bc486e3d8cad365172d820213"
+    },
+    {
+      "path": "macos/Runner/Info.plist",
+      "size": 1433,
+      "sha256": "35736cc00cf136671c52c7731ede84db5d1f0d3f5c851bd4295efc25254b3340"
+    },
+    {
+      "path": "macos/Runner/MainFlutterWindow.swift",
+      "size": 388,
+      "sha256": "65c9613c11bcedfa51416b16c975d8ba6ff12b405fc19d60db8755d92e86d9fe"
+    },
+    {
+      "path": "macos/Runner/Release.entitlements",
+      "size": 411,
+      "sha256": "faf7e45c3d6f2ee9c7ef5fc0bd2b0a933a1cd7e172e72bdd9c2ad2712e6390a0"
+    },
+    {
+      "path": "macos/RunnerTests/RunnerTests.swift",
+      "size": 290,
+      "sha256": "6bc180bc77c7def7a21d197233e25dff42cc493ab9d294632edafc18fdf0ac44"
+    },
+    {
+      "path": "pubspec.lock",
+      "size": 29689,
+      "sha256": "aca71e4c23bb9301aca83ac78cdfa1a4075f353a494b07dbeb07406c111e00c2"
+    },
+    {
+      "path": "pubspec.yaml",
+      "size": 5018,
+      "sha256": "93669722fc1db450ffcb7924e585a682e78c346938a57e8ca033ef813f9c6453"
+    },
+    {
+      "path": "scripts/detect-ci-targets.sh",
+      "size": 1625,
+      "sha256": "e1ca37b123ef9ca5df126977bc7d04142105cf409da0e982c51716f733fcaf55"
+    },
+    {
+      "path": "test/admin_access_config_test.dart",
+      "size": 1524,
+      "sha256": "49f26ea088215c2f7c82d3ebd38099e6d8d5653ca1a4773b2ca9902e5435c0d2"
+    },
+    {
+      "path": "test/admin_dashboard_service_test.dart",
+      "size": 962,
+      "sha256": "63bd741c39abc644abaadbffd3f095ef49f8afcb854e1a44585acae6a6f4994b"
+    },
+    {
+      "path": "test/app_dependencies_test.dart",
+      "size": 11894,
+      "sha256": "f34637e5075ebd631e9f8a314c540f14c42b11629fd8d7f494cc064cf9ec5a82"
+    },
+    {
+      "path": "test/app_edition_test.dart",
+      "size": 722,
+      "sha256": "62761aa843e001483ca7466764e0f6ba4efb1ae9ea1eaac7f9a28b72e0140878"
+    },
+    {
+      "path": "test/calendar_color_service_test.dart",
+      "size": 942,
+      "sha256": "c8d6238ab098971cddaacda11b0cb00f6cf6df57f967878106e9191df985f78c"
+    },
+    {
+      "path": "test/calendar_event_matcher_test.dart",
+      "size": 3007,
+      "sha256": "8b2104f19c9e308504a7a71d822ebf203ba9b4006f043a5379cf8472d6c6f642"
+    },
+    {
+      "path": "test/calendar_foundation_test.dart",
+      "size": 3787,
+      "sha256": "115a14fa6a89d199be6976147ece58ed88a0ac7f978dab534005d04188b27477"
+    },
+    {
+      "path": "test/calendar_relationship_description_test.dart",
+      "size": 2656,
+      "sha256": "8249fd7368d47143bd4179ec118ad5b03e845c959b17b00ec364cfc275c7c19a"
+    },
+    {
+      "path": "test/calendar_service_managed_event_test.dart",
+      "size": 5326,
+      "sha256": "aeb0b85ba5c80bcb3c6002e2951f8d44ae6ba977579c68213f8dd20dc659bee4"
+    },
+    {
+      "path": "test/calendar_workflow_facade_test.dart",
+      "size": 1863,
+      "sha256": "992db03d6f3fbe65b888a62817e2f35670866b610e7a3743e95088c45d159833"
+    },
+    {
+      "path": "test/canonical_import_calendar_vertical_slice_test.dart",
+      "size": 8459,
+      "sha256": "69b5ccecd56647cd9521056b63c2c19909ca47d1e673c51c865ddb64d5d95369"
+    },
+    {
+      "path": "test/canonical_schedule_adapter_test.dart",
+      "size": 3750,
+      "sha256": "993bc0099caae48e267296d9ead3186f4ab295acfd613774505a4fd587930255"
+    },
+    {
+      "path": "test/column_mapping_controller_test.dart",
+      "size": 2134,
+      "sha256": "69fd903334ecf5d683423ecf54f3adac7c3f5b230036c21f9c37521a238a0693"
+    },
+    {
+      "path": "test/column_mapping_page_test.dart",
+      "size": 1803,
+      "sha256": "e95c61363c519472cc569ac3c1091ead87661c65963dc39f63bb07ae6e6ac38e"
+    },
+    {
+      "path": "test/column_mapping_test.dart",
+      "size": 747,
+      "sha256": "5d1d1b2da532ae7faf1c59e2de5d1a71c316aa5fd32036322c66f1ea43a639f0"
+    },
+    {
+      "path": "test/dashboard_summary_service_test.dart",
+      "size": 1283,
+      "sha256": "b48617e4129b2ca7d5999933f3fa408fb4d60ccee337fec18b9e24500e05238a"
+    },
+    {
+      "path": "test/domain_architecture_test.dart",
+      "size": 2199,
+      "sha256": "0e93add3246543c1c8dd8c3ce68d18f5d5b035c2123363f2518d5a02da889497"
+    },
+    {
+      "path": "test/employee_directory_test.dart",
+      "size": 3013,
+      "sha256": "ba29caa2341d27987cc687be5421b0933bedef6b704f754f3e280da36ca18d92"
+    },
+    {
+      "path": "test/employee_repository_test.dart",
+      "size": 3452,
+      "sha256": "d5633d4446a984e49c1c6a3a1c90f8b0c01ac9a6cb5ee9db1d5e7f53b5074523"
+    },
+    {
+      "path": "test/excel_import_controller_test.dart",
+      "size": 5007,
+      "sha256": "665ee0c3807f5823a60cb79c5d5a6486b5e466622b06dbf396f1730d984c8b8f"
+    },
+    {
+      "path": "test/excel_preview_table_test.dart",
+      "size": 2584,
+      "sha256": "784f34f60f3d54d29b645128ed9f6c5ba8c9fa6c870f5f532a0c0137c91b9b82"
+    },
+    {
+      "path": "test/excel_reader_service_test.dart",
+      "size": 4083,
+      "sha256": "4d273ecd87aa133ab6aded4439449095c0042e9a8424224b69daa052cdc82c16"
+    },
+    {
+      "path": "test/features/calendar_sync/domain/calendar_sync_protocol_test.dart",
+      "size": 2849,
+      "sha256": "f5117baaf65f79d84c925c543b75d80c1fb1dc52ab59a66a79e4c8ee866a6971"
+    },
+    {
+      "path": "test/google_api_client_test.dart",
+      "size": 2014,
+      "sha256": "0213c7a53ac160d3bd29d967c2f3294a06e4c1d31946c1ba926d25486cc6d810"
+    },
+    {
+      "path": "test/google_calendar_sync_gateway_test.dart",
+      "size": 3724,
+      "sha256": "73f96f9b21fb7b5cb65eca3996f24cad06e16a16f2ce601b31ef32d5caf8bbec"
+    },
+    {
+      "path": "test/google_calendar_workflow_integration_test.dart",
+      "size": 16248,
+      "sha256": "45eec9caa94922fcb15f8434d123fda377b1239e889a54519983c8fdb29d88d1"
+    },
+    {
+      "path": "test/google_sheets_import_data_source_test.dart",
+      "size": 9255,
+      "sha256": "92034f1852cc24b119145efe005af8b0eaf0718b6dd771937e303580579e26e6"
+    },
+    {
+      "path": "test/idempotency_service_test.dart",
+      "size": 1237,
+      "sha256": "9b780fd4776b7f6598397ed7f6f0e175768b3d88d6ceaeb4e42e2909cfabd8eb"
+    },
+    {
+      "path": "test/import_engine_test.dart",
+      "size": 3970,
+      "sha256": "638aeeabd9235a67f30eda7294cb5aca9c957f81ada83733865c58af5f26caa9"
+    },
+    {
+      "path": "test/import_excel_page_test.dart",
+      "size": 5049,
+      "sha256": "5a15b3cb08a329a6874ddcd69c5a2f4806aba8066b2fc7ab269887a8d19da97a"
+    },
+    {
+      "path": "test/import_summary_page_test.dart",
+      "size": 2034,
+      "sha256": "317296d263caf12a40d80fefc80e8360c0a02ea20ca9ce95a2e361d9116ef4ba"
+    },
+    {
+      "path": "test/local_roster_file_service_test.dart",
+      "size": 1900,
+      "sha256": "86cdb5bd6c033723c8475fbdede202d630cabcb03d421bb3a745fdfe1c0ff614"
+    },
+    {
+      "path": "test/localization_widget_test.dart",
+      "size": 3440,
+      "sha256": "840bb439b0be32f2a9151705f1086abceacc86af904addb69ac0298682b6026c"
+    },
+    {
+      "path": "test/manual_roster_editor_test.dart",
+      "size": 5259,
+      "sha256": "a01b94eac344a651a8328982f414a1a938bcb2db31c8b5dd576fc0ef767303f5"
+    },
+    {
+      "path": "test/monthly_roster_all_dates_test.dart",
+      "size": 4902,
+      "sha256": "a5fdab96f0c2399f12b252acfeea1452e5a1cfb4a443e8064e2caad400b08bb0"
+    },
+    {
+      "path": "test/monthly_roster_all_years_leap_test.dart",
+      "size": 3326,
+      "sha256": "fe5e32facccbb1976e00fe56ccad0c2dc6f272878cb97817f5ba4d60cfa2284b"
+    },
+    {
+      "path": "test/monthly_roster_cross_month_date_test.dart",
+      "size": 6660,
+      "sha256": "f23c05b37ab721ac9d715f589560cab86abd69f5e17d23c0c9d865c4a3c47bc9"
+    },
+    {
+      "path": "test/monthly_roster_section_parser_test.dart",
+      "size": 7552,
+      "sha256": "a5b85c70edaba9a21664d29a5838dc54c4eb405de05692123a5539759d480059"
+    },
+    {
+      "path": "test/monthly_roster_template_test.dart",
+      "size": 2146,
+      "sha256": "43491b9121bd0031c97ed10e8772bec1337d74a39e312e788e9138ba59123076"
+    },
+    {
+      "path": "test/monthly_schedule_pdf_service_test.dart",
+      "size": 4367,
+      "sha256": "4721c35b87501c726e9c5f3a67694de682c1a945586c45dee14382250513e919"
+    },
+    {
+      "path": "test/monthly_schedule_report_controller_test.dart",
+      "size": 6944,
+      "sha256": "c5a61b554ab61f8047b50d13ab19dc75c2e618f9f9b352ac1a1062393f751cc8"
+    },
+    {
+      "path": "test/monthly_schedule_report_mapper_test.dart",
+      "size": 6105,
+      "sha256": "04eeaf3f25bda0191ee1062ded48499c6123d89cdf1d1ccf2fbc2748bb852a35"
+    },
+    {
+      "path": "test/off_after_cross_month_roster_boundary_test.dart",
+      "size": 2733,
+      "sha256": "10382634904a67541a8a39f4744a95d3cbccd3911f6226b6696d9439dd41747b"
+    },
+    {
+      "path": "test/plugin_registry_test.dart",
+      "size": 1487,
+      "sha256": "02d16914879b047c97f0d1c0d9929cc4ae4a3551ab3fde79d6361b8ff0853f29"
+    },
+    {
+      "path": "test/radiology_roster_structure_test.dart",
+      "size": 4209,
+      "sha256": "e526b10d9c6039756439032c4062739886780b735aeea99beff9e04119e1d843"
+    },
+    {
+      "path": "test/roster_assignment_timeline_test.dart",
+      "size": 3069,
+      "sha256": "7167990cb66590bade074be13fe5339988fbdc60a2dabf4f14493e60322e6ff0"
+    },
+    {
+      "path": "test/roster_name_entry_test.dart",
+      "size": 1534,
+      "sha256": "15dc0da8acc3b28d6d8b81fc11cc4281ad068678c64f0754dcabd87136ee77c6"
+    },
+    {
+      "path": "test/roster_reference_comparison_test.dart",
+      "size": 1607,
+      "sha256": "d16ca98671685e19099f51a87e4cc023dae166057b3aa436ba5991a040749cc1"
+    },
+    {
+      "path": "test/rule_engine_consolidation_test.dart",
+      "size": 3180,
+      "sha256": "70ebce500581f1f93962d2d453a027d66899d66099ef4a2d637f155dc1f3b1fa"
+    },
+    {
+      "path": "test/rule_engine_foundation_test.dart",
+      "size": 8149,
+      "sha256": "31ad1aa480817e4c9ac012e51b332ff10c6a75b5f7aaef5844d239e6fe623884"
+    },
+    {
+      "path": "test/rule_validation_page_test.dart",
+      "size": 2090,
+      "sha256": "579720365fa40ac7f7a72bb3af111b5ef4e4fac5d3013be22df0bb2df5279652"
+    },
+    {
+      "path": "test/sce_a1_notation_test.dart",
+      "size": 797,
+      "sha256": "54c91c69246130f0e9b3d2519ea876bba0ad61a72d87b6a7a0abd444c7cdcf47"
+    },
+    {
+      "path": "test/sce_calendar_diff_engine_test.dart",
+      "size": 2651,
+      "sha256": "0fd28af3b5b25d83c422fa487867353055a91c10af45b49dc70b56a920c93d34"
+    },
+    {
+      "path": "test/sce_calendar_sync_executor_test.dart",
+      "size": 3420,
+      "sha256": "50bc08b309d47d2d48a0cb78fbba3a12cc89c61406bc057bc1d294ae9667ed87"
+    },
+    {
+      "path": "test/sce_calendar_sync_plan_builder_test.dart",
+      "size": 1585,
+      "sha256": "8c09ec06df2e375144ef3a1e153f5b168b2b19ef015b6e9f82ea92baec665846"
+    },
+    {
+      "path": "test/sce_failed_sync_json_codec_test.dart",
+      "size": 1107,
+      "sha256": "d52ddd64310805103a5fe8c1dd934b3d4c48cfd4dc8de18497d26dc7a01f6fb3"
+    },
+    {
+      "path": "test/sce_grid_range_test.dart",
+      "size": 698,
+      "sha256": "f348d24cbfb23ae6709e78585d821bb2df5a2c435f4f43bcb838394b979ff106"
+    },
+    {
+      "path": "test/sce_hospital_roster_parser_test.dart",
+      "size": 2300,
+      "sha256": "aaf7e3a038019c621710df61633c366ebcbce3ebf8af110acf296afd60dd7ab3"
+    },
+    {
+      "path": "test/sce_relationship_resolver_test.dart",
+      "size": 1430,
+      "sha256": "b85ee9e1d2c0926f135bb28e29c0855507af504e06ac9d98f18bdf1a6401642b"
+    },
+    {
+      "path": "test/sce_resilient_calendar_sync_executor_test.dart",
+      "size": 2782,
+      "sha256": "b1fb462c488daa734b831cc53a132713f0c9af42026b53d77dedda56b778aba5"
+    },
+    {
+      "path": "test/sce_roster_comparison_engine_test.dart",
+      "size": 1733,
+      "sha256": "fa156ae2b9af3e048dfc2f256c1feacb13190370f83ab29a774a35b347063f69"
+    },
+    {
+      "path": "test/sce_sheet_color_test.dart",
+      "size": 812,
+      "sha256": "883040e6158d1a1ff6d08fb5e4855dc0efc22c5d2d10dbd54f34a57b80c08b31"
+    },
+    {
+      "path": "test/sce_shift_catalog_test.dart",
+      "size": 663,
+      "sha256": "c694823c3c5c6ae9b7f661a1011f2991249a55ad5b5d5a8f1f41d91280963f5e"
+    },
+    {
+      "path": "test/sce_shift_record_test.dart",
+      "size": 887,
+      "sha256": "68e94f07a706fa1a641c40dc2a0a6a073f860a5d5f87f2e8e559f6c760e83006"
+    },
+    {
+      "path": "test/sce_simulation_plan_builder_test.dart",
+      "size": 1233,
+      "sha256": "5b37b632f3dc88124932fcdc6f406558cc14d41e2299dbb33221f9e59c49244f"
+    },
+    {
+      "path": "test/sce_snapshot_normalizer_test.dart",
+      "size": 1676,
+      "sha256": "4dd1b850b744cc51d415c5d08060bcb647d796bc5242c1106fad097d6bf9a9d2"
+    },
+    {
+      "path": "test/sce_sync_history_json_codec_test.dart",
+      "size": 728,
+      "sha256": "a7872b7b7cba67344519e2416fc5e114f27d3978e1d9d89d838af2633fab71a3"
+    },
+    {
+      "path": "test/sce_sync_id_factory_test.dart",
+      "size": 732,
+      "sha256": "3001c0059cdaad848d5c05ea192a5b1be6b6c9d1984fdbff5969efe84c9314e3"
+    },
+    {
+      "path": "test/sce_thai_roster_period_parser_test.dart",
+      "size": 3910,
+      "sha256": "4d67cec84516ddf16d5247c4cfce444b30375128f5d94f7a5590f0ad1b1c475c"
+    },
+    {
+      "path": "test/sce_user_shift_event_mapper_test.dart",
+      "size": 2620,
+      "sha256": "b7462540bf3361bc9e92ea5808d02930d3fbe7b813e409dd91ae5e30319e2729"
+    },
+    {
+      "path": "test/sce_workflow_preview_builder_test.dart",
+      "size": 1165,
+      "sha256": "ca037da13b699cd13a42a6b65461c51e2edb5e08247241545ede83f0c1df9e30"
+    },
+    {
+      "path": "test/schedule_controller_test.dart",
+      "size": 6262,
+      "sha256": "b6100ebd42a0d3f8d7ce584105cf0c9d7ee2f34409fe1bfd18bdb0be69065cee"
+    },
+    {
+      "path": "test/schedule_generator_test.dart",
+      "size": 6370,
+      "sha256": "0bf7e07e249a21854e8c4e050d2440c32b1aa55ad7e5ce668f3fbb1fb0d3fa06"
+    },
+    {
+      "path": "test/schedule_json_codec_test.dart",
+      "size": 2899,
+      "sha256": "89463213982d6d7546f67f13d752153cbecaa87b098b5f8df52167ddcf59fd13"
+    },
+    {
+      "path": "test/schedule_pages_test.dart",
+      "size": 5861,
+      "sha256": "80b2c63db5304d3efb4f65216c795e427f1126a97cf5a2f8285757772af46bf2"
+    },
+    {
+      "path": "test/schedule_repository_test.dart",
+      "size": 4228,
+      "sha256": "d1d5f8866104a6853ea9e803839576fd62144fde92fa7f7bced051567f971e2e"
+    },
+    {
+      "path": "test/schedule_service_test.dart",
+      "size": 3485,
+      "sha256": "fc0ca5057290c6b138b3a45b852fbf819eb27c08640e6a931f26b1f850f0584e"
+    },
+    {
+      "path": "test/service_logic_test.dart",
+      "size": 12482,
+      "sha256": "e1f3b5634c3003a2ad237618ea9722817376f872b8c4f41f6a728ce70744a4a9"
+    },
+    {
+      "path": "test/shift_alert_service_test.dart",
+      "size": 9326,
+      "sha256": "2e3487892a8a2faabe185511aba40271ad0e446fdf38db88ba03a261dc80c777"
+    },
+    {
+      "path": "test/shift_color_service_test.dart",
+      "size": 2613,
+      "sha256": "bcfa14b6cba028fb052199dedcdc2491fe3d8ea0901a75dc6d46ae81bdf9d14f"
+    },
+    {
+      "path": "test/shift_exchange_controller_test.dart",
+      "size": 1421,
+      "sha256": "878d06e2cba1d8c4b5eb8b6b6ff27e95d312e15f07f9e4dc3e9b9b1e9817dda0"
+    },
+    {
+      "path": "test/shift_parser_test.dart",
+      "size": 8769,
+      "sha256": "36db26d12c22376c9a2aa5b9d51055470159d4b0f725faa0a06a9187ae11398c"
+    },
+    {
+      "path": "test/shift_template_test.dart",
+      "size": 3771,
+      "sha256": "416cf7c7607708f419fe569074f0bdce0101404c619b41c451e429f2e0969738"
+    },
+    {
+      "path": "test/shift_time_service_test.dart",
+      "size": 1160,
+      "sha256": "0236957c9779ddd75789c0fae49a18a9cb060a8b41e81728cd1d59728a1f53d7"
+    },
+    {
+      "path": "test/support/canonical_schedule_fixture.dart",
+      "size": 3076,
+      "sha256": "8c3427f39d66b1aedfea0309ac7a75dfe131a792639884bc3711ff2a83017f52"
+    },
+    {
+      "path": "test/support/in_memory_schedule_store.dart",
+      "size": 645,
+      "sha256": "baa26a13ae7712c0679259ac3f14ee72b996ef9a2e3175a03763212a04cf4ba1"
+    },
+    {
+      "path": "test/swap_request_service_test.dart",
+      "size": 721,
+      "sha256": "13b430ea5a944f506d49c28997d72e0f84994ba47d0d5b23d6cf46b8c8dc2273"
+    },
+    {
+      "path": "test/tenant_guard_test.dart",
+      "size": 1901,
+      "sha256": "342ec8e11672a12ee348a3ea16596c77d5a4472899d6465b8ea704dfdc00a4c1"
+    },
+    {
+      "path": "test/thai_roster_every_single_date_test.dart",
+      "size": 2593,
+      "sha256": "5d712ef2716dc267d64146d1b6378665141cee79cf6259737a7202d56023e5ca"
+    },
+    {
+      "path": "test/v2/access_control_test.dart",
+      "size": 598,
+      "sha256": "e34ab8a283d9b35b1e8d7a43725cacea5660eebb0bc5ca7a70889e302d496997"
+    },
+    {
+      "path": "test/v2/calendar_diff_engine_test.dart",
+      "size": 4909,
+      "sha256": "50935bd3117a6a1ca4e6fdf44720bcf3e3a492c27b782f5b4a833da737b3df28"
+    },
+    {
+      "path": "test/v2/calendar_sync_actions_test.dart",
+      "size": 2571,
+      "sha256": "c255290463c71d2ad7b24c9cc271b2355c9ac3b432a0ca55dad162c7cd898b58"
+    },
+    {
+      "path": "test/v2/calendar_sync_controller_test.dart",
+      "size": 5184,
+      "sha256": "b12ffc336c07b0eeb41664e6aeaeb16481815e0efcfe0e997f4f0f9f151a936c"
+    },
+    {
+      "path": "test/v2/calendar_sync_executor_test.dart",
+      "size": 13145,
+      "sha256": "1c5bd21e627d73213622cae0b139513370da7e5550a511e81f7641b6a0295109"
+    },
+    {
+      "path": "test/v2/calendar_sync_planner_test.dart",
+      "size": 7932,
+      "sha256": "08ac90d1771e1fccd3053f83f388af3d1b7d737fabc363926e07fd2fe8e938c6"
+    },
+    {
+      "path": "test/v2/calendar_sync_progress_test.dart",
+      "size": 4754,
+      "sha256": "580b0af47475b5f1db2705027e56b7bc1bb0264daaa7a686ef1748e0bb5c4a95"
+    },
+    {
+      "path": "test/v2/calendar_sync_screen_test.dart",
+      "size": 2182,
+      "sha256": "a392aabd6579f86409eddcfc77e1d1cb0c0f6b53470399cbbe2d3d54415f8d0e"
+    },
+    {
+      "path": "test/v2/calendar_sync_service_test.dart",
+      "size": 10117,
+      "sha256": "9ca30fe50473dff50d480e23276deee7370aaa7fc51add08e8e33017a202bda8"
+    },
+    {
+      "path": "test/v2/google_calendar_event_mapper_test.dart",
+      "size": 10509,
+      "sha256": "65cc1637237410db88ce55452b2a243259872c98b8dd0e306f95c754cc15d9c4"
+    },
+    {
+      "path": "test/v2/rule_engine_test.dart",
+      "size": 1535,
+      "sha256": "e0735d9ed5ed75f54e091d7e5be6bf1f5a2f6f46bb423cfa848386881787585c"
+    },
+    {
+      "path": "test/v2/shift_exchange_request_test.dart",
+      "size": 927,
+      "sha256": "9187f583afc132ba5b4150ae721afeffbd378317f595360e91d3b2ae1986cafa"
+    },
+    {
+      "path": "test/v2/simulation_engine_test.dart",
+      "size": 3350,
+      "sha256": "afd78813d7fd952a7a609886a5e92dbecea1699a218f9969c265409a4f29a16c"
+    },
+    {
+      "path": "test/widget_test.dart",
+      "size": 16545,
+      "sha256": "8c5f18aa8446be316a3f843d7fea41e57a560ca1e2ff159a0af24fec0c1f489e"
+    },
+    {
+      "path": "tools/diskpath/generate_diskpath.py",
+      "size": 6212,
+      "sha256": "83867789562a0f0f86a830d26b6cd4d12952a4720217e082d9f7b1f19ae9106d"
+    },
+    {
+      "path": "tools/diskpath/validate_diskpath.py",
+      "size": 7386,
+      "sha256": "fa12b8739246d6bfac8ebeef7aaae4caf7ddbc6805ff88f0a768c33596214b51"
+    },
+    {
+      "path": "web/favicon.png",
+      "size": 485,
+      "sha256": "fffdc8a0b1d523bedd692ece9542b994b062f9a48fbeb8481bb09822b5fe93bf"
+    },
+    {
+      "path": "web/icons/Icon-192.png",
+      "size": 24513,
+      "sha256": "54b454fef92c7ed8d0d02b942416c131937c95d843ee19dfc77acab5c1f02a74"
+    },
+    {
+      "path": "web/icons/Icon-512.png",
+      "size": 177891,
+      "sha256": "4cdd129b10738dc9b3964842c0903503db53e8e062d53f81a21843215d924d78"
+    },
+    {
+      "path": "web/icons/Icon-maskable-192.png",
+      "size": 24513,
+      "sha256": "54b454fef92c7ed8d0d02b942416c131937c95d843ee19dfc77acab5c1f02a74"
+    },
+    {
+      "path": "web/icons/Icon-maskable-512.png",
+      "size": 177891,
+      "sha256": "4cdd129b10738dc9b3964842c0903503db53e8e062d53f81a21843215d924d78"
+    },
+    {
+      "path": "web/index.html",
+      "size": 1547,
+      "sha256": "ece4ffcdab5314323478617bc5c3a94b62cdebd9156147e2f9b43fab74692d80"
+    },
+    {
+      "path": "web/manifest.json",
+      "size": 941,
+      "sha256": "dcf52e8a0cac0b3fcad9fc7363f42ca823fb7ce11d58f585818194269fe0227f"
+    },
+    {
+      "path": "windows/.gitignore",
+      "size": 291,
+      "sha256": "96345475f1a3c66bd32d28178fba151ab1506b35b1f7857b8f7651863093ea11"
+    },
+    {
+      "path": "windows/CMakeLists.txt",
+      "size": 4170,
+      "sha256": "e14e3a939bfef759ad8fbd3ccdc8b2ab17ad294616029e9c6999dd5759a6f285"
+    },
+    {
+      "path": "windows/flutter/CMakeLists.txt",
+      "size": 3742,
+      "sha256": "1fe418971b6f41bb35ceb3d64113a835f3f6f171ecaa707bf232492b57a588d6"
+    },
+    {
+      "path": "windows/flutter/generated_plugin_registrant.cc",
+      "size": 764,
+      "sha256": "5fecec8c6467fdad43fb5bc8314beb02c9dd53723001dce9b8468bc67a24ccd3"
+    },
+    {
+      "path": "windows/flutter/generated_plugin_registrant.h",
+      "size": 302,
+      "sha256": "dbc11635d7b1ba1887adf40df5b83d634e9c3ab0bee34510c71528bb4d73602a"
+    },
+    {
+      "path": "windows/flutter/generated_plugins.cmake",
+      "size": 820,
+      "sha256": "c31ad3ae00bf3b48c23afdd03f5f000d02302f51e31d4f7b28d86151924d56b6"
+    },
+    {
+      "path": "windows/runner/CMakeLists.txt",
+      "size": 1796,
+      "sha256": "34119ec122e36940235ef4bc245fcfb43b6960ed443e28af1a8d833a81209b9e"
+    },
+    {
+      "path": "windows/runner/Runner.rc",
+      "size": 3057,
+      "sha256": "e753ea4bf28e1cde3f787846f84e81a11ecaa233559fe02f9ff7de262add3b45"
+    },
+    {
+      "path": "windows/runner/flutter_window.cpp",
+      "size": 2122,
+      "sha256": "dd185884c0b5301d400b58f12ebb36b1c8b326531597e531b40e44a6eeb0e943"
+    },
+    {
+      "path": "windows/runner/flutter_window.h",
+      "size": 928,
+      "sha256": "38e0fcd3a0b83895852ec295cb70d90179c0dcd40d58f065eb5232a4ecd84898"
+    },
+    {
+      "path": "windows/runner/main.cpp",
+      "size": 1264,
+      "sha256": "91bf810ff85f2185d9f2bc30aac1dd50239e13160feb649b58d1d43638bf0405"
+    },
+    {
+      "path": "windows/runner/resource.h",
+      "size": 432,
+      "sha256": "1fa98588b04561590ba1cf0521ab86a9db4a878312f21c9d5861d965ddd8d1ae"
+    },
+    {
+      "path": "windows/runner/resources/app_icon.ico",
+      "size": 44011,
+      "sha256": "1cbe5736aa3256ccc5a99379cbc4c476bbeb56febbd3564a00cdb136b1e178ac"
+    },
+    {
+      "path": "windows/runner/runner.exe.manifest",
+      "size": 602,
+      "sha256": "825d243e9fa1542619909c1b72d09b3ed7c1f3b225bb8367c125835e5dc3f8aa"
+    },
+    {
+      "path": "windows/runner/utils.cpp",
+      "size": 2168,
+      "sha256": "6c2c87106b4b29d534c7edcafb3b7f7b9079caa3cdafa7e56671ad2adf5a2543"
+    },
+    {
+      "path": "windows/runner/utils.h",
+      "size": 672,
+      "sha256": "95a7f7dddb832997cefa937a96f89472332277e75734a5de553610760b744b03"
+    },
+    {
+      "path": "windows/runner/win32_window.cpp",
+      "size": 8534,
+      "sha256": "9065f31ccf746cf8b390121f958f9e959033af864aed779597066625ed56bc36"
+    },
+    {
+      "path": "windows/runner/win32_window.h",
+      "size": 3522,
+      "sha256": "7dd03746b19dcf3542829b2f6e8ed40a2714ce5f2cb3b0e23f0118a2fcf62d62"
+    }
+  ]
+}
