@@ -142,7 +142,10 @@ def render_markdown(manifest: dict) -> str:
         f"- Manifest scope: `{manifest['manifest_scope']}`",
         f"- Tracked files: `{manifest['file_count']}`",
         "- Excluded paths: "
-        + ", ".join(f"`{path}`" for path in manifest["excluded_paths"]),
+        + ", ".join(
+            f"`{path}`"
+            for path in manifest["excluded_paths"]
+        ),
         "",
         "## Repository Paths",
         "",
@@ -152,6 +155,7 @@ def render_markdown(manifest: dict) -> str:
 
     for entry in manifest["files"]:
         path = entry["path"].replace("|", "\\|")
+
         lines.append(
             f"| `{path}` | {entry['size']} | `{entry['sha256']}` |"
         )
@@ -175,10 +179,16 @@ def render_markdown(manifest: dict) -> str:
 def write_if_changed(path: Path, content: str) -> bool:
     if path.exists():
         current = path.read_text(encoding="utf-8")
+
         if current == content:
             return False
 
-    path.write_text(content, encoding="utf-8", newline="\n")
+    path.write_text(
+        content,
+        encoding="utf-8",
+        newline="\n",
+    )
+
     return True
 
 
@@ -186,14 +196,17 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Generate DISKPATH.json and DISKPATH.md."
     )
+
     parser.add_argument(
         "--check",
         action="store_true",
         help="Fail if generated files are not already current.",
     )
+
     args = parser.parse_args()
 
     root = repository_root()
+
     json_path = root / MANIFEST_JSON
     md_path = root / MANIFEST_MD
 
@@ -205,35 +218,62 @@ def main() -> int:
     if args.check:
         json_current = (
             json_path.exists()
-            and json_path.read_text(encoding="utf-8") == json_content
+            and json_path.read_text(encoding="utf-8")
+            == json_content
         )
+
         md_current = (
             md_path.exists()
-            and md_path.read_text(encoding="utf-8") == md_content
+            and md_path.read_text(encoding="utf-8")
+            == md_content
         )
 
         if not json_current or not md_current:
             print("DISKPATH CHECK: FAIL")
+
             if not json_current:
-                print("- DISKPATH.json is out of date or missing.")
+                print(
+                    "- DISKPATH.json is out of date or missing."
+                )
+
             if not md_current:
-                print("- DISKPATH.md is out of date or missing.")
+                print(
+                    "- DISKPATH.md is out of date or missing."
+                )
+
             return 1
 
         print(
-            f"DISKPATH CHECK: PASS ({manifest['file_count']} tracked files)"
+            "DISKPATH CHECK: PASS "
+            f"({manifest['file_count']} tracked files)"
         )
+
         return 0
 
-    json_changed = write_if_changed(json_path, json_content)
-    md_changed = write_if_changed(md_path, md_content)
+    json_changed = write_if_changed(
+        json_path,
+        json_content,
+    )
+
+    md_changed = write_if_changed(
+        md_path,
+        md_content,
+    )
 
     print(
         "DISKPATH GENERATION: PASS "
         f"({manifest['file_count']} tracked files)"
     )
-    print(f"DISKPATH.json: {'updated' if json_changed else 'current'}")
-    print(f"DISKPATH.md: {'updated' if md_changed else 'current'}")
+
+    print(
+        "DISKPATH.json: "
+        f"{'updated' if json_changed else 'current'}"
+    )
+
+    print(
+        "DISKPATH.md: "
+        f"{'updated' if md_changed else 'current'}"
+    )
 
     return 0
 
