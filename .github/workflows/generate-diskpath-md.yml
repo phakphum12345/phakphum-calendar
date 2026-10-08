@@ -4,10 +4,7 @@ on:
   workflow_dispatch:
 
   pull_request:
-    paths-ignore:
-      - "DISKPATH.json"
-      - "DISKPATH.md"
-
+  
   push:
     branches:
       - main
