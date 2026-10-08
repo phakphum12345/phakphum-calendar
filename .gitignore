@@ -54,3 +54,5 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 /android/.kotlin/
+
+.vscode/

@@ -49,7 +49,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `.github/workflows/generate-diskpath-md.yml` | 1680 | `60942776de088532c9f89de9f54579d3afab7036def54fca7096faf1190e6b99` |
 | `.github/workflows/web.yml` | 1976 | `0ec0716928e090ef398aecfa8b36aeb4a899474b75eecb23e8c09b85ddf5cad1` |
 | `.github/workflows/windows.yml` | 3105 | `fdfdaf76b97529b5f5eb1d70d53f57c189e3b6772e8d3306bcd7a177bf901636` |
-| `.gitignore` | 885 | `ef2df2e38b6ccf9af7295cb26bd630a71101fef2ffed5eae26c51b23eb09440c` |
+| `.gitignore` | 895 | `d3420b65d05078d62f4de2c8664fc77c7f4fe3b5b4c33782602b9b7f290cb1d0` |
 | `.metadata` | 1706 | `acfbaea52ff601014457c28ebe80ffc1b52132c4041b5896a82636ef1be6c6c5` |
 | `AI_GUIDE.md` | 764 | `a371137228538147759c16eeed0dcff6543d500db269cf62d564374e8d0578b3` |
 | `ARCHITECTURE.md` | 4196 | `1f7aa6dd70c192d12097cea5ca86f36ef21772aef88d48861e8ff4705547f7d5` |
