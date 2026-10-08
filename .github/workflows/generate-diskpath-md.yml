@@ -1,0 +1,68 @@
+name: Generate DISKPATH
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "DISKPATH.json"
+      - "DISKPATH.md"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: generate-diskpath
+  cancel-in-progress: true
+
+jobs:
+  generate-and-validate:
+    name: Generate and validate DISKPATH
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      - name: Generate DISKPATH
+        run: |
+          set -euo pipefail
+          python3 tools/diskpath/generate_diskpath.py
+
+      - name: Validate DISKPATH
+        run: |
+          set -euo pipefail
+          python3 tools/diskpath/validate_diskpath.py
+
+      - name: Check generated files
+        run: |
+          set -euo pipefail
+          git diff --check
+
+      - name: Commit generated manifests
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if git diff --quiet -- DISKPATH.json DISKPATH.md; then
+            echo "DISKPATH is already current."
+            exit 0
+          fi
+
+          git add DISKPATH.json DISKPATH.md
+
+          git commit -m "docs: update DISKPATH"
+
+          git push origin HEAD:main
