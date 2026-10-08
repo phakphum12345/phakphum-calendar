@@ -2,6 +2,12 @@ name: Generate DISKPATH
 
 on:
   workflow_dispatch:
+
+  pull_request:
+    paths-ignore:
+      - "DISKPATH.json"
+      - "DISKPATH.md"
+
   push:
     branches:
       - main
@@ -48,7 +54,29 @@ jobs:
           set -euo pipefail
           git diff --check
 
+      - name: Enforce DISKPATH synchronization on pull requests
+        if: github.event_name == 'pull_request'
+        run: |
+          set -euo pipefail
+
+          if ! git diff --quiet -- DISKPATH.json DISKPATH.md; then
+            echo "DISKPATH ENFORCEMENT: FAIL"
+            echo ""
+            echo "DISKPATH.json or DISKPATH.md is out of date."
+            echo "Run:"
+            echo "  python3 tools/diskpath/generate_diskpath.py"
+            echo "Then commit the generated manifests."
+            echo ""
+            git diff -- DISKPATH.json DISKPATH.md
+            exit 1
+          fi
+
+          python3 tools/diskpath/generate_diskpath.py --check
+
+          echo "DISKPATH ENFORCEMENT: PASS"
+
       - name: Commit generated manifests
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           set -euo pipefail
 
