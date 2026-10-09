@@ -46,7 +46,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `.github/workflows/README.md` | 4740 | `51638d5e46f83dc17f392ae04d8dd2999a898468c50bf0be31baab30c9969c1a` |
 | `.github/workflows/ci-auto-detect.yml` | 3719 | `c0a5d84f10b3ba4901fd3856ed87c1b3364d07729d8b9dacd15ac48a18f453f7` |
 | `.github/workflows/final-gate.yml` | 3408 | `1de8e3e51bfd7f128ebc37161229a1a36007f450cde2f6f8f319c7127d961914` |
-| `.github/workflows/generate-diskpath-md.yml` | 2345 | `d83b371cf188e80be1eed5d2d792ae29d4d3134063ea7cf2ac35dc0d053b895c` |
+| `.github/workflows/generate-diskpath-md.yml` | 2315 | `ace8d16e891134ef40b92c7d6772109c9059e0f8ce2943f8c9dfad910c627f51` |
 | `.github/workflows/web.yml` | 1976 | `0ec0716928e090ef398aecfa8b36aeb4a899474b75eecb23e8c09b85ddf5cad1` |
 | `.github/workflows/windows.yml` | 3105 | `fdfdaf76b97529b5f5eb1d70d53f57c189e3b6772e8d3306bcd7a177bf901636` |
 | `.gitignore` | 885 | `ef2df2e38b6ccf9af7295cb26bd630a71101fef2ffed5eae26c51b23eb09440c` |

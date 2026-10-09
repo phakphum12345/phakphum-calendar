@@ -12,11 +12,8 @@ on:
       - "DISKPATH.json"
       - "DISKPATH.md"
 
-permissions:
-  contents: write
-
 concurrency:
-  group: generate-diskpath
+  group: generate-diskpath-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -56,35 +53,37 @@ jobs:
         run: |
           set -euo pipefail
 
-          if ! git diff --quiet -- DISKPATH.json DISKPATH.md; then
-            echo "DISKPATH ENFORCEMENT: FAIL"
-            echo ""
-            echo "DISKPATH.json or DISKPATH.md is out of date."
-            echo "Run:"
-            echo "  python3 tools/diskpath/generate_diskpath.py"
-            echo "Then commit the generated manifests."
-            echo ""
-            git diff -- DISKPATH.json DISKPATH.md
-            exit 1
+          if git diff --quiet -- DISKPATH.json DISKPATH.md; then
+            echo "DISKPATH ENFORCEMENT: PASS"
+            echo "Generated manifests are synchronized with the repository."
+            exit 0
           fi
 
-          python3 tools/diskpath/generate_diskpath.py --check
+          echo "DISKPATH ENFORCEMENT: FAIL"
+          echo
+          echo "DISKPATH.json and/or DISKPATH.md are out of date."
+          echo "Run:"
+          echo
+          echo "  python3 tools/diskpath/generate_diskpath.py"
+          echo
+          echo "Then commit the generated files."
+          echo
+          git diff -- DISKPATH.json DISKPATH.md
+          exit 1
 
-          echo "DISKPATH ENFORCEMENT: PASS"
-
-      - name: Commit generated manifests
+      - name: Commit generated manifests on main
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
           set -euo pipefail
-
-          git config user.name "github-actions[bot]"
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
 
           if git diff --quiet -- DISKPATH.json DISKPATH.md; then
             echo "DISKPATH is already current."
             exit 0
           fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email \
+            "41898282+github-actions[bot]@users.noreply.github.com"
 
           git add DISKPATH.json DISKPATH.md
 
