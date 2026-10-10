@@ -16,6 +16,8 @@ on:
       - "integration_test/**"
       - "pubspec.yaml"
       - "pubspec.lock"
+      - "DISKPATH.json"
+      - "DISKPATH.md"
       - ".github/workflows/**"
   push:
     branches: [main]
@@ -31,6 +33,8 @@ on:
       - "integration_test/**"
       - "pubspec.yaml"
       - "pubspec.lock"
+      - "DISKPATH.json"
+      - "DISKPATH.md"
       - ".github/workflows/**"
 
 permissions:

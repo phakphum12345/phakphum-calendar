@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `733`
+- Tracked files: `736`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -43,12 +43,15 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `.codex/project.md` | 4964 | `535b4a50a65823d5c3cbb933d5340f54fd9bd8eb995a8ba47bd8247e92ac0b2d` |
 | `.codex/prompts.md` | 3504 | `1dec39a5591dec97c329c43266add5c9e492436a9826bcc9ca0fa0d6bb18f5bd` |
 | `.codex/roadmap.md` | 3272 | `201819ebdf4e490a2c7e31d0b3b7cae4d9c1f7eef3190f92ca8b698c7430d696` |
-| `.github/workflows/README.md` | 4740 | `51638d5e46f83dc17f392ae04d8dd2999a898468c50bf0be31baab30c9969c1a` |
-| `.github/workflows/ci-auto-detect.yml` | 3719 | `c0a5d84f10b3ba4901fd3856ed87c1b3364d07729d8b9dacd15ac48a18f453f7` |
-| `.github/workflows/final-gate.yml` | 3408 | `1de8e3e51bfd7f128ebc37161229a1a36007f450cde2f6f8f319c7127d961914` |
+| `.github/workflows/README.md` | 4671 | `90ade45bf43e7abbbb17d1db9b7c35a1817abe9a59872394dd224a6c2345e7b8` |
+| `.github/workflows/android.yml` | 1912 | `aea0aa2d5c63e25b6ce82cfe9a28196fdb1d34f857cd13aa8076fb9dfef0afb1` |
+| `.github/workflows/ci-auto-detect.yml` | 4070 | `3dab5c3760a11aedfa8ffa511e3686f6816934f7b77a4fad06181cbe24485d99` |
+| `.github/workflows/final-gate.yml` | 4341 | `5f7f8c37244ec4dc034a7fbdfd04e03bd2618a3384846454689afb7967b91ea1` |
 | `.github/workflows/generate-diskpath-md.yml` | 2317 | `60371bf9f1cd59e048a92411255a917d4957642f5509bc99e9a768c7367c42ed` |
-| `.github/workflows/web.yml` | 1976 | `0ec0716928e090ef398aecfa8b36aeb4a899474b75eecb23e8c09b85ddf5cad1` |
-| `.github/workflows/windows.yml` | 3105 | `fdfdaf76b97529b5f5eb1d70d53f57c189e3b6772e8d3306bcd7a177bf901636` |
+| `.github/workflows/ios.yml` | 3199 | `2dbe209e5400a98eb602322f8a11eec76bea439194b5a304010dafc891c1bfe7` |
+| `.github/workflows/linux.yml` | 2491 | `b901696b43535d362950d8af97b5c3782ce7fa284f47e17282b0a1bebff5bdae` |
+| `.github/workflows/web.yml` | 2182 | `337b69d0094fa91fd0928212b6250ed611829d94091f8d059667664c6f4b28ec` |
+| `.github/workflows/windows.yml` | 3311 | `accb06a46965008a06eff8662129cd2e884bba205c2328abc57bb8dd2e6cfe57` |
 | `.gitignore` | 885 | `ef2df2e38b6ccf9af7295cb26bd630a71101fef2ffed5eae26c51b23eb09440c` |
 | `.metadata` | 1706 | `acfbaea52ff601014457c28ebe80ffc1b52132c4041b5896a82636ef1be6c6c5` |
 | `AI_GUIDE.md` | 764 | `a371137228538147759c16eeed0dcff6543d500db269cf62d564374e8d0578b3` |
@@ -176,7 +179,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `docs/INTEGRATION_STATUS.md` | 1213 | `3f1f58a1b84f313c7685d82761f6d8dcb2768f3b8a24428894425b54343cbcab` |
 | `docs/NEW_APP_STRUCTURE_TH.md` | 9311 | `d5ac9ae4f7ecd84082008da5506af13729ef81450d3c31e1a8bc214e4550f6ff` |
 | `docs/PARSER_FOUNDATION.md` | 1548 | `b8d62f7396066e46f9c2c74a75448c23e78acc3f0ddfe625eac1af9d396295c9` |
-| `docs/PLATFORM_SUPPORT.md` | 2155 | `35c8631217c9c3f356096e02ced902a39f692ef118927c1623328c9a6952e701` |
+| `docs/PLATFORM_SUPPORT.md` | 2207 | `519f4deb785d0f8d972c541dae211d518d85efd11e0ce155385b6a885b4c43d3` |
 | `docs/PROJECT_AUDIT.md` | 23667 | `c833f9d4e5b55e994bf82a4656240e60bc75257407f917c9673995d62c4fc46f` |
 | `docs/REAL_ROSTER_PROFILE.md` | 1316 | `29c63cc02f2a49550489c35649dd265ec9114a9518c4d600ce4dad5be1913e5d` |
 | `docs/SCE_3_0_IMPLEMENTATION_MAP.md` | 3052 | `e969fdc2a6e9507781782db27df28e9c75cb5979479c14d26bdbcfdbc1b67432` |

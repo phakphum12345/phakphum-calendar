@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 733,
+  "file_count": 736,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -78,18 +78,23 @@
     },
     {
       "path": ".github/workflows/README.md",
-      "size": 4740,
-      "sha256": "51638d5e46f83dc17f392ae04d8dd2999a898468c50bf0be31baab30c9969c1a"
+      "size": 4671,
+      "sha256": "90ade45bf43e7abbbb17d1db9b7c35a1817abe9a59872394dd224a6c2345e7b8"
+    },
+    {
+      "path": ".github/workflows/android.yml",
+      "size": 1912,
+      "sha256": "aea0aa2d5c63e25b6ce82cfe9a28196fdb1d34f857cd13aa8076fb9dfef0afb1"
     },
     {
       "path": ".github/workflows/ci-auto-detect.yml",
-      "size": 3719,
-      "sha256": "c0a5d84f10b3ba4901fd3856ed87c1b3364d07729d8b9dacd15ac48a18f453f7"
+      "size": 4070,
+      "sha256": "3dab5c3760a11aedfa8ffa511e3686f6816934f7b77a4fad06181cbe24485d99"
     },
     {
       "path": ".github/workflows/final-gate.yml",
-      "size": 3408,
-      "sha256": "1de8e3e51bfd7f128ebc37161229a1a36007f450cde2f6f8f319c7127d961914"
+      "size": 4341,
+      "sha256": "5f7f8c37244ec4dc034a7fbdfd04e03bd2618a3384846454689afb7967b91ea1"
     },
     {
       "path": ".github/workflows/generate-diskpath-md.yml",
@@ -97,14 +102,24 @@
       "sha256": "60371bf9f1cd59e048a92411255a917d4957642f5509bc99e9a768c7367c42ed"
     },
     {
+      "path": ".github/workflows/ios.yml",
+      "size": 3199,
+      "sha256": "2dbe209e5400a98eb602322f8a11eec76bea439194b5a304010dafc891c1bfe7"
+    },
+    {
+      "path": ".github/workflows/linux.yml",
+      "size": 2491,
+      "sha256": "b901696b43535d362950d8af97b5c3782ce7fa284f47e17282b0a1bebff5bdae"
+    },
+    {
       "path": ".github/workflows/web.yml",
-      "size": 1976,
-      "sha256": "0ec0716928e090ef398aecfa8b36aeb4a899474b75eecb23e8c09b85ddf5cad1"
+      "size": 2182,
+      "sha256": "337b69d0094fa91fd0928212b6250ed611829d94091f8d059667664c6f4b28ec"
     },
     {
       "path": ".github/workflows/windows.yml",
-      "size": 3105,
-      "sha256": "fdfdaf76b97529b5f5eb1d70d53f57c189e3b6772e8d3306bcd7a177bf901636"
+      "size": 3311,
+      "sha256": "accb06a46965008a06eff8662129cd2e884bba205c2328abc57bb8dd2e6cfe57"
     },
     {
       "path": ".gitignore",
@@ -743,8 +758,8 @@
     },
     {
       "path": "docs/PLATFORM_SUPPORT.md",
-      "size": 2155,
-      "sha256": "35c8631217c9c3f356096e02ced902a39f692ef118927c1623328c9a6952e701"
+      "size": 2207,
+      "sha256": "519f4deb785d0f8d972c541dae211d518d85efd11e0ce155385b6a885b4c43d3"
     },
     {
       "path": "docs/PROJECT_AUDIT.md",
