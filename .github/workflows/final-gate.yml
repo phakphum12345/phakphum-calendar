@@ -1,4 +1,4 @@
-﻿name: Final Gate
+name: Final Gate
 
 on:
   push:
@@ -52,6 +52,7 @@ jobs:
           set -euo pipefail
 
           SHA="$EVENT_SHA"
+          export SHA
           echo "Final Gate collector SHA: $SHA"
 
           get_run_state() {
