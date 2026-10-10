@@ -2,43 +2,40 @@
 
 ## Current release scope
 
-The project is intentionally stabilized around two delivery targets:
+The active build and delivery pipeline covers five targets:
 
 1. **Windows x64** — packaged release ZIP with SHA-256 checksum.
 2. **Web** — Flutter Web release deployed to GitHub Pages.
+3. **Android** — release APK artifact (debug-key signed; not Play Store ready).
+4. **iOS** — unsigned release app artifact (not App Store ready).
+5. **Linux x64** — release application bundle archive.
 
-These are the only platforms that should participate in the active release
-pipeline during the current stabilization phase.
+Android, iOS, and Linux builds validate and publish downloadable CI artifacts.
+Mobile distribution still requires the appropriate production signing setup.
 
 | Platform | Product source | Release CI/CD | Status |
 | --- | --- | --- | --- |
 | Windows x64 | Yes | `.github/workflows/windows.yml` | Supported |
 | Web | Yes | `.github/workflows/web.yml` | Supported |
-| Android | Preserved for now | None | Paused |
-| iOS | Preserved for now | None | Paused |
+| Android | Yes | `.github/workflows/android.yml` | Build supported |
+| iOS | Yes | `.github/workflows/ios.yml` | Unsigned build supported |
 | macOS | Preserved for now | None | Paused |
-| Linux | Preserved for now | None | Paused |
+| Linux x64 | Yes | `.github/workflows/linux.yml` | Build supported |
 | Backend/Laravel | Preserved if present | None | Paused |
 
-## Why source folders are not deleted yet
+## Build artifacts and distribution
 
-The stabilization change removes **delivery responsibility**, not source code.
-Deleting Flutter platform directories immediately would be a destructive
-migration and could make future re-enablement harder. The first safety step
-is therefore to remove their CI/CD gates and keep the repository build surface
-small.
-
-A platform should only be physically removed later if there is an explicit
-product decision to delete that source permanently.
+The Android, iOS, and Linux workflows build artifacts without making mobile
+store signing a prerequisite. These artifacts prove the app compiles for each
+target; they do not replace production signing or store release workflows.
 
 ## Failure containment
 
-The active Windows/Web release path must not depend on:
+Build workflows must not depend on:
 
 - `integration_test/` existing;
 - coverage files such as `coverage/lcov.info`;
-- Android/iOS/macOS/Linux SDKs;
-- mobile signing credentials;
+- production Android/iOS signing credentials;
 - backend/Laravel services;
 - broad repository validation jobs.
 
@@ -46,9 +43,9 @@ This prevents the previously observed failures—missing `integration_test/`,
 formatter self-modification, and missing coverage artifacts—from blocking the
 supported release targets.
 
-## Re-enable procedure
+## Add another platform procedure
 
-To re-enable a paused platform, add a dedicated workflow only after:
+To add another platform, add a dedicated workflow only after:
 
 1. the platform has an explicit product requirement;
 2. its build/signing prerequisites are documented;

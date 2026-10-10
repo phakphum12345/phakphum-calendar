@@ -24,6 +24,9 @@ jobs:
       has_integration_tests: ${{ steps.detect.outputs.has_integration_tests }}
       has_web: ${{ steps.detect.outputs.has_web }}
       has_windows: ${{ steps.detect.outputs.has_windows }}
+      has_android: ${{ steps.detect.outputs.has_android }}
+      has_ios: ${{ steps.detect.outputs.has_ios }}
+      has_linux: ${{ steps.detect.outputs.has_linux }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -122,3 +125,6 @@ jobs:
           echo "Integration tests: ${{ needs.detect.outputs.has_integration_tests }}"
           echo "Web: ${{ needs.detect.outputs.has_web }}"
           echo "Windows: ${{ needs.detect.outputs.has_windows }}"
+          echo "Android: ${{ needs.detect.outputs.has_android }}"
+          echo "iOS: ${{ needs.detect.outputs.has_ios }}"
+          echo "Linux: ${{ needs.detect.outputs.has_linux }}"

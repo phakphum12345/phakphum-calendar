@@ -7,6 +7,9 @@ on:
     paths:
       - "lib/**"
       - "assets/**"
+      - "android/**"
+      - "ios/**"
+      - "linux/**"
       - "windows/**"
       - "web/**"
       - "test/**"
@@ -19,6 +22,9 @@ on:
     paths:
       - "lib/**"
       - "assets/**"
+      - "android/**"
+      - "ios/**"
+      - "linux/**"
       - "windows/**"
       - "web/**"
       - "test/**"

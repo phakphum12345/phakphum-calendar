@@ -1,4 +1,4 @@
-name: Build and Deploy Web
+name: Build Android
 
 on:
   workflow_dispatch:
@@ -37,14 +37,14 @@ permissions:
   contents: read
 
 concurrency:
-  group: pages-${{ github.workflow }}-${{ github.ref }}
+  group: android-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-web:
-    name: Build Flutter web
+  build-android:
+    name: Android APK release build
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
 
     steps:
       - name: Checkout repository
@@ -60,28 +60,20 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build web release
+      - name: Build Android release APK
         env:
-          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
-        run: |
-          REPO_NAME="${GITHUB_REPOSITORY#*/}"
-          flutter build web --release --base-href "/$REPO_NAME/" \
-            --dart-define=GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID" \
-            --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID"
+        run: >-
+          flutter build apk --release
+          --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID"
 
-      - name: Verify web output
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f build/web/index.html
-          test -d build/web/assets
-          echo "WEB BUILD PASS"
+      - name: Verify Android APK
+        run: test -s build/app/outputs/flutter-apk/app-release.apk
 
-      - name: Upload downloadable web build
+      - name: Upload Android APK
         uses: actions/upload-artifact@v7
         with:
-          name: phakphum-calendar-web
-          path: build/web
+          name: phakphum-calendar-android-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
           if-no-files-found: error
           retention-days: 14

@@ -4,9 +4,11 @@ on:
   workflow_dispatch:
   workflow_run:
     workflows:
-      - Auto Detect CI
       - Build Windows
       - Build and Deploy Web
+      - Build Android
+      - Build iOS
+      - Build Linux
     types: [completed]
 
 permissions:
@@ -19,11 +21,11 @@ concurrency:
 
 jobs:
   final-gate:
-    name: Analyze + Test + Windows + Web verification
+    name: Quality + five platform build verification
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.head_branch == 'main' &&
-       github.event.workflow_run.conclusion == 'success')
+       github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
@@ -50,31 +52,46 @@ jobs:
 
           echo "Final-gate commit: $SHA"
 
-          get_successful_run() {
+          get_run_conclusion() {
             local workflow="$1"
             gh api \
               -H 'Accept: application/vnd.github+json' \
               "/repos/${REPOSITORY}/actions/workflows/${workflow}/runs?branch=main&head_sha=${SHA}&status=completed&per_page=20" \
-              --jq '.workflow_runs[] | select(.conclusion == "success") | .id' \
-              | head -n 1
+              --jq '.workflow_runs[0].conclusion // empty'
           }
 
           for attempt in {1..20}; do
-            QUALITY_RUN="$(get_successful_run ci-auto-detect.yml || true)"
-            WINDOWS_RUN="$(get_successful_run windows.yml || true)"
-            WEB_RUN="$(get_successful_run web.yml || true)"
+            QUALITY_RESULT="$(get_run_conclusion ci-auto-detect.yml || true)"
+            WINDOWS_RESULT="$(get_run_conclusion windows.yml || true)"
+            WEB_RESULT="$(get_run_conclusion web.yml || true)"
+            ANDROID_RESULT="$(get_run_conclusion android.yml || true)"
+            IOS_RESULT="$(get_run_conclusion ios.yml || true)"
+            LINUX_RESULT="$(get_run_conclusion linux.yml || true)"
 
             echo "Evidence check ${attempt}/20"
-            echo "Quality:  ${QUALITY_RUN:-PENDING}"
-            echo "Windows:  ${WINDOWS_RUN:-PENDING}"
-            echo "Website:  ${WEB_RUN:-PENDING}"
+            echo "Quality:  ${QUALITY_RESULT:-PENDING}"
+            echo "Windows:  ${WINDOWS_RESULT:-PENDING}"
+            echo "Web:      ${WEB_RESULT:-PENDING}"
+            echo "Android:  ${ANDROID_RESULT:-PENDING}"
+            echo "iOS:      ${IOS_RESULT:-PENDING}"
+            echo "Linux:    ${LINUX_RESULT:-PENDING}"
 
-            if [[ -n "$QUALITY_RUN" && -n "$WINDOWS_RUN" && -n "$WEB_RUN" ]]; then
-              echo "QUALITY PASS: $QUALITY_RUN"
-              echo "WINDOWS PASS: $WINDOWS_RUN"
-              echo "WEB PASS: $WEB_RUN"
-              echo "FINAL PASS"
-              exit 0
+            if [[ -n "$QUALITY_RESULT" && -n "$WINDOWS_RESULT" &&
+                  -n "$WEB_RESULT" &&
+                  -n "$ANDROID_RESULT" && -n "$IOS_RESULT" &&
+                  -n "$LINUX_RESULT" ]]; then
+              if [[ "$QUALITY_RESULT" == "success" &&
+                    "$WINDOWS_RESULT" == "success" &&
+                    "$WEB_RESULT" == "success" &&
+                    "$ANDROID_RESULT" == "success" &&
+                    "$IOS_RESULT" == "success" &&
+                    "$LINUX_RESULT" == "success" ]]; then
+                echo "FINAL PASS: Quality + Windows + Web + Android + iOS + Linux."
+                exit 0
+              fi
+
+              echo "ERROR: one or more platform builds failed for commit $SHA."
+              exit 1
             fi
 
             if [[ "$attempt" -lt 20 ]]; then
@@ -83,7 +100,7 @@ jobs:
           done
 
           echo "ERROR: required PASS evidence was not available for commit $SHA within the Final Gate wait window."
-          echo "Required: Auto Detect CI + Windows + Web on the same commit."
+          echo "Required: Auto Detect CI + Windows + Web + Android + iOS + Linux on the same commit."
           exit 1
 
       - name: Verify supported delivery structure
@@ -92,15 +109,18 @@ jobs:
           set -euo pipefail
           test -d windows
           test -d web
+          test -d android
+          test -d ios
+          test -d linux
           test -f pubspec.yaml
           test -f .github/workflows/ci-auto-detect.yml
           test -f .github/workflows/windows.yml
           test -f .github/workflows/web.yml
+          test -f .github/workflows/android.yml
+          test -f .github/workflows/ios.yml
+          test -f .github/workflows/linux.yml
           test -f .github/workflows/final-gate.yml
           test ! -f .github/workflows/flutter-ci.yaml
           test ! -f .github/workflows/flutter-web-deploy.yaml
-          test ! -f .github/workflows/android.yml
-          test ! -f .github/workflows/ios.yml
           test ! -f .github/workflows/macos.yml
-          test ! -f .github/workflows/linux.yml
-          echo 'MAIN VERIFIED: Quality + Windows + Web active; Android/iOS/macOS/Linux paused.'
+          echo 'MAIN VERIFIED: Windows + Web + Android + iOS + Linux active; macOS paused.'
