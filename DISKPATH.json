@@ -93,8 +93,8 @@
     },
     {
       "path": ".github/workflows/final-gate.yml",
-      "size": 4341,
-      "sha256": "b69d1fa8ae245c42438ba9e36bdfc6d7df43ec31d2b2d732fc2cebbdac8e33ca"
+      "size": 4588,
+      "sha256": "40d606276d313400fc90d52b8bb1a3c333c14cc908f8c3205a99ad0ac837ffde"
     },
     {
       "path": ".github/workflows/generate-diskpath-md.yml",
