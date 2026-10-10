@@ -176,15 +176,15 @@ class AppDependencies {
            SharedPreferencesShiftTemplateRepository(),
        scheduleRepository =
            scheduleRepository ?? SharedPreferencesScheduleRepository(),
-       workflowMessageProvider = workflowMessageProviderOverride ??
+       workflowMessageProvider =
+           workflowMessageProviderOverride ??
            ((key) => workflowMessageFor(AppLocalizationsTh(), key));
 
   /// Creates the dependency graph used by the production application.
   factory AppDependencies.production({
     String? Function(String key)? workflowMessageProvider,
-  }) => AppDependencies(
-    workflowMessageProviderOverride: workflowMessageProvider,
-  );
+  }) =>
+      AppDependencies(workflowMessageProviderOverride: workflowMessageProvider);
 
   final GoogleAuthGateway googleAuthService;
   final AppSettingsStore legacySettingsService;
@@ -321,6 +321,7 @@ class AppDependencies {
     return EmployeeDirectoryController(
       schedule: schedule,
       repository: employeeRepository,
+      googleAuth: googleAuthService,
     );
   }
 

@@ -214,6 +214,7 @@ class AppController extends ChangeNotifier implements ControllerState {
   Set<String> existingKeys = {};
   Map<String, RosterAssignmentTimeline> _revisionTimelines = const {};
   int _loadedRevisionCount = 0;
+  String? timelineWarning;
   List<String> sheetTitles = [];
   Set<String> pinnedToolIds = {...defaultPinnedToolIds};
   bool initialized = false;
@@ -705,17 +706,45 @@ class AppController extends ChangeNotifier implements ControllerState {
         _currentAllRosterShifts = _filterToSyncDateRange(
           _currentAllRosterShifts,
         );
-          // Generate timelines on-demand without keeping revision exports.
-          final generator = RosterTimelineGenerator();
-          final timelines = generator.generateFromDocuments([
-            RosterRevisionDocument(
-              revisionId: 'current',
-              modifiedAt: DateTime.now(),
-              snapshots: snapshots,
-            )
-          ]);
-          _revisionTimelines = timelines;
-          _loadedRevisionCount = 1;
+        final currentRevision = RosterRevisionDocument(
+          revisionId: 'current',
+          modifiedAt: DateTime.now(),
+          snapshots: snapshots,
+        );
+        final timelineGenerator = const RosterTimelineGenerator();
+        if (background && _loadedRevisionCount > 0) {
+          timelineWarning =
+              'ใช้ประวัติ Timeline จากการอ่านล่าสุด; '
+              'กดอ่านใหม่เพื่อโหลด revision ล่าสุดจาก Drive';
+        } else {
+          timelineWarning = null;
+          try {
+            final historicalRevisions = await const RosterRevisionService()
+                .readHistoryTransient(client, spreadsheetId);
+            _loadedRevisionCount = historicalRevisions.length + 1;
+            _revisionTimelines = timelineGenerator.generateFromDocuments([
+              ...historicalRevisions,
+              currentRevision,
+            ]);
+            if (historicalRevisions.isEmpty) {
+              timelineWarning =
+                  'Google Drive ไม่พบประวัติ revision ที่อ่านได้ '
+                  'จึงแสดงเฉพาะรายชื่อเวรปัจจุบัน';
+            }
+          } on Object catch (caught, stackTrace) {
+            _loadedRevisionCount = 1;
+            _revisionTimelines = timelineGenerator.generateFromDocuments([
+              currentRevision,
+            ]);
+            timelineWarning =
+                'อ่านประวัติ Timeline จาก Google Drive ไม่สำเร็จ: $caught';
+            await _addAudit('sheet.timeline.failed', timelineWarning!, false);
+            debugPrintStack(
+              label: 'Could not load Google Sheets revision timeline',
+              stackTrace: stackTrace,
+            );
+          }
+        }
         final periods = _periodsForShifts(rangedParsed);
         _replaceLegacyShifts(
           _alertService.addOffDutyPeriods(
@@ -737,7 +766,8 @@ class AppController extends ChangeNotifier implements ControllerState {
             'จาก ${periods.length} เดือน • '
             '${syncRangeStart == null || syncRangeEnd == null ? '' : 'ช่วง ${_dateLabel(syncRangeStart!)}–${_dateLabel(syncRangeEnd!)} • '}'
             'อ่านสีจากไฟล์หลัก $colorCount รายการ • '
-            'Timeline $_loadedRevisionCount revision • '
+            'Timeline $_loadedRevisionCount revision'
+            '${timelineWarning == null ? '' : ' • $timelineWarning'} • '
             'สร้าง OFF $offCount รายการ • รอตัดสินใจ $pendingAlertCount รายการ';
         await _addAudit(
           'sheet.read',
@@ -808,6 +838,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       _currentAllRosterShifts = _filterToSyncDateRange(_currentAllRosterShifts);
       _revisionTimelines = const {};
       _loadedRevisionCount = 0;
+      timelineWarning = null;
       _replaceLegacyShifts(
         _alertService.addOffDutyPeriods(
           _applyReferenceRelationships(rangedParsed),
@@ -1262,7 +1293,8 @@ class AppController extends ChangeNotifier implements ControllerState {
   /// Prepares a preview for a pre-mapped list of desired calendar event
   /// candidates (used for swap/one-off previews) and returns the computed diff.
   Future<CalendarDiff> previewCandidates(
-      List<CalendarEventCandidate> desired) async {
+    List<CalendarEventCandidate> desired,
+  ) async {
     final workflow = await _calendarWorkflowControllerFactory();
     try {
       await workflow.prepareCandidatePreview(desired: desired);
@@ -1668,6 +1700,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       _referenceAllRosterShifts = [];
       _revisionTimelines = const {};
       _loadedRevisionCount = 0;
+      timelineWarning = null;
       _loadedRosterShifts = [];
       syncRangeStart = null;
       syncRangeEnd = null;

@@ -105,8 +105,8 @@ class RosterRevisionService implements RosterRevisionGateway {
     final effectivePageSize = pageSize < 1
         ? 1
         : pageSize > 1000
-            ? 1000
-            : pageSize;
+        ? 1000
+        : pageSize;
     String? pageToken;
     do {
       final response = await api.revisions.list(
@@ -171,7 +171,12 @@ class RosterRevisionService implements RosterRevisionGateway {
 
     try {
       final response = await client.get(Uri.parse(exportUrl));
-      if (response.statusCode < 200 || response.statusCode >= 300) return null;
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw StateError(
+          'Could not download revision $revisionId '
+          '(HTTP ${response.statusCode}).',
+        );
+      }
       final document = fileReader.readBytes(
         name: 'revision-$revisionId.xlsx',
         bytes: response.bodyBytes,
@@ -207,7 +212,12 @@ class RosterRevisionService implements RosterRevisionGateway {
 
     try {
       final response = await client.get(Uri.parse(exportUrl));
-      if (response.statusCode < 200 || response.statusCode >= 300) return null;
+      if (response.statusCode < 200 || response.statusCode >= 300) {
+        throw StateError(
+          'Could not download revision $revisionId '
+          '(HTTP ${response.statusCode}).',
+        );
+      }
       final document = fileReader.readBytes(
         name: 'revision-$revisionId.xlsx',
         bytes: response.bodyBytes,
@@ -218,8 +228,11 @@ class RosterRevisionService implements RosterRevisionGateway {
         snapshots: document.snapshots,
       );
       return result;
-    } catch (_) {
-      return null;
+    } on Object catch (error, stackTrace) {
+      Error.throwWithStackTrace(
+        StateError('Could not read Google Sheets revision $revisionId: $error'),
+        stackTrace,
+      );
     }
   }
 }

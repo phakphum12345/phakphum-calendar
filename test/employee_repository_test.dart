@@ -91,6 +91,35 @@ void main() {
       expect(restored, employee);
     },
   );
+
+  test('employee repository saves a complete directory atomically', () async {
+    final store = _MemoryEmployeeStore();
+    final repository = SharedPreferencesEmployeeRepository(store: store);
+    final second = employee.copyWith(
+      id: 'employee-2',
+      employeeCode: 'E002',
+      firstName: 'สมหญิง',
+    );
+
+    expect(await repository.saveAll([employee, second]), isA<Success>());
+    expect(
+      (await repository.findAll(activeOnly: false) as Success<List<Employee>>)
+          .value,
+      [employee, second],
+    );
+    expect(
+      await repository.saveAll([
+        employee,
+        second.copyWith(employeeCode: 'E001'),
+      ]),
+      isA<ValidationFailure<List<Employee>>>(),
+    );
+    expect(
+      (await repository.findAll(activeOnly: false) as Success<List<Employee>>)
+          .value,
+      [employee, second],
+    );
+  });
 }
 
 class _MemoryEmployeeStore implements EmployeeKeyValueStore {
