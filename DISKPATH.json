@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 736,
+  "file_count": 737,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -103,8 +103,8 @@
     },
     {
       "path": ".github/workflows/ios.yml",
-      "size": 3199,
-      "sha256": "2dbe209e5400a98eb602322f8a11eec76bea439194b5a304010dafc891c1bfe7"
+      "size": 3314,
+      "sha256": "5f55449deb3a0238e8d89c036e858168c90dbd6f5441482b94cc1be3e5752333"
     },
     {
       "path": ".github/workflows/linux.yml",
@@ -370,6 +370,11 @@
       "path": "android/settings.gradle.kts",
       "size": 771,
       "sha256": "b76d554153a63772dddbe2ee91abdf582f5f871af40698b80a2ef7b70903d96f"
+    },
+    {
+      "path": "artifacts/ios/phakphum-calendar-unsigned.ipa",
+      "size": 12475880,
+      "sha256": "4c0d1f75669f6d4c94331b694e5e899075d9f9a170c3adec6af231b31026cbc3"
     },
     {
       "path": "assets/app_icon_master.png",
@@ -3558,13 +3563,13 @@
     },
     {
       "path": "tools/diskpath/generate_diskpath.py",
-      "size": 6212,
-      "sha256": "83867789562a0f0f86a830d26b6cd4d12952a4720217e082d9f7b1f19ae9106d"
+      "size": 6331,
+      "sha256": "06c2e778414b6f58b433fcfc261564f40225a2e7bc1f44514195b8558b94793e"
     },
     {
       "path": "tools/diskpath/validate_diskpath.py",
-      "size": 7386,
-      "sha256": "fa12b8739246d6bfac8ebeef7aaae4caf7ddbc6805ff88f0a768c33596214b51"
+      "size": 7564,
+      "sha256": "b7988a31006b42abc37e53483b309594cdddde0ad038985c19141e7bff3adf2e"
     },
     {
       "path": "web/favicon.png",

@@ -19,9 +19,6 @@ EXCLUDED_PATHS = {
     "DISKPATH.md",
 }
 
-CHUNK_SIZE = 1024 * 1024
-
-
 def fail(message: str) -> int:
     print(f"DISKPATH VALIDATION: FAIL - {message}")
     return 1
@@ -37,36 +34,33 @@ def repository_root() -> Path:
     return Path(result.stdout.strip()).resolve()
 
 
-def tracked_paths(root: Path) -> list[str]:
+def tracked_blobs(root: Path) -> list[tuple[str, str]]:
     result = subprocess.run(
-        ["git", "ls-files", "-z"],
+        ["git", "ls-files", "--stage", "-z"],
         cwd=root,
         check=True,
         capture_output=True,
     )
+    files = []
+    for record in result.stdout.split(b"\0"):
+        if not record:
+            continue
+        metadata, raw_path = record.split(b"\t", 1)
+        mode, oid, stage = metadata.decode("ascii").split()
+        path = raw_path.decode("utf-8")
+        if stage == "0" and mode in ("100644", "100755") and path not in EXCLUDED_PATHS:
+            files.append((path, oid))
+    return sorted(files)
 
-    paths = result.stdout.decode("utf-8").split("\0")
 
-    return sorted(
-        path
-        for path in paths
-        if path
-        and path not in EXCLUDED_PATHS
-        and (root / path).is_file()
+def git_blob(root: Path, oid: str) -> bytes:
+    result = subprocess.run(
+        ["git", "cat-file", "blob", oid],
+        cwd=root,
+        check=True,
+        capture_output=True,
     )
-
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-
-    with path.open("rb") as handle:
-        while True:
-            chunk = handle.read(CHUNK_SIZE)
-            if not chunk:
-                break
-            digest.update(chunk)
-
-    return digest.hexdigest()
+    return result.stdout
 
 
 def load_manifest() -> dict:
@@ -142,7 +136,8 @@ def validate_schema(manifest: dict) -> None:
 
 
 def validate_entries(root: Path, manifest: dict) -> None:
-    expected_paths = tracked_paths(root)
+    blobs = dict(tracked_blobs(root))
+    expected_paths = sorted(blobs)
 
     manifest_entries = manifest["files"]
 
@@ -231,10 +226,9 @@ def validate_entries(root: Path, manifest: dict) -> None:
     }
 
     for path in expected_paths:
-        absolute = root / path
         entry = entries_by_path[path]
-
-        actual_size = absolute.stat().st_size
+        content = git_blob(root, blobs[path])
+        actual_size = len(content)
 
         if actual_size != entry["size"]:
             raise ValueError(
@@ -243,7 +237,7 @@ def validate_entries(root: Path, manifest: dict) -> None:
                 f"actual={actual_size}"
             )
 
-        actual_sha256 = sha256_file(absolute)
+        actual_sha256 = hashlib.sha256(content).hexdigest()
 
         if actual_sha256 != entry["sha256"]:
             raise ValueError(

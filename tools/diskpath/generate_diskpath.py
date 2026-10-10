@@ -30,9 +30,6 @@ EXCLUDED_PATHS = (
     "DISKPATH.md",
 )
 
-CHUNK_SIZE = 1024 * 1024
-
-
 def repository_root() -> Path:
     result = subprocess.run(
         ["git", "rev-parse", "--show-toplevel"],
@@ -43,49 +40,45 @@ def repository_root() -> Path:
     return Path(result.stdout.strip()).resolve()
 
 
-def tracked_paths(root: Path) -> list[str]:
+def tracked_blobs(root: Path) -> list[tuple[str, str]]:
     result = subprocess.run(
-        ["git", "ls-files", "-z"],
+        ["git", "ls-files", "--stage", "-z"],
         cwd=root,
         check=True,
         capture_output=True,
     )
+    files = []
+    for record in result.stdout.split(b"\0"):
+        if not record:
+            continue
+        metadata, raw_path = record.split(b"\t", 1)
+        mode, oid, stage = metadata.decode("ascii").split()
+        path = raw_path.decode("utf-8")
+        if stage == "0" and mode in ("100644", "100755") and path not in EXCLUDED_PATHS:
+            files.append((path, oid))
+    return sorted(files)
 
-    paths = result.stdout.decode("utf-8").split("\0")
 
-    return sorted(
-        path
-        for path in paths
-        if path
-        and path not in EXCLUDED_PATHS
-        and (root / path).is_file()
+def git_blob(root: Path, oid: str) -> bytes:
+    result = subprocess.run(
+        ["git", "cat-file", "blob", oid],
+        cwd=root,
+        check=True,
+        capture_output=True,
     )
-
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-
-    with path.open("rb") as handle:
-        while True:
-            chunk = handle.read(CHUNK_SIZE)
-            if not chunk:
-                break
-            digest.update(chunk)
-
-    return digest.hexdigest()
+    return result.stdout
 
 
 def build_manifest(root: Path) -> dict:
     files = []
 
-    for relative_path in tracked_paths(root):
-        absolute_path = root / relative_path
-
+    for relative_path, oid in tracked_blobs(root):
+        content = git_blob(root, oid)
         files.append(
             {
                 "path": relative_path,
-                "size": absolute_path.stat().st_size,
-                "sha256": sha256_file(absolute_path),
+                "size": len(content),
+                "sha256": hashlib.sha256(content).hexdigest(),
             }
         )
 

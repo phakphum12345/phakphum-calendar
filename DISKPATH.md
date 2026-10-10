@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `736`
+- Tracked files: `737`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -48,7 +48,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `.github/workflows/ci-auto-detect.yml` | 4070 | `3dab5c3760a11aedfa8ffa511e3686f6816934f7b77a4fad06181cbe24485d99` |
 | `.github/workflows/final-gate.yml` | 4341 | `5f7f8c37244ec4dc034a7fbdfd04e03bd2618a3384846454689afb7967b91ea1` |
 | `.github/workflows/generate-diskpath-md.yml` | 2317 | `60371bf9f1cd59e048a92411255a917d4957642f5509bc99e9a768c7367c42ed` |
-| `.github/workflows/ios.yml` | 3199 | `2dbe209e5400a98eb602322f8a11eec76bea439194b5a304010dafc891c1bfe7` |
+| `.github/workflows/ios.yml` | 3314 | `5f55449deb3a0238e8d89c036e858168c90dbd6f5441482b94cc1be3e5752333` |
 | `.github/workflows/linux.yml` | 2491 | `b901696b43535d362950d8af97b5c3782ce7fa284f47e17282b0a1bebff5bdae` |
 | `.github/workflows/web.yml` | 2182 | `337b69d0094fa91fd0928212b6250ed611829d94091f8d059667664c6f4b28ec` |
 | `.github/workflows/windows.yml` | 3311 | `accb06a46965008a06eff8662129cd2e884bba205c2328abc57bb8dd2e6cfe57` |
@@ -102,6 +102,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `android/gradle.properties` | 457 | `abf5a6fdadbd2420d8f10da4fa75e9469e7802c7d4e2c9cec9e86ba8a5e553c8` |
 | `android/gradle/wrapper/gradle-wrapper.properties` | 202 | `3221993eac1057198d652b7437105e2953ca4850d415eb0eb2b9625874fd059e` |
 | `android/settings.gradle.kts` | 771 | `b76d554153a63772dddbe2ee91abdf582f5f871af40698b80a2ef7b70903d96f` |
+| `artifacts/ios/phakphum-calendar-unsigned.ipa` | 12475880 | `4c0d1f75669f6d4c94331b694e5e899075d9f9a170c3adec6af231b31026cbc3` |
 | `assets/app_icon_master.png` | 874012 | `b8e81b47ba02626f4fd572560150129718bb5df5496cd49e0ceb4e6be676cd6d` |
 | `backend/.editorconfig` | 275 | `fe39e0ad06edea8e256e44f1fc4f319a8acfa785a7470af5cf6b9ed12dc34406` |
 | `backend/.env.example` | 1096 | `7521e5f490dd728d443580a25764558832e836ea196bba92e3967ce03adb85c9` |
@@ -739,8 +740,8 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/v2/shift_exchange_request_test.dart` | 927 | `9187f583afc132ba5b4150ae721afeffbd378317f595360e91d3b2ae1986cafa` |
 | `test/v2/simulation_engine_test.dart` | 3350 | `afd78813d7fd952a7a609886a5e92dbecea1699a218f9969c265409a4f29a16c` |
 | `test/widget_test.dart` | 16545 | `8c5f18aa8446be316a3f843d7fea41e57a560ca1e2ff159a0af24fec0c1f489e` |
-| `tools/diskpath/generate_diskpath.py` | 6212 | `83867789562a0f0f86a830d26b6cd4d12952a4720217e082d9f7b1f19ae9106d` |
-| `tools/diskpath/validate_diskpath.py` | 7386 | `fa12b8739246d6bfac8ebeef7aaae4caf7ddbc6805ff88f0a768c33596214b51` |
+| `tools/diskpath/generate_diskpath.py` | 6331 | `06c2e778414b6f58b433fcfc261564f40225a2e7bc1f44514195b8558b94793e` |
+| `tools/diskpath/validate_diskpath.py` | 7564 | `b7988a31006b42abc37e53483b309594cdddde0ad038985c19141e7bff3adf2e` |
 | `web/favicon.png` | 485 | `fffdc8a0b1d523bedd692ece9542b994b062f9a48fbeb8481bb09822b5fe93bf` |
 | `web/icons/Icon-192.png` | 24513 | `54b454fef92c7ed8d0d02b942416c131937c95d843ee19dfc77acab5c1f02a74` |
 | `web/icons/Icon-512.png` | 177891 | `4cdd129b10738dc9b3964842c0903503db53e8e062d53f81a21843215d924d78` |
