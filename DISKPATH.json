@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 731,
+  "file_count": 733,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -178,8 +178,8 @@
     },
     {
       "path": "README.md",
-      "size": 49299,
-      "sha256": "7ffbca2d102e0303019c49f6a2c58bcdb46f8fc08ae83452f666519de7a86417"
+      "size": 51204,
+      "sha256": "7e6e43108660d6670717466d6f24b6082d115657e7c97a6d7d473cda464535f1"
     },
     {
       "path": "ROADMAP.md",
@@ -718,8 +718,8 @@
     },
     {
       "path": "docs/GOOGLE_SETUP.md",
-      "size": 1414,
-      "sha256": "ab9595d530eee7a59edc5b4c0baef0d9858f9e57d67adee07d69ac7497a87cde"
+      "size": 2196,
+      "sha256": "79da078521c34792514a536dba282e9845e7f35d26502ad356a78846b7dc3284"
     },
     {
       "path": "docs/INSTALLATION_AND_USER_GUIDE.md",
@@ -1148,13 +1148,13 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 80020,
-      "sha256": "30e9a60f162e7043a5c8962f146e8468ed40e6273cb1238ef6e01aa591017a81"
+      "size": 81640,
+      "sha256": "8e67edf7a57a83afb0cadb8c5478a09809207fdc1bf05feb5b2ee0bcd3680ba7"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
-      "size": 21861,
-      "sha256": "beaf06e83dfe1c2a78f0ca20b2cfe5671777f700ab36bfeaa96c34a4aa60ee13"
+      "size": 21906,
+      "sha256": "4075fdbcb457fd20199b251966063c71408d27ce8a8301bbfce9f160dff36b14"
     },
     {
       "path": "lib/core/google/authorized_google_client_factory.dart",
@@ -1163,8 +1163,8 @@
     },
     {
       "path": "lib/core/google/google_scopes.dart",
-      "size": 458,
-      "sha256": "b31555c1d517a2575bd50b31431debaa30fda4a8ce17ac6442aa21fb573801e5"
+      "size": 629,
+      "sha256": "437eaa6b551e7fcfc6993603d2acb6c3a5be6818d0289ed2b20b0fc1af2d29b2"
     },
     {
       "path": "lib/core/models/shift_record.dart",
@@ -1248,8 +1248,8 @@
     },
     {
       "path": "lib/domain/repositories/employee_repository.dart",
-      "size": 391,
-      "sha256": "7a09cd1583847e9cda8e2660f2f7068ee16cde2a7c2e0f5d9a03e917ae544be0"
+      "size": 459,
+      "sha256": "9b6177679360670f11e2a6bf04b5c86a46e27689c70ed50d561dd712d16448a5"
     },
     {
       "path": "lib/domain/repositories/import_repository.dart",
@@ -1628,13 +1628,13 @@
     },
     {
       "path": "lib/features/employees/README.md",
-      "size": 710,
-      "sha256": "8580694e3c08654d9787bcdeee6854c98250ef506174e38bd19c0dcb0870da86"
+      "size": 1477,
+      "sha256": "9bde50d94912b3f6307bd539c50d3b1384ffcd3f79afef697b4042cf7d726694"
     },
     {
       "path": "lib/features/employees/application/employee_directory_service.dart",
-      "size": 1253,
-      "sha256": "719c5b3b0382e7806d7def0f6a1ca81a1de0e839081a623c9179bfa95ed0c742"
+      "size": 2562,
+      "sha256": "d956c8d8dc51ea382fe6c283272c31b2119108039305828b4b24d22933861ba5"
     },
     {
       "path": "lib/features/employees/infrastructure/employee_json_codec.dart",
@@ -1642,19 +1642,24 @@
       "sha256": "60f6443de077430ffd2dd4c6c61dbe445d48688dc0edeca0b6ce471549a8d216"
     },
     {
+      "path": "lib/features/employees/infrastructure/google_employee_sync_service.dart",
+      "size": 11106,
+      "sha256": "e49ae53b19e0752fee1b3325a7374ca41db8b2510beace54af4f6c66bf8a34a2"
+    },
+    {
       "path": "lib/features/employees/infrastructure/shared_preferences_employee_repository.dart",
-      "size": 8076,
-      "sha256": "a8f17b915ed411c4d13ebdf06909369d200048ef0b393e20f2a191e13701ca38"
+      "size": 8886,
+      "sha256": "555403b304ecd6a1f9fe74889f4b4c3aaec0d67c22f7af2568e3a24df9724205"
     },
     {
       "path": "lib/features/employees/presentation/controllers/employee_directory_controller.dart",
-      "size": 5452,
-      "sha256": "925d761485bf6ffbfb9071871d184a124b9d3301d5b605e86ee1ea4c8210b754"
+      "size": 13528,
+      "sha256": "e2f18f953d4c02b05a4a23890a700f52cd66dca2e4d9cf4060d3d56d8a776957"
     },
     {
       "path": "lib/features/employees/presentation/pages/employee_directory_page.dart",
-      "size": 13385,
-      "sha256": "540f0635047c5283b4731bdab3b806649e3690b0e6bddfef2e711a5323d19438"
+      "size": 22704,
+      "sha256": "7f485c7d3a649d0e81858265c85a902402379d7d17ada14cef7425d5f26ecad5"
     },
     {
       "path": "lib/features/excel_import/application/import_engine.dart",
@@ -2733,8 +2738,8 @@
     },
     {
       "path": "lib/services/roster_revision_service.dart",
-      "size": 7063,
-      "sha256": "bf17dfcf83bc6ad09637dcc81d9a03a303854390a20a25a3157f0a41be1c7d5b"
+      "size": 7467,
+      "sha256": "46489ff8306e094b989b44c20bbfabb2cd49979126a371907346ccde0ab109d0"
     },
     {
       "path": "lib/services/roster_timeline_generator.dart",
@@ -3003,8 +3008,8 @@
     },
     {
       "path": "pubspec.lock",
-      "size": 29689,
-      "sha256": "aca71e4c23bb9301aca83ac78cdfa1a4075f353a494b07dbeb07406c111e00c2"
+      "size": 29693,
+      "sha256": "baeda33c5f9fd74c3e5a28af78b4f6d7a44b5d9cf2247c198fd2edd70d241cda"
     },
     {
       "path": "pubspec.yaml",
@@ -3103,13 +3108,13 @@
     },
     {
       "path": "test/employee_directory_test.dart",
-      "size": 3013,
-      "sha256": "ba29caa2341d27987cc687be5421b0933bedef6b704f754f3e280da36ca18d92"
+      "size": 5423,
+      "sha256": "572803916c5773e013e9cbf47d6ba447de760687789c1277c33bc345fdf343a8"
     },
     {
       "path": "test/employee_repository_test.dart",
-      "size": 3452,
-      "sha256": "d5633d4446a984e49c1c6a3a1c90f8b0c01ac9a6cb5ee9db1d5e7f53b5074523"
+      "size": 4324,
+      "sha256": "fb420e4cc6a2bec5fdf8ca7a7ebbc2eca1d0a4c9cff55c4484c1ee9426a18419"
     },
     {
       "path": "test/excel_import_controller_test.dart",
@@ -3145,6 +3150,11 @@
       "path": "test/google_calendar_workflow_integration_test.dart",
       "size": 16248,
       "sha256": "45eec9caa94922fcb15f8434d123fda377b1239e889a54519983c8fdb29d88d1"
+    },
+    {
+      "path": "test/google_employee_sync_service_test.dart",
+      "size": 3691,
+      "sha256": "266b6dd3b9a7e72df07735dd1bd9f47da626798b51292f5eb63e25c1e514d98f"
     },
     {
       "path": "test/google_sheets_import_data_source_test.dart",
@@ -3183,8 +3193,8 @@
     },
     {
       "path": "test/manual_roster_editor_test.dart",
-      "size": 5259,
-      "sha256": "a01b94eac344a651a8328982f414a1a938bcb2db31c8b5dd576fc0ef767303f5"
+      "size": 5374,
+      "sha256": "fb65001fa4ca8fbbf216dc698a43217e9bff0353dc270347c08a401297fb7bb9"
     },
     {
       "path": "test/monthly_roster_all_dates_test.dart",
