@@ -106,6 +106,10 @@ class _EmployeeRepository implements EmployeeRepository {
   Future<Result<Employee>> save(Employee employee) async => Success(employee);
 
   @override
+  Future<Result<List<Employee>>> saveAll(List<Employee> employees) async =>
+      Success(employees);
+
+  @override
   Future<Result<List<Employee>>> search(String query) async =>
       const Success([employee]);
 }
