@@ -1,0 +1,113 @@
+name: Build iOS
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - "lib/**"
+      - "assets/**"
+      - "android/**"
+      - "ios/**"
+      - "linux/**"
+      - "windows/**"
+      - "web/**"
+      - "test/**"
+      - "integration_test/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "DISKPATH.json"
+      - "DISKPATH.md"
+      - ".github/workflows/**"
+  push:
+    branches: [main]
+    paths:
+      - "lib/**"
+      - "assets/**"
+      - "android/**"
+      - "ios/**"
+      - "linux/**"
+      - "windows/**"
+      - "web/**"
+      - "test/**"
+      - "integration_test/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "DISKPATH.json"
+      - "DISKPATH.md"
+      - ".github/workflows/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ios-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-ios:
+    name: iOS unsigned release build
+    runs-on: macos-latest
+    timeout-minutes: 50
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Configure optional Google iOS OAuth
+        env:
+          GOOGLE_IOS_CLIENT_ID: ${{ secrets.GOOGLE_IOS_CLIENT_ID }}
+          GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$GOOGLE_IOS_CLIENT_ID" ]]; then
+            /usr/libexec/PlistBuddy \
+              -c "Set :GIDClientID $GOOGLE_IOS_CLIENT_ID" \
+              ios/Runner/Info.plist
+            reversed_client_id="com.googleusercontent.apps.${GOOGLE_IOS_CLIENT_ID%.apps.googleusercontent.com}"
+            /usr/libexec/PlistBuddy \
+              -c "Set :CFBundleURLTypes:0:CFBundleURLSchemes:0 $reversed_client_id" \
+              ios/Runner/Info.plist
+          fi
+          if [[ -n "$GOOGLE_SERVER_CLIENT_ID" ]]; then
+            /usr/libexec/PlistBuddy \
+              -c "Set :GIDServerClientID $GOOGLE_SERVER_CLIENT_ID" \
+              ios/Runner/Info.plist
+          fi
+
+      - name: Build unsigned iOS app
+        env:
+          GOOGLE_IOS_CLIENT_ID: ${{ secrets.GOOGLE_IOS_CLIENT_ID }}
+          GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
+        run: >-
+          flutter build ios --release --no-codesign
+          --dart-define=GOOGLE_IOS_CLIENT_ID="$GOOGLE_IOS_CLIENT_ID"
+          --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID"
+
+      - name: Verify iOS app
+        run: test -d build/ios/iphoneos/Runner.app
+
+      - name: Package unsigned iOS app
+        run: |
+          mkdir -p dist/ios
+          ditto -c -k --sequesterRsrc --keepParent \
+            build/ios/iphoneos/Runner.app \
+            dist/ios/phakphum-calendar-ios-unsigned.zip
+
+      - name: Upload unsigned iOS app
+        uses: actions/upload-artifact@v7
+        with:
+          name: phakphum-calendar-ios-unsigned
+          path: dist/ios/phakphum-calendar-ios-unsigned.zip
+          if-no-files-found: error
+          retention-days: 14

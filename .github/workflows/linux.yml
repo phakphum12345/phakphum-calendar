@@ -1,4 +1,4 @@
-name: Build and Deploy Web
+name: Build Linux
 
 on:
   workflow_dispatch:
@@ -41,18 +41,30 @@ permissions:
   contents: read
 
 concurrency:
-  group: pages-${{ github.workflow }}-${{ github.ref }}
+  group: linux-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-web:
-    name: Build Flutter web
+  build-linux:
+    name: Linux x64 release build
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Install Linux desktop dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes \
+            clang \
+            cmake \
+            libgtk-3-dev \
+            liblzma-dev \
+            libstdc++-12-dev \
+            ninja-build \
+            pkg-config
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -64,28 +76,28 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build web release
-        env:
-          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
-          GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
-        run: |
-          REPO_NAME="${GITHUB_REPOSITORY#*/}"
-          flutter build web --release --base-href "/$REPO_NAME/" \
-            --dart-define=GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID" \
-            --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID"
+      - name: Enable Linux desktop
+        run: flutter config --enable-linux-desktop
 
-      - name: Verify web output
-        shell: bash
+      - name: Build Linux release
+        env:
+          GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
+        run: >-
+          flutter build linux --release
+          --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID"
+
+      - name: Package Linux application
         run: |
           set -euo pipefail
-          test -f build/web/index.html
-          test -d build/web/assets
-          echo "WEB BUILD PASS"
+          test -x build/linux/x64/release/bundle/phakphum_calendar
+          mkdir -p dist/linux
+          tar -czf dist/linux/phakphum-calendar-linux-x64.tar.gz \
+            -C build/linux/x64/release bundle
 
-      - name: Upload downloadable web build
+      - name: Upload Linux application
         uses: actions/upload-artifact@v7
         with:
-          name: phakphum-calendar-web
-          path: build/web
+          name: phakphum-calendar-linux-x64
+          path: dist/linux/phakphum-calendar-linux-x64.tar.gz
           if-no-files-found: error
           retention-days: 14
