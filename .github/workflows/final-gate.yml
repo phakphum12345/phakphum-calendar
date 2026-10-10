@@ -115,8 +115,8 @@ jobs:
 
               if [[ "$status" == "completed" ]]; then
                 if [[ "$conclusion" != "success" ]]; then
-                  echo "FINAL FAIL: $label did not pass for $SHA."
-                  exit 1
+                  echo "FAILURE OBSERVED: $label concluded ${conclusion:-unknown} for $SHA."
+                  failed=1
                 fi
               else
                 pending=1
@@ -127,6 +127,12 @@ jobs:
               echo ""
               echo "FINAL PASS: all six workflows succeeded for $SHA."
               exit 0
+            fi
+
+            if [[ "$pending" -eq 0 && "$failed" -eq 1 ]]; then
+              echo ""
+              echo "FINAL FAIL: one or more latest workflow runs failed for $SHA."
+              exit 1
             fi
 
             if [[ "$attempt" -lt 80 ]]; then
