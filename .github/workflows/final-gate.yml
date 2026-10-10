@@ -27,7 +27,7 @@ jobs:
       (github.event.workflow_run.head_branch == 'main' &&
        github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
       - name: Checkout main
@@ -60,7 +60,7 @@ jobs:
               --jq '.workflow_runs[0].conclusion // empty'
           }
 
-          for attempt in {1..20}; do
+          for attempt in {1..40}; do
             QUALITY_RESULT="$(get_run_conclusion ci-auto-detect.yml || true)"
             WINDOWS_RESULT="$(get_run_conclusion windows.yml || true)"
             WEB_RESULT="$(get_run_conclusion web.yml || true)"
@@ -68,7 +68,7 @@ jobs:
             IOS_RESULT="$(get_run_conclusion ios.yml || true)"
             LINUX_RESULT="$(get_run_conclusion linux.yml || true)"
 
-            echo "Evidence check ${attempt}/20"
+            echo "Evidence check ${attempt}/40"
             echo "Quality:  ${QUALITY_RESULT:-PENDING}"
             echo "Windows:  ${WINDOWS_RESULT:-PENDING}"
             echo "Web:      ${WEB_RESULT:-PENDING}"
@@ -94,7 +94,7 @@ jobs:
               exit 1
             fi
 
-            if [[ "$attempt" -lt 20 ]]; then
+            if [[ "$attempt" -lt 40 ]]; then
               sleep 30
             fi
           done
