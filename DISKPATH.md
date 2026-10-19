@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `737`
+- Tracked files: `739`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -43,6 +43,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `.codex/project.md` | 4964 | `535b4a50a65823d5c3cbb933d5340f54fd9bd8eb995a8ba47bd8247e92ac0b2d` |
 | `.codex/prompts.md` | 3504 | `1dec39a5591dec97c329c43266add5c9e492436a9826bcc9ca0fa0d6bb18f5bd` |
 | `.codex/roadmap.md` | 3272 | `201819ebdf4e490a2c7e31d0b3b7cae4d9c1f7eef3190f92ca8b698c7430d696` |
+| `.github/workflows/feature-branch-validation.yml` | 674 | `59ecf8fbbc04c01bed7166d0363860e7b3f016f4ea145307dde9039c16e680f2` |
 | `.github/workflows/README.md` | 4671 | `90ade45bf43e7abbbb17d1db9b7c35a1817abe9a59872394dd224a6c2345e7b8` |
 | `.github/workflows/android.yml` | 1912 | `aea0aa2d5c63e25b6ce82cfe9a28196fdb1d34f857cd13aa8076fb9dfef0afb1` |
 | `.github/workflows/ci-auto-detect.yml` | 4070 | `3dab5c3760a11aedfa8ffa511e3686f6816934f7b77a4fad06181cbe24485d99` |
@@ -61,6 +62,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `CODE_STYLE.md` | 3238 | `876174cecd8d0474f35335a34133d5415c36b676ecf1d146bcd144bd6dee0613` |
 | `CONTRIBUTING.md` | 3267 | `8a62c5ffd0ccca9c39e4b24a0db5e0d463ebb80634a492aa927038f19aa408a0` |
 | `DATA_MODEL.md` | 828 | `ec8b06bab5ccb403559c201117c99d558c40fced412675d682f225aae6bfdd73` |
+| `lib/ui/first_login_setup_dialog.dart` | 6098 | `8b743cb888c0e7574fef394f4c39b7ae35a5d186fae054f66d80ea3491701eaa` |
 | `LICENSE` | 11358 | `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30` |
 | `MASTER_PLAN.md` | 5376 | `9d287248c6ba070027086b3f998f83886041d5deb14aeea8eac515653fa04a62` |
 | `NOTICE` | 101 | `466fa508291567626fb52fdf58e15ce228338a594f9c368d0324af3b9b9087b5` |
@@ -261,7 +263,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `l10n.yaml` | 151 | `c3ce52cbd012e898f809811d21f21ead3bb3afd08b49a4efe4da74080248664d` |
 | `lib/app.dart` | 7679 | `599df85fd9c6a6abaa17e5646dd59969ef67bbe5a9d722030c1c5d4c83247ce1` |
 | `lib/bootstrap/app_bootstrap.dart` | 380 | `cada71fb830d954d0bd4df8e8892b7e0b62a5844a01d00daf1cd0007c9f23cb0` |
-| `lib/controller/app_controller.dart` | 81640 | `8e67edf7a57a83afb0cadb8c5478a09809207fdc1bf05feb5b2ee0bcd3680ba7` |
+| `lib/controller/app_controller.dart` | 86967 | `9ca741ab2a1c4d26289c5ade47590dd90805d1ce0ef202ed85c5e9a9d7816337` |
 | `lib/core/di/app_dependencies.dart` | 21906 | `4075fdbcb457fd20199b251966063c71408d27ce8a8301bbfce9f160dff36b14` |
 | `lib/core/google/authorized_google_client_factory.dart` | 971 | `8a5504571f4d8e93d096d3f3bb3140564e58729510ac66c021a95361b2d362c8` |
 | `lib/core/google/google_scopes.dart` | 629 | `437eaa6b551e7fcfc6993603d2acb6c3a5be6818d0289ed2b20b0fc1af2d29b2` |
@@ -561,7 +563,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/l10n/app_th.arb` | 12647 | `3d3971d1748c39e4bd19cf611a020ebec1e718ec2648d2ebabbffa2c471c6e54` |
 | `lib/l10n/l10n.dart` | 1308 | `5d62a056c5de4c2309bb7b6399a577d768cbba35b238ac1c3075df141867d22e` |
 | `lib/main.dart` | 75 | `2981c5cc33eb705b1cec9d4631de854cb029f9f641ba244b893456665a2d3cb0` |
-| `lib/models/app_settings.dart` | 2347 | `3506c35cdab07ba93e8478972ce2bfa0afe2a5c6d8161e7ff3c3a76465c2f779` |
+| `lib/models/app_settings.dart` | 4167 | `6ff84106068b5a2680a470cbe4b71bd1d40eab2590733df3bfc4b3f708f87ce6` |
 | `lib/models/audit_entry.dart` | 755 | `434b2712916db1be9121560039c1add1df893c18c97988abbca8720fb218327b` |
 | `lib/models/calendar_busy_period.dart` | 552 | `ef2dc05ae45a0a17f74478b7931deae7f740cdeef56fd6c106cb84e2389d0dd6` |
 | `lib/models/roster_assignment_timeline.dart` | 2394 | `28dfea9099c6f4485f97027dec67072564ac7dae161a601a032cd06f9485239c` |
@@ -577,11 +579,11 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/drive_archive_service.dart` | 2913 | `37ce39a437c4c889b98d413ddd6de4f6e2f9499766531ffad6803ba7dd16e570` |
 | `lib/services/drive_ownership_service.dart` | 9290 | `e30489316965e91f008baf31d6fe2f1f3c592643257399117462e125c2d6f9e1` |
 | `lib/services/google_api_client.dart` | 589 | `95d32f2e3bd5f722201e0440d9545de40424b67ad56d264c1dd62a7742d0ae49` |
-| `lib/services/google_auth_service.dart` | 9662 | `a85087ec29d85fd3be5fed0c586ae7dee065fa2aaf2d567642fcea9b4432b076` |
+| `lib/services/google_auth_service.dart` | 9717 | `173a28aa6f14792d67e640876a5d2eab29d28d61269bca0d8f3726365a5d7946` |
 | `lib/services/local_roster_file_service.dart` | 5387 | `db5336a2eb195d18c0027528d0ef0f167fb02b5c558919e98d861614da6b83db` |
 | `lib/services/roster_revision_service.dart` | 7467 | `46489ff8306e094b989b44c20bbfabb2cd49979126a371907346ccde0ab109d0` |
 | `lib/services/roster_timeline_generator.dart` | 1531 | `7ed54286153b0075d6d979a82ea0cecd72aec47b3cea150fef2fdf152acc683e` |
-| `lib/services/settings_service.dart` | 6645 | `daddd02bf7b6b6b1e0e1ec40676a50f98f54e3a45a754bb3060ac3c558fc3d2c` |
+| `lib/services/settings_service.dart` | 8208 | `732d6754db002c00ef7e37e3ba7534d72eafc491c4582c715c8a5c83c359511d` |
 | `lib/services/sheets_service.dart` | 8196 | `b960cbdbc0f2ebbd82b8a7e7b0bb855ef023e2211055cf7386663e05dbd95461` |
 | `lib/services/shift_alert_service.dart` | 9323 | `681366fa6eaf18b1d1d940b1a68058ea4138855e473bd769111e158d11c958b1` |
 | `lib/services/shift_color_service.dart` | 3429 | `8385c92e56d2438944daaa9286de441944896467fd3f2f010b5dd98a31cbcc70` |
@@ -589,7 +591,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/shift_time_service.dart` | 2193 | `612c7b2f23bb5c5405ff64455cb9a1172a0ac3e4a5a852b6b43eca9e16d31495` |
 | `lib/services/swap_request_service.dart` | 1857 | `84df2fac3ba6319c7fbbd7e16a757aeeac3041b2cedf6d3bbb926dc361b48f45` |
 | `lib/shared/presentation/app_status_page.dart` | 2355 | `632e9de1c6f386b0ef04fdc15e0870c0ac633859493fa2acea07e8c7926dabfd` |
-| `lib/ui/app_shell.dart` | 186097 | `191ffcbe193bc6c92a4f50ed1f9382a40632167de77aaee850ee4a3d526ad69e` |
+| `lib/ui/app_shell.dart` | 187933 | `25a787c9fbf915085985ad373ec52baaf284a0bb0adab3ca1d2fca16e392ada7` |
 | `lib/ui/audit_log_page.dart` | 1240 | `550aa1ac28816344c928a4335ed337e4224a7442df5ecdd8d433bcb627eb362b` |
 | `lib/ui/google_sign_in_button.dart` | 102 | `250dcb07d7da55efdcbe2f2f164ef395050f5b635e044e48f16575dc035ad2b7` |
 | `lib/ui/google_sign_in_button_stub.dart` | 485 | `a7dc983f3b084047340e7899c25abe7f89fc45401653e3a41ecc83f868504656` |
