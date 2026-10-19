@@ -43,10 +43,10 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `.codex/project.md` | 4964 | `535b4a50a65823d5c3cbb933d5340f54fd9bd8eb995a8ba47bd8247e92ac0b2d` |
 | `.codex/prompts.md` | 3504 | `1dec39a5591dec97c329c43266add5c9e492436a9826bcc9ca0fa0d6bb18f5bd` |
 | `.codex/roadmap.md` | 3272 | `201819ebdf4e490a2c7e31d0b3b7cae4d9c1f7eef3190f92ca8b698c7430d696` |
-| `.github/workflows/feature-branch-validation.yml` | 674 | `59ecf8fbbc04c01bed7166d0363860e7b3f016f4ea145307dde9039c16e680f2` |
 | `.github/workflows/README.md` | 4671 | `90ade45bf43e7abbbb17d1db9b7c35a1817abe9a59872394dd224a6c2345e7b8` |
 | `.github/workflows/android.yml` | 1912 | `aea0aa2d5c63e25b6ce82cfe9a28196fdb1d34f857cd13aa8076fb9dfef0afb1` |
 | `.github/workflows/ci-auto-detect.yml` | 4070 | `3dab5c3760a11aedfa8ffa511e3686f6816934f7b77a4fad06181cbe24485d99` |
+| `.github/workflows/feature-branch-validation.yml` | 674 | `59ecf8fbbc04c01bed7166d0363860e7b3f016f4ea145307dde9039c16e680f2` |
 | `.github/workflows/final-gate.yml` | 4821 | `b69b099494415f889c077395a16a5181f6f19ae81042ea3380e2b6b511c9247e` |
 | `.github/workflows/generate-diskpath-md.yml` | 2317 | `60371bf9f1cd59e048a92411255a917d4957642f5509bc99e9a768c7367c42ed` |
 | `.github/workflows/ios.yml` | 3314 | `5f55449deb3a0238e8d89c036e858168c90dbd6f5441482b94cc1be3e5752333` |
@@ -62,7 +62,6 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `CODE_STYLE.md` | 3238 | `876174cecd8d0474f35335a34133d5415c36b676ecf1d146bcd144bd6dee0613` |
 | `CONTRIBUTING.md` | 3267 | `8a62c5ffd0ccca9c39e4b24a0db5e0d463ebb80634a492aa927038f19aa408a0` |
 | `DATA_MODEL.md` | 828 | `ec8b06bab5ccb403559c201117c99d558c40fced412675d682f225aae6bfdd73` |
-| `lib/ui/first_login_setup_dialog.dart` | 6098 | `8b743cb888c0e7574fef394f4c39b7ae35a5d186fae054f66d80ea3491701eaa` |
 | `LICENSE` | 11358 | `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30` |
 | `MASTER_PLAN.md` | 5376 | `9d287248c6ba070027086b3f998f83886041d5deb14aeea8eac515653fa04a62` |
 | `NOTICE` | 101 | `466fa508291567626fb52fdf58e15ce228338a594f9c368d0324af3b9b9087b5` |
@@ -593,6 +592,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/shared/presentation/app_status_page.dart` | 2355 | `632e9de1c6f386b0ef04fdc15e0870c0ac633859493fa2acea07e8c7926dabfd` |
 | `lib/ui/app_shell.dart` | 187933 | `25a787c9fbf915085985ad373ec52baaf284a0bb0adab3ca1d2fca16e392ada7` |
 | `lib/ui/audit_log_page.dart` | 1240 | `550aa1ac28816344c928a4335ed337e4224a7442df5ecdd8d433bcb627eb362b` |
+| `lib/ui/first_login_setup_dialog.dart` | 6098 | `8b743cb888c0e7574fef394f4c39b7ae35a5d186fae054f66d80ea3491701eaa` |
 | `lib/ui/google_sign_in_button.dart` | 102 | `250dcb07d7da55efdcbe2f2f164ef395050f5b635e044e48f16575dc035ad2b7` |
 | `lib/ui/google_sign_in_button_stub.dart` | 485 | `a7dc983f3b084047340e7899c25abe7f89fc45401653e3a41ecc83f868504656` |
 | `lib/ui/google_sign_in_button_web.dart` | 600 | `b817de5a6e8960ca5e42cc386c7f85f0a41c75e01c350ed783dedc1d8cedb9ca` |
