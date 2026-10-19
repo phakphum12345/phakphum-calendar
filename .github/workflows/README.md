@@ -8,7 +8,7 @@ The active build and delivery surface covers **Windows, Web, Android, iOS, and L
 - `android.yml` — Android release APK build artifact.
 - `ios.yml` — unsigned iOS release app build artifact.
 - `linux.yml` — Linux x64 release bundle archive.
-- `final-gate.yml` — verifies Auto Detect CI and all five platform builds passed for the same `main` commit.
+- `final-gate.yml` — requires Auto Detect CI, Windows, and Web for the same `main` commit; Android, iOS, and Linux are best-effort and may be skipped with a recorded reason.
 
 macOS, Laravel/backend validation, broad repository validation, coverage
 gates, and integration-test gates are not active delivery gates. The Android,
@@ -84,16 +84,19 @@ from `main`.
 
 ### Final
 
-The final gate combines quality and successful build evidence from all five
-targets for one exact commit. The intended sequence is:
+The final gate combines required quality and core delivery evidence for one exact
+commit. Optional platform artifacts are reported separately and do not block the
+core result when unavailable or behind:
 
-**Clean → Capability-aware CI → Windows PASS → Web PASS → Android PASS → iOS PASS → Linux PASS → Final PASS**
+**Clean → Capability-aware CI → Windows PASS + Web PASS → optional Android/iOS/Linux PASS or SKIPPED → Final PASS**
 
 ## Failure-containment policy
 
 The platform build workflows remain independent:
 
-1. Store-signing credentials must not be required for iOS or Android compile checks.
+1. Auto Detect CI, Windows, and Web are required release evidence.
+2. Android, iOS, and Linux are optional artifact evidence. The final gate waits up to 10 minutes for optional targets, then records any still missing or unsuccessful target as `SKIPPED`.
+3. Store-signing credentials must not be required for iOS or Android compile checks.
 2. Missing `integration_test/` must never be treated as a CI failure for the
    supported targets.
 3. Coverage artifacts are not required by any platform build workflow.
@@ -102,9 +105,11 @@ The platform build workflows remain independent:
 5. A workflow must not auto-commit generated formatting changes during a
    release gate. Formatting changes must be committed explicitly by the
    developer or a dedicated maintenance job.
-6. Capability detection must not mutate the source tree or introduce a new
+7. Capability detection must not mutate the source tree or introduce a new
    platform automatically.
-7. The final gate must compare results using the same commit SHA.
+8. The final gate must compare required evidence using the same commit SHA.
+9. Skipped optional targets must be visible in the job log with a reason; skipping
+   an optional target must never hide a failure in required quality, Windows, or Web checks.
 
 ## Simplification policy
 
