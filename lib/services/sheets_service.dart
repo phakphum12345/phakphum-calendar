@@ -111,7 +111,9 @@ class SheetsService implements RosterSheetsGateway {
           .firstOrNull;
       final selectedTitle = selected?.properties?.title;
       if (selectedTitle == null || selectedTitle.isEmpty) {
-        throw StateError('ไม่พบแท็บ Google Sheets ที่เลือก (gid=$requestedSheetId)');
+        throw StateError(
+          'ไม่พบแท็บ Google Sheets ที่เลือก (gid=$requestedSheetId)',
+        );
       }
       titles = [selectedTitle];
     } else {
