@@ -312,7 +312,7 @@ void main() {
     expect(find.text('เลือกไฟล์ Excel'), findsOneWidget);
   });
 
-  testWidgets('Google Sheets picker entry remains usable on a phone', (
+  testWidgets('Google Sheets link picker stays gated while signed out on a phone', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
@@ -326,7 +326,20 @@ void main() {
 
     expect(find.text('ยังไม่ได้เลือกแหล่งข้อมูลเวร'), findsOneWidget);
     expect(find.text('เลือกไฟล์จาก Google Sheets'), findsOneWidget);
+    expect(find.text('เลือกแท็บด้วยลิงก์'), findsOneWidget);
     expect(find.text('วาง URL จากเบราว์เซอร์'), findsNothing);
+
+    // The demo controller is intentionally signed out. Verify the picker is
+    // present but gated until Google authentication, rather than tapping a
+    // disabled button and expecting its dialog to open.
+    final linkPickerButton = find.ancestor(
+      of: find.text('เลือกแท็บด้วยลิงก์'),
+      matching: find.byType(OutlinedButton),
+    );
+    expect(linkPickerButton, findsOneWidget);
+    final button = tester.widget<OutlinedButton>(linkPickerButton);
+    expect(button.onPressed, isNull);
+    expect(find.text('เลือกไฟล์หรือแท็บด้วยลิงก์'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
