@@ -482,9 +482,9 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/schedule/presentation/widgets/schedule_cell.dart` | 6155 | `35ccea0635005df54f527d89f8fbec3aff9a6420813beba8d2fa0bdded3e87cf` |
 | `lib/features/schedule/presentation/widgets/schedule_controller_host.dart` | 1015 | `3f43f317ff9f37a71f01f430ec41b2dce0983f2c4e411d8466f040fa622fa7b2` |
 | `lib/features/schedule/presentation/widgets/schedule_filters.dart` | 5047 | `05daf6d2af081c5f9094055d153e5a73948387c8167ea576f6e81b83c5732d7c` |
-| `lib/features/schedule/presentation/widgets/schedule_grid.dart` | 5456 | `a34454239d5dd0597a8d5c05fb1364fe6e8516c949173db9b4f621e39a5e0cd6` |
+| `lib/features/schedule/presentation/widgets/schedule_grid.dart` | 6517 | `c5392ba5563707e94ca7316ecbf210fab8457036a3c39fcffaf93b485304ebfd` |
 | `lib/features/schedule/presentation/widgets/schedule_statistics_panel.dart` | 1565 | `2cbcbc27814c7848ce0366ada7e6e6aea728dcd184e5bc0e9252f08f97b01659` |
-| `lib/features/schedule/presentation/widgets/schedule_view_scaffold.dart` | 1441 | `bfa1fa82012243ab9841e95537b5fe8861f084e78b3acd8cb0a00733e81f716d` |
+| `lib/features/schedule/presentation/widgets/schedule_view_scaffold.dart` | 4684 | `4f74862ebafb7cf89de873a0cab67d33fa5f45cb77f3b44dbf438762c2ff0ede` |
 | `lib/features/schedule/presentation/widgets/schedule_view_selector.dart` | 1056 | `7c4c6b45b7218cb15441d9a569792a5e7600a3b1e85c7de194fedd4e4873293f` |
 | `lib/features/schedule/presentation/widgets/shift_chip.dart` | 626 | `bba083b0013c9565a5d41913a43af4b3823ae0d85c01c56afeca5acb53b9e80c` |
 | `lib/features/schedule_generation/application/auto_assignment_service.dart` | 5947 | `46847efff8fb070ea5873f915883c6098311a44fb6325b96b073d9f290021024` |
