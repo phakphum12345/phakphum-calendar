@@ -78,13 +78,13 @@
     },
     {
       "path": ".github/workflows/README.md",
-      "size": 4671,
-      "sha256": "90ade45bf43e7abbbb17d1db9b7c35a1817abe9a59872394dd224a6c2345e7b8"
+      "size": 5353,
+      "sha256": "a911a1a7b9b2b8a69442ad96f7bf89491a5de2b1779c24b3871a81ba93f9ab35"
     },
     {
       "path": ".github/workflows/android.yml",
-      "size": 1912,
-      "sha256": "aea0aa2d5c63e25b6ce82cfe9a28196fdb1d34f857cd13aa8076fb9dfef0afb1"
+      "size": 1561,
+      "sha256": "d4002720cddb73a27f5d339dd69eade09b00aa679f8c7ce5ca81cb13909f3528"
     },
     {
       "path": ".github/workflows/ci-auto-detect.yml",
@@ -93,23 +93,23 @@
     },
     {
       "path": ".github/workflows/final-gate.yml",
-      "size": 4821,
-      "sha256": "b69b099494415f889c077395a16a5181f6f19ae81042ea3380e2b6b511c9247e"
+      "size": 6405,
+      "sha256": "c160ae7913364bc15af46a2dfc281ec909127925d78f9a92f072fb4cbf70f69b"
     },
     {
       "path": ".github/workflows/generate-diskpath-md.yml",
-      "size": 2317,
-      "sha256": "60371bf9f1cd59e048a92411255a917d4957642f5509bc99e9a768c7367c42ed"
+      "size": 1633,
+      "sha256": "b962a10ffd7b988fc69f8386b97dad58a8bf0b2dea2a532620da914e70bb0d27"
     },
     {
       "path": ".github/workflows/ios.yml",
-      "size": 3314,
-      "sha256": "5f55449deb3a0238e8d89c036e858168c90dbd6f5441482b94cc1be3e5752333"
+      "size": 2963,
+      "sha256": "0becfc04c62121b0c60772424269290982983907a664e11c5097ce51d0f098c3"
     },
     {
       "path": ".github/workflows/linux.yml",
-      "size": 2491,
-      "sha256": "b901696b43535d362950d8af97b5c3782ce7fa284f47e17282b0a1bebff5bdae"
+      "size": 2140,
+      "sha256": "257036e0c9922ee17921a0bd32cc1773ea880967d9235e5cbb90e0837a1d8c89"
     },
     {
       "path": ".github/workflows/web.yml",
@@ -1168,8 +1168,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 86967,
-      "sha256": "9ca741ab2a1c4d26289c5ade47590dd90805d1ce0ef202ed85c5e9a9d7816337"
+      "size": 83932,
+      "sha256": "9c84b3757b28535d0f756437ba8e50f5b334ba6f02341355d50703d0f431b974"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
@@ -2698,8 +2698,8 @@
     },
     {
       "path": "lib/models/saved_sheet.dart",
-      "size": 2423,
-      "sha256": "2bab48eaa2fbea8d167de698fce1194360eb2e3216dd110322caf92b179ee413"
+      "size": 3324,
+      "sha256": "6698d929b467a4decaee950205f2db63ccb020cfa3e490b68007f45c0839e520"
     },
     {
       "path": "lib/models/shift.dart",
@@ -2773,8 +2773,8 @@
     },
     {
       "path": "lib/services/sheets_service.dart",
-      "size": 8196,
-      "sha256": "b960cbdbc0f2ebbd82b8a7e7b0bb855ef023e2211055cf7386663e05dbd95461"
+      "size": 9135,
+      "sha256": "10f60cc6de94fbc0eb6c91961935b509f32e54e347d004d5f9f4bd7ac19a328b"
     },
     {
       "path": "lib/services/shift_alert_service.dart",
@@ -2808,8 +2808,8 @@
     },
     {
       "path": "lib/ui/app_shell.dart",
-      "size": 187933,
-      "sha256": "25a787c9fbf915085985ad373ec52baaf284a0bb0adab3ca1d2fca16e392ada7"
+      "size": 188713,
+      "sha256": "6fd97fdda05b11c00a4a81f65f3faa452fc45baf61532bf39afb38c0f7a311a2"
     },
     {
       "path": "lib/ui/audit_log_page.dart",
@@ -3307,6 +3307,11 @@
       "sha256": "579720365fa40ac7f7a72bb3af111b5ef4e4fac5d3013be22df0bb2df5279652"
     },
     {
+      "path": "test/saved_sheet_selection_test.dart",
+      "size": 2369,
+      "sha256": "9adedf024cacaf8fa00674d1c531ce4ef4ca35160c33282bc585e82225b30bdd"
+    },
+    {
       "path": "test/sce_a1_notation_test.dart",
       "size": 797,
       "sha256": "54c91c69246130f0e9b3d2519ea876bba0ad61a72d87b6a7a0abd444c7cdcf47"
@@ -3563,8 +3568,8 @@
     },
     {
       "path": "test/widget_test.dart",
-      "size": 16545,
-      "sha256": "8c5f18aa8446be316a3f843d7fea41e57a560ca1e2ff159a0af24fec0c1f489e"
+      "size": 17312,
+      "sha256": "b56a87eae7d32a9261305ba12d7e0717caf2e7156d27894e95f99757c7122a73"
     },
     {
       "path": "tools/diskpath/generate_diskpath.py",

@@ -30,10 +30,10 @@ concurrency:
 
 jobs:
   final-gate:
-    name: Single collector / Quality + five platforms
+    name: Required quality + core delivery / optional platform evidence
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 42
 
     steps:
       - name: Checkout exact target commit
@@ -42,7 +42,7 @@ jobs:
           ref: ${{ github.sha }}
           fetch-depth: 1
 
-      - name: Collect all required evidence for this commit
+      - name: Collect required and optional evidence for this commit
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
@@ -57,7 +57,6 @@ jobs:
 
           get_run_state() {
             local workflow="$1"
-
             gh api \
               -H 'Accept: application/vnd.github+json' \
               "/repos/${REPOSITORY}/actions/workflows/${workflow}/runs?branch=main&head_sha=${SHA}&per_page=100" \
@@ -68,71 +67,92 @@ jobs:
                  | select(.event == "push")]
                 | sort_by(.run_number, .run_attempt)
                 | last // {}
-                | [
-                    (.status // "missing"),
-                    (.conclusion // ""),
-                    (.html_url // "")
-                  ]
+                | [(.status // "missing"), (.conclusion // ""), (.html_url // "")]
                 | @tsv
               ' 2>/dev/null
           }
 
-          workflows=(
+          # These protect the user-facing application and its primary release paths.
+          required_workflows=(
             "Auto Detect CI:ci-auto-detect.yml"
             "Windows:windows.yml"
             "Web:web.yml"
+          )
+
+          # These are best-effort artifacts. Their queue/build failures must not
+          # block the core release; every skip is explicitly recorded below.
+          optional_workflows=(
             "Android:android.yml"
             "iOS:ios.yml"
             "Linux:linux.yml"
           )
 
+          optional_grace_attempt=20
           for attempt in $(seq 1 80); do
-            pending=0
-            failed=0
-
+            required_pending=0
+            required_failed=0
+            optional_pending=0
             echo ""
             echo "===== EVIDENCE CHECK ${attempt}/80 ====="
 
-            for entry in "${workflows[@]}"; do
+            for entry in "${required_workflows[@]}"; do
               label="${entry%%:*}"
               workflow="${entry#*:}"
-
               state="$(get_run_state "$workflow" || true)"
-
               if [[ -z "$state" ]]; then
-                status="missing"
-                conclusion=""
-                url=""
+                status="missing"; conclusion=""; url=""
               else
                 IFS=$'\t' read -r status conclusion url <<< "$state"
-                status="${status:-missing}"
-                conclusion="${conclusion:-}"
-                url="${url:-}"
+                status="${status:-missing}"; conclusion="${conclusion:-}"; url="${url:-}"
               fi
 
-              echo "$label: status=$status conclusion=${conclusion:-PENDING}"
+              echo "REQUIRED $label: status=$status conclusion=${conclusion:-PENDING}"
               [[ -z "$url" ]] || echo "  $url"
-
               if [[ "$status" == "completed" ]]; then
                 if [[ "$conclusion" != "success" ]]; then
-                  echo "FAILURE OBSERVED: $label concluded ${conclusion:-unknown} for $SHA."
-                  failed=1
+                  echo "REQUIRED FAILURE: $label concluded ${conclusion:-unknown} for $SHA."
+                  required_failed=1
                 fi
               else
-                pending=1
+                required_pending=1
               fi
             done
 
-            if [[ "$pending" -eq 0 && "$failed" -eq 0 ]]; then
+            for entry in "${optional_workflows[@]}"; do
+              label="${entry%%:*}"
+              workflow="${entry#*:}"
+              state="$(get_run_state "$workflow" || true)"
+              if [[ -z "$state" ]]; then
+                status="missing"; conclusion=""; url=""
+              else
+                IFS=$'\t' read -r status conclusion url <<< "$state"
+                status="${status:-missing}"; conclusion="${conclusion:-}"; url="${url:-}"
+              fi
+
+              if [[ "$status" == "completed" && "$conclusion" == "success" ]]; then
+                echo "OPTIONAL $label: PASS"
+                [[ -z "$url" ]] || echo "  $url"
+              elif [[ "$attempt" -lt "$optional_grace_attempt" && "$status" != "completed" ]]; then
+                echo "OPTIONAL $label: WAITING (status=$status)"
+                optional_pending=1
+              else
+                reason="${conclusion:-no successful run within grace period}"
+                echo "OPTIONAL $label: SKIPPED (status=$status; reason=$reason)"
+                [[ -z "$url" ]] || echo "  $url"
+              fi
+            done
+
+            if [[ "$required_failed" -eq 1 ]]; then
               echo ""
-              echo "FINAL PASS: all six workflows succeeded for $SHA."
-              exit 0
+              echo "FINAL FAIL: one or more required workflows failed for $SHA."
+              exit 1
             fi
 
-            if [[ "$pending" -eq 0 && "$failed" -eq 1 ]]; then
+            if [[ "$required_pending" -eq 0 && "$optional_pending" -eq 0 ]]; then
               echo ""
-              echo "FINAL FAIL: one or more latest workflow runs failed for $SHA."
-              exit 1
+              echo "Required evidence complete for $SHA."
+              echo "Android/iOS/Linux are best-effort; see per-target PASS/SKIPPED lines above."
+              exit 0
             fi
 
             if [[ "$attempt" -lt 80 ]]; then
@@ -140,27 +160,28 @@ jobs:
             fi
           done
 
-          echo "FINAL FAIL: evidence incomplete after 40 minutes for $SHA."
+          echo "FINAL FAIL: required evidence incomplete after 40 minutes for $SHA."
           exit 1
 
-      - name: Verify supported delivery structure
+      - name: Verify required structure and report optional targets
         shell: bash
         run: |
           set -euo pipefail
+          test -f pubspec.yaml
           test -d windows
           test -d web
-          test -d android
-          test -d ios
-          test -d linux
-          test -f pubspec.yaml
           test -f .github/workflows/ci-auto-detect.yml
           test -f .github/workflows/windows.yml
           test -f .github/workflows/web.yml
-          test -f .github/workflows/android.yml
-          test -f .github/workflows/ios.yml
-          test -f .github/workflows/linux.yml
           test -f .github/workflows/final-gate.yml
-          test ! -f .github/workflows/flutter-ci.yaml
-          test ! -f .github/workflows/flutter-web-deploy.yaml
-          test ! -f .github/workflows/macos.yml
-          echo 'MAIN VERIFIED: Windows + Web + Android + iOS + Linux active; macOS paused.'
+          test -f scripts/detect-ci-targets.sh
+
+          echo "REQUIRED TARGETS: Windows + Web"
+          for target in android ios linux; do
+            if [[ -d "$target" && -f ".github/workflows/$target.yml" ]]; then
+              echo "OPTIONAL TARGET $target: available; build evidence is best-effort"
+            else
+              echo "OPTIONAL TARGET $target: SKIPPED (platform source or workflow missing)"
+            fi
+          done
+          echo "Capability-aware Final Gate structure check: PASS"

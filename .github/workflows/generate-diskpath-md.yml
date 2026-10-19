@@ -2,15 +2,16 @@ name: Generate DISKPATH
 
 on:
   workflow_dispatch:
-
   pull_request:
-  
   push:
     branches:
       - main
     paths-ignore:
       - "DISKPATH.json"
       - "DISKPATH.md"
+
+permissions:
+  contents: read
 
 concurrency:
   group: generate-diskpath-${{ github.ref }}
@@ -48,8 +49,8 @@ jobs:
           set -euo pipefail
           git diff --check
 
-      - name: Enforce DISKPATH synchronization on pull requests
-        if: github.event_name == 'pull_request'
+      - name: Enforce DISKPATH synchronization
+        if: github.event_name != 'workflow_dispatch'
         run: |
           set -euo pipefail
 
@@ -60,33 +61,7 @@ jobs:
           fi
 
           echo "DISKPATH ENFORCEMENT: FAIL"
-          echo
           echo "DISKPATH.json and/or DISKPATH.md are out of date."
-          echo "Run:"
-          echo
-          echo "  python3 tools/diskpath/generate_diskpath.py"
-          echo
-          echo "Then commit the generated files."
-          echo
+          echo "Run python3 tools/diskpath/generate_diskpath.py and commit the generated files."
           git diff -- DISKPATH.json DISKPATH.md
           exit 1
-
-      - name: Commit generated manifests on main
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: |
-          set -euo pipefail
-
-          if git diff --quiet -- DISKPATH.json DISKPATH.md; then
-            echo "DISKPATH is already current."
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email \
-            "41898282+github-actions[bot]@users.noreply.github.com"
-
-          git add DISKPATH.json DISKPATH.md
-
-          git commit -m "docs: update DISKPATH"
-
-          git push origin HEAD:main

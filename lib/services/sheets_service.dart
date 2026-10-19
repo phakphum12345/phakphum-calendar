@@ -96,20 +96,42 @@ class SheetsService implements RosterSheetsGateway {
   ) async {
     final id = spreadsheetIdFromUrl(sourceUrl);
     final api = sheets.SheetsApi(client);
-    var titles = _titleCache[id];
-    if (titles == null) {
+    final requestedSheetId = sheetIdFromUrl(sourceUrl);
+    List<String> titles;
+    if (requestedSheetId != null) {
+      // A URL copied from a specific tab carries gid=<sheetId>. Honor that
+      // choice rather than parsing every tab in the spreadsheet.
       final metadata = await api.spreadsheets.get(
         id,
         includeGridData: false,
         $fields: 'sheets(properties(sheetId,title,hidden))',
       );
-      titles = [
-        for (final sheet in metadata.sheets ?? const <sheets.Sheet>[])
-          if ((sheet.properties?.title ?? '').isNotEmpty &&
-              sheet.properties?.hidden != true)
-            sheet.properties!.title!,
-      ];
-      _titleCache[id] = titles;
+      final selected = (metadata.sheets ?? const <sheets.Sheet>[])
+          .where((sheet) => sheet.properties?.sheetId == requestedSheetId)
+          .firstOrNull;
+      final selectedTitle = selected?.properties?.title;
+      if (selectedTitle == null || selectedTitle.isEmpty) {
+        throw StateError(
+          'ไม่พบแท็บ Google Sheets ที่เลือก (gid=$requestedSheetId)',
+        );
+      }
+      titles = [selectedTitle];
+    } else {
+      titles = _titleCache[id] ?? [];
+      if (titles.isEmpty) {
+        final metadata = await api.spreadsheets.get(
+          id,
+          includeGridData: false,
+          $fields: 'sheets(properties(sheetId,title,hidden))',
+        );
+        titles = [
+          for (final sheet in metadata.sheets ?? const <sheets.Sheet>[])
+            if ((sheet.properties?.title ?? '').isNotEmpty &&
+                sheet.properties?.hidden != true)
+              sheet.properties!.title!,
+        ];
+        _titleCache[id] = titles;
+      }
     }
     final ranges = [
       for (final title in titles) "'${title.replaceAll("'", "''")}'!A1:AF180",

@@ -1248,6 +1248,59 @@ class _DashboardPageState extends State<_DashboardPage> {
     await controller.selectRecentSourceSheets(selected);
   }
 
+  Future<void> _selectSourceByUrl() async {
+    final urlController = TextEditingController();
+    try {
+      final sourceUrl = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('เลือกไฟล์หรือแท็บด้วยลิงก์'),
+          content: SizedBox(
+            width: 520,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'คัดลอกลิงก์ Google Sheets จากแท็บที่ต้องการใช้ '
+                  'ลิงก์ที่มี #gid= จะอ่านเฉพาะแท็บนั้น '
+                  'หากไม่มี gid จะอ่านทุกแท็บที่มองเห็น',
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: urlController,
+                  autofocus: true,
+                  keyboardType: TextInputType.url,
+                  decoration: const InputDecoration(
+                    labelText: 'URL Google Sheets',
+                    hintText:
+                        'https://docs.google.com/spreadsheets/d/.../edit#gid=123',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('ยกเลิก'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(
+                dialogContext,
+              ).pop(urlController.text.trim()),
+              child: const Text('เลือกแหล่งข้อมูล'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || sourceUrl == null || sourceUrl.isEmpty) return;
+      await widget.controller.selectSourceForCurrentAccount(sourceUrl);
+    } finally {
+      urlController.dispose();
+    }
+  }
+
   Future<void> _addPeriod() async {
     if (month == null || year == null) {
       throw StateError('กรุณาเลือกเดือนและปี ค.ศ. ก่อนกดเพิ่ม');
@@ -1504,6 +1557,14 @@ class _DashboardPageState extends State<_DashboardPage> {
                                 : null,
                             icon: const Icon(Icons.table_chart_outlined),
                             label: const Text('เลือกไฟล์จาก Google Sheets'),
+                          ),
+                          OutlinedButton.icon(
+                            onPressed:
+                                controller.auth.isSignedIn && !controller.busy
+                                ? () => widget.perform(_selectSourceByUrl)
+                                : null,
+                            icon: const Icon(Icons.link_outlined),
+                            label: const Text('เลือกแท็บด้วยลิงก์'),
                           ),
                           OutlinedButton.icon(
                             onPressed: controller.busy
