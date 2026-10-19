@@ -41,6 +41,7 @@ class GoogleAuthService extends ChangeNotifier implements GoogleAuthGateway {
   static const readAccessScopes = <String>[
     spreadsheetsReadOnlyScope,
     'https://www.googleapis.com/auth/calendar.events.readonly',
+    'https://www.googleapis.com/auth/calendar.events',
     drive.DriveApi.driveMetadataReadonlyScope,
     drive.DriveApi.driveReadonlyScope,
   ];
