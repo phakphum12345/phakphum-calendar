@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `738`
+- Tracked files: `739`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -261,7 +261,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `l10n.yaml` | 151 | `c3ce52cbd012e898f809811d21f21ead3bb3afd08b49a4efe4da74080248664d` |
 | `lib/app.dart` | 7679 | `599df85fd9c6a6abaa17e5646dd59969ef67bbe5a9d722030c1c5d4c83247ce1` |
 | `lib/bootstrap/app_bootstrap.dart` | 380 | `cada71fb830d954d0bd4df8e8892b7e0b62a5844a01d00daf1cd0007c9f23cb0` |
-| `lib/controller/app_controller.dart` | 83932 | `9c84b3757b28535d0f756437ba8e50f5b334ba6f02341355d50703d0f431b974` |
+| `lib/controller/app_controller.dart` | 89259 | `ec82eab5e22e3b2396d4ac6404ed9282ae200ce748f7bca1063c1b56d7790fbe` |
 | `lib/core/di/app_dependencies.dart` | 21906 | `4075fdbcb457fd20199b251966063c71408d27ce8a8301bbfce9f160dff36b14` |
 | `lib/core/google/authorized_google_client_factory.dart` | 971 | `8a5504571f4d8e93d096d3f3bb3140564e58729510ac66c021a95361b2d362c8` |
 | `lib/core/google/google_scopes.dart` | 629 | `437eaa6b551e7fcfc6993603d2acb6c3a5be6818d0289ed2b20b0fc1af2d29b2` |
@@ -581,7 +581,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/local_roster_file_service.dart` | 5387 | `db5336a2eb195d18c0027528d0ef0f167fb02b5c558919e98d861614da6b83db` |
 | `lib/services/roster_revision_service.dart` | 7467 | `46489ff8306e094b989b44c20bbfabb2cd49979126a371907346ccde0ab109d0` |
 | `lib/services/roster_timeline_generator.dart` | 1531 | `7ed54286153b0075d6d979a82ea0cecd72aec47b3cea150fef2fdf152acc683e` |
-| `lib/services/settings_service.dart` | 6645 | `daddd02bf7b6b6b1e0e1ec40676a50f98f54e3a45a754bb3060ac3c558fc3d2c` |
+| `lib/services/settings_service.dart` | 8208 | `732d6754db002c00ef7e37e3ba7534d72eafc491c4582c715c8a5c83c359511d` |
 | `lib/services/sheets_service.dart` | 9135 | `10f60cc6de94fbc0eb6c91961935b509f32e54e347d004d5f9f4bd7ac19a328b` |
 | `lib/services/shift_alert_service.dart` | 9323 | `681366fa6eaf18b1d1d940b1a68058ea4138855e473bd769111e158d11c958b1` |
 | `lib/services/shift_color_service.dart` | 3429 | `8385c92e56d2438944daaa9286de441944896467fd3f2f010b5dd98a31cbcc70` |
@@ -589,7 +589,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/shift_time_service.dart` | 2193 | `612c7b2f23bb5c5405ff64455cb9a1172a0ac3e4a5a852b6b43eca9e16d31495` |
 | `lib/services/swap_request_service.dart` | 1857 | `84df2fac3ba6319c7fbbd7e16a757aeeac3041b2cedf6d3bbb926dc361b48f45` |
 | `lib/shared/presentation/app_status_page.dart` | 2355 | `632e9de1c6f386b0ef04fdc15e0870c0ac633859493fa2acea07e8c7926dabfd` |
-| `lib/ui/app_shell.dart` | 188713 | `6fd97fdda05b11c00a4a81f65f3faa452fc45baf61532bf39afb38c0f7a311a2` |
+| `lib/ui/app_shell.dart` | 190549 | `5b21959890a4fe2c238f0536ba22f22391b3c12f5659024e116d93cacd9c090d` |
 | `lib/ui/audit_log_page.dart` | 1240 | `550aa1ac28816344c928a4335ed337e4224a7442df5ecdd8d433bcb627eb362b` |
 | `lib/ui/first_login_setup_dialog.dart` | 6098 | `8b743cb888c0e7574fef394f4c39b7ae35a5d186fae054f66d80ea3491701eaa` |
 | `lib/ui/google_sign_in_button.dart` | 102 | `250dcb07d7da55efdcbe2f2f164ef395050f5b635e044e48f16575dc035ad2b7` |
