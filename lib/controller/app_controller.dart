@@ -336,6 +336,11 @@ class AppController extends ChangeNotifier implements ControllerState {
         }
       }(),
     ]);
+    try {
+      await _ensureActiveSavedSheetPerAccount();
+    } catch (caught) {
+      error ??= 'ปรับข้อมูลแหล่งชีตเดิมไม่สำเร็จ: $caught';
+    }
     auth.addListener(_onAuthChanged);
     await auth.initialize(webClientId: settings.googleWebClientId);
     initialized = true;
@@ -441,11 +446,16 @@ class AppController extends ChangeNotifier implements ControllerState {
     return savedSheets
         .where((sheet) => sheet.ownerAccountId == accountId)
         .toList()
-      ..sort((left, right) => right.savedAt.compareTo(left.savedAt));
+      ..sort((left, right) {
+        if (left.isActive != right.isActive) return left.isActive ? -1 : 1;
+        return right.savedAt.compareTo(left.savedAt);
+      });
   }
 
+  /// Only an explicitly selected source is used for roster import/sync.
+  /// Saved sources are not automatically substituted when selection is empty.
   SavedSheet? get currentSourceSheet =>
-      savedSheetsForCurrentAccount.firstOrNull;
+      savedSheetsForCurrentAccount.where((sheet) => sheet.isActive).firstOrNull;
 
   String get currentSourceUrl => currentSourceSheet?.url ?? '';
 
@@ -559,7 +569,11 @@ class AppController extends ChangeNotifier implements ControllerState {
             client,
             selected.url,
           );
-          await _saveSheetReference(account.id, reference);
+          await _saveSheetReference(
+            account.id,
+            reference,
+            setActive: false,
+          );
           addedCount++;
         }
         _resetSyncRange();
@@ -637,7 +651,10 @@ class AppController extends ChangeNotifier implements ControllerState {
     _requireSheetOwner(sheet);
     await _run('ลบชีตออกจากรายการบันทึก', () async {
       final wasCurrent = currentSourceSheet?.key == sheet.key;
-      savedSheets.removeWhere((item) => item.key == sheet.key);
+      savedSheets.removeWhere(
+        (item) => item.ownerAccountId == sheet.ownerAccountId &&
+            item.key == sheet.key,
+      );
       await _settingsService.saveSavedSheets(savedSheets);
       if (wasCurrent) {
         _replaceLegacyShifts(const []);
@@ -1625,10 +1642,48 @@ class AppController extends ChangeNotifier implements ControllerState {
     }
   }
 
+  Future<void> _ensureActiveSavedSheetPerAccount() async {
+    final accountIds = savedSheets
+        .map((sheet) => sheet.ownerAccountId)
+        .where((id) => id.isNotEmpty)
+        .toSet();
+    var changed = false;
+
+    for (final accountId in accountIds) {
+      final accountSheets = savedSheets
+          .where((sheet) => sheet.ownerAccountId == accountId)
+          .toList()
+        ..sort((left, right) => right.savedAt.compareTo(left.savedAt));
+
+      if (accountSheets.any((sheet) => sheet.isActive)) continue;
+      // Migrate only accounts whose records all predate explicit selection.
+      // If the user already has explicit inactive records, preserve that choice.
+      if (accountSheets.any((sheet) => sheet.hasExplicitActiveState)) continue;
+      if (accountSheets.isEmpty) continue;
+
+      final activeKey = accountSheets.first.key;
+      savedSheets = [
+        for (final item in savedSheets)
+          if (item.ownerAccountId == accountId)
+            item.copyWith(isActive: item.key == activeKey)
+          else
+            item,
+      ];
+      changed = true;
+    }
+
+    if (changed) await _settingsService.saveSavedSheets(savedSheets);
+  }
+
   Future<SavedSheet> _saveSheetReference(
     String accountId,
-    SheetReference reference,
-  ) async {
+    SheetReference reference, {
+    bool setActive = true,
+  }) async {
+    final key = '$accountId:${reference.spreadsheetId}:${reference.sheetId ?? 'all'}';
+    final existing = savedSheets
+        .where((item) => item.ownerAccountId == accountId && item.key == key)
+        .firstOrNull;
     final saved = SavedSheet(
       ownerAccountId: accountId,
       spreadsheetId: reference.spreadsheetId,
@@ -1637,8 +1692,16 @@ class AppController extends ChangeNotifier implements ControllerState {
       sheetTitle: reference.sheetTitle,
       url: reference.url,
       savedAt: DateTime.now(),
+      isActive: setActive || (existing?.isActive ?? false),
     );
-    savedSheets.removeWhere((item) => item.key == saved.key);
+
+    savedSheets = [
+      for (final item in savedSheets)
+        if (item.key != saved.key)
+          (setActive && item.ownerAccountId == accountId)
+              ? item.copyWith(isActive: false)
+              : item,
+    ];
     savedSheets.insert(0, saved);
     await _settingsService.saveSavedSheets(savedSheets);
     return saved;
