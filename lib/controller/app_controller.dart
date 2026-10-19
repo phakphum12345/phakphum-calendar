@@ -1417,6 +1417,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       _replaceLegacyShifts(updatedShifts);
     }
     _rebuildAlerts();
+    unawaited(recordShiftTimelineEvent(action: excluded == true || category == ShiftCategory.given ? 'SHIFT_CANCELLED' : (category == ShiftCategory.majorSwap || category == ShiftCategory.borrowedPaid || category == ShiftCategory.borrowedUnpaid) ? 'SHIFT_EXCHANGED' : 'SHIFT_UPDATED', summary: excluded == true || category == ShiftCategory.given ? 'ยกเวร' : (category == ShiftCategory.majorSwap || category == ShiftCategory.borrowedPaid || category == ShiftCategory.borrowedUnpaid) ? 'แลกเวร' : 'ปรับสถานะเวร', details: 'เวร: ${shift.displayName}\nผู้ปฏิบัติงาน: ${shift.assignedName}\nเวลาเดิม: ${shift.start}–${shift.end}\nประเภทเดิม: ${shift.category.label}\nประเภทใหม่: ${updatedShifts[index].category.label}\nยกเวร: ${excluded == true}', shift: shift).catchError((Object error) { status = 'บันทึก Timeline ไม่สำเร็จ: $error'; notifyListeners(); }));
     notifyListeners();
   }
 
@@ -1456,6 +1457,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     existingKeys = {};
     _rebuildAlerts();
     status = 'ปรับชื่อ เวลา ประเภท และสีของรายการแล้ว';
+    unawaited(recordShiftTimelineEvent(action: 'SHIFT_UPDATED', summary: 'แก้ไขรายละเอียดเวร', details: 'เวรเดิม: ${shift.displayName}\nเวรใหม่: ${updated.displayName}\nผู้ปฏิบัติงาน: ${shift.assignedName}\nเวลาเดิม: ${shift.start}–${shift.end}\nเวลาใหม่: ${updated.start}–${updated.end}\nสีใหม่: ${updated.effectiveCalendarColorId}\nประเภทใหม่: ${updated.category.label}', shift: shift).catchError((Object error) { status = 'บันทึก Timeline ไม่สำเร็จ: $error'; notifyListeners(); }));
     notifyListeners();
   }
 
@@ -1511,6 +1513,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           'ไม่บันทึกชื่อกิจกรรมหรือข้อมูลต้นฉบับใน Audit log',
       true,
     );
+    unawaited(recordShiftTimelineEvent(action: 'SHIFT_CREATED', summary: 'เพิ่มเวรใหม่', details: 'เวร: ${shift.displayName}\nผู้รับเวร: ${shift.assignedName}\nเวลา: ${shift.start}–${shift.end}\nประเภท: ${shift.category.label}\nสี Calendar: ${shift.effectiveCalendarColorId}', shift: shift).catchError((Object error) { status = 'บันทึก Timeline ไม่สำเร็จ: $error'; notifyListeners(); }));
     notifyListeners();
   }
 
@@ -1668,6 +1671,48 @@ class AppController extends ChangeNotifier implements ControllerState {
       busy = false;
       notifyListeners();
     }
+  }
+
+  /// Writes a structured audit record to the shift event description and a separate Calendar event.
+  Future<void> recordShiftTimelineEvent({required String action, required String summary, required String details, Shift? shift}) async {
+    final account = auth.account;
+    if (account == null) throw StateError('กรุณาล็อกอิน Google ก่อนบันทึก Timeline');
+    final timestamp = DateTime.now();
+    final actor = account.displayName?.trim().isNotEmpty == true ? account.displayName!.trim() : account.email;
+    final record = '[$action] ${timestamp.toIso8601String()} | ผู้แก้ไข: $actor\n$details';
+    final client = await auth.clientFor([calendar.CalendarApi.calendarEventsScope]);
+    try {
+      final api = calendar.CalendarApi(client);
+      if (shift != null) {
+        final rangeStart = DateTime.utc(shift.start.year, shift.start.month, shift.start.day).subtract(const Duration(hours: 7));
+        final rangeEnd = DateTime.utc(shift.start.year, shift.start.month + 1, 1).subtract(const Duration(hours: 7));
+        String? token; calendar.Event? matched;
+        do {
+          final page = await api.events.list('primary', timeMin: rangeStart, timeMax: rangeEnd, singleEvents: true, showDeleted: false, maxResults: 2500, pageToken: token);
+          for (final event in page.items ?? const <calendar.Event>[]) {
+            final eventStart = event.start?.dateTime;
+            if ((event.summary ?? '').trim() == CalendarService.summaryFor(shift) && eventStart != null && eventStart.toUtc().difference(shift.start.toUtc()).inMinutes.abs() <= 1) { matched = event; break; }
+          }
+          token = matched == null ? page.nextPageToken : null;
+        } while (token != null && token.isNotEmpty);
+        if (matched?.id != null) {
+          final oldDescription = matched!.description?.trim() ?? '';
+          matched.description = oldDescription.isEmpty ? record : '$oldDescription\n\n--- Timeline ---\n$record';
+          await api.events.update(matched, 'primary', matched.id!);
+        }
+      }
+      final end = timestamp.add(const Duration(minutes: 10));
+      DateTime instant(DateTime value) => DateTime.utc(value.year, value.month, value.day, value.hour - 7, value.minute);
+      await api.events.insert(calendar.Event(
+        summary: 'Timeline: $summary',
+        description: 'ประเภทเหตุการณ์: $action\nผู้แก้ไข: $actor (${account.email})\nเวลา: ${timestamp.toIso8601String()}\n\n$details',
+        colorId: '8',
+        start: calendar.EventDateTime(dateTime: instant(timestamp), timeZone: CalendarService.timeZone),
+        end: calendar.EventDateTime(dateTime: instant(end), timeZone: CalendarService.timeZone),
+        extendedProperties: calendar.EventExtendedProperties(private: {'sourceApp': CalendarService.sourceApp, 'auditType': 'shift_timeline', 'action': action, 'actorEmail': account.email}),
+      ), 'primary', sendUpdates: 'none');
+      await _addAudit(action, '$summary — ผู้แก้ไข: $actor; $details', true);
+    } finally { client.close(); }
   }
 
   Future<void> _addAudit(String action, String message, bool success) async {
