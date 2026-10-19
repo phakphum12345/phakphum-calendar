@@ -44,12 +44,12 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `.codex/prompts.md` | 3504 | `1dec39a5591dec97c329c43266add5c9e492436a9826bcc9ca0fa0d6bb18f5bd` |
 | `.codex/roadmap.md` | 3272 | `201819ebdf4e490a2c7e31d0b3b7cae4d9c1f7eef3190f92ca8b698c7430d696` |
 | `.github/workflows/README.md` | 5353 | `a911a1a7b9b2b8a69442ad96f7bf89491a5de2b1779c24b3871a81ba93f9ab35` |
-| `.github/workflows/android.yml` | 1561 | `d4002720cddb73a27f5d339dd69eade09b00aa679f8c7ce5ca81cb13909f3528` |
+| `.github/workflows/android.yml` | 1891 | `d092e0080b24a8bf983dfa6f5f1f2689ff85c4d8a2fb3e5ced3075ed267ab0a4` |
 | `.github/workflows/ci-auto-detect.yml` | 4070 | `3dab5c3760a11aedfa8ffa511e3686f6816934f7b77a4fad06181cbe24485d99` |
 | `.github/workflows/final-gate.yml` | 6405 | `c160ae7913364bc15af46a2dfc281ec909127925d78f9a92f072fb4cbf70f69b` |
 | `.github/workflows/generate-diskpath-md.yml` | 1633 | `b962a10ffd7b988fc69f8386b97dad58a8bf0b2dea2a532620da914e70bb0d27` |
-| `.github/workflows/ios.yml` | 2963 | `0becfc04c62121b0c60772424269290982983907a664e11c5097ce51d0f098c3` |
-| `.github/workflows/linux.yml` | 2140 | `257036e0c9922ee17921a0bd32cc1773ea880967d9235e5cbb90e0837a1d8c89` |
+| `.github/workflows/ios.yml` | 3293 | `5dc716ed94b3cfd421df674aa831d4b6f21c6e3390a054eb12dd02aea1b52934` |
+| `.github/workflows/linux.yml` | 2470 | `850db3a8e9c539389df9eb6e7d801bf40de6b82accd595e90870c200b3e5db9b` |
 | `.github/workflows/web.yml` | 2182 | `337b69d0094fa91fd0928212b6250ed611829d94091f8d059667664c6f4b28ec` |
 | `.github/workflows/windows.yml` | 3311 | `accb06a46965008a06eff8662129cd2e884bba205c2328abc57bb8dd2e6cfe57` |
 | `.gitignore` | 885 | `ef2df2e38b6ccf9af7295cb26bd630a71101fef2ffed5eae26c51b23eb09440c` |
