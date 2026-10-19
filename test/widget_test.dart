@@ -312,7 +312,7 @@ void main() {
     expect(find.text('เลือกไฟล์ Excel'), findsOneWidget);
   });
 
-  testWidgets('Google Sheets picker entry remains usable on a phone', (
+  testWidgets('Google Sheets link picker stays gated while signed out on a phone', (
     tester,
   ) async {
     await tester.binding.setSurfaceSize(const Size(390, 844));
