@@ -10,7 +10,7 @@ Map<String, Object?> _record({Object? isActive}) => {
   'sheetTitle': 'August',
   'url': 'https://docs.google.com/spreadsheets/d/spreadsheet-123/edit#gid=42',
   'savedAt': '2026-10-19T10:00:00.000',
-  if (isActive != null) 'isActive': isActive,
+  'isActive': ?isActive,
 };
 
 void main() {
