@@ -2273,8 +2273,8 @@
     },
     {
       "path": "lib/features/schedule/presentation/widgets/schedule_grid.dart",
-      "size": 5456,
-      "sha256": "a34454239d5dd0597a8d5c05fb1364fe6e8516c949173db9b4f621e39a5e0cd6"
+      "size": 6517,
+      "sha256": "c5392ba5563707e94ca7316ecbf210fab8457036a3c39fcffaf93b485304ebfd"
     },
     {
       "path": "lib/features/schedule/presentation/widgets/schedule_statistics_panel.dart",
@@ -2283,8 +2283,8 @@
     },
     {
       "path": "lib/features/schedule/presentation/widgets/schedule_view_scaffold.dart",
-      "size": 1441,
-      "sha256": "bfa1fa82012243ab9841e95537b5fe8861f084e78b3acd8cb0a00733e81f716d"
+      "size": 4684,
+      "sha256": "4f74862ebafb7cf89de873a0cab67d33fa5f45cb77f3b44dbf438762c2ff0ede"
     },
     {
       "path": "lib/features/schedule/presentation/widgets/schedule_view_selector.dart",
