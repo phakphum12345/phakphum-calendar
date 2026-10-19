@@ -2,23 +2,6 @@ name: Build iOS
 
 on:
   workflow_dispatch:
-  pull_request:
-    branches: [main]
-    paths:
-      - "lib/**"
-      - "assets/**"
-      - "android/**"
-      - "ios/**"
-      - "linux/**"
-      - "windows/**"
-      - "web/**"
-      - "test/**"
-      - "integration_test/**"
-      - "pubspec.yaml"
-      - "pubspec.lock"
-      - "DISKPATH.json"
-      - "DISKPATH.md"
-      - ".github/workflows/**"
   push:
     branches: [main]
     paths:
