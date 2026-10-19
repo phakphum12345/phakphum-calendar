@@ -148,7 +148,7 @@ jobs:
               exit 1
             fi
 
-            if [[ "$required_pending" -eq 0 ]]; then
+            if [[ "$required_pending" -eq 0 && "$optional_pending" -eq 0 ]]; then
               echo ""
               echo "Required evidence complete for $SHA."
               echo "Android/iOS/Linux are best-effort; see per-target PASS/SKIPPED lines above."
