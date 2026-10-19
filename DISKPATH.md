@@ -47,7 +47,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `.github/workflows/android.yml` | 1561 | `d4002720cddb73a27f5d339dd69eade09b00aa679f8c7ce5ca81cb13909f3528` |
 | `.github/workflows/ci-auto-detect.yml` | 4070 | `3dab5c3760a11aedfa8ffa511e3686f6816934f7b77a4fad06181cbe24485d99` |
 | `.github/workflows/final-gate.yml` | 6405 | `c160ae7913364bc15af46a2dfc281ec909127925d78f9a92f072fb4cbf70f69b` |
-| `.github/workflows/generate-diskpath-md.yml` | 2317 | `60371bf9f1cd59e048a92411255a917d4957642f5509bc99e9a768c7367c42ed` |
+| `.github/workflows/generate-diskpath-md.yml` | 1633 | `b962a10ffd7b988fc69f8386b97dad58a8bf0b2dea2a532620da914e70bb0d27` |
 | `.github/workflows/ios.yml` | 2963 | `0becfc04c62121b0c60772424269290982983907a664e11c5097ce51d0f098c3` |
 | `.github/workflows/linux.yml` | 2140 | `257036e0c9922ee17921a0bd32cc1773ea880967d9235e5cbb90e0837a1d8c89` |
 | `.github/workflows/web.yml` | 2182 | `337b69d0094fa91fd0928212b6250ed611829d94091f8d059667664c6f4b28ec` |
