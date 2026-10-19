@@ -98,8 +98,8 @@
     },
     {
       "path": ".github/workflows/generate-diskpath-md.yml",
-      "size": 2317,
-      "sha256": "60371bf9f1cd59e048a92411255a917d4957642f5509bc99e9a768c7367c42ed"
+      "size": 1633,
+      "sha256": "b962a10ffd7b988fc69f8386b97dad58a8bf0b2dea2a532620da914e70bb0d27"
     },
     {
       "path": ".github/workflows/ios.yml",
