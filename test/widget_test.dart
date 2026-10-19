@@ -328,7 +328,10 @@ void main() {
     expect(find.text('เลือกไฟล์จาก Google Sheets'), findsOneWidget);
     expect(find.text('เลือกแท็บด้วยลิงก์'), findsOneWidget);
     expect(find.text('วาง URL จากเบราว์เซอร์'), findsNothing);
-    await tester.tap(find.text('เลือกแท็บด้วยลิงก์'));
+    final linkPicker = find.text('เลือกแท็บด้วยลิงก์');
+    await tester.ensureVisible(linkPicker);
+    await tester.pumpAndSettle();
+    await tester.tap(linkPicker);
     await tester.pumpAndSettle();
     expect(find.text('เลือกไฟล์หรือแท็บด้วยลิงก์'), findsOneWidget);
     expect(find.textContaining('ลิงก์ที่มี #gid='), findsOneWidget);
