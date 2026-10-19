@@ -3563,8 +3563,8 @@
     },
     {
       "path": "test/widget_test.dart",
-      "size": 17299,
-      "sha256": "44933d2b3b8e702d4433fb985ee6f5d5900e4585404045cbd460b9b55254eda2"
+      "size": 17312,
+      "sha256": "b56a87eae7d32a9261305ba12d7e0717caf2e7156d27894e95f99757c7122a73"
     },
     {
       "path": "tools/diskpath/generate_diskpath.py",
