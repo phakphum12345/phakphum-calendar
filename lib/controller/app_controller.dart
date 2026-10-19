@@ -562,9 +562,11 @@ class AppController extends ChangeNotifier implements ControllerState {
 
       try {
         var addedCount = 0;
+        final shouldActivateFirst = currentSourceSheet == null;
+        final firstSelectedId = uniqueSheets.first.id;
 
-        // บันทึกย้อนลำดับ เพื่อให้ไฟล์แรกที่ผู้ใช้เลือกเป็นไฟล์หลักล่าสุด
-        // และยังเก็บไฟล์อื่นทั้งหมดไว้ในรายการชีตที่บันทึก
+        // Keep an existing explicit selection when adding more files.
+        // If no source is active yet, use the first file the user selected.
         for (final selected in uniqueSheets.reversed) {
           await _ownershipService.requireOwnedSpreadsheet(client, selected.id);
           final reference = await _sheetsService.describeSpreadsheet(
@@ -574,7 +576,8 @@ class AppController extends ChangeNotifier implements ControllerState {
           await _saveSheetReference(
             account.id,
             reference,
-            setActive: false,
+            setActive:
+                shouldActivateFirst && selected.id == firstSelectedId,
           );
           addedCount++;
         }
