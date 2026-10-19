@@ -455,7 +455,9 @@ class AppController extends ChangeNotifier implements ControllerState {
   /// Only an explicitly selected source is used for roster import/sync.
   /// Saved sources are not automatically substituted when selection is empty.
   SavedSheet? get currentSourceSheet =>
-      savedSheetsForCurrentAccount.where((sheet) => sheet.isActive).firstOrNull;
+      savedSheetsForCurrentAccount
+          .where((sheet) => sheet.isActive)
+          .firstOrNull;
 
   String get currentSourceUrl => currentSourceSheet?.url ?? '';
 
@@ -1680,7 +1682,8 @@ class AppController extends ChangeNotifier implements ControllerState {
     SheetReference reference, {
     bool setActive = true,
   }) async {
-    final key = '$accountId:${reference.spreadsheetId}:${reference.sheetId ?? 'all'}';
+    final key =
+        '$accountId:${reference.spreadsheetId}:${reference.sheetId ?? 'all'}';
     final existing = savedSheets
         .where((item) => item.ownerAccountId == accountId && item.key == key)
         .firstOrNull;
