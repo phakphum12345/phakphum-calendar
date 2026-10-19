@@ -83,8 +83,8 @@
     },
     {
       "path": ".github/workflows/android.yml",
-      "size": 1561,
-      "sha256": "d4002720cddb73a27f5d339dd69eade09b00aa679f8c7ce5ca81cb13909f3528"
+      "size": 1891,
+      "sha256": "d092e0080b24a8bf983dfa6f5f1f2689ff85c4d8a2fb3e5ced3075ed267ab0a4"
     },
     {
       "path": ".github/workflows/ci-auto-detect.yml",
@@ -103,13 +103,13 @@
     },
     {
       "path": ".github/workflows/ios.yml",
-      "size": 2963,
-      "sha256": "0becfc04c62121b0c60772424269290982983907a664e11c5097ce51d0f098c3"
+      "size": 3293,
+      "sha256": "5dc716ed94b3cfd421df674aa831d4b6f21c6e3390a054eb12dd02aea1b52934"
     },
     {
       "path": ".github/workflows/linux.yml",
-      "size": 2140,
-      "sha256": "257036e0c9922ee17921a0bd32cc1773ea880967d9235e5cbb90e0837a1d8c89"
+      "size": 2470,
+      "sha256": "850db3a8e9c539389df9eb6e7d801bf40de6b82accd595e90870c200b3e5db9b"
     },
     {
       "path": ".github/workflows/web.yml",
