@@ -328,15 +328,18 @@ void main() {
     expect(find.text('เลือกไฟล์จาก Google Sheets'), findsOneWidget);
     expect(find.text('เลือกแท็บด้วยลิงก์'), findsOneWidget);
     expect(find.text('วาง URL จากเบราว์เซอร์'), findsNothing);
-    final linkPicker = find.text('เลือกแท็บด้วยลิงก์');
-    await tester.ensureVisible(linkPicker);
-    await tester.pumpAndSettle();
-    await tester.tap(linkPicker);
-    await tester.pumpAndSettle();
-    expect(find.text('เลือกไฟล์หรือแท็บด้วยลิงก์'), findsOneWidget);
-    expect(find.textContaining('ลิงก์ที่มี #gid='), findsOneWidget);
-    await tester.tap(find.text('ยกเลิก'));
-    await tester.pumpAndSettle();
+
+    // The demo controller is intentionally signed out. Verify the picker is
+    // present but gated until Google authentication, rather than tapping a
+    // disabled button and expecting its dialog to open.
+    final linkPickerButton = find.ancestor(
+      of: find.text('เลือกแท็บด้วยลิงก์'),
+      matching: find.byType(OutlinedButton),
+    );
+    expect(linkPickerButton, findsOneWidget);
+    final button = tester.widget<OutlinedButton>(linkPickerButton);
+    expect(button.onPressed, isNull);
+    expect(find.text('เลือกไฟล์หรือแท็บด้วยลิงก์'), findsNothing);
     expect(tester.takeException(), isNull);
   });
 
