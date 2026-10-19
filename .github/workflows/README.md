@@ -95,7 +95,7 @@ core result when unavailable or behind:
 The platform build workflows remain independent:
 
 1. Auto Detect CI, Windows, and Web are required release evidence.
-2. Android, iOS, and Linux are optional artifact evidence. The final gate waits up to 10 minutes for optional targets, then records any still missing or unsuccessful target as `SKIPPED`.
+2. Android, iOS, and Linux are optional artifact evidence. Their workflows do not run on pull requests; they run on relevant pushes to `main` or by manual dispatch. The final gate waits up to 10 minutes for optional targets, then records any still missing or unsuccessful target as `SKIPPED`.
 3. Store-signing credentials must not be required for iOS or Android compile checks.
 2. Missing `integration_test/` must never be treated as a CI failure for the
    supported targets.
