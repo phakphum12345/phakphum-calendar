@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `739`
+- Tracked files: `738`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -46,7 +46,6 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `.github/workflows/README.md` | 4671 | `90ade45bf43e7abbbb17d1db9b7c35a1817abe9a59872394dd224a6c2345e7b8` |
 | `.github/workflows/android.yml` | 1912 | `aea0aa2d5c63e25b6ce82cfe9a28196fdb1d34f857cd13aa8076fb9dfef0afb1` |
 | `.github/workflows/ci-auto-detect.yml` | 4070 | `3dab5c3760a11aedfa8ffa511e3686f6816934f7b77a4fad06181cbe24485d99` |
-| `.github/workflows/feature-branch-validation.yml` | 674 | `59ecf8fbbc04c01bed7166d0363860e7b3f016f4ea145307dde9039c16e680f2` |
 | `.github/workflows/final-gate.yml` | 4821 | `b69b099494415f889c077395a16a5181f6f19ae81042ea3380e2b6b511c9247e` |
 | `.github/workflows/generate-diskpath-md.yml` | 2317 | `60371bf9f1cd59e048a92411255a917d4957642f5509bc99e9a768c7367c42ed` |
 | `.github/workflows/ios.yml` | 3314 | `5f55449deb3a0238e8d89c036e858168c90dbd6f5441482b94cc1be3e5752333` |
@@ -578,7 +577,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/drive_archive_service.dart` | 2913 | `37ce39a437c4c889b98d413ddd6de4f6e2f9499766531ffad6803ba7dd16e570` |
 | `lib/services/drive_ownership_service.dart` | 9290 | `e30489316965e91f008baf31d6fe2f1f3c592643257399117462e125c2d6f9e1` |
 | `lib/services/google_api_client.dart` | 589 | `95d32f2e3bd5f722201e0440d9545de40424b67ad56d264c1dd62a7742d0ae49` |
-| `lib/services/google_auth_service.dart` | 9717 | `173a28aa6f14792d67e640876a5d2eab29d28d61269bca0d8f3726365a5d7946` |
+| `lib/services/google_auth_service.dart` | 9662 | `a85087ec29d85fd3be5fed0c586ae7dee065fa2aaf2d567642fcea9b4432b076` |
 | `lib/services/local_roster_file_service.dart` | 5387 | `db5336a2eb195d18c0027528d0ef0f167fb02b5c558919e98d861614da6b83db` |
 | `lib/services/roster_revision_service.dart` | 7467 | `46489ff8306e094b989b44c20bbfabb2cd49979126a371907346ccde0ab109d0` |
 | `lib/services/roster_timeline_generator.dart` | 1531 | `7ed54286153b0075d6d979a82ea0cecd72aec47b3cea150fef2fdf152acc683e` |
