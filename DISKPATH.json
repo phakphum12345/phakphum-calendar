@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 739,
+  "file_count": 738,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -90,11 +90,6 @@
       "path": ".github/workflows/ci-auto-detect.yml",
       "size": 4070,
       "sha256": "3dab5c3760a11aedfa8ffa511e3686f6816934f7b77a4fad06181cbe24485d99"
-    },
-    {
-      "path": ".github/workflows/feature-branch-validation.yml",
-      "size": 674,
-      "sha256": "59ecf8fbbc04c01bed7166d0363860e7b3f016f4ea145307dde9039c16e680f2"
     },
     {
       "path": ".github/workflows/final-gate.yml",
@@ -2753,8 +2748,8 @@
     },
     {
       "path": "lib/services/google_auth_service.dart",
-      "size": 9717,
-      "sha256": "173a28aa6f14792d67e640876a5d2eab29d28d61269bca0d8f3726365a5d7946"
+      "size": 9662,
+      "sha256": "a85087ec29d85fd3be5fed0c586ae7dee065fa2aaf2d567642fcea9b4432b076"
     },
     {
       "path": "lib/services/local_roster_file_service.dart",
