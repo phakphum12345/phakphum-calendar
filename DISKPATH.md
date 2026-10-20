@@ -741,7 +741,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/v2/rule_engine_test.dart` | 1535 | `e0735d9ed5ed75f54e091d7e5be6bf1f5a2f6f46bb423cfa848386881787585c` |
 | `test/v2/shift_exchange_request_test.dart` | 927 | `9187f583afc132ba5b4150ae721afeffbd378317f595360e91d3b2ae1986cafa` |
 | `test/v2/simulation_engine_test.dart` | 3350 | `afd78813d7fd952a7a609886a5e92dbecea1699a218f9969c265409a4f29a16c` |
-| `test/widget_test.dart` | 17312 | `b56a87eae7d32a9261305ba12d7e0717caf2e7156d27894e95f99757c7122a73` |
+| `test/widget_test.dart` | 18114 | `66d09ca2ac9cdf960e443ca4dea37b7b06eb5cb40d128daa670ed7787f56db34` |
 | `tools/diskpath/generate_diskpath.py` | 6331 | `06c2e778414b6f58b433fcfc261564f40225a2e7bc1f44514195b8558b94793e` |
 | `tools/diskpath/validate_diskpath.py` | 7564 | `b7988a31006b42abc37e53483b309594cdddde0ad038985c19141e7bff3adf2e` |
 | `web/favicon.png` | 485 | `fffdc8a0b1d523bedd692ece9542b994b062f9a48fbeb8481bb09822b5fe93bf` |
