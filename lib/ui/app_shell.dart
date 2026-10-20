@@ -157,6 +157,10 @@ class _AppShellState extends State<AppShell> {
       _setupDialogShownForEmail = null;
       return;
     }
+    // The first-run dialog must use the edition selected by the user.
+    // Don't open it while edition storage is still loading or no edition has
+    // been selected yet.
+    if (editionLoading || edition == null) return;
     if (_permissionDialogOpen || auth.checkingReadAccess) return;
     if (auth.readAccessGranted) {
       if (!widget.controller.settings.setupComplete &&
@@ -179,8 +183,26 @@ class _AppShellState extends State<AppShell> {
   Future<void> _showFirstLoginSetupDialog(String email) async {
     if (_setupDialogOpen || !mounted) return;
     _setupDialogOpen = true;
-    try { await showDialog<void>(context: context, barrierDismissible: false, builder: (_) => FirstLoginSetupDialog(controller: widget.controller)); }
-    finally { _setupDialogOpen = false; if (mounted && !widget.controller.settings.setupComplete) _setupDialogShownForEmail = null; }
+    final selectedEdition = edition;
+    if (selectedEdition == null) {
+      _setupDialogOpen = false;
+      return;
+    }
+    try {
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => FirstLoginSetupDialog(
+          controller: widget.controller,
+          edition: selectedEdition,
+        ),
+      );
+    } finally {
+      _setupDialogOpen = false;
+      if (mounted && !widget.controller.settings.setupComplete) {
+        _setupDialogShownForEmail = null;
+      }
+    }
   }
 
   Future<void> _openSetupFromSettings() => _showFirstLoginSetupDialog(widget.controller.auth.account?.email ?? '');
@@ -192,6 +214,7 @@ class _AppShellState extends State<AppShell> {
         edition = loaded;
         editionLoading = false;
       });
+      _handleControllerChanged();
     }
   }
 
@@ -202,6 +225,7 @@ class _AppShellState extends State<AppShell> {
         edition = value;
         selectedIndex = 0;
       });
+      _handleControllerChanged();
     }
   }
 
