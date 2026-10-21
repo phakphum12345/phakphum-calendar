@@ -108,6 +108,36 @@ void main() {
     expect(find.text('ชื่อเวรเริ่มต้น *'), findsOneWidget);
   });
 
+  test('personal edition skips Timeline without requesting Calendar write access', () async {
+    final controller = demoController();
+    addTearDown(controller.dispose);
+    controller.shiftTimelineEnabled = false;
+    final auditCount = controller.auditEntries.length;
+
+    await controller.recordShiftTimelineEvent(
+      action: 'SHIFT_UPDATED',
+      summary: 'แก้ไขเวร',
+      details: 'test personal read-only behavior',
+    );
+
+    expect(controller.auditEntries, hasLength(auditCount));
+  });
+
+  test('organization Timeline remains enabled and requires authentication', () async {
+    final controller = demoController();
+    addTearDown(controller.dispose);
+    controller.shiftTimelineEnabled = true;
+
+    await expectLater(
+      controller.recordShiftTimelineEvent(
+        action: 'SHIFT_UPDATED',
+        summary: 'แก้ไขเวร',
+        details: 'test organization Timeline path',
+      ),
+      throwsA(isA<StateError>()),
+    );
+  });
+
   test('default monthly roster contains no personal names', () {
     final controller = demoController();
     addTearDown(controller.dispose);
