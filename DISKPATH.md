@@ -50,8 +50,8 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `.github/workflows/generate-diskpath-md.yml` | 1633 | `b962a10ffd7b988fc69f8386b97dad58a8bf0b2dea2a532620da914e70bb0d27` |
 | `.github/workflows/ios.yml` | 3293 | `5dc716ed94b3cfd421df674aa831d4b6f21c6e3390a054eb12dd02aea1b52934` |
 | `.github/workflows/linux.yml` | 2470 | `850db3a8e9c539389df9eb6e7d801bf40de6b82accd595e90870c200b3e5db9b` |
-| `.github/workflows/web.yml` | 2182 | `337b69d0094fa91fd0928212b6250ed611829d94091f8d059667664c6f4b28ec` |
-| `.github/workflows/windows.yml` | 3311 | `accb06a46965008a06eff8662129cd2e884bba205c2328abc57bb8dd2e6cfe57` |
+| `.github/workflows/web.yml` | 2161 | `acf4196bff49af2a5c8c164ba7fbaa3168dc3bbd4883703d5503a0cdb6fc0546` |
+| `.github/workflows/windows.yml` | 3290 | `c9dc273d17a356f7c551e86d1b534b19ec8db2c09be1b660a4f82d05d6d6ed77` |
 | `.gitignore` | 885 | `ef2df2e38b6ccf9af7295cb26bd630a71101fef2ffed5eae26c51b23eb09440c` |
 | `.metadata` | 1706 | `acfbaea52ff601014457c28ebe80ffc1b52132c4041b5896a82636ef1be6c6c5` |
 | `AI_GUIDE.md` | 764 | `a371137228538147759c16eeed0dcff6543d500db269cf62d564374e8d0578b3` |
