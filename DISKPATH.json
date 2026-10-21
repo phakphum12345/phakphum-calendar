@@ -1168,8 +1168,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 89259,
-      "sha256": "ec82eab5e22e3b2396d4ac6404ed9282ae200ce748f7bca1063c1b56d7790fbe"
+      "size": 90997,
+      "sha256": "dc5061554f136be8cdb8be76acddb9075ce5d7815737bb89799b1482fd467be0"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
