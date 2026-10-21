@@ -2808,8 +2808,8 @@
     },
     {
       "path": "lib/ui/app_shell.dart",
-      "size": 190792,
-      "sha256": "48211a323e42a7b2a0f66ab1fcc012228eded2f6f0ecfd9db100e8f0482022a6"
+      "size": 190833,
+      "sha256": "00bbf5b3050fe30668c4763c4785690aa7d05c67bc67ad42e0761dcc21eedf48"
     },
     {
       "path": "lib/ui/audit_log_page.dart",
