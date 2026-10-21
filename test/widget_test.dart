@@ -399,4 +399,25 @@ void main() {
       debugDefaultTargetPlatformOverride = null;
     }
   });
+
+  testWidgets('Timeline shortcut opens the audit history', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    final controller = demoController();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(ShiftToolsApp(controller: controller));
+    await tester.pumpAndSettle();
+
+    final timelineShortcut = find.byTooltip('Timeline ย้อนหลัง');
+    expect(timelineShortcut, findsOneWidget);
+    await tester.tap(timelineShortcut);
+    await tester.pumpAndSettle();
+
+    expect(find.text('ประวัติการทำงาน'), findsOneWidget);
+    expect(find.text('ยังไม่มี Audit log'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
 }

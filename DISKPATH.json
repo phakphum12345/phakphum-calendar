@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 738,
+  "file_count": 739,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -83,8 +83,8 @@
     },
     {
       "path": ".github/workflows/android.yml",
-      "size": 1561,
-      "sha256": "d4002720cddb73a27f5d339dd69eade09b00aa679f8c7ce5ca81cb13909f3528"
+      "size": 1891,
+      "sha256": "d092e0080b24a8bf983dfa6f5f1f2689ff85c4d8a2fb3e5ced3075ed267ab0a4"
     },
     {
       "path": ".github/workflows/ci-auto-detect.yml",
@@ -103,23 +103,23 @@
     },
     {
       "path": ".github/workflows/ios.yml",
-      "size": 2963,
-      "sha256": "0becfc04c62121b0c60772424269290982983907a664e11c5097ce51d0f098c3"
+      "size": 3293,
+      "sha256": "5dc716ed94b3cfd421df674aa831d4b6f21c6e3390a054eb12dd02aea1b52934"
     },
     {
       "path": ".github/workflows/linux.yml",
-      "size": 2140,
-      "sha256": "257036e0c9922ee17921a0bd32cc1773ea880967d9235e5cbb90e0837a1d8c89"
+      "size": 2470,
+      "sha256": "850db3a8e9c539389df9eb6e7d801bf40de6b82accd595e90870c200b3e5db9b"
     },
     {
       "path": ".github/workflows/web.yml",
-      "size": 2182,
-      "sha256": "337b69d0094fa91fd0928212b6250ed611829d94091f8d059667664c6f4b28ec"
+      "size": 2161,
+      "sha256": "acf4196bff49af2a5c8c164ba7fbaa3168dc3bbd4883703d5503a0cdb6fc0546"
     },
     {
       "path": ".github/workflows/windows.yml",
-      "size": 3311,
-      "sha256": "accb06a46965008a06eff8662129cd2e884bba205c2328abc57bb8dd2e6cfe57"
+      "size": 3290,
+      "sha256": "c9dc273d17a356f7c551e86d1b534b19ec8db2c09be1b660a4f82d05d6d6ed77"
     },
     {
       "path": ".gitignore",
@@ -1168,8 +1168,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 83932,
-      "sha256": "9c84b3757b28535d0f756437ba8e50f5b334ba6f02341355d50703d0f431b974"
+      "size": 90997,
+      "sha256": "dc5061554f136be8cdb8be76acddb9075ce5d7815737bb89799b1482fd467be0"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
@@ -2668,8 +2668,8 @@
     },
     {
       "path": "lib/models/app_settings.dart",
-      "size": 2347,
-      "sha256": "3506c35cdab07ba93e8478972ce2bfa0afe2a5c6d8161e7ff3c3a76465c2f779"
+      "size": 4167,
+      "sha256": "6ff84106068b5a2680a470cbe4b71bd1d40eab2590733df3bfc4b3f708f87ce6"
     },
     {
       "path": "lib/models/audit_entry.dart",
@@ -2768,8 +2768,8 @@
     },
     {
       "path": "lib/services/settings_service.dart",
-      "size": 6645,
-      "sha256": "daddd02bf7b6b6b1e0e1ec40676a50f98f54e3a45a754bb3060ac3c558fc3d2c"
+      "size": 8208,
+      "sha256": "732d6754db002c00ef7e37e3ba7534d72eafc491c4582c715c8a5c83c359511d"
     },
     {
       "path": "lib/services/sheets_service.dart",
@@ -2808,13 +2808,18 @@
     },
     {
       "path": "lib/ui/app_shell.dart",
-      "size": 188713,
-      "sha256": "6fd97fdda05b11c00a4a81f65f3faa452fc45baf61532bf39afb38c0f7a311a2"
+      "size": 190549,
+      "sha256": "5b21959890a4fe2c238f0536ba22f22391b3c12f5659024e116d93cacd9c090d"
     },
     {
       "path": "lib/ui/audit_log_page.dart",
       "size": 1240,
       "sha256": "550aa1ac28816344c928a4335ed337e4224a7442df5ecdd8d433bcb627eb362b"
+    },
+    {
+      "path": "lib/ui/first_login_setup_dialog.dart",
+      "size": 6098,
+      "sha256": "8b743cb888c0e7574fef394f4c39b7ae35a5d186fae054f66d80ea3491701eaa"
     },
     {
       "path": "lib/ui/google_sign_in_button.dart",
@@ -3563,8 +3568,8 @@
     },
     {
       "path": "test/widget_test.dart",
-      "size": 17312,
-      "sha256": "b56a87eae7d32a9261305ba12d7e0717caf2e7156d27894e95f99757c7122a73"
+      "size": 18114,
+      "sha256": "66d09ca2ac9cdf960e443ca4dea37b7b06eb5cb40d128daa670ed7787f56db34"
     },
     {
       "path": "tools/diskpath/generate_diskpath.py",

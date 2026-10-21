@@ -1439,6 +1439,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       _replaceLegacyShifts(updatedShifts);
     }
     _rebuildAlerts();
+    unawaited(recordShiftTimelineEvent(action: excluded == true || category == ShiftCategory.given ? 'SHIFT_CANCELLED' : (category == ShiftCategory.majorSwap || category == ShiftCategory.borrowedPaid || category == ShiftCategory.borrowedUnpaid) ? 'SHIFT_EXCHANGED' : 'SHIFT_UPDATED', summary: excluded == true || category == ShiftCategory.given ? 'ยกเวร' : (category == ShiftCategory.majorSwap || category == ShiftCategory.borrowedPaid || category == ShiftCategory.borrowedUnpaid) ? 'แลกเวร' : 'ปรับสถานะเวร', details: 'เวร: ${shift.displayName}\nผู้ปฏิบัติงาน: ${shift.assignedName}\nเวลาเดิม: ${shift.start}–${shift.end}\nประเภทเดิม: ${shift.category.label}\nประเภทใหม่: ${updatedShifts[index].category.label}\nยกเวร: ${excluded == true}', shift: shift).catchError((Object error) { status = 'บันทึก Timeline ไม่สำเร็จ: $error'; notifyListeners(); }));
     notifyListeners();
   }
 
@@ -1478,6 +1479,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     existingKeys = {};
     _rebuildAlerts();
     status = 'ปรับชื่อ เวลา ประเภท และสีของรายการแล้ว';
+    unawaited(recordShiftTimelineEvent(action: 'SHIFT_UPDATED', summary: 'แก้ไขรายละเอียดเวร', details: 'เวรเดิม: ${shift.displayName}\nเวรใหม่: ${updated.displayName}\nผู้ปฏิบัติงาน: ${shift.assignedName}\nเวลาเดิม: ${shift.start}–${shift.end}\nเวลาใหม่: ${updated.start}–${updated.end}\nสีใหม่: ${updated.effectiveCalendarColorId}\nประเภทใหม่: ${updated.category.label}', shift: shift).catchError((Object error) { status = 'บันทึก Timeline ไม่สำเร็จ: $error'; notifyListeners(); }));
     notifyListeners();
   }
 
@@ -1533,6 +1535,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           'ไม่บันทึกชื่อกิจกรรมหรือข้อมูลต้นฉบับใน Audit log',
       true,
     );
+    unawaited(recordShiftTimelineEvent(action: 'SHIFT_CREATED', summary: 'เพิ่มเวรใหม่', details: 'เวร: ${shift.displayName}\nผู้รับเวร: ${shift.assignedName}\nเวลา: ${shift.start}–${shift.end}\nประเภท: ${shift.category.label}\nสี Calendar: ${shift.effectiveCalendarColorId}', shift: shift).catchError((Object error) { status = 'บันทึก Timeline ไม่สำเร็จ: $error'; notifyListeners(); }));
     notifyListeners();
   }
 
@@ -1736,6 +1739,131 @@ class AppController extends ChangeNotifier implements ControllerState {
     } finally {
       busy = false;
       notifyListeners();
+    }
+  }
+
+  /// Writes a structured audit record to the shift event description and a separate Calendar event.
+  Future<void> recordShiftTimelineEvent({
+    required String action,
+    required String summary,
+    required String details,
+    Shift? shift,
+  }) async {
+    final account = auth.account;
+    if (account == null) {
+      throw StateError('กรุณาล็อกอิน Google ก่อนบันทึก Timeline');
+    }
+    final timestamp = DateTime.now();
+    final actor = account.displayName?.trim().isNotEmpty == true
+        ? account.displayName!.trim()
+        : account.email;
+    final record =
+        '[$action] ${timestamp.toIso8601String()} | ผู้แก้ไข: $actor\n$details';
+    var sourceEventStatus = '';
+    final client = await auth.clientFor([
+      calendar.CalendarApi.calendarEventsScope,
+    ]);
+    try {
+      final api = calendar.CalendarApi(client);
+      if (shift != null) {
+        // Interpret the month in the device's local timezone, then query using
+        // absolute UTC instants. Never subtract a fixed Bangkok offset.
+        final rangeStart = DateTime(
+          shift.start.year,
+          shift.start.month,
+          1,
+        ).toUtc();
+        final rangeEnd = DateTime(
+          shift.start.year,
+          shift.start.month + 1,
+          1,
+        ).toUtc();
+        String? token;
+        calendar.Event? matched;
+        do {
+          final page = await api.events.list(
+            'primary',
+            timeMin: rangeStart,
+            timeMax: rangeEnd,
+            singleEvents: true,
+            showDeleted: false,
+            maxResults: 2500,
+            pageToken: token,
+          );
+          for (final event in page.items ?? const <calendar.Event>[]) {
+            final eventStart = event.start?.dateTime;
+            if ((event.summary ?? '').trim() ==
+                    CalendarService.summaryFor(shift) &&
+                eventStart != null &&
+                eventStart
+                        .toUtc()
+                        .difference(shift.start.toUtc())
+                        .inMinutes
+                        .abs() <=
+                    1) {
+              matched = event;
+              break;
+            }
+          }
+          token = matched == null ? page.nextPageToken : null;
+        } while (token != null && token.isNotEmpty);
+
+        if (matched?.id != null) {
+          final oldDescription = matched!.description?.trim() ?? '';
+          matched.description = oldDescription.isEmpty
+              ? record
+              : '$oldDescription\n\n--- Timeline ---\n$record';
+          await api.events.update(matched, 'primary', matched.id!);
+          sourceEventStatus =
+              'พบรายการเวรต้นฉบับและเพิ่มรายละเอียด Timeline แล้ว';
+        } else if (action != 'SHIFT_CREATED') {
+          // Keep the separate Timeline entry, but be explicit that the source
+          // event could not be matched and was not modified.
+          sourceEventStatus =
+              'ไม่พบรายการเวรต้นฉบับที่ตรงกัน จึงไม่ได้แก้ไขคำอธิบายรายการเดิม';
+        }
+      }
+
+      final recordedDetails = sourceEventStatus.isEmpty
+          ? details
+          : '$details\n\nสถานะรายการเวรต้นฉบับ: $sourceEventStatus';
+      final endTime = timestamp.add(const Duration(minutes: 10));
+      await api.events.insert(
+        calendar.Event(
+          summary: 'Timeline: $summary',
+          description:
+              'ประเภทเหตุการณ์: $action\nผู้แก้ไข: $actor (${account.email})'
+              '\nเวลา: ${timestamp.toIso8601String()}\n\n$recordedDetails',
+          colorId: '8',
+          // Use absolute instants. The timeZone controls calendar display;
+          // shifting the hour manually would record the wrong instant.
+          start: calendar.EventDateTime(
+            dateTime: timestamp.toUtc(),
+            timeZone: CalendarService.timeZone,
+          ),
+          end: calendar.EventDateTime(
+            dateTime: endTime.toUtc(),
+            timeZone: CalendarService.timeZone,
+          ),
+          extendedProperties: calendar.EventExtendedProperties(
+            private: {
+              'sourceApp': CalendarService.sourceApp,
+              'auditType': 'shift_timeline',
+              'action': action,
+              'actorEmail': account.email,
+            },
+          ),
+        ),
+        'primary',
+        sendUpdates: 'none',
+      );
+      await _addAudit(
+        action,
+        '$summary — ผู้แก้ไข: $actor; $recordedDetails',
+        true,
+      );
+    } finally {
+      client.close();
     }
   }
 

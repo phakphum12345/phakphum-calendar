@@ -11,6 +11,9 @@ class AppSettings {
     required this.refreshSeconds,
     required this.autoSync,
     required this.googleWebClientId,
+    this.organizationName = '', this.officerName = '', this.defaultShiftName = '',
+    this.defaultShiftColor = '#616161', this.defaultShiftStart = '08:00', this.defaultShiftEnd = '16:00',
+    this.defaultShiftReceiver = '', this.shiftExchangeNote = '', this.shiftCancellationNote = '', this.setupComplete = false,
   });
 
   factory AppSettings.defaults() {
@@ -36,6 +39,8 @@ class AppSettings {
   final int refreshSeconds;
   final bool autoSync;
   final String googleWebClientId;
+  final String organizationName, officerName, defaultShiftName, defaultShiftColor, defaultShiftStart, defaultShiftEnd, defaultShiftReceiver, shiftExchangeNote, shiftCancellationNote;
+  final bool setupComplete;
 
   List<RosterPeriod> get effectivePeriods {
     if (periods.isNotEmpty) {
@@ -60,6 +65,9 @@ class AppSettings {
     int? refreshSeconds,
     bool? autoSync,
     String? googleWebClientId,
+    String? organizationName, String? officerName, String? defaultShiftName, String? defaultShiftColor,
+    String? defaultShiftStart, String? defaultShiftEnd, String? defaultShiftReceiver,
+    String? shiftExchangeNote, String? shiftCancellationNote, bool? setupComplete,
   }) => AppSettings(
     targetName: targetName ?? this.targetName,
     year: year ?? this.year,
@@ -70,6 +78,11 @@ class AppSettings {
     refreshSeconds: refreshSeconds ?? this.refreshSeconds,
     autoSync: autoSync ?? this.autoSync,
     googleWebClientId: googleWebClientId ?? this.googleWebClientId,
+    organizationName: organizationName ?? this.organizationName, officerName: officerName ?? this.officerName,
+    defaultShiftName: defaultShiftName ?? this.defaultShiftName, defaultShiftColor: defaultShiftColor ?? this.defaultShiftColor,
+    defaultShiftStart: defaultShiftStart ?? this.defaultShiftStart, defaultShiftEnd: defaultShiftEnd ?? this.defaultShiftEnd,
+    defaultShiftReceiver: defaultShiftReceiver ?? this.defaultShiftReceiver, shiftExchangeNote: shiftExchangeNote ?? this.shiftExchangeNote,
+    shiftCancellationNote: shiftCancellationNote ?? this.shiftCancellationNote, setupComplete: setupComplete ?? this.setupComplete,
   );
 
   AppSettings clearRosterSelection() => AppSettings(
@@ -82,5 +95,9 @@ class AppSettings {
     refreshSeconds: refreshSeconds,
     autoSync: autoSync,
     googleWebClientId: googleWebClientId,
+    organizationName: organizationName, officerName: officerName, defaultShiftName: defaultShiftName,
+    defaultShiftColor: defaultShiftColor, defaultShiftStart: defaultShiftStart, defaultShiftEnd: defaultShiftEnd,
+    defaultShiftReceiver: defaultShiftReceiver, shiftExchangeNote: shiftExchangeNote,
+    shiftCancellationNote: shiftCancellationNote, setupComplete: setupComplete,
   );
 }

@@ -35,6 +35,7 @@ import '../services/calendar_color_service.dart';
 import '../services/drive_ownership_service.dart';
 import '../services/google_auth_service.dart';
 import '../services/shift_color_service.dart';
+import 'first_login_setup_dialog.dart';
 import 'google_sign_in_button.dart';
 
 enum _UtilityPage {
@@ -86,6 +87,8 @@ class _AppShellState extends State<AppShell> {
   bool editionLoading = true;
   bool _permissionDialogOpen = false;
   String? _permissionDialogShownForEmail;
+  bool _setupDialogOpen = false;
+  String? _setupDialogShownForEmail;
 
   List<NavigationDestination> _destinations(
     BuildContext context,
@@ -151,19 +154,36 @@ class _AppShellState extends State<AppShell> {
     final account = auth.account;
     if (account == null) {
       _permissionDialogShownForEmail = null;
+      _setupDialogShownForEmail = null;
       return;
     }
-    if (_permissionDialogOpen ||
-        auth.checkingReadAccess ||
-        auth.readAccessGranted ||
-        _permissionDialogShownForEmail == account.email) {
+    if (_permissionDialogOpen || auth.checkingReadAccess) return;
+    if (auth.readAccessGranted) {
+      if (!widget.controller.settings.setupComplete &&
+          !_setupDialogOpen &&
+          _setupDialogShownForEmail != account.email) {
+        _setupDialogShownForEmail = account.email;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) unawaited(_showFirstLoginSetupDialog(account.email));
+        });
+      }
       return;
     }
+    if (_permissionDialogShownForEmail == account.email) return;
     _permissionDialogShownForEmail = account.email;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_showReadAccessDialog(account.email));
     });
   }
+
+  Future<void> _showFirstLoginSetupDialog(String email) async {
+    if (_setupDialogOpen || !mounted) return;
+    _setupDialogOpen = true;
+    try { await showDialog<void>(context: context, barrierDismissible: false, builder: (_) => FirstLoginSetupDialog(controller: widget.controller)); }
+    finally { _setupDialogOpen = false; if (mounted && !widget.controller.settings.setupComplete) _setupDialogShownForEmail = null; }
+  }
+
+  Future<void> _openSetupFromSettings() => _showFirstLoginSetupDialog(widget.controller.auth.account?.email ?? '');
 
   Future<void> _loadEdition() async {
     final loaded = await editionRepository.load();
@@ -249,6 +269,7 @@ class _AppShellState extends State<AppShell> {
               openShiftTemplates: _openShiftTemplates,
               edition: currentEdition,
               changeEdition: _selectEdition,
+              openSetup: _openSetupFromSettings,
             ),
           ];
           final content = IndexedStack(index: selectedIndex, children: pages);
@@ -311,6 +332,7 @@ class _AppShellState extends State<AppShell> {
                 ],
               ),
               actions: [
+                IconButton(tooltip: 'Timeline ย้อนหลัง', icon: const Icon(Icons.history_toggle_off_outlined), onPressed: () => unawaited(_openUtilityPage(_UtilityPage.history))),
                 IconButton(
                   key: const Key('locale-switch'),
                   tooltip: context.l10n.switchLanguage,
@@ -4678,6 +4700,7 @@ class _SettingsPage extends StatelessWidget {
     required this.openShiftTemplates,
     required this.edition,
     required this.changeEdition,
+    required this.openSetup,
   });
   final AppController controller;
   final Future<void> Function(String template, String newTitle)
@@ -4685,11 +4708,14 @@ class _SettingsPage extends StatelessWidget {
   final VoidCallback openShiftTemplates;
   final AppEdition edition;
   final Future<void> Function(AppEdition edition) changeEdition;
+  final Future<void> Function() openSetup;
 
   @override
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.all(20),
     children: [
+      Card(child: ListTile(leading: const CircleAvatar(child: Icon(Icons.tune_outlined)), title: const Text('ตั้งค่าหน่วยงานและเวร'), subtitle: Text('${controller.settings.organizationName.isEmpty ? 'ยังไม่ได้ตั้งค่า' : controller.settings.organizationName} • ${controller.settings.officerName}'), trailing: const Icon(Icons.edit_outlined), onTap: openSetup)),
+      const SizedBox(height: 12),
       Card(
         child: ListTile(
           leading: CircleAvatar(
