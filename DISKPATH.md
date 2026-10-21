@@ -261,7 +261,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `l10n.yaml` | 151 | `c3ce52cbd012e898f809811d21f21ead3bb3afd08b49a4efe4da74080248664d` |
 | `lib/app.dart` | 7679 | `599df85fd9c6a6abaa17e5646dd59969ef67bbe5a9d722030c1c5d4c83247ce1` |
 | `lib/bootstrap/app_bootstrap.dart` | 380 | `cada71fb830d954d0bd4df8e8892b7e0b62a5844a01d00daf1cd0007c9f23cb0` |
-| `lib/controller/app_controller.dart` | 90997 | `dc5061554f136be8cdb8be76acddb9075ce5d7815737bb89799b1482fd467be0` |
+| `lib/controller/app_controller.dart` | 91074 | `3d8dfd1ae05752edd8d698d90d567fdd080f2cc3c5ce7ede75456e50e1a597a6` |
 | `lib/core/di/app_dependencies.dart` | 21906 | `4075fdbcb457fd20199b251966063c71408d27ce8a8301bbfce9f160dff36b14` |
 | `lib/core/google/authorized_google_client_factory.dart` | 971 | `8a5504571f4d8e93d096d3f3bb3140564e58729510ac66c021a95361b2d362c8` |
 | `lib/core/google/google_scopes.dart` | 629 | `437eaa6b551e7fcfc6993603d2acb6c3a5be6818d0289ed2b20b0fc1af2d29b2` |
@@ -589,9 +589,9 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/shift_time_service.dart` | 2193 | `612c7b2f23bb5c5405ff64455cb9a1172a0ac3e4a5a852b6b43eca9e16d31495` |
 | `lib/services/swap_request_service.dart` | 1857 | `84df2fac3ba6319c7fbbd7e16a757aeeac3041b2cedf6d3bbb926dc361b48f45` |
 | `lib/shared/presentation/app_status_page.dart` | 2355 | `632e9de1c6f386b0ef04fdc15e0870c0ac633859493fa2acea07e8c7926dabfd` |
-| `lib/ui/app_shell.dart` | 190549 | `5b21959890a4fe2c238f0536ba22f22391b3c12f5659024e116d93cacd9c090d` |
+| `lib/ui/app_shell.dart` | 190792 | `48211a323e42a7b2a0f66ab1fcc012228eded2f6f0ecfd9db100e8f0482022a6` |
 | `lib/ui/audit_log_page.dart` | 1240 | `550aa1ac28816344c928a4335ed337e4224a7442df5ecdd8d433bcb627eb362b` |
-| `lib/ui/first_login_setup_dialog.dart` | 6098 | `8b743cb888c0e7574fef394f4c39b7ae35a5d186fae054f66d80ea3491701eaa` |
+| `lib/ui/first_login_setup_dialog.dart` | 10532 | `38d98cd2da5a0f12f6997695783589dd3796a9123fd3f01fbf8d46c815a848d4` |
 | `lib/ui/google_sign_in_button.dart` | 102 | `250dcb07d7da55efdcbe2f2f164ef395050f5b635e044e48f16575dc035ad2b7` |
 | `lib/ui/google_sign_in_button_stub.dart` | 485 | `a7dc983f3b084047340e7899c25abe7f89fc45401653e3a41ecc83f868504656` |
 | `lib/ui/google_sign_in_button_web.dart` | 600 | `b817de5a6e8960ca5e42cc386c7f85f0a41c75e01c350ed783dedc1d8cedb9ca` |
@@ -741,7 +741,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/v2/rule_engine_test.dart` | 1535 | `e0735d9ed5ed75f54e091d7e5be6bf1f5a2f6f46bb423cfa848386881787585c` |
 | `test/v2/shift_exchange_request_test.dart` | 927 | `9187f583afc132ba5b4150ae721afeffbd378317f595360e91d3b2ae1986cafa` |
 | `test/v2/simulation_engine_test.dart` | 3350 | `afd78813d7fd952a7a609886a5e92dbecea1699a218f9969c265409a4f29a16c` |
-| `test/widget_test.dart` | 18114 | `66d09ca2ac9cdf960e443ca4dea37b7b06eb5cb40d128daa670ed7787f56db34` |
+| `test/widget_test.dart` | 22170 | `007af4a8268279bd93d16e5d16d752bfd663c16e58aaffe56fa263f7baeae2b7` |
 | `tools/diskpath/generate_diskpath.py` | 6331 | `06c2e778414b6f58b433fcfc261564f40225a2e7bc1f44514195b8558b94793e` |
 | `tools/diskpath/validate_diskpath.py` | 7564 | `b7988a31006b42abc37e53483b309594cdddde0ad038985c19141e7bff3adf2e` |
 | `web/favicon.png` | 485 | `fffdc8a0b1d523bedd692ece9542b994b062f9a48fbeb8481bb09822b5fe93bf` |
