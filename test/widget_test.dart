@@ -71,6 +71,19 @@ void main() {
     expect(find.text('ชื่อหน่วยงาน *'), findsNothing);
     expect(find.text('ชื่อเจ้าหน้าที่ *'), findsNothing);
     expect(find.text('ชื่อเวรเริ่มต้น *'), findsOneWidget);
+
+    // Actually save Personal setup with no Google account/write authorization.
+    await tester.enterText(
+      find.widgetWithText(TextField, 'ชื่อเวรเริ่มต้น *'),
+      'เวรส่วนตัว',
+    );
+    await tester.tap(find.text('บันทึกและเข้าหน้าหลัก'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('first-login-setup-dialog')), findsNothing);
+    expect(controller.settings.setupComplete, isTrue);
+    expect(controller.settings.organizationName, isEmpty);
+    expect(controller.settings.officerName, isEmpty);
   });
 
   testWidgets('organization first-run setup requires organization fields', (
