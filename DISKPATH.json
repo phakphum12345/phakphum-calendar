@@ -113,13 +113,13 @@
     },
     {
       "path": ".github/workflows/web.yml",
-      "size": 2182,
-      "sha256": "337b69d0094fa91fd0928212b6250ed611829d94091f8d059667664c6f4b28ec"
+      "size": 2161,
+      "sha256": "acf4196bff49af2a5c8c164ba7fbaa3168dc3bbd4883703d5503a0cdb6fc0546"
     },
     {
       "path": ".github/workflows/windows.yml",
-      "size": 3311,
-      "sha256": "accb06a46965008a06eff8662129cd2e884bba205c2328abc57bb8dd2e6cfe57"
+      "size": 3290,
+      "sha256": "c9dc273d17a356f7c551e86d1b534b19ec8db2c09be1b660a4f82d05d6d6ed77"
     },
     {
       "path": ".gitignore",
