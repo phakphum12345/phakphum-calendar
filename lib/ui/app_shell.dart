@@ -209,6 +209,8 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _loadEdition() async {
     final loaded = await editionRepository.load();
+    widget.controller.shiftTimelineEnabled =
+        loaded == AppEdition.organization;
     if (mounted) {
       setState(() {
         edition = loaded;
@@ -220,6 +222,8 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _selectEdition(AppEdition value) async {
     await editionRepository.save(value);
+    widget.controller.shiftTimelineEnabled =
+        value == AppEdition.organization;
     if (mounted) {
       setState(() {
         edition = value;
