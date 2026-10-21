@@ -1,4 +1,5 @@
 name: Build Windows
+# Run platform gates for stacked PRs as well as PRs targeting main.
 
 on:
   workflow_dispatch:
