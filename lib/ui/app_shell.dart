@@ -179,7 +179,7 @@ class _AppShellState extends State<AppShell> {
   Future<void> _showFirstLoginSetupDialog(String email) async {
     if (_setupDialogOpen || !mounted) return;
     _setupDialogOpen = true;
-    try { await showDialog<void>(context: context, barrierDismissible: false, builder: (_) => FirstLoginSetupDialog(controller: widget.controller)); }
+    try { await showDialog<void>(context: context, barrierDismissible: false, builder: (_) => FirstLoginSetupDialog(controller: widget.controller, edition: edition ?? AppEdition.personal)); }
     finally { _setupDialogOpen = false; if (mounted && !widget.controller.settings.setupComplete) _setupDialogShownForEmail = null; }
   }
 
