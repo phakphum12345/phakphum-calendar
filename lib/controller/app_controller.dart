@@ -1767,7 +1767,7 @@ class AppController extends ChangeNotifier implements ControllerState {
         ? account.displayName!.trim()
         : account.email;
     final record =
-        '[$action] ${timestamp.toIso8601String()} | ผู้แก้ไข: $actor\\n$details';
+        '[$action] ${timestamp.toIso8601String()} | ผู้แก้ไข: $actor\n$details';
     var sourceEventStatus = '';
     final client = await auth.clientFor([
       calendar.CalendarApi.calendarEventsScope,
@@ -1821,7 +1821,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           final oldDescription = matched!.description?.trim() ?? '';
           matched.description = oldDescription.isEmpty
               ? record
-              : '$oldDescription\\n\\n--- Timeline ---\\n$record';
+              : '$oldDescription\n\n--- Timeline ---\n$record';
           await api.events.update(matched, 'primary', matched.id!);
           sourceEventStatus =
               'พบรายการเวรต้นฉบับและเพิ่มรายละเอียด Timeline แล้ว';
@@ -1835,14 +1835,14 @@ class AppController extends ChangeNotifier implements ControllerState {
 
       final recordedDetails = sourceEventStatus.isEmpty
           ? details
-          : '$details\\n\\nสถานะรายการเวรต้นฉบับ: $sourceEventStatus';
+          : '$details\n\nสถานะรายการเวรต้นฉบับ: $sourceEventStatus';
       final endTime = timestamp.add(const Duration(minutes: 10));
       await api.events.insert(
         calendar.Event(
           summary: 'Timeline: $summary',
           description:
-              'ประเภทเหตุการณ์: $action\\nผู้แก้ไข: $actor (${account.email})'
-              '\\nเวลา: ${timestamp.toIso8601String()}\\n\\n$recordedDetails',
+              'ประเภทเหตุการณ์: $action\nผู้แก้ไข: $actor (${account.email})'
+              '\nเวลา: ${timestamp.toIso8601String()}\n\n$recordedDetails',
           colorId: '8',
           // Use absolute instants. The timeZone controls calendar display;
           // shifting the hour manually would record the wrong instant.
