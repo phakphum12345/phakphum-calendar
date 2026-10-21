@@ -190,6 +190,10 @@ class AppController extends ChangeNotifier implements ControllerState {
   final Future<ShiftCalendarWorkflowController> Function()
   _calendarWorkflowControllerFactory;
 
+  /// Shift Timeline writes are enabled only for the Organization edition.
+  /// Keep disabled until AppShell has loaded the saved edition.
+  bool shiftTimelineEnabled = false;
+
   AppSettings settings = AppSettings.defaults();
   late LegacyScheduleConversion _legacySchedule = _legacyScheduleAdapter
       .toCanonical(
@@ -1743,45 +1747,133 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   /// Writes a structured audit record to the shift event description and a separate Calendar event.
-  Future<void> recordShiftTimelineEvent({required String action, required String summary, required String details, Shift? shift}) async {
+  ///
+  /// Personal edition is read-only for Calendar events, so Timeline writes are
+  /// skipped unless the selected edition explicitly enables them.
+  Future<void> recordShiftTimelineEvent({
+    required String action,
+    required String summary,
+    required String details,
+    Shift? shift,
+  }) async {
+    if (!shiftTimelineEnabled) return;
+
     final account = auth.account;
-    if (account == null) throw StateError('กรุณาล็อกอิน Google ก่อนบันทึก Timeline');
+    if (account == null) {
+      throw StateError('กรุณาล็อกอิน Google ก่อนบันทึก Timeline');
+    }
     final timestamp = DateTime.now();
-    final actor = account.displayName?.trim().isNotEmpty == true ? account.displayName!.trim() : account.email;
-    final record = '[$action] ${timestamp.toIso8601String()} | ผู้แก้ไข: $actor\n$details';
-    final client = await auth.clientFor([calendar.CalendarApi.calendarEventsScope]);
+    final actor = account.displayName?.trim().isNotEmpty == true
+        ? account.displayName!.trim()
+        : account.email;
+    final record =
+        '[$action] ${timestamp.toIso8601String()} | ผู้แก้ไข: $actor\\n$details';
+    var sourceEventStatus = '';
+    final client = await auth.clientFor([
+      calendar.CalendarApi.calendarEventsScope,
+    ]);
     try {
       final api = calendar.CalendarApi(client);
       if (shift != null) {
-        final rangeStart = DateTime.utc(shift.start.year, shift.start.month, shift.start.day).subtract(const Duration(hours: 7));
-        final rangeEnd = DateTime.utc(shift.start.year, shift.start.month + 1, 1).subtract(const Duration(hours: 7));
-        String? token; calendar.Event? matched;
+        // Interpret the month in the device's local timezone, then query using
+        // absolute UTC instants. Never subtract a fixed Bangkok offset.
+        final rangeStart = DateTime(
+          shift.start.year,
+          shift.start.month,
+          1,
+        ).toUtc();
+        final rangeEnd = DateTime(
+          shift.start.year,
+          shift.start.month + 1,
+          1,
+        ).toUtc();
+        String? token;
+        calendar.Event? matched;
         do {
-          final page = await api.events.list('primary', timeMin: rangeStart, timeMax: rangeEnd, singleEvents: true, showDeleted: false, maxResults: 2500, pageToken: token);
+          final page = await api.events.list(
+            'primary',
+            timeMin: rangeStart,
+            timeMax: rangeEnd,
+            singleEvents: true,
+            showDeleted: false,
+            maxResults: 2500,
+            pageToken: token,
+          );
           for (final event in page.items ?? const <calendar.Event>[]) {
             final eventStart = event.start?.dateTime;
-            if ((event.summary ?? '').trim() == CalendarService.summaryFor(shift) && eventStart != null && eventStart.toUtc().difference(shift.start.toUtc()).inMinutes.abs() <= 1) { matched = event; break; }
+            if ((event.summary ?? '').trim() ==
+                    CalendarService.summaryFor(shift) &&
+                eventStart != null &&
+                eventStart
+                        .toUtc()
+                        .difference(shift.start.toUtc())
+                        .inMinutes
+                        .abs() <=
+                    1) {
+              matched = event;
+              break;
+            }
           }
           token = matched == null ? page.nextPageToken : null;
         } while (token != null && token.isNotEmpty);
+
         if (matched?.id != null) {
           final oldDescription = matched!.description?.trim() ?? '';
-          matched.description = oldDescription.isEmpty ? record : '$oldDescription\n\n--- Timeline ---\n$record';
+          matched.description = oldDescription.isEmpty
+              ? record
+              : '$oldDescription\\n\\n--- Timeline ---\\n$record';
           await api.events.update(matched, 'primary', matched.id!);
+          sourceEventStatus =
+              'พบรายการเวรต้นฉบับและเพิ่มรายละเอียด Timeline แล้ว';
+        } else if (action != 'SHIFT_CREATED') {
+          // Keep the separate Timeline entry, but be explicit that the source
+          // event could not be matched and was not modified.
+          sourceEventStatus =
+              'ไม่พบรายการเวรต้นฉบับที่ตรงกัน จึงไม่ได้แก้ไขคำอธิบายรายการเดิม';
         }
       }
-      final end = timestamp.add(const Duration(minutes: 10));
-      DateTime instant(DateTime value) => DateTime.utc(value.year, value.month, value.day, value.hour - 7, value.minute);
-      await api.events.insert(calendar.Event(
-        summary: 'Timeline: $summary',
-        description: 'ประเภทเหตุการณ์: $action\nผู้แก้ไข: $actor (${account.email})\nเวลา: ${timestamp.toIso8601String()}\n\n$details',
-        colorId: '8',
-        start: calendar.EventDateTime(dateTime: instant(timestamp), timeZone: CalendarService.timeZone),
-        end: calendar.EventDateTime(dateTime: instant(end), timeZone: CalendarService.timeZone),
-        extendedProperties: calendar.EventExtendedProperties(private: {'sourceApp': CalendarService.sourceApp, 'auditType': 'shift_timeline', 'action': action, 'actorEmail': account.email}),
-      ), 'primary', sendUpdates: 'none');
-      await _addAudit(action, '$summary — ผู้แก้ไข: $actor; $details', true);
-    } finally { client.close(); }
+
+      final recordedDetails = sourceEventStatus.isEmpty
+          ? details
+          : '$details\\n\\nสถานะรายการเวรต้นฉบับ: $sourceEventStatus';
+      final endTime = timestamp.add(const Duration(minutes: 10));
+      await api.events.insert(
+        calendar.Event(
+          summary: 'Timeline: $summary',
+          description:
+              'ประเภทเหตุการณ์: $action\\nผู้แก้ไข: $actor (${account.email})'
+              '\\nเวลา: ${timestamp.toIso8601String()}\\n\\n$recordedDetails',
+          colorId: '8',
+          // Use absolute instants. The timeZone controls calendar display;
+          // shifting the hour manually would record the wrong instant.
+          start: calendar.EventDateTime(
+            dateTime: timestamp.toUtc(),
+            timeZone: CalendarService.timeZone,
+          ),
+          end: calendar.EventDateTime(
+            dateTime: endTime.toUtc(),
+            timeZone: CalendarService.timeZone,
+          ),
+          extendedProperties: calendar.EventExtendedProperties(
+            private: {
+              'sourceApp': CalendarService.sourceApp,
+              'auditType': 'shift_timeline',
+              'action': action,
+              'actorEmail': account.email,
+            },
+          ),
+        ),
+        'primary',
+        sendUpdates: 'none',
+      );
+      await _addAudit(
+        action,
+        '$summary — ผู้แก้ไข: $actor; $recordedDetails',
+        true,
+      );
+    } finally {
+      client.close();
+    }
   }
 
   Future<void> _addAudit(String action, String message, bool success) async {
