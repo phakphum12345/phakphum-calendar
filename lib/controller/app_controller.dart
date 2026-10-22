@@ -10,6 +10,7 @@ import '../models/app_settings.dart';
 import '../models/audit_entry.dart';
 import '../models/calendar_busy_period.dart';
 import '../models/roster_period.dart';
+import '../models/selected_roster_period_range.dart';
 import '../models/roster_reference_comparison.dart';
 import '../models/roster_assignment_timeline.dart';
 import '../models/saved_sheet.dart';
@@ -2174,6 +2175,18 @@ class AppController extends ChangeNotifier implements ControllerState {
         syncRangeEnd != null) {
       return;
     }
+
+    // The user's selected month(s) take precedence over a source section's
+    // declared range, which may cross into a neighbouring month.
+    final selectedPeriods = SelectedRosterPeriodRange.fromPeriods(
+      settings.effectivePeriods,
+    );
+    if (selectedPeriods != null) {
+      syncRangeStart = selectedPeriods.start;
+      syncRangeEnd = selectedPeriods.end;
+      return;
+    }
+
     final ranges = monthlyRoster.dateRanges;
     if (ranges.isEmpty) {
       if (parsed.isEmpty) return;
@@ -2201,7 +2214,15 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   List<Shift> _filterToSyncDateRange(Iterable<Shift> source) => source
-      .where((shift) => _includesSyncDate(shift.start))
+      .where(
+        (shift) =>
+            _includesSyncDate(shift.start) &&
+            (_syncRangeCustomized ||
+                settings.effectivePeriods.isEmpty ||
+                SelectedRosterPeriodRange.fromPeriods(
+                  settings.effectivePeriods,
+                )!.includes(shift.start)),
+      )
       .toList(growable: false);
 
   bool _includesSyncDate(DateTime date) {
