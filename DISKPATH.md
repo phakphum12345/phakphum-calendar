@@ -61,6 +61,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `CODE_STYLE.md` | 3238 | `876174cecd8d0474f35335a34133d5415c36b676ecf1d146bcd144bd6dee0613` |
 | `CONTRIBUTING.md` | 3267 | `8a62c5ffd0ccca9c39e4b24a0db5e0d463ebb80634a492aa927038f19aa408a0` |
 | `DATA_MODEL.md` | 828 | `ec8b06bab5ccb403559c201117c99d558c40fced412675d682f225aae6bfdd73` |
+| `lib/features/google_drive/application/multi_sheet_picker_selection.dart` | 1179 | `27d63b76944ae07f093982732805221ee1bcc4578194eda58f11da3a902a71de` |
 | `LICENSE` | 11358 | `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30` |
 | `MASTER_PLAN.md` | 5376 | `9d287248c6ba070027086b3f998f83886041d5deb14aeea8eac515653fa04a62` |
 | `NOTICE` | 101 | `466fa508291567626fb52fdf58e15ce228338a594f9c368d0324af3b9b9087b5` |
@@ -78,6 +79,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `SPRINT_4_STATUS.md` | 406 | `79f03b6451ed222dd18b5eca8885071dc8ff55afaa30adb0a250be5b53cadbe0` |
 | `SPRINT_5_STATUS.md` | 592 | `8902d6a55f203cfc4667be2e9941c63d9e2071928d3aff627447d8b4b9979b42` |
 | `SPRINT_6_STATUS.md` | 703 | `91118d016752c5373a072191c8da67ef2e6eb1a0d2d07acaa0f6217d43e647d5` |
+| `test/multi_sheet_picker_selection_test.dart` | 1904 | `6c460b5ca26b2557e414fdc857c60130628a5c0e21541fff37e04ad0fe9689da` |
 | `TESTING.md` | 2671 | `e295cc8a2cfc592a4b4d3b3d5ec353f4b7b4b0558e4bb794d195d5caa83059f8` |
 | `VERSION_2_0_STATUS.md` | 1107 | `1a3265cb0b873fdda5a5ccbd990de5b70beee839220359109d41c7c0922636f8` |
 | `VERSION_3_0_STATUS.md` | 1650 | `342b1067c053e616af214a8ab836fc2ba951858f13b8091557cb26851a49e9dd` |
@@ -589,7 +591,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/shift_time_service.dart` | 2193 | `612c7b2f23bb5c5405ff64455cb9a1172a0ac3e4a5a852b6b43eca9e16d31495` |
 | `lib/services/swap_request_service.dart` | 1857 | `84df2fac3ba6319c7fbbd7e16a757aeeac3041b2cedf6d3bbb926dc361b48f45` |
 | `lib/shared/presentation/app_status_page.dart` | 2355 | `632e9de1c6f386b0ef04fdc15e0870c0ac633859493fa2acea07e8c7926dabfd` |
-| `lib/ui/app_shell.dart` | 192215 | `622cb9eb504c74341b14be2b752f558f65b049190742e6628224981dda29b0c4` |
+| `lib/ui/app_shell.dart` | 191943 | `76d45d301cbcaff7c5c6706df8bf8a359bb51a556854b39e08e4fcd19d9ab7f3` |
 | `lib/ui/audit_log_page.dart` | 1240 | `550aa1ac28816344c928a4335ed337e4224a7442df5ecdd8d433bcb627eb362b` |
 | `lib/ui/first_login_setup_dialog.dart` | 6098 | `8b743cb888c0e7574fef394f4c39b7ae35a5d186fae054f66d80ea3491701eaa` |
 | `lib/ui/google_sign_in_button.dart` | 102 | `250dcb07d7da55efdcbe2f2f164ef395050f5b635e044e48f16575dc035ad2b7` |
