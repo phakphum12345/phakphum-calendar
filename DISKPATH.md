@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `741`
+- Tracked files: `743`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
