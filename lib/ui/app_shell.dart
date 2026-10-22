@@ -1233,7 +1233,7 @@ class _DashboardPageState extends State<_DashboardPage> {
       throw StateError('ไม่พบ Google Sheets ที่บัญชีนี้เข้าถึงได้');
     }
 
-    final selected = await showDialog<List<RecentOwnedSheet>>(
+    final selection = await showDialog<_GoogleSheetPickerResult>(
       context: context,
       builder: (context) => _GoogleSheetPickerDialog(
         files: controller.recentOwnedSheets,
@@ -1244,8 +1244,23 @@ class _DashboardPageState extends State<_DashboardPage> {
       ),
     );
 
-    if (selected == null || selected.isEmpty || !mounted) return;
-    await controller.selectRecentSourceSheets(selected);
+    if (selection == null || !mounted) return;
+
+    if (selection.removedSpreadsheetIds.isNotEmpty) {
+      final savedToRemove = controller.savedSheetsForCurrentAccount
+          .where(
+            (sheet) =>
+                selection.removedSpreadsheetIds.contains(sheet.spreadsheetId),
+          )
+          .toList(growable: false);
+      for (final sheet in savedToRemove) {
+        await controller.deleteSavedSheet(sheet);
+      }
+    }
+
+    if (selection.addedFiles.isNotEmpty) {
+      await controller.selectRecentSourceSheets(selection.addedFiles);
+    }
   }
 
   Future<void> _selectSourceByUrl() async {
@@ -1996,6 +2011,7 @@ class _GoogleSheetPickerDialog extends StatefulWidget {
 class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
   final TextEditingController _searchController = TextEditingController();
   final Set<String> _selectedIds = <String>{};
+  final Set<String> _removedIds = <String>{};
   String _query = '';
 
   List<RecentOwnedSheet> get _filteredFiles {
@@ -2011,9 +2027,13 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
       .toList(growable: false);
 
   void _toggle(RecentOwnedSheet file) {
-    if (widget.alreadyAddedSpreadsheetIds.contains(file.id)) return;
+    final alreadyAdded = widget.alreadyAddedSpreadsheetIds.contains(file.id);
     setState(() {
-      if (!_selectedIds.add(file.id)) {
+      if (alreadyAdded) {
+        if (!_removedIds.add(file.id)) {
+          _removedIds.remove(file.id);
+        }
+      } else if (!_selectedIds.add(file.id)) {
         _selectedIds.remove(file.id);
       }
     });
@@ -2058,7 +2078,8 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
                 '${widget.order == OwnedSheetOrder.firstCreated ? 'เรียงจากไฟล์ที่สร้างก่อน' : 'เรียงจากไฟล์ที่แก้ไขล่าสุด'} • '
                 'แสดงหน้าแรก ${files.length}/${widget.files.length} ไฟล์ • '
                 'เลือกใหม่ ${_selectedIds.length} ไฟล์ • '
-                'เพิ่มไว้แล้ว ${widget.alreadyAddedSpreadsheetIds.length} ไฟล์',
+                'เพิ่มไว้แล้ว ${widget.alreadyAddedSpreadsheetIds.length} ไฟล์ • '
+                'เอาออก ${_removedIds.length} ไฟล์',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -2075,8 +2096,10 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
                             .contains(file.id);
                         final selected = _selectedIds.contains(file.id);
                         return CheckboxListTile(
-                          value: alreadyAdded || selected,
-                          onChanged: alreadyAdded ? null : (_) => _toggle(file),
+                          value: alreadyAdded
+                              ? !_removedIds.contains(file.id)
+                              : selected,
+                          onChanged: (_) => _toggle(file),
                           secondary: const CircleAvatar(
                             child: Icon(Icons.table_chart_outlined),
                           ),
@@ -2087,7 +2110,9 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
                           ),
                           subtitle: Text(
                             alreadyAdded
-                                ? 'เพิ่มไว้แล้ว'
+                                ? _removedIds.contains(file.id)
+                                      ? 'จะเอาออกจากรายการในแอป (ไม่ลบไฟล์จริง)'
+                                      : 'เพิ่มไว้แล้ว · ติ๊กเพื่อเอาออกจากรายการในแอป'
                                 : widget.order == OwnedSheetOrder.firstCreated
                                 ? file.createdAt == null
                                       ? 'ไม่พบเวลาที่สร้างไฟล์'
@@ -2112,15 +2137,35 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
           child: const Text('ยกเลิก'),
         ),
         FilledButton.icon(
-          onPressed: _selectedIds.isEmpty
+          onPressed: _selectedIds.isEmpty && _removedIds.isEmpty
               ? null
-              : () => Navigator.of(context).pop(_selectedFiles),
-          icon: const Icon(Icons.add),
-          label: Text('เพิ่ม ${_selectedIds.length} ไฟล์'),
+              : () => Navigator.of(context).pop(
+                  _GoogleSheetPickerResult(
+                    addedFiles: _selectedFiles,
+                    removedSpreadsheetIds: Set<String>.of(_removedIds),
+                  ),
+                ),
+          icon: const Icon(Icons.save_outlined),
+          label: Text(
+            _removedIds.isEmpty
+                ? 'เพิ่ม ${_selectedIds.length} ไฟล์'
+                : 'บันทึกการเลือก',
+          ),
         ),
       ],
     );
   }
+}
+
+
+class _GoogleSheetPickerResult {
+  const _GoogleSheetPickerResult({
+    required this.addedFiles,
+    required this.removedSpreadsheetIds,
+  });
+
+  final List<RecentOwnedSheet> addedFiles;
+  final Set<String> removedSpreadsheetIds;
 }
 
 class _SceDashboardHero extends StatelessWidget {
