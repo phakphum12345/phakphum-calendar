@@ -261,7 +261,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `l10n.yaml` | 151 | `c3ce52cbd012e898f809811d21f21ead3bb3afd08b49a4efe4da74080248664d` |
 | `lib/app.dart` | 7679 | `599df85fd9c6a6abaa17e5646dd59969ef67bbe5a9d722030c1c5d4c83247ce1` |
 | `lib/bootstrap/app_bootstrap.dart` | 380 | `cada71fb830d954d0bd4df8e8892b7e0b62a5844a01d00daf1cd0007c9f23cb0` |
-| `lib/controller/app_controller.dart` | 96678 | `1e00ce4ccc6e36184546411cc54436523d66edff0922dedf85a57e2f20933181` |
+| `lib/controller/app_controller.dart` | 96521 | `5cabc2d8138c2b26da42922aab91e728305618f302ad674cfb1e6e8fbdadb064` |
 | `lib/core/di/app_dependencies.dart` | 21906 | `4075fdbcb457fd20199b251966063c71408d27ce8a8301bbfce9f160dff36b14` |
 | `lib/core/google/authorized_google_client_factory.dart` | 971 | `8a5504571f4d8e93d096d3f3bb3140564e58729510ac66c021a95361b2d362c8` |
 | `lib/core/google/google_scopes.dart` | 629 | `437eaa6b551e7fcfc6993603d2acb6c3a5be6818d0289ed2b20b0fc1af2d29b2` |
@@ -689,7 +689,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/roster_assignment_timeline_test.dart` | 3069 | `7167990cb66590bade074be13fe5339988fbdc60a2dabf4f14493e60322e6ff0` |
 | `test/roster_name_entry_test.dart` | 1534 | `15dc0da8acc3b28d6d8b81fc11cc4281ad068678c64f0754dcabd87136ee77c6` |
 | `test/roster_reference_comparison_test.dart` | 1607 | `d16ca98671685e19099f51a87e4cc023dae166057b3aa436ba5991a040749cc1` |
-| `test/roster_sync_period_filter_test.dart` | 1720 | `8819edb048ee8340fffee5ec1beb8a7afc3262bac3ff2218d969c4127e524376` |
+| `test/roster_sync_period_filter_test.dart` | 2584 | `42879ab0bc3ed8edc7342b8a6663acb9c3a9065b560b0bd4752c23a029062a57` |
 | `test/rule_engine_consolidation_test.dart` | 3180 | `70ebce500581f1f93962d2d453a027d66899d66099ef4a2d637f155dc1f3b1fa` |
 | `test/rule_engine_foundation_test.dart` | 8149 | `31ad1aa480817e4c9ac012e51b332ff10c6a75b5f7aaef5844d239e6fe623884` |
 | `test/rule_validation_page_test.dart` | 2090 | `579720365fa40ac7f7a72bb3af111b5ef4e4fac5d3013be22df0bb2df5279652` |
