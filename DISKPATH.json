@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 739,
+  "file_count": 743,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -743,8 +743,8 @@
     },
     {
       "path": "docs/INSTALLATION_AND_USER_GUIDE.md",
-      "size": 20150,
-      "sha256": "e4aab257ef8df48a697883895ca6acbd44747faf829dc9d4082e6904fee241f6"
+      "size": 20183,
+      "sha256": "3d05d1e411495be2d97f9e8838598c3baf88290ada30d51f154d5a74ba6327b9"
     },
     {
       "path": "docs/INTEGRATION_STATUS.md",
@@ -1168,8 +1168,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 91074,
-      "sha256": "3d8dfd1ae05752edd8d698d90d567fdd080f2cc3c5ce7ede75456e50e1a597a6"
+      "size": 95249,
+      "sha256": "fb42a6546a9d21b5d94feecbce682b24eeb83ac651b5fc68fd24dde1787ef7a6"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
@@ -1867,6 +1867,11 @@
       "sha256": "5f7ad5c975c37f2c557dc52c24717b2f92ae3f7ec9cd84f9f9b3e692d6f1604f"
     },
     {
+      "path": "lib/features/google_drive/application/multi_sheet_picker_selection.dart",
+      "size": 1179,
+      "sha256": "27d63b76944ae07f093982732805221ee1bcc4578194eda58f11da3a902a71de"
+    },
+    {
       "path": "lib/features/google_drive/application/roster_selection_controller.dart",
       "size": 1951,
       "sha256": "015bc1b319ba6ed5b665e682c461cb51c51631fd843bf40e52f1493aea5610e7"
@@ -2433,8 +2438,8 @@
     },
     {
       "path": "lib/features/shift_parser/application/monthly_roster_section_parser.dart",
-      "size": 8269,
-      "sha256": "a91c621e5749ebe76cfb74ae08597fcc37907e32fc56379bfa0eaa7ae19697ca"
+      "size": 13462,
+      "sha256": "c9ceb14081e4f00a1ff5fd496c174a2c4e66ef5a8198463be174f7610fa3a80a"
     },
     {
       "path": "lib/features/shift_parser/application/snapshot_normalizer.dart",
@@ -2485,6 +2490,11 @@
       "path": "lib/features/shift_parser/domain/roster_parse_report.dart",
       "size": 358,
       "sha256": "71907b2d4e5c0285a7b07183601d5939227973adde0df3bf67f03b6683503359"
+    },
+    {
+      "path": "lib/features/shift_parser/domain/roster_sync_period_filter.dart",
+      "size": 1216,
+      "sha256": "f07880f2e0949171bf41f75a4d3bc066e2b34f52404b13f39611d0e6b8ee1555"
     },
     {
       "path": "lib/features/shift_parser/domain/shift_catalog.dart",
@@ -2808,8 +2818,8 @@
     },
     {
       "path": "lib/ui/app_shell.dart",
-      "size": 190833,
-      "sha256": "00bbf5b3050fe30668c4763c4785690aa7d05c67bc67ad42e0761dcc21eedf48"
+      "size": 192184,
+      "sha256": "3a757d0716cb3cc6eb779c722a9e0b8fb5ff9fe5138f2962e5e486eb79433dc0"
     },
     {
       "path": "lib/ui/audit_log_page.dart",
@@ -3238,8 +3248,8 @@
     },
     {
       "path": "test/monthly_roster_section_parser_test.dart",
-      "size": 7552,
-      "sha256": "a5b85c70edaba9a21664d29a5838dc54c4eb405de05692123a5539759d480059"
+      "size": 9773,
+      "sha256": "710fa33c84a88746247dc58a59b2e12df1153c1f1a5825f660f1e29bc74e40b1"
     },
     {
       "path": "test/monthly_roster_template_test.dart",
@@ -3260,6 +3270,11 @@
       "path": "test/monthly_schedule_report_mapper_test.dart",
       "size": 6105,
       "sha256": "04eeaf3f25bda0191ee1062ded48499c6123d89cdf1d1ccf2fbc2748bb852a35"
+    },
+    {
+      "path": "test/multi_sheet_picker_selection_test.dart",
+      "size": 1904,
+      "sha256": "6c460b5ca26b2557e414fdc857c60130628a5c0e21541fff37e04ad0fe9689da"
     },
     {
       "path": "test/off_after_cross_month_roster_boundary_test.dart",
@@ -3290,6 +3305,11 @@
       "path": "test/roster_reference_comparison_test.dart",
       "size": 1607,
       "sha256": "d16ca98671685e19099f51a87e4cc023dae166057b3aa436ba5991a040749cc1"
+    },
+    {
+      "path": "test/roster_sync_period_filter_test.dart",
+      "size": 1720,
+      "sha256": "8819edb048ee8340fffee5ec1beb8a7afc3262bac3ff2218d969c4127e524376"
     },
     {
       "path": "test/rule_engine_consolidation_test.dart",
@@ -3568,8 +3588,8 @@
     },
     {
       "path": "test/widget_test.dart",
-      "size": 22170,
-      "sha256": "007af4a8268279bd93d16e5d16d752bfd663c16e58aaffe56fa263f7baeae2b7"
+      "size": 22171,
+      "sha256": "fb81ea6e37e9406a762e1090edb555d1dc711b6135e9021c1dbbe50f791094f7"
     },
     {
       "path": "tools/diskpath/generate_diskpath.py",

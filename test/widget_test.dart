@@ -37,120 +37,6 @@ void main() {
     expect(find.text('องค์กร'), findsOneWidget);
   });
 
-  testWidgets('personal first-run setup does not require organization fields', (
-    tester,
-  ) async {
-    final controller = demoController();
-    addTearDown(controller.dispose);
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => Center(
-              child: TextButton(
-                onPressed: () => showDialog<void>(
-                  context: context,
-                  builder: (_) => FirstLoginSetupDialog(
-                    controller: controller,
-                    edition: AppEdition.personal,
-                  ),
-                ),
-                child: const Text('เปิดตั้งค่า'),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('เปิดตั้งค่า'));
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('first-login-setup-dialog')), findsOneWidget);
-    expect(find.text('ชื่อหน่วยงาน *'), findsNothing);
-    expect(find.text('ชื่อเจ้าหน้าที่ *'), findsNothing);
-    expect(find.text('ชื่อเวรเริ่มต้น *'), findsOneWidget);
-
-    // Actually save Personal setup with no Google account/write authorization.
-    await tester.enterText(
-      find.widgetWithText(TextField, 'ชื่อเวรเริ่มต้น *'),
-      'เวรส่วนตัว',
-    );
-    await tester.tap(find.text('บันทึกและเข้าหน้าหลัก'));
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('first-login-setup-dialog')), findsNothing);
-    expect(controller.settings.setupComplete, isTrue);
-    expect(controller.settings.organizationName, isEmpty);
-    expect(controller.settings.officerName, isEmpty);
-  });
-
-  testWidgets('organization first-run setup requires organization fields', (
-    tester,
-  ) async {
-    final controller = demoController();
-    addTearDown(controller.dispose);
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) => Center(
-              child: TextButton(
-                onPressed: () => showDialog<void>(
-                  context: context,
-                  builder: (_) => FirstLoginSetupDialog(
-                    controller: controller,
-                    edition: AppEdition.organization,
-                  ),
-                ),
-                child: const Text('เปิดตั้งค่า'),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('เปิดตั้งค่า'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('ชื่อหน่วยงาน *'), findsOneWidget);
-    expect(find.text('ชื่อเจ้าหน้าที่ *'), findsOneWidget);
-    expect(find.text('ชื่อเวรเริ่มต้น *'), findsOneWidget);
-  });
-
-  test('personal edition skips Timeline without requesting Calendar write access', () async {
-    final controller = demoController();
-    addTearDown(controller.dispose);
-    controller.shiftTimelineEnabled = false;
-    final auditCount = controller.auditEntries.length;
-
-    await controller.recordShiftTimelineEvent(
-      action: 'SHIFT_UPDATED',
-      summary: 'แก้ไขเวร',
-      details: 'test personal read-only behavior',
-    );
-
-    expect(controller.auditEntries, hasLength(auditCount));
-  });
-
-  test('organization Timeline remains enabled and requires authentication', () async {
-    final controller = demoController();
-    addTearDown(controller.dispose);
-    controller.shiftTimelineEnabled = true;
-
-    await expectLater(
-      controller.recordShiftTimelineEvent(
-        action: 'SHIFT_UPDATED',
-        summary: 'แก้ไขเวร',
-        details: 'test organization Timeline path',
-      ),
-      throwsA(isA<StateError>()),
-    );
-  });
-
   test('default monthly roster contains no personal names', () {
     final controller = demoController();
     addTearDown(controller.dispose);
@@ -265,6 +151,121 @@ void main() {
       );
     },
   );
+
+  testWidgets('personal first-run setup does not require organization fields', (
+    tester,
+  ) async {
+    final controller = demoController();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => Center(
+              child: TextButton(
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => FirstLoginSetupDialog(
+                    controller: controller,
+                    edition: AppEdition.personal,
+                  ),
+                ),
+                child: const Text('เปิดตั้งค่า'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('เปิดตั้งค่า'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('first-login-setup-dialog')), findsOneWidget);
+    expect(find.text('ชื่อหน่วยงาน *'), findsNothing);
+    expect(find.text('ชื่อเจ้าหน้าที่ *'), findsNothing);
+    expect(find.text('ชื่อเวรเริ่มต้น *'), findsOneWidget);
+
+    // Actually save Personal setup with no Google account/write authorization.
+    await tester.enterText(
+      find.widgetWithText(TextField, 'ชื่อเวรเริ่มต้น *'),
+      'เวรส่วนตัว',
+    );
+    await tester.tap(find.text('บันทึกและเข้าหน้าหลัก'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('first-login-setup-dialog')), findsNothing);
+    expect(controller.settings.setupComplete, isTrue);
+    expect(controller.settings.organizationName, isEmpty);
+    expect(controller.settings.officerName, isEmpty);
+  });
+
+  testWidgets('organization first-run setup requires organization fields', (
+    tester,
+  ) async {
+    final controller = demoController();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => Center(
+              child: TextButton(
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => FirstLoginSetupDialog(
+                    controller: controller,
+                    edition: AppEdition.organization,
+                  ),
+                ),
+                child: const Text('เปิดตั้งค่า'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('เปิดตั้งค่า'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ชื่อหน่วยงาน *'), findsOneWidget);
+    expect(find.text('ชื่อเจ้าหน้าที่ *'), findsOneWidget);
+    expect(find.text('ชื่อเวรเริ่มต้น *'), findsOneWidget);
+  });
+
+  test('personal edition skips Timeline without requesting Calendar write access', () async {
+    final controller = demoController();
+    addTearDown(controller.dispose);
+    controller.shiftTimelineEnabled = false;
+    final auditCount = controller.auditEntries.length;
+
+    await controller.recordShiftTimelineEvent(
+      action: 'SHIFT_UPDATED',
+      summary: 'แก้ไขเวร',
+      details: 'test personal read-only behavior',
+    );
+
+    expect(controller.auditEntries, hasLength(auditCount));
+  });
+
+  test('organization Timeline remains enabled and requires authentication', () async {
+    final controller = demoController();
+    addTearDown(controller.dispose);
+    controller.shiftTimelineEnabled = true;
+
+    await expectLater(
+      controller.recordShiftTimelineEvent(
+        action: 'SHIFT_UPDATED',
+        summary: 'แก้ไขเวร',
+        details: 'test organization Timeline path',
+      ),
+      throwsA(isA<StateError>()),
+    );
+  });
+
 
   testWidgets('shift settings allow selecting a different date', (
     tester,
