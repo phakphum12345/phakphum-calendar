@@ -61,7 +61,6 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `CODE_STYLE.md` | 3238 | `876174cecd8d0474f35335a34133d5415c36b676ecf1d146bcd144bd6dee0613` |
 | `CONTRIBUTING.md` | 3267 | `8a62c5ffd0ccca9c39e4b24a0db5e0d463ebb80634a492aa927038f19aa408a0` |
 | `DATA_MODEL.md` | 828 | `ec8b06bab5ccb403559c201117c99d558c40fced412675d682f225aae6bfdd73` |
-| `lib/features/google_drive/application/multi_sheet_picker_selection.dart` | 1179 | `27d63b76944ae07f093982732805221ee1bcc4578194eda58f11da3a902a71de` |
 | `LICENSE` | 11358 | `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30` |
 | `MASTER_PLAN.md` | 5376 | `9d287248c6ba070027086b3f998f83886041d5deb14aeea8eac515653fa04a62` |
 | `NOTICE` | 101 | `466fa508291567626fb52fdf58e15ce228338a594f9c368d0324af3b9b9087b5` |
@@ -79,7 +78,6 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `SPRINT_4_STATUS.md` | 406 | `79f03b6451ed222dd18b5eca8885071dc8ff55afaa30adb0a250be5b53cadbe0` |
 | `SPRINT_5_STATUS.md` | 592 | `8902d6a55f203cfc4667be2e9941c63d9e2071928d3aff627447d8b4b9979b42` |
 | `SPRINT_6_STATUS.md` | 703 | `91118d016752c5373a072191c8da67ef2e6eb1a0d2d07acaa0f6217d43e647d5` |
-| `test/multi_sheet_picker_selection_test.dart` | 1904 | `6c460b5ca26b2557e414fdc857c60130628a5c0e21541fff37e04ad0fe9689da` |
 | `TESTING.md` | 2671 | `e295cc8a2cfc592a4b4d3b3d5ec353f4b7b4b0558e4bb794d195d5caa83059f8` |
 | `VERSION_2_0_STATUS.md` | 1107 | `1a3265cb0b873fdda5a5ccbd990de5b70beee839220359109d41c7c0922636f8` |
 | `VERSION_3_0_STATUS.md` | 1650 | `342b1067c053e616af214a8ab836fc2ba951858f13b8091557cb26851a49e9dd` |
@@ -403,6 +401,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/excel_import/presentation/widgets/validation_banner.dart` | 1540 | `9cbca587ca4c9b3175997d3b65a935642ec209bccbcd05e2bf5e419c49e1db2a` |
 | `lib/features/excel_import/presentation/widgets/worksheet_list.dart` | 1793 | `4f7f1713d61150b7b3ea6b753aceedb883047dc2e874ffe0544d26c34650c616` |
 | `lib/features/google_drive/README.md` | 536 | `5f7ad5c975c37f2c557dc52c24717b2f92ae3f7ec9cd84f9f9b3e692d6f1604f` |
+| `lib/features/google_drive/application/multi_sheet_picker_selection.dart` | 1179 | `27d63b76944ae07f093982732805221ee1bcc4578194eda58f11da3a902a71de` |
 | `lib/features/google_drive/application/roster_selection_controller.dart` | 1951 | `015bc1b319ba6ed5b665e682c461cb51c51631fd843bf40e52f1493aea5610e7` |
 | `lib/features/google_drive/application/roster_selection_state.dart` | 665 | `e97be027ec4c0a36d365e260743d34149d4efcf57a1c0fe76ef4c29fa0948750` |
 | `lib/features/google_drive/domain/drive_gateway.dart` | 168 | `0e04cb9f13e023e6fc5e852ad658c83f8d73aa1e2249123818ed82e44153b010` |
@@ -682,6 +681,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/monthly_schedule_pdf_service_test.dart` | 4367 | `4721c35b87501c726e9c5f3a67694de682c1a945586c45dee14382250513e919` |
 | `test/monthly_schedule_report_controller_test.dart` | 6944 | `c5a61b554ab61f8047b50d13ab19dc75c2e618f9f9b352ac1a1062393f751cc8` |
 | `test/monthly_schedule_report_mapper_test.dart` | 6105 | `04eeaf3f25bda0191ee1062ded48499c6123d89cdf1d1ccf2fbc2748bb852a35` |
+| `test/multi_sheet_picker_selection_test.dart` | 1904 | `6c460b5ca26b2557e414fdc857c60130628a5c0e21541fff37e04ad0fe9689da` |
 | `test/off_after_cross_month_roster_boundary_test.dart` | 2733 | `10382634904a67541a8a39f4744a95d3cbccd3911f6226b6696d9439dd41747b` |
 | `test/plugin_registry_test.dart` | 1487 | `02d16914879b047c97f0d1c0d9929cc4ae4a3551ab3fde79d6361b8ff0853f29` |
 | `test/radiology_roster_structure_test.dart` | 4209 | `e526b10d9c6039756439032c4062739886780b735aeea99beff9e04119e1d843` |
@@ -771,9 +771,3 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `windows/runner/utils.h` | 672 | `95a7f7dddb832997cefa937a96f89472332277e75734a5de553610760b744b03` |
 | `windows/runner/win32_window.cpp` | 8534 | `9065f31ccf746cf8b390121f958f9e959033af864aed779597066625ed56bc36` |
 | `windows/runner/win32_window.h` | 3522 | `7dd03746b19dcf3542829b2f6e8ed40a2714ce5f2cb3b0e23f0118a2fcf62d62` |
-
-## Integrity
-
-The canonical machine-readable manifest is `DISKPATH.json`.
-
-Run `python3 tools/diskpath/validate_diskpath.py` to validate the manifest against the repository.
