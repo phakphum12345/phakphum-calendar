@@ -44,6 +44,30 @@ void main() {
       );
     });
 
+    test('re-filters the same complete roster when the selected month changes', () {
+      final completeRoster = [
+        DateTime(2026, 8, 1),
+        DateTime(2026, 8, 15),
+        DateTime(2026, 9, 1),
+      ];
+
+      final august = completeRoster
+          .where((date) => RosterSyncPeriodFilter.includes(date, const [
+                RosterPeriod(year: 2026, month: 8),
+              ]))
+          .toList();
+      final september = completeRoster
+          .where((date) => RosterSyncPeriodFilter.includes(date, const [
+                RosterPeriod(year: 2026, month: 9),
+              ]))
+          .toList();
+
+      expect(august, [DateTime(2026, 8, 1), DateTime(2026, 8, 15)]);
+      expect(september, [DateTime(2026, 9, 1)]);
+      // Filtering a view must not mutate/truncate the original roster.
+      expect(completeRoster, hasLength(3));
+    });
+
     test('does not filter when no month is selected', () {
       expect(
         RosterSyncPeriodFilter.includes(DateTime(2026, 8, 15), const []),
