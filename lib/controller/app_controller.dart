@@ -634,6 +634,52 @@ class AppController extends ChangeNotifier implements ControllerState {
     await selectSourceForCurrentAccount(sheet.url);
   }
 
+  /// Clears the active roster source for the signed-in account without
+  /// deleting the saved Google Sheet or changing the spreadsheet itself.
+  Future<void> clearRosterSourceSelection() async {
+    await _run('ยกเลิกการเลือกตารางเวร', () async {
+      final accountId = auth.account?.id;
+      if (accountId != null) {
+        savedSheets = [
+          for (final sheet in savedSheets)
+            if (sheet.ownerAccountId != accountId)
+              sheet
+            else
+              sheet.copyWith(isActive: false),
+        ];
+        await _settingsService.saveSavedSheets(savedSheets);
+      }
+
+      localSourceLabel = null;
+      _autoRefreshTimer?.cancel();
+      _replaceLegacyShifts(const []);
+      alerts = [];
+      calendarPeriods = [];
+      existingKeys = {};
+      sheetTitles = [];
+      monthlyRoster = const MonthlyRosterParseReport(
+        sections: [],
+        warnings: [],
+      );
+      _loadedRosterShifts = [];
+      _currentAllRosterShifts = [];
+      _referenceAllRosterShifts = [];
+      _revisionTimelines = const {};
+      _loadedRevisionCount = 0;
+      timelineWarning = null;
+      localReferenceLabel = null;
+      localReferenceShifts = [];
+      _resetSyncRange();
+      status = 'ยกเลิกการเลือกตารางแล้ว; ไฟล์ต้นฉบับยังอยู่ใน Google Sheets';
+      await _addAudit(
+        'sheet.source.clear',
+        'ยกเลิกการเลือกแหล่งข้อมูลเวรสำหรับบัญชีปัจจุบัน; ไม่ได้ลบไฟล์ต้นฉบับ',
+        true,
+      );
+    });
+  }
+
+
   Future<void> openSavedSheet(SavedSheet sheet) async {
     _requireSheetOwner(sheet);
     await _run('เปิดชีตที่บันทึก', () async {
