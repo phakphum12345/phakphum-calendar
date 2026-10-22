@@ -180,7 +180,7 @@ class _AppShellState extends State<AppShell> {
   Future<void> _showFirstLoginSetupDialog(String email) async {
     if (_setupDialogOpen || !mounted) return;
     _setupDialogOpen = true;
-    try { await showDialog<void>(context: context, barrierDismissible: false, builder: (_) => FirstLoginSetupDialog(controller: widget.controller)); }
+    try { await showDialog<void>(context: context, barrierDismissible: false, builder: (_) => FirstLoginSetupDialog(controller: widget.controller, edition: edition ?? AppEdition.personal)); }
     finally { _setupDialogOpen = false; if (mounted && !widget.controller.settings.setupComplete) _setupDialogShownForEmail = null; }
   }
 
@@ -188,6 +188,8 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _loadEdition() async {
     final loaded = await editionRepository.load();
+    widget.controller.shiftTimelineEnabled =
+        loaded == AppEdition.organization;
     if (mounted) {
       setState(() {
         edition = loaded;
@@ -198,6 +200,8 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _selectEdition(AppEdition value) async {
     await editionRepository.save(value);
+    widget.controller.shiftTimelineEnabled =
+        value == AppEdition.organization;
     if (mounted) {
       setState(() {
         edition = value;
