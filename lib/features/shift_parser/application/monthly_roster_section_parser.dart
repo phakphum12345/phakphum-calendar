@@ -1,5 +1,6 @@
 import '../domain/a1_notation.dart';
 import '../domain/monthly_roster_section.dart';
+import '../../../models/shift.dart';
 import '../../../services/shift_color_service.dart';
 import '../domain/shift_parser_input.dart';
 import '../domain/thai_roster_period_parser.dart';
