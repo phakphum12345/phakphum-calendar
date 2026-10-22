@@ -234,6 +234,10 @@ class AppController extends ChangeNotifier implements ControllerState {
   List<Shift> _referenceAllRosterShifts = [];
   List<Shift> _loadedRosterShifts = [];
   bool _syncRangeCustomized = false;
+  MonthlyRosterParseReport _allMonthlyRoster = const MonthlyRosterParseReport(
+    sections: [],
+    warnings: [],
+  );
   MonthlyRosterParseReport monthlyRoster = const MonthlyRosterParseReport(
     sections: [],
     warnings: [],
@@ -366,6 +370,10 @@ class AppController extends ChangeNotifier implements ControllerState {
     calendarPeriods = [];
     existingKeys = {};
     sheetTitles = [];
+    _allMonthlyRoster = const MonthlyRosterParseReport(
+      sections: [],
+      warnings: [],
+    );
     monthlyRoster = const MonthlyRosterParseReport(sections: [], warnings: []);
     recentOwnedSheets = [];
     localSourceLabel = null;
@@ -411,6 +419,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     settings = next;
     await _settingsService.save(next);
     if (periodChanged) {
+      monthlyRoster = _filterMonthlyReportToSelectedPeriods(_allMonthlyRoster);
       _setDefaultSyncDateRange(_loadedRosterShifts);
       final selectedShifts = _filterToSyncDateRange(_loadedRosterShifts);
       _replaceLegacyShifts(
@@ -683,6 +692,10 @@ class AppController extends ChangeNotifier implements ControllerState {
         calendarPeriods = [];
         existingKeys = {};
         sheetTitles = [];
+        _allMonthlyRoster = const MonthlyRosterParseReport(
+          sections: [],
+          warnings: [],
+        );
         monthlyRoster = const MonthlyRosterParseReport(
           sections: [],
           warnings: [],
@@ -745,8 +758,9 @@ class AppController extends ChangeNotifier implements ControllerState {
         final monthlyReportSource = parsedMonthlyAll.sections.isEmpty
             ? MonthlyRosterParseReport.fromShifts(parsed)
             : parsedMonthlyAll;
+        _allMonthlyRoster = monthlyReportSource;
         monthlyRoster = _filterMonthlyReportToSelectedPeriods(
-          monthlyReportSource,
+          _allMonthlyRoster,
         );
         _loadedRosterShifts = parsed;
         _setDefaultSyncDateRange(parsed);
@@ -886,8 +900,9 @@ class AppController extends ChangeNotifier implements ControllerState {
       final monthlyReportSource = parsedMonthlyAll.sections.isEmpty
           ? MonthlyRosterParseReport.fromShifts(parsed)
           : parsedMonthlyAll;
+      _allMonthlyRoster = monthlyReportSource;
       monthlyRoster = _filterMonthlyReportToSelectedPeriods(
-        monthlyReportSource,
+        _allMonthlyRoster,
       );
       _loadedRosterShifts = parsed;
       _syncRangeCustomized = false;
@@ -943,12 +958,16 @@ class AppController extends ChangeNotifier implements ControllerState {
         final parsedMonthly = _parseMonthlyRosterSnapshots(
           snapshots,
           spreadsheetId: spreadsheetId,
+          applyPeriodFilter: false,
         );
-        monthlyRoster = parsedMonthly.sections.isEmpty
+        _allMonthlyRoster = parsedMonthly.sections.isEmpty
             ? MonthlyRosterParseReport.fromShifts(
                 _parseAllRosterSnapshots(snapshots, fallback: const []),
               )
             : parsedMonthly;
+        monthlyRoster = _filterMonthlyReportToSelectedPeriods(
+          _allMonthlyRoster,
+        );
         sheetTitles = snapshots.map((sheet) => sheet.title).toList();
         localSourceLabel = null;
         lastRefresh = DateTime.now();
@@ -977,12 +996,16 @@ class AppController extends ChangeNotifier implements ControllerState {
       final parsedMonthly = _parseMonthlyRosterSnapshots(
         document.snapshots,
         spreadsheetId: 'local-monthly-${document.extension}',
+        applyPeriodFilter: false,
       );
-      monthlyRoster = parsedMonthly.sections.isEmpty
+      _allMonthlyRoster = parsedMonthly.sections.isEmpty
           ? MonthlyRosterParseReport.fromShifts(
               _parseAllRosterSnapshots(document.snapshots, fallback: const []),
             )
           : parsedMonthly;
+      monthlyRoster = _filterMonthlyReportToSelectedPeriods(
+        _allMonthlyRoster,
+      );
       sheetTitles = document.snapshots.map((sheet) => sheet.title).toList();
       localSourceLabel = 'ไฟล์ .${document.extension} ในเครื่อง';
       lastRefresh = DateTime.now();
@@ -1947,6 +1970,14 @@ class AppController extends ChangeNotifier implements ControllerState {
       _loadedRevisionCount = 0;
       timelineWarning = null;
       _loadedRosterShifts = [];
+      _allMonthlyRoster = const MonthlyRosterParseReport(
+        sections: [],
+        warnings: [],
+      );
+      monthlyRoster = const MonthlyRosterParseReport(
+        sections: [],
+        warnings: [],
+      );
       syncRangeStart = null;
       syncRangeEnd = null;
       _syncRangeCustomized = false;
