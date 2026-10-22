@@ -168,25 +168,6 @@ void main() {
     expect(report.sections.single.title, 'ต้นฉบับ: กล้อง');
     expect(report.assignments.single.rowLabel, 'รายการจากกล้อง');
   });
-}
-
-List<NormalizedCell> _row(int rowIndex, List<Object?> values) {
-  return [
-    for (var columnIndex = 0; columnIndex < values.length; columnIndex++)
-      if (values[columnIndex] != null)
-        NormalizedCell(
-          sheetId: 1,
-          sheetTitle: 'Sheet',
-          a1: '',
-          rowIndex: rowIndex,
-          columnIndex: columnIndex,
-          text: values[columnIndex] is String
-              ? values[columnIndex] as String
-              : null,
-          rawValue: values[columnIndex],
-        ),
-  ];
-
   test('converts monthly roster assignments to calendar shifts for the selected worker', () {
     final labels = <String>[
       'P1 เช้า',
@@ -254,6 +235,26 @@ List<NormalizedCell> _row(int rowIndex, List<Object?> values) {
       'B4', 'B5', 'B6', 'B7', 'B8', 'B9', 'B10',
     ]);
   });
+
+}
+
+List<NormalizedCell> _row(int rowIndex, List<Object?> values) {
+  return [
+    for (var columnIndex = 0; columnIndex < values.length; columnIndex++)
+      if (values[columnIndex] != null)
+        NormalizedCell(
+          sheetId: 1,
+          sheetTitle: 'Sheet',
+          a1: '',
+          rowIndex: rowIndex,
+          columnIndex: columnIndex,
+          text: values[columnIndex] is String
+              ? values[columnIndex] as String
+              : null,
+          rawValue: values[columnIndex],
+        ),
+  ];
+
 
 
 }
