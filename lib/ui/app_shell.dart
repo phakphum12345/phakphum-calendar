@@ -1546,6 +1546,11 @@ class _DashboardPageState extends State<_DashboardPage> {
                         ),
                       ),
                       const SizedBox(height: 10),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'นำเข้าไฟล์ในเครื่องเพื่ออ่านตารางเวรเท่านั้น '
+                        'ไฟล์จะไม่ถูกอัปโหลดไป Google Drive หรือ Google Sheets',
+                      ),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
@@ -1567,6 +1572,16 @@ class _DashboardPageState extends State<_DashboardPage> {
                             label: const Text('เลือกแท็บด้วยลิงก์'),
                           ),
                           OutlinedButton.icon(
+                            key: const Key('clearRosterSourceSelectionButton'),
+                            onPressed: controller.hasRosterSource && !controller.busy
+                                ? () => widget.perform(
+                                    controller.clearRosterSourceSelection,
+                                  )
+                                : null,
+                            icon: const Icon(Icons.clear),
+                            label: const Text('ยกเลิกการเลือกตาราง'),
+                          ),
+                          OutlinedButton.icon(
                             onPressed: controller.busy
                                 ? null
                                 : () => widget.perform(() async {
@@ -1574,9 +1589,7 @@ class _DashboardPageState extends State<_DashboardPage> {
                                     await controller.importLocalRosterFile();
                                   }),
                             icon: const Icon(Icons.upload_file_outlined),
-                            label: const Text(
-                              'ไฟล์ .xlsx / .csv / .tsv / .txt',
-                            ),
+                            label: const Text('นำเข้าตารางเวรจากไฟล์'),
                           ),
                           OutlinedButton.icon(
                             onPressed: controller.busy
