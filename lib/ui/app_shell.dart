@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../controller/app_controller.dart';
+import '../features/google_drive/application/multi_sheet_picker_selection.dart';
 import '../domain/entities/schedule.dart';
 import '../features/reports/presentation/controllers/monthly_schedule_report_controller.dart';
 import '../features/reports/presentation/pages/monthly_schedule_report_page.dart';
@@ -2010,8 +2011,10 @@ class _GoogleSheetPickerDialog extends StatefulWidget {
 
 class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
   final TextEditingController _searchController = TextEditingController();
-  final Set<String> _selectedIds = <String>{};
-  final Set<String> _removedIds = <String>{};
+  late final MultiSheetPickerSelection _selection =
+      MultiSheetPickerSelection(
+        alreadyAddedIds: widget.alreadyAddedSpreadsheetIds,
+      );
   String _query = '';
 
   List<RecentOwnedSheet> get _filteredFiles {
@@ -2023,20 +2026,11 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
   }
 
   List<RecentOwnedSheet> get _selectedFiles => widget.files
-      .where((file) => _selectedIds.contains(file.id))
+      .where((file) => _selection.selectedIds.contains(file.id))
       .toList(growable: false);
 
   void _toggle(RecentOwnedSheet file) {
-    final alreadyAdded = widget.alreadyAddedSpreadsheetIds.contains(file.id);
-    setState(() {
-      if (alreadyAdded) {
-        if (!_removedIds.add(file.id)) {
-          _removedIds.remove(file.id);
-        }
-      } else if (!_selectedIds.add(file.id)) {
-        _selectedIds.remove(file.id);
-      }
-    });
+    setState(() => _selection.toggle(file.id));
   }
 
   @override
@@ -2077,9 +2071,9 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
               child: Text(
                 '${widget.order == OwnedSheetOrder.firstCreated ? 'เรียงจากไฟล์ที่สร้างก่อน' : 'เรียงจากไฟล์ที่แก้ไขล่าสุด'} • '
                 'แสดงหน้าแรก ${files.length}/${widget.files.length} ไฟล์ • '
-                'เลือกใหม่ ${_selectedIds.length} ไฟล์ • '
+                'เลือกใหม่ ${_selection.addedCount} ไฟล์ • '
                 'เพิ่มไว้แล้ว ${widget.alreadyAddedSpreadsheetIds.length} ไฟล์ • '
-                'เอาออก ${_removedIds.length} ไฟล์',
+                'เอาออก ${_selection.removedCount} ไฟล์',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -2094,11 +2088,8 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
                         final file = files[index];
                         final alreadyAdded = widget.alreadyAddedSpreadsheetIds
                             .contains(file.id);
-                        final selected = _selectedIds.contains(file.id);
                         return CheckboxListTile(
-                          value: alreadyAdded
-                              ? !_removedIds.contains(file.id)
-                              : selected,
+                          value: _selection.isChecked(file.id),
                           onChanged: (_) => _toggle(file),
                           secondary: const CircleAvatar(
                             child: Icon(Icons.table_chart_outlined),
@@ -2110,7 +2101,7 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
                           ),
                           subtitle: Text(
                             alreadyAdded
-                                ? _removedIds.contains(file.id)
+                                ? _selection.removedIds.contains(file.id)
                                       ? 'จะเอาออกจากรายการในแอป (ไม่ลบไฟล์จริง)'
                                       : 'เพิ่มไว้แล้ว · ติ๊กเพื่อเอาออกจากรายการในแอป'
                                 : widget.order == OwnedSheetOrder.firstCreated
@@ -2137,18 +2128,18 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
           child: const Text('ยกเลิก'),
         ),
         FilledButton.icon(
-          onPressed: _selectedIds.isEmpty && _removedIds.isEmpty
+          onPressed: !_selection.hasChanges
               ? null
               : () => Navigator.of(context).pop(
                   _GoogleSheetPickerResult(
                     addedFiles: _selectedFiles,
-                    removedSpreadsheetIds: Set<String>.of(_removedIds),
+                    removedSpreadsheetIds: _selection.removedIds,
                   ),
                 ),
           icon: const Icon(Icons.save_outlined),
           label: Text(
-            _removedIds.isEmpty
-                ? 'เพิ่ม ${_selectedIds.length} ไฟล์'
+            _selection.removedCount == 0
+                ? 'เพิ่ม ${_selection.addedCount} ไฟล์'
                 : 'บันทึกการเลือก',
           ),
         ),
