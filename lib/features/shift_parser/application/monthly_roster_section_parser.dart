@@ -354,7 +354,7 @@ class MonthlyRosterShiftAdapter {
 
     final p = RegExp(r'^P([1-4])(เช้า|บ่าย|ดึก)$').firstMatch(value);
     if (p != null) {
-      final base = 'P\${p.group(1)}';
+      final base = 'P${p.group(1)}';
       return switch (p.group(2)) {
         'เช้า' => _MonthlyShiftRule(
           code: 'U$base',
