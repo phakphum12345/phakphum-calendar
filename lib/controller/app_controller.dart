@@ -24,6 +24,7 @@ import '../features/google_sheets/domain/sheet_color.dart';
 import '../features/shift_parser/application/monthly_roster_section_parser.dart';
 import '../features/shift_parser/domain/monthly_roster_section.dart';
 import '../features/shift_parser/domain/normalized_cell.dart';
+import '../features/shift_parser/domain/roster_sync_period_filter.dart';
 import '../features/shift_parser/domain/shift_parser_input.dart';
 import '../features/workflow/application/shift_calendar_workflow_controller.dart';
 import '../features/diff_engine/domain/calendar_event_candidate.dart';
@@ -233,6 +234,10 @@ class AppController extends ChangeNotifier implements ControllerState {
   List<Shift> _referenceAllRosterShifts = [];
   List<Shift> _loadedRosterShifts = [];
   bool _syncRangeCustomized = false;
+  MonthlyRosterParseReport _allMonthlyRoster = const MonthlyRosterParseReport(
+    sections: [],
+    warnings: [],
+  );
   MonthlyRosterParseReport monthlyRoster = const MonthlyRosterParseReport(
     sections: [],
     warnings: [],
@@ -365,6 +370,10 @@ class AppController extends ChangeNotifier implements ControllerState {
     calendarPeriods = [];
     existingKeys = {};
     sheetTitles = [];
+    _allMonthlyRoster = const MonthlyRosterParseReport(
+      sections: [],
+      warnings: [],
+    );
     monthlyRoster = const MonthlyRosterParseReport(sections: [], warnings: []);
     recentOwnedSheets = [];
     localSourceLabel = null;
@@ -400,10 +409,28 @@ class AppController extends ChangeNotifier implements ControllerState {
       _pendingCalendarWorkflow = null;
       calendarPeriods = [];
       existingKeys = {};
+      // A month change invalidates any previously customized date range.
+      // Recompute it from the selected periods instead of retaining a stale
+      // range that could silently point at a different month.
+      syncRangeStart = null;
+      syncRangeEnd = null;
+      _syncRangeCustomized = false;
     }
     settings = next;
     await _settingsService.save(next);
-    if (periodChanged) _rebuildAlerts();
+    if (periodChanged) {
+      monthlyRoster = _filterMonthlyReportToSelectedPeriods(_allMonthlyRoster);
+      _setDefaultSyncDateRange(_loadedRosterShifts);
+      if (_loadedRosterShifts.isNotEmpty) {
+        final selectedShifts = _filterToSyncDateRange(_loadedRosterShifts);
+        _replaceLegacyShifts(
+          _alertService.addOffDutyPeriods(
+            _applyReferenceRelationships(selectedShifts),
+          ),
+        );
+      }
+      _rebuildAlerts();
+    }
     _scheduleAutoRefresh();
     notifyListeners();
   }
@@ -501,6 +528,47 @@ class AppController extends ChangeNotifier implements ControllerState {
       throw StateError('กรุณาเลือกไฟล์ Google Sheets หลักในหน้าแรกก่อน');
     }
     await selectSourceForCurrentAccount(sourceUrl);
+  }
+
+  Future<void> clearRosterSourceSelection() async {
+    await _run('ยกเลิกการเลือกตารางเวร', () async {
+      final accountId = auth.account?.id;
+      if (accountId != null) {
+        savedSheets = [
+          for (final sheet in savedSheets)
+            if (sheet.ownerAccountId != accountId)
+              sheet
+            else
+              sheet.copyWith(isActive: false),
+        ];
+        await _settingsService.saveSavedSheets(savedSheets);
+      }
+
+      localSourceLabel = null;
+      _autoRefreshTimer?.cancel();
+      _replaceLegacyShifts(const []);
+      alerts = [];
+      calendarPeriods = [];
+      existingKeys = {};
+      sheetTitles = [];
+      monthlyRoster = const MonthlyRosterParseReport(
+        sections: [],
+        warnings: [],
+      );
+      _loadedRosterShifts = [];
+      _currentAllRosterShifts = [];
+      _referenceAllRosterShifts = [];
+      _revisionTimelines = const {};
+      _loadedRevisionCount = 0;
+      timelineWarning = null;
+      _resetSyncRange();
+      status = 'ยกเลิกการเลือกตารางแล้ว; ไฟล์ต้นฉบับยังอยู่ใน Google Sheets';
+      await _addAudit(
+        'sheet.source.clear',
+        'ยกเลิกการเลือกแหล่งข้อมูลเวรสำหรับบัญชีปัจจุบัน; ไม่ได้ลบไฟล์ต้นฉบับ',
+        true,
+      );
+    });
   }
 
   Future<void> findAvailableSourceSheets({
@@ -615,6 +683,15 @@ class AppController extends ChangeNotifier implements ControllerState {
         );
         final saved = await _saveSheetReference(account.id, reference);
         _resetSyncRange();
+        _allMonthlyRoster = const MonthlyRosterParseReport(
+          sections: [],
+          warnings: [],
+        );
+        monthlyRoster = const MonthlyRosterParseReport(
+          sections: [],
+          warnings: [],
+        );
+        _replaceLegacyShifts(const []);
         localSourceLabel = null;
         status = 'เลือก “${saved.displayTitle}” เป็นไฟล์หลักของบัญชีนี้แล้ว';
         await _addAudit(
@@ -633,50 +710,6 @@ class AppController extends ChangeNotifier implements ControllerState {
     _requireSheetOwner(sheet);
     await selectSourceForCurrentAccount(sheet.url);
   }
-
-  /// Clears the active roster source for the signed-in account without
-  /// deleting the saved Google Sheet or changing the spreadsheet itself.
-  Future<void> clearRosterSourceSelection() async {
-    await _run('ยกเลิกการเลือกตารางเวร', () async {
-      final accountId = auth.account?.id;
-      if (accountId != null) {
-        savedSheets = [
-          for (final sheet in savedSheets)
-            if (sheet.ownerAccountId != accountId)
-              sheet
-            else
-              sheet.copyWith(isActive: false),
-        ];
-        await _settingsService.saveSavedSheets(savedSheets);
-      }
-
-      localSourceLabel = null;
-      _autoRefreshTimer?.cancel();
-      _replaceLegacyShifts(const []);
-      alerts = [];
-      calendarPeriods = [];
-      existingKeys = {};
-      sheetTitles = [];
-      monthlyRoster = const MonthlyRosterParseReport(
-        sections: [],
-        warnings: [],
-      );
-      _loadedRosterShifts = [];
-      _currentAllRosterShifts = [];
-      _referenceAllRosterShifts = [];
-      _revisionTimelines = const {};
-      _loadedRevisionCount = 0;
-      timelineWarning = null;
-      _resetSyncRange();
-      status = 'ยกเลิกการเลือกตารางแล้ว; ไฟล์ต้นฉบับยังอยู่ใน Google Sheets';
-      await _addAudit(
-        'sheet.source.clear',
-        'ยกเลิกการเลือกแหล่งข้อมูลเวรสำหรับบัญชีปัจจุบัน; ไม่ได้ลบไฟล์ต้นฉบับ',
-        true,
-      );
-    });
-  }
-
 
   Future<void> openSavedSheet(SavedSheet sheet) async {
     _requireSheetOwner(sheet);
@@ -711,6 +744,10 @@ class AppController extends ChangeNotifier implements ControllerState {
         calendarPeriods = [];
         existingKeys = {};
         sheetTitles = [];
+        _allMonthlyRoster = const MonthlyRosterParseReport(
+          sections: [],
+          warnings: [],
+        );
         monthlyRoster = const MonthlyRosterParseReport(
           sections: [],
           warnings: [],
@@ -755,20 +792,28 @@ class AppController extends ChangeNotifier implements ControllerState {
           snapshots,
           searchNames: searchNames,
         );
-        final parsedMonthly = _parseMonthlyRosterSnapshots(
+        // Keep the complete parsed roster in memory. Month selection is
+        // applied as a separate filter so changing months never reuses a
+        // parser result that was already truncated to the previous month.
+        final parsedMonthlyAll = _parseMonthlyRosterSnapshots(
           snapshots,
           spreadsheetId: spreadsheetId,
+          applyPeriodFilter: false,
         );
         final monthlyParsed = const MonthlyRosterShiftAdapter()
-            .parseForWorkers(parsedMonthly, targetNames: searchNames)
+            .parseForWorkers(parsedMonthlyAll, targetNames: searchNames)
             .map(_applyShiftOverride)
             .toList(growable: false);
         final usedMonthlyFallback =
             legacyParsed.isEmpty && monthlyParsed.isNotEmpty;
         final parsed = legacyParsed.isEmpty ? monthlyParsed : legacyParsed;
-        monthlyRoster = parsedMonthly.sections.isEmpty
+        final monthlyReportSource = parsedMonthlyAll.sections.isEmpty
             ? MonthlyRosterParseReport.fromShifts(parsed)
-            : parsedMonthly;
+            : parsedMonthlyAll;
+        _allMonthlyRoster = monthlyReportSource;
+        monthlyRoster = _filterMonthlyReportToSelectedPeriods(
+          _allMonthlyRoster,
+        );
         _loadedRosterShifts = parsed;
         _setDefaultSyncDateRange(parsed);
         final rangedParsed = _filterToSyncDateRange(parsed);
@@ -894,18 +939,23 @@ class AppController extends ChangeNotifier implements ControllerState {
         document.snapshots,
         searchNames: searchNames,
       );
-      final parsedMonthly = _parseMonthlyRosterSnapshots(
+      final parsedMonthlyAll = _parseMonthlyRosterSnapshots(
         document.snapshots,
         spreadsheetId: 'local-${document.extension}',
+        applyPeriodFilter: false,
       );
       final monthlyParsed = const MonthlyRosterShiftAdapter()
-          .parseForWorkers(parsedMonthly, targetNames: searchNames)
+          .parseForWorkers(parsedMonthlyAll, targetNames: searchNames)
           .map(_applyShiftOverride)
           .toList(growable: false);
       final parsed = legacyParsed.isEmpty ? monthlyParsed : legacyParsed;
-      monthlyRoster = parsedMonthly.sections.isEmpty
+      final monthlyReportSource = parsedMonthlyAll.sections.isEmpty
           ? MonthlyRosterParseReport.fromShifts(parsed)
-          : parsedMonthly;
+          : parsedMonthlyAll;
+      _allMonthlyRoster = monthlyReportSource;
+      monthlyRoster = _filterMonthlyReportToSelectedPeriods(
+        _allMonthlyRoster,
+      );
       _loadedRosterShifts = parsed;
       _syncRangeCustomized = false;
       _setDefaultSyncDateRange(parsed);
@@ -960,12 +1010,16 @@ class AppController extends ChangeNotifier implements ControllerState {
         final parsedMonthly = _parseMonthlyRosterSnapshots(
           snapshots,
           spreadsheetId: spreadsheetId,
+          applyPeriodFilter: false,
         );
-        monthlyRoster = parsedMonthly.sections.isEmpty
+        _allMonthlyRoster = parsedMonthly.sections.isEmpty
             ? MonthlyRosterParseReport.fromShifts(
                 _parseAllRosterSnapshots(snapshots, fallback: const []),
               )
             : parsedMonthly;
+        monthlyRoster = _filterMonthlyReportToSelectedPeriods(
+          _allMonthlyRoster,
+        );
         sheetTitles = snapshots.map((sheet) => sheet.title).toList();
         localSourceLabel = null;
         lastRefresh = DateTime.now();
@@ -994,12 +1048,16 @@ class AppController extends ChangeNotifier implements ControllerState {
       final parsedMonthly = _parseMonthlyRosterSnapshots(
         document.snapshots,
         spreadsheetId: 'local-monthly-${document.extension}',
+        applyPeriodFilter: false,
       );
-      monthlyRoster = parsedMonthly.sections.isEmpty
+      _allMonthlyRoster = parsedMonthly.sections.isEmpty
           ? MonthlyRosterParseReport.fromShifts(
               _parseAllRosterSnapshots(document.snapshots, fallback: const []),
             )
           : parsedMonthly;
+      monthlyRoster = _filterMonthlyReportToSelectedPeriods(
+        _allMonthlyRoster,
+      );
       sheetTitles = document.snapshots.map((sheet) => sheet.title).toList();
       localSourceLabel = 'ไฟล์ .${document.extension} ในเครื่อง';
       lastRefresh = DateTime.now();
@@ -1018,6 +1076,7 @@ class AppController extends ChangeNotifier implements ControllerState {
   MonthlyRosterParseReport _parseMonthlyRosterSnapshots(
     List<SheetSnapshot> snapshots, {
     required String spreadsheetId,
+    bool applyPeriodFilter = true,
   }) {
     final sections = <MonthlyRosterSection>[];
     final warnings = <String>[];
@@ -1069,12 +1128,19 @@ class AppController extends ChangeNotifier implements ControllerState {
       sections: List.unmodifiable(sections),
       warnings: List.unmodifiable(warnings),
     );
-    return settings.effectivePeriods.isEmpty
+    return !applyPeriodFilter || settings.effectivePeriods.isEmpty
         ? report
-        : report.filtered(
-            includesDate: (date) =>
-                settings.includesPeriod(date.year, date.month),
-          );
+        : _filterMonthlyReportToSelectedPeriods(report);
+  }
+
+  MonthlyRosterParseReport _filterMonthlyReportToSelectedPeriods(
+    MonthlyRosterParseReport report,
+  ) {
+    if (settings.effectivePeriods.isEmpty) return report;
+    return report.filtered(
+      includesDate: (date) =>
+          settings.includesPeriod(date.year, date.month),
+    );
   }
 
   SheetColor? _sheetColor(int? value) {
@@ -1956,6 +2022,14 @@ class AppController extends ChangeNotifier implements ControllerState {
       _loadedRevisionCount = 0;
       timelineWarning = null;
       _loadedRosterShifts = [];
+      _allMonthlyRoster = const MonthlyRosterParseReport(
+        sections: [],
+        warnings: [],
+      );
+      monthlyRoster = const MonthlyRosterParseReport(
+        sections: [],
+        warnings: [],
+      );
       syncRangeStart = null;
       syncRangeEnd = null;
       _syncRangeCustomized = false;
@@ -2218,6 +2292,19 @@ class AppController extends ChangeNotifier implements ControllerState {
         syncRangeEnd != null) {
       return;
     }
+
+    // Explicit month selection is authoritative. Use calendar-month
+    // boundaries and separately exclude unselected months, including gaps
+    // when multiple non-consecutive months are selected.
+    final selectedRange = RosterSyncPeriodFilter.rangeFor(
+      settings.effectivePeriods,
+    );
+    if (selectedRange != null) {
+      syncRangeStart = selectedRange.start;
+      syncRangeEnd = selectedRange.end;
+      return;
+    }
+
     final ranges = monthlyRoster.dateRanges;
     if (ranges.isEmpty) {
       if (parsed.isEmpty) return;
@@ -2249,6 +2336,9 @@ class AppController extends ChangeNotifier implements ControllerState {
       .toList(growable: false);
 
   bool _includesSyncDate(DateTime date) {
+    if (!RosterSyncPeriodFilter.includes(date, settings.effectivePeriods)) {
+      return false;
+    }
     final start = syncRangeStart;
     final end = syncRangeEnd;
     if (start == null || end == null) return true;
