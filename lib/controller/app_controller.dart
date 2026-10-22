@@ -411,7 +411,9 @@ class AppController extends ChangeNotifier implements ControllerState {
       _loadedRosterShifts = [];
       _currentAllRosterShifts = [];
       monthlyRoster = const MonthlyRosterParseReport(sections: [], warnings: []);
-      _replaceLegacyShifts(const []);
+      // Clear only the in-memory sync projection; do not persist an empty
+      // schedule over the user's last saved schedule.
+      _replaceLegacyShifts(const [], persist: false);
       status = 'เดือน/ปีที่เลือกเปลี่ยนแล้ว กรุณาอ่านตารางเวรใหม่ก่อนซิงก์';
     }
     settings = next;
