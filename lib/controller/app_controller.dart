@@ -10,7 +10,6 @@ import '../models/app_settings.dart';
 import '../models/audit_entry.dart';
 import '../models/calendar_busy_period.dart';
 import '../models/roster_period.dart';
-import '../features/shift_parser/domain/roster_sync_period_filter.dart';
 import '../models/roster_reference_comparison.dart';
 import '../models/roster_assignment_timeline.dart';
 import '../models/saved_sheet.dart';
@@ -25,6 +24,7 @@ import '../features/google_sheets/domain/sheet_color.dart';
 import '../features/shift_parser/application/monthly_roster_section_parser.dart';
 import '../features/shift_parser/domain/monthly_roster_section.dart';
 import '../features/shift_parser/domain/normalized_cell.dart';
+import '../features/shift_parser/domain/roster_sync_period_filter.dart';
 import '../features/shift_parser/domain/shift_parser_input.dart';
 import '../features/workflow/application/shift_calendar_workflow_controller.dart';
 import '../features/diff_engine/domain/calendar_event_candidate.dart';
@@ -421,12 +421,14 @@ class AppController extends ChangeNotifier implements ControllerState {
     if (periodChanged) {
       monthlyRoster = _filterMonthlyReportToSelectedPeriods(_allMonthlyRoster);
       _setDefaultSyncDateRange(_loadedRosterShifts);
-      final selectedShifts = _filterToSyncDateRange(_loadedRosterShifts);
-      _replaceLegacyShifts(
-        _alertService.addOffDutyPeriods(
-          _applyReferenceRelationships(selectedShifts),
-        ),
-      );
+      if (_loadedRosterShifts.isNotEmpty) {
+        final selectedShifts = _filterToSyncDateRange(_loadedRosterShifts);
+        _replaceLegacyShifts(
+          _alertService.addOffDutyPeriods(
+            _applyReferenceRelationships(selectedShifts),
+          ),
+        );
+      }
       _rebuildAlerts();
     }
     _scheduleAutoRefresh();
