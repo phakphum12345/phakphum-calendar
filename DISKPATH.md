@@ -566,9 +566,9 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/models/calendar_busy_period.dart` | 552 | `ef2dc05ae45a0a17f74478b7931deae7f740cdeef56fd6c106cb84e2389d0dd6` |
 | `lib/models/roster_assignment_timeline.dart` | 2394 | `28dfea9099c6f4485f97027dec67072564ac7dae161a601a032cd06f9485239c` |
 | `lib/models/roster_period.dart` | 452 | `6075bd0d304ed6a242aaff73ea9276ab43227312ad4ff24f76b09f7916071f32` |
-| `lib/models/selected_roster_period_range.dart` | 996 | `86fae555c0a8f2e02d85eb45af82d6b6fb0651b02879cecd5a435675736f5bd2` |
 | `lib/models/roster_reference_comparison.dart` | 1888 | `94f9afc5588eacfbfb57ec07f105d1b06f65b30a5a777817cabeda93475c810f` |
 | `lib/models/saved_sheet.dart` | 3324 | `6698d929b467a4decaee950205f2db63ccb020cfa3e490b68007f45c0839e520` |
+| `lib/models/selected_roster_period_range.dart` | 996 | `86fae555c0a8f2e02d85eb45af82d6b6fb0651b02879cecd5a435675736f5bd2` |
 | `lib/models/shift.dart` | 5780 | `658b89a13c918e9685746394b45515824e3250a0a9ed2b2e90725d7f9f5962ef` |
 | `lib/models/shift_alert.dart` | 1473 | `91d42f3e53e1ac9d55f553bd325ec19436d82fa6feb4d9fcd0760e33706795ff` |
 | `lib/models/swap_request.dart` | 1253 | `1cb1b80512e3ceb84f2e55e5321bcd59d91275d28fc4c7343af56cd8a95b75d4` |
