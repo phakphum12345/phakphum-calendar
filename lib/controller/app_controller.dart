@@ -640,6 +640,15 @@ class AppController extends ChangeNotifier implements ControllerState {
         );
         final saved = await _saveSheetReference(account.id, reference);
         _resetSyncRange();
+        _allMonthlyRoster = const MonthlyRosterParseReport(
+          sections: [],
+          warnings: [],
+        );
+        monthlyRoster = const MonthlyRosterParseReport(
+          sections: [],
+          warnings: [],
+        );
+        _replaceLegacyShifts(const []);
         localSourceLabel = null;
         status = 'เลือก “${saved.displayTitle}” เป็นไฟล์หลักของบัญชีนี้แล้ว';
         await _addAudit(
