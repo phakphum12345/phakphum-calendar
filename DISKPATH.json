@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 739,
+  "file_count": 741,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -1168,8 +1168,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 91803,
-      "sha256": "8852b8199989c325760a4c73ddea92c872b49f63711a78fb507fbe67fbcd7b8e"
+      "size": 95172,
+      "sha256": "f230f9c4a7ca80d7699142edb0fb8eb2445184a7b4072708eb78f858278d74c9"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
@@ -2487,6 +2487,11 @@
       "sha256": "71907b2d4e5c0285a7b07183601d5939227973adde0df3bf67f03b6683503359"
     },
     {
+      "path": "lib/features/shift_parser/domain/roster_sync_period_filter.dart",
+      "size": 1216,
+      "sha256": "f07880f2e0949171bf41f75a4d3bc066e2b34f52404b13f39611d0e6b8ee1555"
+    },
+    {
       "path": "lib/features/shift_parser/domain/shift_catalog.dart",
       "size": 3483,
       "sha256": "1ddaaf5ac7d0c1aaa485076e57b6cb46c8d2328b0660d1db76d173ee2bee561d"
@@ -3290,6 +3295,11 @@
       "path": "test/roster_reference_comparison_test.dart",
       "size": 1607,
       "sha256": "d16ca98671685e19099f51a87e4cc023dae166057b3aa436ba5991a040749cc1"
+    },
+    {
+      "path": "test/roster_sync_period_filter_test.dart",
+      "size": 1720,
+      "sha256": "8819edb048ee8340fffee5ec1beb8a7afc3262bac3ff2218d969c4127e524376"
     },
     {
       "path": "test/rule_engine_consolidation_test.dart",

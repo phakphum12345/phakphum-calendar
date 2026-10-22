@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `739`
+- Tracked files: `741`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -261,7 +261,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `l10n.yaml` | 151 | `c3ce52cbd012e898f809811d21f21ead3bb3afd08b49a4efe4da74080248664d` |
 | `lib/app.dart` | 7679 | `599df85fd9c6a6abaa17e5646dd59969ef67bbe5a9d722030c1c5d4c83247ce1` |
 | `lib/bootstrap/app_bootstrap.dart` | 380 | `cada71fb830d954d0bd4df8e8892b7e0b62a5844a01d00daf1cd0007c9f23cb0` |
-| `lib/controller/app_controller.dart` | 91803 | `8852b8199989c325760a4c73ddea92c872b49f63711a78fb507fbe67fbcd7b8e` |
+| `lib/controller/app_controller.dart` | 95172 | `f230f9c4a7ca80d7699142edb0fb8eb2445184a7b4072708eb78f858278d74c9` |
 | `lib/core/di/app_dependencies.dart` | 21906 | `4075fdbcb457fd20199b251966063c71408d27ce8a8301bbfce9f160dff36b14` |
 | `lib/core/google/authorized_google_client_factory.dart` | 971 | `8a5504571f4d8e93d096d3f3bb3140564e58729510ac66c021a95361b2d362c8` |
 | `lib/core/google/google_scopes.dart` | 629 | `437eaa6b551e7fcfc6993603d2acb6c3a5be6818d0289ed2b20b0fc1af2d29b2` |
@@ -525,6 +525,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/shift_parser/domain/roster_cell_assignment.dart` | 875 | `c352977bc8d910b571b876cfd6bd3462f46f32cd8396e08945e3d20f52e40d10` |
 | `lib/features/shift_parser/domain/roster_layout_profile.dart` | 788 | `43a4b44089e50d8e99809cce2b700426f2e4f096c28aad3a2c06faa42fab9b08` |
 | `lib/features/shift_parser/domain/roster_parse_report.dart` | 358 | `71907b2d4e5c0285a7b07183601d5939227973adde0df3bf67f03b6683503359` |
+| `lib/features/shift_parser/domain/roster_sync_period_filter.dart` | 1216 | `f07880f2e0949171bf41f75a4d3bc066e2b34f52404b13f39611d0e6b8ee1555` |
 | `lib/features/shift_parser/domain/shift_catalog.dart` | 3483 | `1ddaaf5ac7d0c1aaa485076e57b6cb46c8d2328b0660d1db76d173ee2bee561d` |
 | `lib/features/shift_parser/domain/shift_definition.dart` | 725 | `2a97a4ec42d13714163d1ac14f28b370ec217a73db11786e283005310672dc27` |
 | `lib/features/shift_parser/domain/shift_parser.dart` | 345 | `e3afb0184be4e32a0d1579da3de2f433308a22643f70b60e04eef9596453fca6` |
@@ -686,6 +687,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/roster_assignment_timeline_test.dart` | 3069 | `7167990cb66590bade074be13fe5339988fbdc60a2dabf4f14493e60322e6ff0` |
 | `test/roster_name_entry_test.dart` | 1534 | `15dc0da8acc3b28d6d8b81fc11cc4281ad068678c64f0754dcabd87136ee77c6` |
 | `test/roster_reference_comparison_test.dart` | 1607 | `d16ca98671685e19099f51a87e4cc023dae166057b3aa436ba5991a040749cc1` |
+| `test/roster_sync_period_filter_test.dart` | 1720 | `8819edb048ee8340fffee5ec1beb8a7afc3262bac3ff2218d969c4127e524376` |
 | `test/rule_engine_consolidation_test.dart` | 3180 | `70ebce500581f1f93962d2d453a027d66899d66099ef4a2d637f155dc1f3b1fa` |
 | `test/rule_engine_foundation_test.dart` | 8149 | `31ad1aa480817e4c9ac012e51b332ff10c6a75b5f7aaef5844d239e6fe623884` |
 | `test/rule_validation_page_test.dart` | 2090 | `579720365fa40ac7f7a72bb3af111b5ef4e4fac5d3013be22df0bb2df5279652` |
