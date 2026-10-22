@@ -218,6 +218,7 @@ class AppController extends ChangeNotifier implements ControllerState {
   String? timelineWarning;
   List<String> sheetTitles = [];
   Set<String> pinnedToolIds = {...defaultPinnedToolIds};
+  bool shiftTimelineEnabled = false;
   bool initialized = false;
   bool busy = false;
   bool recentSheetHistoryLoaded = false;
@@ -1872,6 +1873,8 @@ class AppController extends ChangeNotifier implements ControllerState {
     required String details,
     Shift? shift,
   }) async {
+    if (!shiftTimelineEnabled) return;
+
     final account = auth.account;
     if (account == null) {
       throw StateError('กรุณาล็อกอิน Google ก่อนบันทึก Timeline');
