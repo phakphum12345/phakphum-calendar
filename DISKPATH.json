@@ -1168,8 +1168,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 90997,
-      "sha256": "dc5061554f136be8cdb8be76acddb9075ce5d7815737bb89799b1482fd467be0"
+      "size": 91803,
+      "sha256": "8852b8199989c325760a4c73ddea92c872b49f63711a78fb507fbe67fbcd7b8e"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
@@ -2433,8 +2433,8 @@
     },
     {
       "path": "lib/features/shift_parser/application/monthly_roster_section_parser.dart",
-      "size": 8269,
-      "sha256": "a91c621e5749ebe76cfb74ae08597fcc37907e32fc56379bfa0eaa7ae19697ca"
+      "size": 13425,
+      "sha256": "38d7e99c1f5c5725dcbb5d76e83e45c3bbb37b8900566c3236d04757f3ed43e1"
     },
     {
       "path": "lib/features/shift_parser/application/snapshot_normalizer.dart",
@@ -3238,8 +3238,8 @@
     },
     {
       "path": "test/monthly_roster_section_parser_test.dart",
-      "size": 7552,
-      "sha256": "a5b85c70edaba9a21664d29a5838dc54c4eb405de05692123a5539759d480059"
+      "size": 9772,
+      "sha256": "c783baecabc2120ea3e4e39fad88844d5b11fbfa050ec88c71d2b85fb6e61438"
     },
     {
       "path": "test/monthly_roster_template_test.dart",
