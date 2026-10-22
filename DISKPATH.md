@@ -29,6 +29,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Repository Paths
 
 | Path | Size (bytes) | SHA-256 |
+| --- | ---: | --- |
 | `.ai/memory/architecture.md` | 155 | `c2e3765e8d8913200f45f3a6c888b5f6b3cfe749ba8433ed54cd9cff20562a63` |
 | `.ai/memory/business_rules.md` | 135 | `010dcd4618a9b09e34ce0b4df8d176557d1c1cb407ae67937753c398a5607316` |
 | `.ai/memory/decisions.md` | 235 | `ee769b3be30b4b2bc90b4fc144863178f9e3cd4e72667bb760ef709c9f89fbf7` |
