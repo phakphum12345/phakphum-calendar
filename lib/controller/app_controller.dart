@@ -10,6 +10,7 @@ import '../models/app_settings.dart';
 import '../models/audit_entry.dart';
 import '../models/calendar_busy_period.dart';
 import '../models/roster_period.dart';
+import '../features/shift_parser/domain/roster_sync_period_filter.dart';
 import '../models/roster_reference_comparison.dart';
 import '../models/roster_assignment_timeline.dart';
 import '../models/saved_sheet.dart';
@@ -400,10 +401,25 @@ class AppController extends ChangeNotifier implements ControllerState {
       _pendingCalendarWorkflow = null;
       calendarPeriods = [];
       existingKeys = {};
+      // A month change invalidates any previously customized date range.
+      // Recompute it from the selected periods instead of retaining a stale
+      // range that could silently point at a different month.
+      syncRangeStart = null;
+      syncRangeEnd = null;
+      _syncRangeCustomized = false;
     }
     settings = next;
     await _settingsService.save(next);
-    if (periodChanged) _rebuildAlerts();
+    if (periodChanged) {
+      _setDefaultSyncDateRange(_loadedRosterShifts);
+      final selectedShifts = _filterToSyncDateRange(_loadedRosterShifts);
+      _replaceLegacyShifts(
+        _alertService.addOffDutyPeriods(
+          _applyReferenceRelationships(selectedShifts),
+        ),
+      );
+      _rebuildAlerts();
+    }
     _scheduleAutoRefresh();
     notifyListeners();
   }
@@ -711,20 +727,27 @@ class AppController extends ChangeNotifier implements ControllerState {
           snapshots,
           searchNames: searchNames,
         );
-        final parsedMonthly = _parseMonthlyRosterSnapshots(
+        // Keep the complete parsed roster in memory. Month selection is
+        // applied as a separate filter so changing months never reuses a
+        // parser result that was already truncated to the previous month.
+        final parsedMonthlyAll = _parseMonthlyRosterSnapshots(
           snapshots,
           spreadsheetId: spreadsheetId,
+          applyPeriodFilter: false,
         );
         final monthlyParsed = const MonthlyRosterShiftAdapter()
-            .parseForWorkers(parsedMonthly, targetNames: searchNames)
+            .parseForWorkers(parsedMonthlyAll, targetNames: searchNames)
             .map(_applyShiftOverride)
             .toList(growable: false);
         final usedMonthlyFallback =
             legacyParsed.isEmpty && monthlyParsed.isNotEmpty;
         final parsed = legacyParsed.isEmpty ? monthlyParsed : legacyParsed;
-        monthlyRoster = parsedMonthly.sections.isEmpty
+        final monthlyReportSource = parsedMonthlyAll.sections.isEmpty
             ? MonthlyRosterParseReport.fromShifts(parsed)
-            : parsedMonthly;
+            : parsedMonthlyAll;
+        monthlyRoster = _filterMonthlyReportToSelectedPeriods(
+          monthlyReportSource,
+        );
         _loadedRosterShifts = parsed;
         _setDefaultSyncDateRange(parsed);
         final rangedParsed = _filterToSyncDateRange(parsed);
@@ -974,6 +997,7 @@ class AppController extends ChangeNotifier implements ControllerState {
   MonthlyRosterParseReport _parseMonthlyRosterSnapshots(
     List<SheetSnapshot> snapshots, {
     required String spreadsheetId,
+    bool applyPeriodFilter = true,
   }) {
     final sections = <MonthlyRosterSection>[];
     final warnings = <String>[];
@@ -1025,12 +1049,19 @@ class AppController extends ChangeNotifier implements ControllerState {
       sections: List.unmodifiable(sections),
       warnings: List.unmodifiable(warnings),
     );
-    return settings.effectivePeriods.isEmpty
+    return !applyPeriodFilter || settings.effectivePeriods.isEmpty
         ? report
-        : report.filtered(
-            includesDate: (date) =>
-                settings.includesPeriod(date.year, date.month),
-          );
+        : _filterMonthlyReportToSelectedPeriods(report);
+  }
+
+  MonthlyRosterParseReport _filterMonthlyReportToSelectedPeriods(
+    MonthlyRosterParseReport report,
+  ) {
+    if (settings.effectivePeriods.isEmpty) return report;
+    return report.filtered(
+      includesDate: (date) =>
+          settings.includesPeriod(date.year, date.month),
+    );
   }
 
   SheetColor? _sheetColor(int? value) {
@@ -2174,6 +2205,19 @@ class AppController extends ChangeNotifier implements ControllerState {
         syncRangeEnd != null) {
       return;
     }
+
+    // Explicit month selection is authoritative. Use calendar-month
+    // boundaries and separately exclude unselected months, including gaps
+    // when multiple non-consecutive months are selected.
+    final selectedRange = RosterSyncPeriodFilter.rangeFor(
+      settings.effectivePeriods,
+    );
+    if (selectedRange != null) {
+      syncRangeStart = selectedRange.start;
+      syncRangeEnd = selectedRange.end;
+      return;
+    }
+
     final ranges = monthlyRoster.dateRanges;
     if (ranges.isEmpty) {
       if (parsed.isEmpty) return;
@@ -2205,6 +2249,9 @@ class AppController extends ChangeNotifier implements ControllerState {
       .toList(growable: false);
 
   bool _includesSyncDate(DateTime date) {
+    if (!RosterSyncPeriodFilter.includes(date, settings.effectivePeriods)) {
+      return false;
+    }
     final start = syncRangeStart;
     final end = syncRangeEnd;
     if (start == null || end == null) return true;
