@@ -2433,8 +2433,8 @@
     },
     {
       "path": "lib/features/shift_parser/application/monthly_roster_section_parser.dart",
-      "size": 13425,
-      "sha256": "38d7e99c1f5c5725dcbb5d76e83e45c3bbb37b8900566c3236d04757f3ed43e1"
+      "size": 13462,
+      "sha256": "c9ceb14081e4f00a1ff5fd496c174a2c4e66ef5a8198463be174f7610fa3a80a"
     },
     {
       "path": "lib/features/shift_parser/application/snapshot_normalizer.dart",
