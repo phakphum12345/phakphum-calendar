@@ -186,4 +186,74 @@ List<NormalizedCell> _row(int rowIndex, List<Object?> values) {
           rawValue: values[columnIndex],
         ),
   ];
+
+  test('converts monthly roster assignments to calendar shifts for the selected worker', () {
+    final labels = <String>[
+      'P1 เช้า',
+      'P2 ดึก',
+      'GEN',
+      'ER',
+      'CT',
+      '14ชั้น',
+      'CTIPD บ่าย',
+    ];
+    final assignments = [
+      for (var index = 0; index < labels.length; index++)
+        MonthlyRosterAssignment(
+          sectionTitle: 'ตารางเวรเดือนสิงหาคม 2569',
+          rowLabel: labels[index],
+          rowIndex: index + 3,
+          workerName: 'นายสมชาย ใจดี',
+          date: DateTime(2026, 8, index + 1),
+          sourceCell: 'B\${index + 4}',
+        ),
+      MonthlyRosterAssignment(
+        sectionTitle: 'ตารางเวรเดือนสิงหาคม 2569',
+        rowLabel: 'P3 เช้า',
+        rowIndex: 20,
+        workerName: 'นางสมหญิง',
+        date: DateTime(2026, 8, 20),
+        sourceCell: 'U21',
+      ),
+    ];
+    final report = MonthlyRosterParseReport(
+      sections: [
+        MonthlyRosterSection(
+          title: 'ตารางเวรเดือนสิงหาคม 2569',
+          headerRowIndex: 1,
+          assignments: assignments,
+          startDate: DateTime(2026, 8, 1),
+          endDate: DateTime(2026, 8, 31),
+        ),
+      ],
+      warnings: const [],
+    );
+
+    final shifts = const MonthlyRosterShiftAdapter().parseForWorkers(
+      report,
+      targetNames: ['สมชาย', 'ใจดี'],
+    );
+
+    expect(shifts, hasLength(7));
+    expect(shifts.map((shift) => shift.code), [
+      'UP1',
+      'NP2',
+      'UG',
+      'UER',
+      'UCT',
+      'U14',
+      'ACTIPD',
+    ]);
+    expect(shifts.first.start, DateTime(2026, 8, 1, 8));
+    expect(shifts[1].start, DateTime(2026, 8, 2));
+    expect(shifts[1].end, DateTime(2026, 8, 2, 8));
+    expect(shifts.last.start, DateTime(2026, 8, 7, 16));
+    expect(shifts.last.end, DateTime(2026, 8, 8, 8));
+    expect(shifts.every((shift) => shift.assignedName == 'นายสมชาย ใจดี'), isTrue);
+    expect(shifts.map((shift) => shift.cell), [
+      'B4', 'B5', 'B6', 'B7', 'B8', 'B9', 'B10',
+    ]);
+  });
+
+
 }
