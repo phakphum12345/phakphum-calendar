@@ -873,18 +873,22 @@ class AppController extends ChangeNotifier implements ControllerState {
         document.snapshots,
         searchNames: searchNames,
       );
-      final parsedMonthly = _parseMonthlyRosterSnapshots(
+      final parsedMonthlyAll = _parseMonthlyRosterSnapshots(
         document.snapshots,
         spreadsheetId: 'local-${document.extension}',
+        applyPeriodFilter: false,
       );
       final monthlyParsed = const MonthlyRosterShiftAdapter()
-          .parseForWorkers(parsedMonthly, targetNames: searchNames)
+          .parseForWorkers(parsedMonthlyAll, targetNames: searchNames)
           .map(_applyShiftOverride)
           .toList(growable: false);
       final parsed = legacyParsed.isEmpty ? monthlyParsed : legacyParsed;
-      monthlyRoster = parsedMonthly.sections.isEmpty
+      final monthlyReportSource = parsedMonthlyAll.sections.isEmpty
           ? MonthlyRosterParseReport.fromShifts(parsed)
-          : parsedMonthly;
+          : parsedMonthlyAll;
+      monthlyRoster = _filterMonthlyReportToSelectedPeriods(
+        monthlyReportSource,
+      );
       _loadedRosterShifts = parsed;
       _syncRangeCustomized = false;
       _setDefaultSyncDateRange(parsed);
