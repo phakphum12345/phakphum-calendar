@@ -2213,17 +2213,18 @@ class AppController extends ChangeNotifier implements ControllerState {
     _loadedRosterShifts = [];
   }
 
-  List<Shift> _filterToSyncDateRange(Iterable<Shift> source) => source
-      .where(
-        (shift) =>
-            _includesSyncDate(shift.start) &&
-            (_syncRangeCustomized ||
-                settings.effectivePeriods.isEmpty ||
-                SelectedRosterPeriodRange.fromPeriods(
-                  settings.effectivePeriods,
-                )!.includes(shift.start)),
-      )
-      .toList(growable: false);
+  List<Shift> _filterToSyncDateRange(Iterable<Shift> source) {
+    final selectedPeriods = _syncRangeCustomized
+        ? null
+        : SelectedRosterPeriodRange.fromPeriods(settings.effectivePeriods);
+    return source
+        .where(
+          (shift) =>
+              _includesSyncDate(shift.start) &&
+              (selectedPeriods == null || selectedPeriods.includes(shift.start)),
+        )
+        .toList(growable: false);
+  }
 
   bool _includesSyncDate(DateTime date) {
     final start = syncRangeStart;
