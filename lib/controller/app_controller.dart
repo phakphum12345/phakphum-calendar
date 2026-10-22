@@ -1827,13 +1827,13 @@ class AppController extends ChangeNotifier implements ControllerState {
 
   /// Writes a structured audit record to the shift event description and a separate Calendar event.
   Future<void> recordShiftTimelineEvent({
-    if (!shiftTimelineEnabled) return;
-
     required String action,
     required String summary,
     required String details,
     Shift? shift,
   }) async {
+    if (!shiftTimelineEnabled) return;
+
     final account = auth.account;
     if (account == null) {
       throw StateError('กรุณาล็อกอิน Google ก่อนบันทึก Timeline');
