@@ -707,7 +707,7 @@ class AppController extends ChangeNotifier implements ControllerState {
         final spreadsheetId = _sheetsService.parseSpreadsheetId(sourceUrl);
         await _ownershipService.requireOwnedSpreadsheet(client, spreadsheetId);
         final snapshots = await _sheetsService.readAll(client, sourceUrl);
-        final parsed = _parseRosterSnapshots(
+        final legacyParsed = _parseRosterSnapshots(
           snapshots,
           searchNames: searchNames,
         );
@@ -715,6 +715,13 @@ class AppController extends ChangeNotifier implements ControllerState {
           snapshots,
           spreadsheetId: spreadsheetId,
         );
+        final monthlyParsed = const MonthlyRosterShiftAdapter()
+            .parseForWorkers(parsedMonthly, targetNames: searchNames)
+            .map(_applyShiftOverride)
+            .toList(growable: false);
+        final usedMonthlyFallback =
+            legacyParsed.isEmpty && monthlyParsed.isNotEmpty;
+        final parsed = legacyParsed.isEmpty ? monthlyParsed : legacyParsed;
         monthlyRoster = parsedMonthly.sections.isEmpty
             ? MonthlyRosterParseReport.fromShifts(parsed)
             : parsedMonthly;
@@ -795,6 +802,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           'sheet.read',
           'อ่าน ${snapshots.length} แท็บ ${periods.length} เดือน '
               'พบ ${rangedParsed.length} เวรในช่วงที่กำหนด '
+              '${usedMonthlyFallback ? 'ใช้ตัวแปลงตารางรายเดือนสำรอง ' : ''}'
               'อ่าน Timeline $_loadedRevisionCount revision '
               'อ่านสีจากไฟล์หลัก $colorCount รายการ และสร้าง OFF '
               '$offCount รายการ; ไม่มีการแก้ไขชีต',
@@ -838,7 +846,7 @@ class AppController extends ChangeNotifier implements ControllerState {
         status = 'ยกเลิกการเลือกไฟล์';
         return;
       }
-      final parsed = _parseRosterSnapshots(
+      final legacyParsed = _parseRosterSnapshots(
         document.snapshots,
         searchNames: searchNames,
       );
@@ -846,6 +854,11 @@ class AppController extends ChangeNotifier implements ControllerState {
         document.snapshots,
         spreadsheetId: 'local-${document.extension}',
       );
+      final monthlyParsed = const MonthlyRosterShiftAdapter()
+          .parseForWorkers(parsedMonthly, targetNames: searchNames)
+          .map(_applyShiftOverride)
+          .toList(growable: false);
+      final parsed = legacyParsed.isEmpty ? monthlyParsed : legacyParsed;
       monthlyRoster = parsedMonthly.sections.isEmpty
           ? MonthlyRosterParseReport.fromShifts(parsed)
           : parsedMonthly;
