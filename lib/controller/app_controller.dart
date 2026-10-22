@@ -667,8 +667,6 @@ class AppController extends ChangeNotifier implements ControllerState {
       _revisionTimelines = const {};
       _loadedRevisionCount = 0;
       timelineWarning = null;
-      localReferenceLabel = null;
-      localReferenceShifts = [];
       _resetSyncRange();
       status = 'ยกเลิกการเลือกตารางแล้ว; ไฟล์ต้นฉบับยังอยู่ใน Google Sheets';
       await _addAudit(
