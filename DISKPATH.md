@@ -771,6 +771,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `windows/runner/utils.h` | 672 | `95a7f7dddb832997cefa937a96f89472332277e75734a5de553610760b744b03` |
 | `windows/runner/win32_window.cpp` | 8534 | `9065f31ccf746cf8b390121f958f9e959033af864aed779597066625ed56bc36` |
 | `windows/runner/win32_window.h` | 3522 | `7dd03746b19dcf3542829b2f6e8ed40a2714ce5f2cb3b0e23f0118a2fcf62d62` |
+
 ## Integrity
 
 The canonical machine-readable manifest is `DISKPATH.json`.
