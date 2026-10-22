@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 739,
+  "file_count": 743,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -743,8 +743,8 @@
     },
     {
       "path": "docs/INSTALLATION_AND_USER_GUIDE.md",
-      "size": 20150,
-      "sha256": "e4aab257ef8df48a697883895ca6acbd44747faf829dc9d4082e6904fee241f6"
+      "size": 20183,
+      "sha256": "3d05d1e411495be2d97f9e8838598c3baf88290ada30d51f154d5a74ba6327b9"
     },
     {
       "path": "docs/INTEGRATION_STATUS.md",
@@ -1168,8 +1168,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 93456,
-      "sha256": "1d212bfe274a855e4db15d2f2a9d6bec0b5aea2ccf9894550227295c7403611f"
+      "size": 96678,
+      "sha256": "1e00ce4ccc6e36184546411cc54436523d66edff0922dedf85a57e2f20933181"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
@@ -1867,6 +1867,11 @@
       "sha256": "5f7ad5c975c37f2c557dc52c24717b2f92ae3f7ec9cd84f9f9b3e692d6f1604f"
     },
     {
+      "path": "lib/features/google_drive/application/multi_sheet_picker_selection.dart",
+      "size": 1179,
+      "sha256": "27d63b76944ae07f093982732805221ee1bcc4578194eda58f11da3a902a71de"
+    },
+    {
       "path": "lib/features/google_drive/application/roster_selection_controller.dart",
       "size": 1951,
       "sha256": "015bc1b319ba6ed5b665e682c461cb51c51631fd843bf40e52f1493aea5610e7"
@@ -2487,6 +2492,11 @@
       "sha256": "71907b2d4e5c0285a7b07183601d5939227973adde0df3bf67f03b6683503359"
     },
     {
+      "path": "lib/features/shift_parser/domain/roster_sync_period_filter.dart",
+      "size": 1216,
+      "sha256": "f07880f2e0949171bf41f75a4d3bc066e2b34f52404b13f39611d0e6b8ee1555"
+    },
+    {
       "path": "lib/features/shift_parser/domain/shift_catalog.dart",
       "size": 3483,
       "sha256": "1ddaaf5ac7d0c1aaa485076e57b6cb46c8d2328b0660d1db76d173ee2bee561d"
@@ -2808,8 +2818,8 @@
     },
     {
       "path": "lib/ui/app_shell.dart",
-      "size": 191527,
-      "sha256": "203a3075461941ce1a41988e64a50c611eb7f5e2ab8d3c8abb890f3953dd5868"
+      "size": 192921,
+      "sha256": "052bfd82bd3ca1724fd0c2527d25a4a248a2ff974a1cdd189992a63d1c2aa9f6"
     },
     {
       "path": "lib/ui/audit_log_page.dart",
@@ -3262,6 +3272,11 @@
       "sha256": "04eeaf3f25bda0191ee1062ded48499c6123d89cdf1d1ccf2fbc2748bb852a35"
     },
     {
+      "path": "test/multi_sheet_picker_selection_test.dart",
+      "size": 1904,
+      "sha256": "6c460b5ca26b2557e414fdc857c60130628a5c0e21541fff37e04ad0fe9689da"
+    },
+    {
       "path": "test/off_after_cross_month_roster_boundary_test.dart",
       "size": 2733,
       "sha256": "10382634904a67541a8a39f4744a95d3cbccd3911f6226b6696d9439dd41747b"
@@ -3290,6 +3305,11 @@
       "path": "test/roster_reference_comparison_test.dart",
       "size": 1607,
       "sha256": "d16ca98671685e19099f51a87e4cc023dae166057b3aa436ba5991a040749cc1"
+    },
+    {
+      "path": "test/roster_sync_period_filter_test.dart",
+      "size": 1720,
+      "sha256": "8819edb048ee8340fffee5ec1beb8a7afc3262bac3ff2218d969c4127e524376"
     },
     {
       "path": "test/rule_engine_consolidation_test.dart",
