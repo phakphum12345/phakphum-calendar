@@ -689,7 +689,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/roster_assignment_timeline_test.dart` | 3069 | `7167990cb66590bade074be13fe5339988fbdc60a2dabf4f14493e60322e6ff0` |
 | `test/roster_name_entry_test.dart` | 1534 | `15dc0da8acc3b28d6d8b81fc11cc4281ad068678c64f0754dcabd87136ee77c6` |
 | `test/roster_reference_comparison_test.dart` | 1607 | `d16ca98671685e19099f51a87e4cc023dae166057b3aa436ba5991a040749cc1` |
-| `test/roster_sync_period_filter_test.dart` | 1720 | `8819edb048ee8340fffee5ec1beb8a7afc3262bac3ff2218d969c4127e524376` |
+| `test/roster_sync_period_filter_test.dart` | 2584 | `42879ab0bc3ed8edc7342b8a6663acb9c3a9065b560b0bd4752c23a029062a57` |
 | `test/rule_engine_consolidation_test.dart` | 3180 | `70ebce500581f1f93962d2d453a027d66899d66099ef4a2d637f155dc1f3b1fa` |
 | `test/rule_engine_foundation_test.dart` | 8149 | `31ad1aa480817e4c9ac012e51b332ff10c6a75b5f7aaef5844d239e6fe623884` |
 | `test/rule_validation_page_test.dart` | 2090 | `579720365fa40ac7f7a72bb3af111b5ef4e4fac5d3013be22df0bb2df5279652` |
