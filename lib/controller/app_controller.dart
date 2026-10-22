@@ -530,6 +530,47 @@ class AppController extends ChangeNotifier implements ControllerState {
     await selectSourceForCurrentAccount(sourceUrl);
   }
 
+  Future<void> clearRosterSourceSelection() async {
+    await _run('ยกเลิกการเลือกตารางเวร', () async {
+      final accountId = auth.account?.id;
+      if (accountId != null) {
+        savedSheets = [
+          for (final sheet in savedSheets)
+            if (sheet.ownerAccountId != accountId)
+              sheet
+            else
+              sheet.copyWith(isActive: false),
+        ];
+        await _settingsService.saveSavedSheets(savedSheets);
+      }
+
+      localSourceLabel = null;
+      _autoRefreshTimer?.cancel();
+      _replaceLegacyShifts(const []);
+      alerts = [];
+      calendarPeriods = [];
+      existingKeys = {};
+      sheetTitles = [];
+      monthlyRoster = const MonthlyRosterParseReport(
+        sections: [],
+        warnings: [],
+      );
+      _loadedRosterShifts = [];
+      _currentAllRosterShifts = [];
+      _referenceAllRosterShifts = [];
+      _revisionTimelines = const {};
+      _loadedRevisionCount = 0;
+      timelineWarning = null;
+      _resetSyncRange();
+      status = 'ยกเลิกการเลือกตารางแล้ว; ไฟล์ต้นฉบับยังอยู่ใน Google Sheets';
+      await _addAudit(
+        'sheet.source.clear',
+        'ยกเลิกการเลือกแหล่งข้อมูลเวรสำหรับบัญชีปัจจุบัน; ไม่ได้ลบไฟล์ต้นฉบับ',
+        true,
+      );
+    });
+  }
+
   Future<void> findAvailableSourceSheets({
     OwnedSheetOrder order = OwnedSheetOrder.recentlyModified,
   }) async {

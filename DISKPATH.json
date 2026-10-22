@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 741,
+  "file_count": 743,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -1168,8 +1168,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 95172,
-      "sha256": "f230f9c4a7ca80d7699142edb0fb8eb2445184a7b4072708eb78f858278d74c9"
+      "size": 96678,
+      "sha256": "1e00ce4ccc6e36184546411cc54436523d66edff0922dedf85a57e2f20933181"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
@@ -2818,8 +2818,8 @@
     },
     {
       "path": "lib/ui/app_shell.dart",
-      "size": 191943,
-      "sha256": "76d45d301cbcaff7c5c6706df8bf8a359bb51a556854b39e08e4fcd19d9ab7f3"
+      "size": 192921,
+      "sha256": "052bfd82bd3ca1724fd0c2527d25a4a248a2ff974a1cdd189992a63d1c2aa9f6"
     },
     {
       "path": "lib/ui/audit_log_page.dart",
@@ -3588,8 +3588,8 @@
     },
     {
       "path": "test/widget_test.dart",
-      "size": 18114,
-      "sha256": "66d09ca2ac9cdf960e443ca4dea37b7b06eb5cb40d128daa670ed7787f56db34"
+      "size": 18320,
+      "sha256": "a53cbd95d21d5305e699526aac7636821ccb312594e6ba62772012e33456f12c"
     },
     {
       "path": "tools/diskpath/generate_diskpath.py",

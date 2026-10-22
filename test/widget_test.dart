@@ -185,6 +185,8 @@ void main() {
     expect(find.text('ชื่อที่ต้องค้นหา'), findsOneWidget);
     expect(find.text('กรอกชื่อให้ตรงกับชื่อในตารางเวร'), findsOneWidget);
     expect(find.text('เลือกไฟล์จาก Google Sheets'), findsOneWidget);
+    expect(find.text('ยกเลิกการเลือกตาราง'), findsOneWidget);
+    expect(find.text('นำเข้าตารางเวรจากไฟล์'), findsOneWidget);
     expect(find.text('เปิดกล้อง'), findsOneWidget);
     expect(find.text('วาง URL จากเบราว์เซอร์'), findsNothing);
     expect(find.text('แนบไฟล์ต้นฉบับเพื่อเปรียบเทียบ'), findsOneWidget);
