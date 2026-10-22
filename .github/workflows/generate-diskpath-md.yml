@@ -10,8 +10,10 @@ on:
       - "DISKPATH.json"
       - "DISKPATH.md"
 
+# Same-repository PRs may receive the generated manifest commit.
+# Fork PRs retain read-only behavior because GitHub does not grant write tokens.
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: generate-diskpath-${{ github.ref }}
@@ -24,10 +26,11 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: Checkout
+      - name: Checkout PR head (or current branch)
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v6
@@ -49,6 +52,25 @@ jobs:
           set -euo pipefail
           git diff --check
 
+      - name: Commit generated manifests to same-repository PR branch
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- DISKPATH.json DISKPATH.md
+
+          if git diff --cached --quiet; then
+            echo "DISKPATH AUTO-GENERATION: no manifest changes needed."
+            exit 0
+          fi
+
+          git commit -m "chore: automatically regenerate DISKPATH manifests"
+          git push origin "HEAD:${PR_HEAD_REF}"
+          echo "DISKPATH AUTO-GENERATION: committed updated manifests to ${PR_HEAD_REF}"
+
       - name: Enforce DISKPATH synchronization
         if: github.event_name != 'workflow_dispatch'
         run: |
@@ -62,6 +84,6 @@ jobs:
 
           echo "DISKPATH ENFORCEMENT: FAIL"
           echo "DISKPATH.json and/or DISKPATH.md are out of date."
-          echo "Run python3 tools/diskpath/generate_diskpath.py and commit the generated files."
+          echo "The generator ran, but automatic commit is available only for same-repository pull requests."
           git diff -- DISKPATH.json DISKPATH.md
           exit 1
