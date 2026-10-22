@@ -1168,8 +1168,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 96678,
-      "sha256": "1e00ce4ccc6e36184546411cc54436523d66edff0922dedf85a57e2f20933181"
+      "size": 96755,
+      "sha256": "9e01508a89c946c82e48d3efa9b84ab2430fce8c30621af199e6a4d8eb1ba292"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
@@ -2818,8 +2818,8 @@
     },
     {
       "path": "lib/ui/app_shell.dart",
-      "size": 192921,
-      "sha256": "052bfd82bd3ca1724fd0c2527d25a4a248a2ff974a1cdd189992a63d1c2aa9f6"
+      "size": 193137,
+      "sha256": "ed422b5744491ba86b7993bed1bd41fa667f63750f8bd1e7e947cb2bb09a3d6a"
     },
     {
       "path": "lib/ui/audit_log_page.dart",
@@ -2828,8 +2828,8 @@
     },
     {
       "path": "lib/ui/first_login_setup_dialog.dart",
-      "size": 6098,
-      "sha256": "8b743cb888c0e7574fef394f4c39b7ae35a5d186fae054f66d80ea3491701eaa"
+      "size": 10532,
+      "sha256": "38d98cd2da5a0f12f6997695783589dd3796a9123fd3f01fbf8d46c815a848d4"
     },
     {
       "path": "lib/ui/google_sign_in_button.dart",
@@ -3588,8 +3588,8 @@
     },
     {
       "path": "test/widget_test.dart",
-      "size": 18320,
-      "sha256": "a53cbd95d21d5305e699526aac7636821ccb312594e6ba62772012e33456f12c"
+      "size": 22296,
+      "sha256": "4beb8e8ded8187ac7543f0961785022a429635a98cd981ed31a49032560c18c4"
     },
     {
       "path": "tools/diskpath/generate_diskpath.py",
