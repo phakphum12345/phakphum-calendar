@@ -7,30 +7,38 @@ on:
     paths:
       - "lib/**"
       - "assets/**"
+      - "android/**"
+      - "ios/**"
+      - "linux/**"
       - "windows/**"
       - "web/**"
       - "test/**"
       - "integration_test/**"
       - "pubspec.yaml"
       - "pubspec.lock"
+      - "DISKPATH.json"
+      - "DISKPATH.md"
       - ".github/workflows/**"
   push:
     branches: [main]
     paths:
       - "lib/**"
       - "assets/**"
+      - "android/**"
+      - "ios/**"
+      - "linux/**"
       - "windows/**"
       - "web/**"
       - "test/**"
       - "integration_test/**"
       - "pubspec.yaml"
       - "pubspec.lock"
+      - "DISKPATH.json"
+      - "DISKPATH.md"
       - ".github/workflows/**"
 
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages-${{ github.workflow }}-${{ github.ref }}
@@ -49,6 +57,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: 3.47.2
           channel: stable
           cache: true
 
@@ -82,22 +91,23 @@ jobs:
           retention-days: 14
 
       - name: Upload GitHub Pages artifact
-        if: github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: build/web
 
   deploy-pages:
     name: Deploy GitHub Pages
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build-web
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
-      - name: Deploy
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
