@@ -2060,19 +2060,11 @@ class AppController extends ChangeNotifier implements ControllerState {
         targetName: searchNames.first,
         targetAliases: searchNames.skip(1),
       );
-      final selectedPeriods = settings.effectivePeriods;
-      final selectedShifts = selectedPeriods.isEmpty
-          ? allPeriods
-          : allPeriods
-                .where(
-                  (shift) => settings.includesPeriod(
-                    shift.start.year,
-                    shift.start.month,
-                  ),
-                )
-                .toList(growable: false);
-      if (allPeriods.isNotEmpty || selectedPeriods.isEmpty) {
-        return selectedShifts.map(_applyShiftOverride).toList(growable: false)
+      // Keep the complete multi-period parse as the source of truth.
+      // The selected month is applied later to the visible/syncable shifts;
+      // filtering here would make a later month change reuse a truncated roster.
+      if (allPeriods.isNotEmpty || settings.effectivePeriods.isEmpty) {
+        return allPeriods.map(_applyShiftOverride).toList(growable: false)
           ..sort((left, right) => left.start.compareTo(right.start));
       }
     }
