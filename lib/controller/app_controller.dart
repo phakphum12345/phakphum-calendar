@@ -401,6 +401,18 @@ class AppController extends ChangeNotifier implements ControllerState {
       _pendingCalendarWorkflow = null;
       calendarPeriods = [];
       existingKeys = {};
+
+      // Invalidate the previously loaded roster immediately. Otherwise a user
+      // can change the selected month and sync the old month's shifts before
+      // re-reading the source sheet.
+      _syncRangeCustomized = false;
+      syncRangeStart = null;
+      syncRangeEnd = null;
+      _loadedRosterShifts = [];
+      _currentAllRosterShifts = [];
+      monthlyRoster = const MonthlyRosterParseReport(sections: [], warnings: []);
+      _replaceLegacyShifts(const []);
+      status = 'เดือน/ปีที่เลือกเปลี่ยนแล้ว กรุณาอ่านตารางเวรใหม่ก่อนซิงก์';
     }
     settings = next;
     await _settingsService.save(next);
