@@ -188,6 +188,16 @@ void main() {
           date: DateTime(2026, 8, index + 1),
           sourceCell: 'B${index + 4}',
         ),
+      // Same source key from a repeated monthly-grid cell must not create
+      // a duplicate Calendar shift for the same worker, date, and shift code.
+      MonthlyRosterAssignment(
+        sectionTitle: 'ตารางเวรเดือนสิงหาคม 2569',
+        rowLabel: 'P1 เช้า',
+        rowIndex: 30,
+        workerName: 'นายสมชาย ใจดี',
+        date: DateTime(2026, 8, 1),
+        sourceCell: 'B99',
+      ),
       MonthlyRosterAssignment(
         sectionTitle: 'ตารางเวรเดือนสิงหาคม 2569',
         rowLabel: 'P3 เช้า',
