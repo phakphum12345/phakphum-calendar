@@ -401,6 +401,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/excel_import/presentation/widgets/validation_banner.dart` | 1540 | `9cbca587ca4c9b3175997d3b65a935642ec209bccbcd05e2bf5e419c49e1db2a` |
 | `lib/features/excel_import/presentation/widgets/worksheet_list.dart` | 1793 | `4f7f1713d61150b7b3ea6b753aceedb883047dc2e874ffe0544d26c34650c616` |
 | `lib/features/google_drive/README.md` | 536 | `5f7ad5c975c37f2c557dc52c24717b2f92ae3f7ec9cd84f9f9b3e692d6f1604f` |
+| `lib/features/google_drive/application/multi_sheet_picker_selection.dart` | 1179 | `27d63b76944ae07f093982732805221ee1bcc4578194eda58f11da3a902a71de` |
 | `lib/features/google_drive/application/roster_selection_controller.dart` | 1951 | `015bc1b319ba6ed5b665e682c461cb51c51631fd843bf40e52f1493aea5610e7` |
 | `lib/features/google_drive/application/roster_selection_state.dart` | 665 | `e97be027ec4c0a36d365e260743d34149d4efcf57a1c0fe76ef4c29fa0948750` |
 | `lib/features/google_drive/domain/drive_gateway.dart` | 168 | `0e04cb9f13e023e6fc5e852ad658c83f8d73aa1e2249123818ed82e44153b010` |
@@ -590,7 +591,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/shift_time_service.dart` | 2193 | `612c7b2f23bb5c5405ff64455cb9a1172a0ac3e4a5a852b6b43eca9e16d31495` |
 | `lib/services/swap_request_service.dart` | 1857 | `84df2fac3ba6319c7fbbd7e16a757aeeac3041b2cedf6d3bbb926dc361b48f45` |
 | `lib/shared/presentation/app_status_page.dart` | 2355 | `632e9de1c6f386b0ef04fdc15e0870c0ac633859493fa2acea07e8c7926dabfd` |
-| `lib/ui/app_shell.dart` | 190549 | `5b21959890a4fe2c238f0536ba22f22391b3c12f5659024e116d93cacd9c090d` |
+| `lib/ui/app_shell.dart` | 191943 | `76d45d301cbcaff7c5c6706df8bf8a359bb51a556854b39e08e4fcd19d9ab7f3` |
 | `lib/ui/audit_log_page.dart` | 1240 | `550aa1ac28816344c928a4335ed337e4224a7442df5ecdd8d433bcb627eb362b` |
 | `lib/ui/first_login_setup_dialog.dart` | 6098 | `8b743cb888c0e7574fef394f4c39b7ae35a5d186fae054f66d80ea3491701eaa` |
 | `lib/ui/google_sign_in_button.dart` | 102 | `250dcb07d7da55efdcbe2f2f164ef395050f5b635e044e48f16575dc035ad2b7` |
@@ -681,6 +682,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/monthly_schedule_pdf_service_test.dart` | 4367 | `4721c35b87501c726e9c5f3a67694de682c1a945586c45dee14382250513e919` |
 | `test/monthly_schedule_report_controller_test.dart` | 6944 | `c5a61b554ab61f8047b50d13ab19dc75c2e618f9f9b352ac1a1062393f751cc8` |
 | `test/monthly_schedule_report_mapper_test.dart` | 6105 | `04eeaf3f25bda0191ee1062ded48499c6123d89cdf1d1ccf2fbc2748bb852a35` |
+| `test/multi_sheet_picker_selection_test.dart` | 1904 | `6c460b5ca26b2557e414fdc857c60130628a5c0e21541fff37e04ad0fe9689da` |
 | `test/off_after_cross_month_roster_boundary_test.dart` | 2733 | `10382634904a67541a8a39f4744a95d3cbccd3911f6226b6696d9439dd41747b` |
 | `test/plugin_registry_test.dart` | 1487 | `02d16914879b047c97f0d1c0d9929cc4ae4a3551ab3fde79d6361b8ff0853f29` |
 | `test/radiology_roster_structure_test.dart` | 4209 | `e526b10d9c6039756439032c4062739886780b735aeea99beff9e04119e1d843` |

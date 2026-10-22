@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../controller/app_controller.dart';
+import '../features/google_drive/application/multi_sheet_picker_selection.dart';
 import '../domain/entities/schedule.dart';
 import '../features/reports/presentation/controllers/monthly_schedule_report_controller.dart';
 import '../features/reports/presentation/pages/monthly_schedule_report_page.dart';
@@ -1233,7 +1234,7 @@ class _DashboardPageState extends State<_DashboardPage> {
       throw StateError('ไม่พบ Google Sheets ที่บัญชีนี้เข้าถึงได้');
     }
 
-    final selected = await showDialog<List<RecentOwnedSheet>>(
+    final selection = await showDialog<_GoogleSheetPickerResult>(
       context: context,
       builder: (context) => _GoogleSheetPickerDialog(
         files: controller.recentOwnedSheets,
@@ -1244,8 +1245,23 @@ class _DashboardPageState extends State<_DashboardPage> {
       ),
     );
 
-    if (selected == null || selected.isEmpty || !mounted) return;
-    await controller.selectRecentSourceSheets(selected);
+    if (selection == null || !mounted) return;
+
+    if (selection.removedSpreadsheetIds.isNotEmpty) {
+      final savedToRemove = controller.savedSheetsForCurrentAccount
+          .where(
+            (sheet) =>
+                selection.removedSpreadsheetIds.contains(sheet.spreadsheetId),
+          )
+          .toList(growable: false);
+      for (final sheet in savedToRemove) {
+        await controller.deleteSavedSheet(sheet);
+      }
+    }
+
+    if (selection.addedFiles.isNotEmpty) {
+      await controller.selectRecentSourceSheets(selection.addedFiles);
+    }
   }
 
   Future<void> _selectSourceByUrl() async {
@@ -1995,7 +2011,10 @@ class _GoogleSheetPickerDialog extends StatefulWidget {
 
 class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
   final TextEditingController _searchController = TextEditingController();
-  final Set<String> _selectedIds = <String>{};
+  late final MultiSheetPickerSelection _selection =
+      MultiSheetPickerSelection(
+        alreadyAddedIds: widget.alreadyAddedSpreadsheetIds,
+      );
   String _query = '';
 
   List<RecentOwnedSheet> get _filteredFiles {
@@ -2007,16 +2026,11 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
   }
 
   List<RecentOwnedSheet> get _selectedFiles => widget.files
-      .where((file) => _selectedIds.contains(file.id))
+      .where((file) => _selection.selectedIds.contains(file.id))
       .toList(growable: false);
 
   void _toggle(RecentOwnedSheet file) {
-    if (widget.alreadyAddedSpreadsheetIds.contains(file.id)) return;
-    setState(() {
-      if (!_selectedIds.add(file.id)) {
-        _selectedIds.remove(file.id);
-      }
-    });
+    setState(() => _selection.toggle(file.id));
   }
 
   @override
@@ -2057,8 +2071,9 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
               child: Text(
                 '${widget.order == OwnedSheetOrder.firstCreated ? 'เรียงจากไฟล์ที่สร้างก่อน' : 'เรียงจากไฟล์ที่แก้ไขล่าสุด'} • '
                 'แสดงหน้าแรก ${files.length}/${widget.files.length} ไฟล์ • '
-                'เลือกใหม่ ${_selectedIds.length} ไฟล์ • '
-                'เพิ่มไว้แล้ว ${widget.alreadyAddedSpreadsheetIds.length} ไฟล์',
+                'เลือกใหม่ ${_selection.addedCount} ไฟล์ • '
+                'เพิ่มไว้แล้ว ${widget.alreadyAddedSpreadsheetIds.length} ไฟล์ • '
+                'เอาออก ${_selection.removedCount} ไฟล์',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -2073,10 +2088,9 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
                         final file = files[index];
                         final alreadyAdded = widget.alreadyAddedSpreadsheetIds
                             .contains(file.id);
-                        final selected = _selectedIds.contains(file.id);
                         return CheckboxListTile(
-                          value: alreadyAdded || selected,
-                          onChanged: alreadyAdded ? null : (_) => _toggle(file),
+                          value: _selection.isChecked(file.id),
+                          onChanged: (_) => _toggle(file),
                           secondary: const CircleAvatar(
                             child: Icon(Icons.table_chart_outlined),
                           ),
@@ -2087,7 +2101,9 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
                           ),
                           subtitle: Text(
                             alreadyAdded
-                                ? 'เพิ่มไว้แล้ว'
+                                ? _selection.removedIds.contains(file.id)
+                                      ? 'จะเอาออกจากรายการในแอป (ไม่ลบไฟล์จริง)'
+                                      : 'เพิ่มไว้แล้ว · ติ๊กเพื่อเอาออกจากรายการในแอป'
                                 : widget.order == OwnedSheetOrder.firstCreated
                                 ? file.createdAt == null
                                       ? 'ไม่พบเวลาที่สร้างไฟล์'
@@ -2112,15 +2128,35 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
           child: const Text('ยกเลิก'),
         ),
         FilledButton.icon(
-          onPressed: _selectedIds.isEmpty
+          onPressed: !_selection.hasChanges
               ? null
-              : () => Navigator.of(context).pop(_selectedFiles),
-          icon: const Icon(Icons.add),
-          label: Text('เพิ่ม ${_selectedIds.length} ไฟล์'),
+              : () => Navigator.of(context).pop(
+                  _GoogleSheetPickerResult(
+                    addedFiles: _selectedFiles,
+                    removedSpreadsheetIds: _selection.removedIds,
+                  ),
+                ),
+          icon: const Icon(Icons.save_outlined),
+          label: Text(
+            _selection.removedCount == 0
+                ? 'เพิ่ม ${_selection.addedCount} ไฟล์'
+                : 'บันทึกการเลือก',
+          ),
         ),
       ],
     );
   }
+}
+
+
+class _GoogleSheetPickerResult {
+  const _GoogleSheetPickerResult({
+    required this.addedFiles,
+    required this.removedSpreadsheetIds,
+  });
+
+  final List<RecentOwnedSheet> addedFiles;
+  final Set<String> removedSpreadsheetIds;
 }
 
 class _SceDashboardHero extends StatelessWidget {

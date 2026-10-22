@@ -1867,6 +1867,11 @@
       "sha256": "5f7ad5c975c37f2c557dc52c24717b2f92ae3f7ec9cd84f9f9b3e692d6f1604f"
     },
     {
+      "path": "lib/features/google_drive/application/multi_sheet_picker_selection.dart",
+      "size": 1179,
+      "sha256": "27d63b76944ae07f093982732805221ee1bcc4578194eda58f11da3a902a71de"
+    },
+    {
       "path": "lib/features/google_drive/application/roster_selection_controller.dart",
       "size": 1951,
       "sha256": "015bc1b319ba6ed5b665e682c461cb51c51631fd843bf40e52f1493aea5610e7"
@@ -2813,8 +2818,8 @@
     },
     {
       "path": "lib/ui/app_shell.dart",
-      "size": 190549,
-      "sha256": "5b21959890a4fe2c238f0536ba22f22391b3c12f5659024e116d93cacd9c090d"
+      "size": 191943,
+      "sha256": "76d45d301cbcaff7c5c6706df8bf8a359bb51a556854b39e08e4fcd19d9ab7f3"
     },
     {
       "path": "lib/ui/audit_log_page.dart",
@@ -3265,6 +3270,11 @@
       "path": "test/monthly_schedule_report_mapper_test.dart",
       "size": 6105,
       "sha256": "04eeaf3f25bda0191ee1062ded48499c6123d89cdf1d1ccf2fbc2748bb852a35"
+    },
+    {
+      "path": "test/multi_sheet_picker_selection_test.dart",
+      "size": 1904,
+      "sha256": "6c460b5ca26b2557e414fdc857c60130628a5c0e21541fff37e04ad0fe9689da"
     },
     {
       "path": "test/off_after_cross_month_roster_boundary_test.dart",
