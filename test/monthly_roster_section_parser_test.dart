@@ -205,7 +205,7 @@ List<NormalizedCell> _row(int rowIndex, List<Object?> values) {
           rowIndex: index + 3,
           workerName: 'นายสมชาย ใจดี',
           date: DateTime(2026, 8, index + 1),
-          sourceCell: 'B\${index + 4}',
+          sourceCell: 'B${index + 4}',
         ),
       MonthlyRosterAssignment(
         sectionTitle: 'ตารางเวรเดือนสิงหาคม 2569',
