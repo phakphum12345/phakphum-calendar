@@ -1168,8 +1168,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 91803,
-      "sha256": "8852b8199989c325760a4c73ddea92c872b49f63711a78fb507fbe67fbcd7b8e"
+      "size": 93523,
+      "sha256": "945fac2ca4b222f853915a7f6bfc615071016fc7837822eee96f2e525ccb4216"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
@@ -2808,8 +2808,8 @@
     },
     {
       "path": "lib/ui/app_shell.dart",
-      "size": 190549,
-      "sha256": "5b21959890a4fe2c238f0536ba22f22391b3c12f5659024e116d93cacd9c090d"
+      "size": 191527,
+      "sha256": "203a3075461941ce1a41988e64a50c611eb7f5e2ab8d3c8abb890f3953dd5868"
     },
     {
       "path": "lib/ui/audit_log_page.dart",
@@ -3568,8 +3568,8 @@
     },
     {
       "path": "test/widget_test.dart",
-      "size": 18114,
-      "sha256": "66d09ca2ac9cdf960e443ca4dea37b7b06eb5cb40d128daa670ed7787f56db34"
+      "size": 18320,
+      "sha256": "a53cbd95d21d5305e699526aac7636821ccb312594e6ba62772012e33456f12c"
     },
     {
       "path": "tools/diskpath/generate_diskpath.py",
