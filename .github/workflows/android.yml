@@ -93,7 +93,7 @@ jobs:
             rm -rf "${NDK_DIR}"
             rm -rf "${SDK_ROOT}/.temp"
 
-            if "${SDKMANAGER}" --install "ndk;28.2.13676358" \
+            if "${SDKMANAGER}" "ndk;28.2.13676358" \
               && test -f "${NDK_DIR}/source.properties"; then
               cat "${NDK_DIR}/source.properties"
               echo "NDK installation verified."
