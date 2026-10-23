@@ -718,6 +718,13 @@ class _AppShellState extends State<AppShell> {
     }
     if (auth.canConfigureWebOAuth) {
       await _configureGoogleOAuth();
+      // Continue directly into Google sign-in after successful setup. If the
+      // dialog was cancelled or initialization failed, leave the user in place.
+      final configured = widget.controller.auth.oauthConfigured &&
+          widget.controller.auth.signInReady;
+      if (configured) {
+        await _perform(() => widget.controller.signIn());
+      }
       return;
     }
     final message = auth.oauthUnavailableMessage ?? 'Google OAuth ยังไม่พร้อมใช้งาน';
