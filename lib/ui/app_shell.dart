@@ -37,7 +37,6 @@ import '../services/drive_ownership_service.dart';
 import '../services/google_auth_service.dart';
 import '../services/shift_color_service.dart';
 import 'first_login_setup_dialog.dart';
-import 'google_sign_in_button.dart';
 
 enum _UtilityPage {
   notifications,
