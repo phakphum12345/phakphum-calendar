@@ -2818,8 +2818,8 @@
     },
     {
       "path": "lib/ui/app_shell.dart",
-      "size": 193137,
-      "sha256": "ed422b5744491ba86b7993bed1bd41fa667f63750f8bd1e7e947cb2bb09a3d6a"
+      "size": 193632,
+      "sha256": "ec8a9579a16be91813f3741da5c906a2705fa8cc450271314751159d2e3e4bca"
     },
     {
       "path": "lib/ui/audit_log_page.dart",
@@ -3588,8 +3588,8 @@
     },
     {
       "path": "test/widget_test.dart",
-      "size": 22296,
-      "sha256": "4beb8e8ded8187ac7543f0961785022a429635a98cd981ed31a49032560c18c4"
+      "size": 22390,
+      "sha256": "089607a395a173d70e8476892839e2c0c43ce346047c505c6ee1802fa914f38b"
     },
     {
       "path": "tools/diskpath/generate_diskpath.py",

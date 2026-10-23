@@ -37,7 +37,6 @@ import '../services/drive_ownership_service.dart';
 import '../services/google_auth_service.dart';
 import '../services/shift_color_service.dart';
 import 'first_login_setup_dialog.dart';
-import 'google_sign_in_button.dart';
 
 enum _UtilityPage {
   notifications,
@@ -243,6 +242,7 @@ class _AppShellState extends State<AppShell> {
               openAlerts: () =>
                   unawaited(_openUtilityPage(_UtilityPage.notifications)),
               configureGoogleOAuth: _configureGoogleOAuth,
+              syncGoogleAccount: _startGoogleSync,
               dashboardSummaryService: widget.dashboardSummaryService,
             ),
             _PreviewPage(
@@ -709,6 +709,23 @@ class _AppShellState extends State<AppShell> {
     }
   }
 
+  Future<void> _startGoogleSync() async {
+    final auth = widget.controller.auth;
+    if (auth.oauthConfigured) {
+      await _perform(() => widget.controller.signIn());
+      return;
+    }
+    if (auth.canConfigureWebOAuth) {
+      await _configureGoogleOAuth();
+      return;
+    }
+    final message = auth.oauthUnavailableMessage ?? 'Google OAuth ยังไม่พร้อมใช้งาน';
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   Future<void> _configureGoogleOAuth() async {
     final value = TextEditingController(
       text: widget.controller.auth.webClientId,
@@ -726,8 +743,10 @@ class _AppShellState extends State<AppShell> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'วาง Web OAuth Client ID จาก Google Cloud เพื่อเปิดปุ่มล็อกอิน '
-                  'Client ID เปิดเผยได้และไม่ใช่ Client Secret',
+                  'ตั้งค่า Web OAuth Client ID ครั้งเดียวเพื่อเปิดการเชื่อมต่อ '
+                  'หลังจากนั้นกด Sync Google Account เพื่อเข้าสู่ระบบและรับสิทธิ์ '
+                  'Token จะถูกจัดการโดยแอปอัตโนมัติ ไม่ต้องคัดลอก Token '
+                  'Client ID ไม่ใช่ Client Secret',
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -1156,6 +1175,7 @@ class _DashboardPage extends StatefulWidget {
     required this.sync,
     required this.openAlerts,
     required this.configureGoogleOAuth,
+    required this.syncGoogleAccount,
     required this.dashboardSummaryService,
   });
 
@@ -1166,6 +1186,7 @@ class _DashboardPage extends StatefulWidget {
   final Future<void> Function() sync;
   final VoidCallback openAlerts;
   final Future<void> Function() configureGoogleOAuth;
+  final Future<void> Function() syncGoogleAccount;
   final DashboardSummaryService dashboardSummaryService;
 
   @override
@@ -1497,6 +1518,7 @@ class _DashboardPageState extends State<_DashboardPage> {
                 controller: controller,
                 perform: widget.perform,
                 configureGoogleOAuth: widget.configureGoogleOAuth,
+                syncGoogleAccount: widget.syncGoogleAccount,
               ),
               const SizedBox(height: 16),
               Card(
@@ -2330,11 +2352,13 @@ class _GoogleAccountCard extends StatelessWidget {
     required this.controller,
     required this.perform,
     required this.configureGoogleOAuth,
+    required this.syncGoogleAccount,
   });
 
   final AppController controller;
   final Future<void> Function(Future<void> Function()) perform;
   final Future<void> Function() configureGoogleOAuth;
+  final Future<void> Function() syncGoogleAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -2363,6 +2387,12 @@ class _GoogleAccountCard extends StatelessWidget {
                           const Text(
                             'ล็อกอินก่อน แล้วค่อยอนุญาตสิทธิ์ตามปุ่มที่ใช้งาน',
                           ),
+                          if (!controller.auth.oauthConfigured &&
+                              !controller.auth.canConfigureWebOAuth &&
+                              controller.auth.oauthUnavailableMessage != null) ...[
+                            const SizedBox(height: 4),
+                            Text(controller.auth.oauthUnavailableMessage!),
+                          ],
                           if (controller.auth.error != null) ...[
                             const SizedBox(height: 4),
                             Text(
@@ -2376,39 +2406,21 @@ class _GoogleAccountCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  if (controller.auth.oauthConfigured)
-                    if (controller.auth.initialized &&
-                        !controller.auth.signInReady)
-                      OutlinedButton.icon(
-                        onPressed: null,
-                        icon: const Icon(Icons.error_outline),
-                        label: const Text('Google Login ไม่พร้อม'),
-                      )
-                    else
-                      GoogleLoginButton(
-                        enabled:
-                            controller.auth.signInReady && !controller.busy,
-                        onPressed: () => perform(controller.signIn),
-                      )
-                  else if (controller.auth.canConfigureWebOAuth)
-                    OutlinedButton.icon(
-                      onPressed: controller.busy ? null : configureGoogleOAuth,
-                      icon: const Icon(Icons.settings_outlined),
-                      label: const Text('ตั้งค่า Google OAuth'),
-                    )
-                  else
-                    Tooltip(
-                      message: controller.auth.oauthUnavailableMessage ?? '',
-                      child: OutlinedButton.icon(
-                        onPressed: null,
-                        icon: const Icon(Icons.key_off_outlined),
-                        label: Text(
-                          controller.auth.platformSupported
-                              ? 'ยังไม่ได้ตั้งค่า Google OAuth'
-                              : 'Google Login ใช้ผ่าน Web',
-                        ),
-                      ),
+                  FilledButton.icon(
+                    onPressed: controller.busy ||
+                            (controller.auth.oauthConfigured &&
+                                !controller.auth.signInReady) ||
+                            (!controller.auth.oauthConfigured &&
+                                !controller.auth.canConfigureWebOAuth)
+                        ? null
+                        : syncGoogleAccount,
+                    icon: Icon(
+                      controller.auth.oauthConfigured
+                          ? Icons.sync
+                          : Icons.login,
                     ),
+                    label: const Text('Sync Google Account'),
+                  ),
                 ],
               )
             : Wrap(
