@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 
@@ -119,6 +120,15 @@ class GoogleAuthService extends ChangeNotifier implements GoogleAuthGateway {
   Future<void> initialize({String? webClientId}) async {
     if (_initialized) return;
     _runtimeWebClientId = webClientId?.trim() ?? _runtimeWebClientId;
+    // Client IDs are public identifiers, not secrets. Persist the user's Web
+    // OAuth configuration locally so setup survives a browser refresh.
+    if (kIsWeb &&
+        _webClientId.isEmpty &&
+        _runtimeWebClientId.trim().isEmpty) {
+      final preferences = await SharedPreferences.getInstance();
+      _runtimeWebClientId =
+          preferences.getString('google_web_oauth_client_id')?.trim() ?? '';
+    }
     final unavailableMessage = oauthUnavailableMessage;
     if (unavailableMessage != null) {
       _error = unavailableMessage;
@@ -146,6 +156,10 @@ class GoogleAuthService extends ChangeNotifier implements GoogleAuthGateway {
       throw StateError('กรุณาโหลดหน้าแอปใหม่ก่อนเปลี่ยน OAuth Client ID');
     }
     _runtimeWebClientId = clientId;
+    // This is a public OAuth client identifier; never persist a client secret
+    // or access token here.
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.setString('google_web_oauth_client_id', clientId);
     _initialized = false;
     _error = null;
     notifyListeners();
