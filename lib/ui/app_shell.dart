@@ -241,6 +241,7 @@ class _AppShellState extends State<AppShell> {
               sync: _sync,
               openAlerts: () =>
                   unawaited(_openUtilityPage(_UtilityPage.notifications)),
+              configureGoogleOAuth: _configureGoogleOAuth,
               syncGoogleAccount: _startGoogleSync,
               dashboardSummaryService: widget.dashboardSummaryService,
             ),
@@ -273,7 +274,6 @@ class _AppShellState extends State<AppShell> {
               openShiftTemplates: _openShiftTemplates,
               edition: currentEdition,
               changeEdition: _selectEdition,
-              configureGoogleOAuth: _configureGoogleOAuth,
               syncGoogleAccount: _startGoogleSync,
               openSetup: _openSetupFromSettings,
             ),
@@ -4766,7 +4766,6 @@ class _SettingsPage extends StatelessWidget {
     required this.openShiftTemplates,
     required this.edition,
     required this.changeEdition,
-    required this.configureGoogleOAuth,
     required this.syncGoogleAccount,
     required this.openSetup,
   });
@@ -4776,7 +4775,6 @@ class _SettingsPage extends StatelessWidget {
   final VoidCallback openShiftTemplates;
   final AppEdition edition;
   final Future<void> Function(AppEdition edition) changeEdition;
-  final Future<void> Function() configureGoogleOAuth;
   final Future<void> Function() syncGoogleAccount;
   final Future<void> Function() openSetup;
 
