@@ -242,6 +242,7 @@ class _AppShellState extends State<AppShell> {
               openAlerts: () =>
                   unawaited(_openUtilityPage(_UtilityPage.notifications)),
               configureGoogleOAuth: _configureGoogleOAuth,
+              syncGoogleAccount: _startGoogleSync,
               dashboardSummaryService: widget.dashboardSummaryService,
             ),
             _PreviewPage(
@@ -1174,6 +1175,7 @@ class _DashboardPage extends StatefulWidget {
     required this.sync,
     required this.openAlerts,
     required this.configureGoogleOAuth,
+    required this.syncGoogleAccount,
     required this.dashboardSummaryService,
   });
 
@@ -1184,6 +1186,7 @@ class _DashboardPage extends StatefulWidget {
   final Future<void> Function() sync;
   final VoidCallback openAlerts;
   final Future<void> Function() configureGoogleOAuth;
+  final Future<void> Function() syncGoogleAccount;
   final DashboardSummaryService dashboardSummaryService;
 
   @override
@@ -1515,6 +1518,7 @@ class _DashboardPageState extends State<_DashboardPage> {
                 controller: controller,
                 perform: widget.perform,
                 configureGoogleOAuth: widget.configureGoogleOAuth,
+                syncGoogleAccount: widget.syncGoogleAccount,
               ),
               const SizedBox(height: 16),
               Card(
@@ -2348,11 +2352,13 @@ class _GoogleAccountCard extends StatelessWidget {
     required this.controller,
     required this.perform,
     required this.configureGoogleOAuth,
+    required this.syncGoogleAccount,
   });
 
   final AppController controller;
   final Future<void> Function(Future<void> Function()) perform;
   final Future<void> Function() configureGoogleOAuth;
+  final Future<void> Function() syncGoogleAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -2401,7 +2407,7 @@ class _GoogleAccountCard extends StatelessWidget {
                             (!controller.auth.oauthConfigured &&
                                 !controller.auth.canConfigureWebOAuth)
                         ? null
-                        : _startGoogleSync,
+                        : syncGoogleAccount,
                     icon: Icon(
                       controller.auth.oauthConfigured
                           ? Icons.sync
