@@ -1184,6 +1184,7 @@ class _DashboardPage extends StatefulWidget {
     required this.deleteDuplicateCalendarEvents,
     required this.sync,
     required this.openAlerts,
+    required this.configureGoogleOAuth,
     required this.syncGoogleAccount,
     required this.dashboardSummaryService,
   });
@@ -1194,6 +1195,7 @@ class _DashboardPage extends StatefulWidget {
   final Future<void> Function() deleteDuplicateCalendarEvents;
   final Future<void> Function() sync;
   final VoidCallback openAlerts;
+  final Future<void> Function() configureGoogleOAuth;
   final Future<void> Function() syncGoogleAccount;
   final DashboardSummaryService dashboardSummaryService;
 
