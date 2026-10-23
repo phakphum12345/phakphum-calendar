@@ -2387,6 +2387,12 @@ class _GoogleAccountCard extends StatelessWidget {
                           const Text(
                             'ล็อกอินก่อน แล้วค่อยอนุญาตสิทธิ์ตามปุ่มที่ใช้งาน',
                           ),
+                          if (!controller.auth.oauthConfigured &&
+                              !controller.auth.canConfigureWebOAuth &&
+                              controller.auth.oauthUnavailableMessage != null) ...[
+                            const SizedBox(height: 4),
+                            Text(controller.auth.oauthUnavailableMessage!),
+                          ],
                           if (controller.auth.error != null) ...[
                             const SizedBox(height: 4),
                             Text(
