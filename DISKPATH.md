@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `743`
+- Tracked files: `744`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -579,7 +579,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/drive_archive_service.dart` | 2913 | `37ce39a437c4c889b98d413ddd6de4f6e2f9499766531ffad6803ba7dd16e570` |
 | `lib/services/drive_ownership_service.dart` | 9290 | `e30489316965e91f008baf31d6fe2f1f3c592643257399117462e125c2d6f9e1` |
 | `lib/services/google_api_client.dart` | 589 | `95d32f2e3bd5f722201e0440d9545de40424b67ad56d264c1dd62a7742d0ae49` |
-| `lib/services/google_auth_service.dart` | 9662 | `a85087ec29d85fd3be5fed0c586ae7dee065fa2aaf2d567642fcea9b4432b076` |
+| `lib/services/google_auth_service.dart` | 10389 | `0137bf9fec9ecab1547fb1b16e4493dc05dece74e96e633e8283c5a82807b282` |
 | `lib/services/local_roster_file_service.dart` | 5387 | `db5336a2eb195d18c0027528d0ef0f167fb02b5c558919e98d861614da6b83db` |
 | `lib/services/roster_revision_service.dart` | 7467 | `46489ff8306e094b989b44c20bbfabb2cd49979126a371907346ccde0ab109d0` |
 | `lib/services/roster_timeline_generator.dart` | 1531 | `7ed54286153b0075d6d979a82ea0cecd72aec47b3cea150fef2fdf152acc683e` |
@@ -591,7 +591,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/shift_time_service.dart` | 2193 | `612c7b2f23bb5c5405ff64455cb9a1172a0ac3e4a5a852b6b43eca9e16d31495` |
 | `lib/services/swap_request_service.dart` | 1857 | `84df2fac3ba6319c7fbbd7e16a757aeeac3041b2cedf6d3bbb926dc361b48f45` |
 | `lib/shared/presentation/app_status_page.dart` | 2355 | `632e9de1c6f386b0ef04fdc15e0870c0ac633859493fa2acea07e8c7926dabfd` |
-| `lib/ui/app_shell.dart` | 193632 | `ec8a9579a16be91813f3741da5c906a2705fa8cc450271314751159d2e3e4bca` |
+| `lib/ui/app_shell.dart` | 194846 | `eba0a0457e662f7d42e09bf1d2a66a2e6b5346475c9529c8501a919e0455c9e8` |
 | `lib/ui/audit_log_page.dart` | 1240 | `550aa1ac28816344c928a4335ed337e4224a7442df5ecdd8d433bcb627eb362b` |
 | `lib/ui/first_login_setup_dialog.dart` | 10532 | `38d98cd2da5a0f12f6997695783589dd3796a9123fd3f01fbf8d46c815a848d4` |
 | `lib/ui/google_sign_in_button.dart` | 102 | `250dcb07d7da55efdcbe2f2f164ef395050f5b635e044e48f16575dc035ad2b7` |
@@ -663,6 +663,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/excel_reader_service_test.dart` | 4083 | `4d273ecd87aa133ab6aded4439449095c0042e9a8424224b69daa052cdc82c16` |
 | `test/features/calendar_sync/domain/calendar_sync_protocol_test.dart` | 2849 | `f5117baaf65f79d84c925c543b75d80c1fb1dc52ab59a66a79e4c8ee866a6971` |
 | `test/google_api_client_test.dart` | 2014 | `0213c7a53ac160d3bd29d967c2f3294a06e4c1d31946c1ba926d25486cc6d810` |
+| `test/google_auth_service_test.dart` | 855 | `7c020e73fe723f7a10809801b9a7fe5a8e40dee8dc2ce5795c10002b639bc84e` |
 | `test/google_calendar_sync_gateway_test.dart` | 3724 | `73f96f9b21fb7b5cb65eca3996f24cad06e16a16f2ce601b31ef32d5caf8bbec` |
 | `test/google_calendar_workflow_integration_test.dart` | 16248 | `45eec9caa94922fcb15f8434d123fda377b1239e889a54519983c8fdb29d88d1` |
 | `test/google_employee_sync_service_test.dart` | 3691 | `266b6dd3b9a7e72df07735dd1bd9f47da626798b51292f5eb63e25c1e514d98f` |

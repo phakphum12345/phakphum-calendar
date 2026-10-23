@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 743,
+  "file_count": 744,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -2758,8 +2758,8 @@
     },
     {
       "path": "lib/services/google_auth_service.dart",
-      "size": 9662,
-      "sha256": "a85087ec29d85fd3be5fed0c586ae7dee065fa2aaf2d567642fcea9b4432b076"
+      "size": 10389,
+      "sha256": "0137bf9fec9ecab1547fb1b16e4493dc05dece74e96e633e8283c5a82807b282"
     },
     {
       "path": "lib/services/local_roster_file_service.dart",
@@ -2818,8 +2818,8 @@
     },
     {
       "path": "lib/ui/app_shell.dart",
-      "size": 193632,
-      "sha256": "ec8a9579a16be91813f3741da5c906a2705fa8cc450271314751159d2e3e4bca"
+      "size": 194846,
+      "sha256": "eba0a0457e662f7d42e09bf1d2a66a2e6b5346475c9529c8501a919e0455c9e8"
     },
     {
       "path": "lib/ui/audit_log_page.dart",
@@ -3175,6 +3175,11 @@
       "path": "test/google_api_client_test.dart",
       "size": 2014,
       "sha256": "0213c7a53ac160d3bd29d967c2f3294a06e4c1d31946c1ba926d25486cc6d810"
+    },
+    {
+      "path": "test/google_auth_service_test.dart",
+      "size": 855,
+      "sha256": "7c020e73fe723f7a10809801b9a7fe5a8e40dee8dc2ce5795c10002b639bc84e"
     },
     {
       "path": "test/google_calendar_sync_gateway_test.dart",
