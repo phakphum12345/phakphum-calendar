@@ -44,7 +44,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `.codex/prompts.md` | 3504 | `1dec39a5591dec97c329c43266add5c9e492436a9826bcc9ca0fa0d6bb18f5bd` |
 | `.codex/roadmap.md` | 3272 | `201819ebdf4e490a2c7e31d0b3b7cae4d9c1f7eef3190f92ca8b698c7430d696` |
 | `.github/workflows/README.md` | 5353 | `a911a1a7b9b2b8a69442ad96f7bf89491a5de2b1779c24b3871a81ba93f9ab35` |
-| `.github/workflows/android.yml` | 3274 | `0934ff73718e6cf1021688cb283c5c96d70bb0eebec3f759b8eccc3e8c5789f3` |
+| `.github/workflows/android.yml` | 3264 | `c506bdb4f07b67ac53a9bd088dc0ba4a2258506dddb37ce0e7b311129ea890e7` |
 | `.github/workflows/ci-auto-detect.yml` | 4070 | `3dab5c3760a11aedfa8ffa511e3686f6816934f7b77a4fad06181cbe24485d99` |
 | `.github/workflows/final-gate.yml` | 6405 | `c160ae7913364bc15af46a2dfc281ec909127925d78f9a92f072fb4cbf70f69b` |
 | `.github/workflows/generate-diskpath-md.yml` | 2761 | `4f55d3eb957ff8281bce8fddf450d463e4588a024ab82fab64fdd8c5c5df274f` |
