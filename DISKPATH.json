@@ -83,8 +83,8 @@
     },
     {
       "path": ".github/workflows/android.yml",
-      "size": 1891,
-      "sha256": "d092e0080b24a8bf983dfa6f5f1f2689ff85c4d8a2fb3e5ced3075ed267ab0a4"
+      "size": 3264,
+      "sha256": "c506bdb4f07b67ac53a9bd088dc0ba4a2258506dddb37ce0e7b311129ea890e7"
     },
     {
       "path": ".github/workflows/ci-auto-detect.yml",
@@ -98,8 +98,8 @@
     },
     {
       "path": ".github/workflows/generate-diskpath-md.yml",
-      "size": 1633,
-      "sha256": "b962a10ffd7b988fc69f8386b97dad58a8bf0b2dea2a532620da914e70bb0d27"
+      "size": 2761,
+      "sha256": "4f55d3eb957ff8281bce8fddf450d463e4588a024ab82fab64fdd8c5c5df274f"
     },
     {
       "path": ".github/workflows/ios.yml",
@@ -113,8 +113,8 @@
     },
     {
       "path": ".github/workflows/web.yml",
-      "size": 2161,
-      "sha256": "acf4196bff49af2a5c8c164ba7fbaa3168dc3bbd4883703d5503a0cdb6fc0546"
+      "size": 2891,
+      "sha256": "a2de2663fbde56ea69e350a304ca42a66e648e3224ea18cbc057d55f43022630"
     },
     {
       "path": ".github/workflows/windows.yml",
