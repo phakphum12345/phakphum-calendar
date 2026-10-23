@@ -4794,19 +4794,42 @@ class _SettingsPage extends StatelessWidget {
       Card(child: ListTile(leading: const CircleAvatar(child: Icon(Icons.tune_outlined)), title: const Text('ตั้งค่าหน่วยงานและเวร'), subtitle: Text('${controller.settings.organizationName.isEmpty ? 'ยังไม่ได้ตั้งค่า' : controller.settings.organizationName} • ${controller.settings.officerName}'), trailing: const Icon(Icons.edit_outlined), onTap: openSetup)),
       const SizedBox(height: 12),
       Card(
-        child: ListTile(
-          leading: const CircleAvatar(child: Icon(Icons.sync)),
-          title: const Text('Google Account Sync'),
-          subtitle: Text(
-            controller.auth.account?.email ??
-                (controller.auth.oauthConfigured
-                    ? 'พร้อมเชื่อมต่อบัญชี Google'
-                    : 'ตั้งค่า Web OAuth Client ID เพื่อเริ่มซิงค์'),
-          ),
-          trailing: FilledButton.icon(
-            onPressed: controller.busy ? null : syncGoogleAccount,
-            icon: const Icon(Icons.sync),
-            label: const Text('Sync Google Account'),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const CircleAvatar(child: Icon(Icons.sync)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Google Account Sync',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          controller.auth.account?.email ??
+                              (controller.auth.oauthConfigured
+                                  ? 'พร้อมเชื่อมต่อบัญชี Google'
+                                  : 'ตั้งค่า Web OAuth Client ID เพื่อเริ่มซิงค์'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: controller.busy ? null : syncGoogleAccount,
+                icon: const Icon(Icons.sync),
+                label: const Text('Sync Google Account'),
+              ),
+            ],
           ),
         ),
       ),
