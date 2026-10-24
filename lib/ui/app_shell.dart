@@ -1254,6 +1254,125 @@ class _DashboardPageState extends State<_DashboardPage> {
         ),
       );
 
+  Future<void> _showAiRosterSupport() async {
+    final controller = widget.controller;
+    const issueOptions = <String>[
+      'เวรบางรายการหายไป',
+      'อ่านวันที่หรือเดือนผิด',
+      'อ่านชื่อหรือแถวเวรผิด',
+      'อ่านเวรซ้ำ',
+      'ไม่พบตารางรายเดือน',
+      'ไม่แน่ใจว่าข้อมูลใดถูกข้าม',
+    ];
+    var selectedIssue = issueOptions.first;
+    final report = StringBuffer()
+      ..writeln('ขอให้ช่วยวิเคราะห์ปัญหาการนำเข้าตารางเวร')
+      ..writeln('ปัญหาที่พบ: $selectedIssue')
+      ..writeln('จำนวนเวรที่แสดงหลังอ่าน: ${controller.shifts.length}')
+      ..writeln('จำนวนส่วนตารางรายเดือนที่ตรวจพบ: ${controller.monthlyRoster.sections.length}')
+      ..writeln('จำนวนรายการในรายงานรายเดือน: ${controller.monthlyRoster.assignments.length}')
+      ..writeln('คำเตือนจากตัวอ่านตาราง:');
+    if (controller.monthlyRoster.warnings.isEmpty) {
+      report.writeln('- ไม่มีคำเตือนจากตัวอ่านรายเดือน');
+    } else {
+      for (final warning in controller.monthlyRoster.warnings.take(30)) {
+        report.writeln('- $warning');
+      }
+    }
+    report
+      ..writeln()
+      ..writeln('ช่วยเสนอขั้นตอนตรวจสอบที่เจาะจง และแยกข้อเท็จจริงออกจากข้อสันนิษฐาน')
+      ..writeln('ห้ามเดาข้อมูลเวรหรือสร้างชื่อ/วัน/กะขึ้นเอง')
+      ..writeln('หากข้อมูลไม่พอ ให้ระบุว่าต้องตรวจแถวหรือคอลัมน์ใด')
+      ..writeln('ห้ามแก้ไข Google Sheets หรือ Google Calendar โดยอัตโนมัติ');
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.auto_awesome_outlined),
+              SizedBox(width: 10),
+              Expanded(child: Text('AI ซัพพอร์ต: ตรวจตารางเวร')),
+            ],
+          ),
+          content: SizedBox(
+            width: 520,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'เลือกอาการเพื่อเตรียมรายงานวิเคราะห์ ระบบจะไม่ส่งข้อมูลออกไปเอง '
+                    'และจะไม่แก้ไขชีตหรือ Calendar',
+                  ),
+                  const SizedBox(height: 14),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedIssue,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'ปัญหาที่พบ',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      for (final issue in issueOptions)
+                        DropdownMenuItem(value: issue, child: Text(issue)),
+                    ],
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setDialogState(() => selectedIssue = value);
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  Text('ข้อมูลสรุปที่จะนำไปวิเคราะห์',
+                      style: Theme.of(dialogContext).textTheme.titleSmall),
+                  const SizedBox(height: 6),
+                  Text('เวรที่แสดง: ${controller.shifts.length}'),
+                  Text('ส่วนตาราง: ${controller.monthlyRoster.sections.length}'),
+                  Text('รายการรายเดือน: ${controller.monthlyRoster.assignments.length}'),
+                  Text('คำเตือน: ${controller.monthlyRoster.warnings.length}'),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'รายงานจะไม่แนบลิงก์ชีต อีเมล หรือชื่อผู้ปฏิบัติงาน '
+                    'ตรวจทานรายงานก่อนนำไปวางใน AI',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('ยกเลิก'),
+            ),
+            FilledButton.icon(
+              onPressed: () async {
+                final summary = report.toString().replaceFirst(
+                  'ปัญหาที่พบ: เวรบางรายการหายไป',
+                  'ปัญหาที่พบ: $selectedIssue',
+                );
+                await Clipboard.setData(ClipboardData(text: summary));
+                if (!mounted || !dialogContext.mounted) return;
+                final messenger = ScaffoldMessenger.of(context);
+                Navigator.of(dialogContext).pop();
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('คัดลอกรายงานแล้ว ตรวจทานก่อนส่งให้ AI'),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.copy_outlined),
+              label: const Text('คัดลอกรายงานให้ AI'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _pickGoogleSheet({
     OwnedSheetOrder order = OwnedSheetOrder.recentlyModified,
   }) async {
@@ -1853,6 +1972,14 @@ class _DashboardPageState extends State<_DashboardPage> {
                                 : null,
                             icon: const Icon(Icons.refresh),
                             label: const Text('รีเฟรช/อ่านใหม่ตอนนี้'),
+                          ),
+                          OutlinedButton.icon(
+                            key: const Key('ai-roster-import-support'),
+                            onPressed: !controller.busy
+                                ? () => unawaited(_showAiRosterSupport())
+                                : null,
+                            icon: const Icon(Icons.auto_awesome_outlined),
+                            label: const Text('AI ซัพพอร์ต: อ่านเวรผิด'),
                           ),
                           OutlinedButton.icon(
                             onPressed:

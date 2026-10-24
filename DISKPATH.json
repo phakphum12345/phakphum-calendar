@@ -1168,8 +1168,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 96598,
-      "sha256": "e85f976f6333e03992815aa964ecb4b44d1f19c602ae24d53516b04edfa29186"
+      "size": 97579,
+      "sha256": "596274fc25694db58803a9481ade0f9296585d7d6b1f22af8c23825f89944d7f"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
@@ -2818,8 +2818,8 @@
     },
     {
       "path": "lib/ui/app_shell.dart",
-      "size": 196917,
-      "sha256": "fc0f9af080c1bb3e25db99b5e36218fd7713febff827e5fd25a63fdfd054d12c"
+      "size": 203957,
+      "sha256": "04b719ed3244bbda96f8fec0a2d7747f68e404170cba5e399785d184793576fc"
     },
     {
       "path": "lib/ui/audit_log_page.dart",
