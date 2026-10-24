@@ -68,7 +68,10 @@ jobs:
 
       - name: Build web release
         env:
-          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+          # Web OAuth Client IDs are public identifiers, not client secrets.
+          # Prefer the repository secret when configured; otherwise use the
+          # owner's existing Google Web OAuth client for GitHub Pages.
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID || '667656026445-pffm0rtkaiunhfujgfv52dlfb6pbtnm2.apps.googleusercontent.com' }}
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
         run: |
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
