@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `745`
+- Tracked files: `746`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -47,7 +47,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `.github/workflows/android.yml` | 3264 | `c506bdb4f07b67ac53a9bd088dc0ba4a2258506dddb37ce0e7b311129ea890e7` |
 | `.github/workflows/ci-auto-detect.yml` | 4070 | `3dab5c3760a11aedfa8ffa511e3686f6816934f7b77a4fad06181cbe24485d99` |
 | `.github/workflows/final-gate.yml` | 6405 | `c160ae7913364bc15af46a2dfc281ec909127925d78f9a92f072fb4cbf70f69b` |
-| `.github/workflows/generate-diskpath-md.yml` | 2761 | `4f55d3eb957ff8281bce8fddf450d463e4588a024ab82fab64fdd8c5c5df274f` |
+| `.github/workflows/generate-diskpath-md.yml` | 3092 | `f10cc63d0619173b91d9252c2bd4c0dc8bd30f2cc26ded34f554c00491de24e5` |
 | `.github/workflows/ios.yml` | 3293 | `5dc716ed94b3cfd421df674aa831d4b6f21c6e3390a054eb12dd02aea1b52934` |
 | `.github/workflows/linux.yml` | 2470 | `850db3a8e9c539389df9eb6e7d801bf40de6b82accd595e90870c200b3e5db9b` |
 | `.github/workflows/web.yml` | 3193 | `e3e25b3fb2b5dc5369ff7094fd81ef63c1af2960a3971a104750b3f5ed34fa5b` |

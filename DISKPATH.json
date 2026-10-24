@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 745,
+  "file_count": 746,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -98,8 +98,8 @@
     },
     {
       "path": ".github/workflows/generate-diskpath-md.yml",
-      "size": 2761,
-      "sha256": "4f55d3eb957ff8281bce8fddf450d463e4588a024ab82fab64fdd8c5c5df274f"
+      "size": 3092,
+      "sha256": "f10cc63d0619173b91d9252c2bd4c0dc8bd30f2cc26ded34f554c00491de24e5"
     },
     {
       "path": ".github/workflows/ios.yml",
