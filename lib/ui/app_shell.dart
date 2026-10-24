@@ -1310,7 +1310,7 @@ class _DashboardPageState extends State<_DashboardPage> {
                   ),
                   const SizedBox(height: 14),
                   DropdownButtonFormField<String>(
-                    value: selectedIssue,
+                    initialValue: selectedIssue,
                     isExpanded: true,
                     decoration: const InputDecoration(
                       labelText: 'ปัญหาที่พบ',
@@ -1355,9 +1355,10 @@ class _DashboardPageState extends State<_DashboardPage> {
                   'ปัญหาที่พบ: $selectedIssue',
                 );
                 await Clipboard.setData(ClipboardData(text: summary));
-                if (!dialogContext.mounted) return;
+                if (!mounted || !dialogContext.mounted) return;
+                final messenger = ScaffoldMessenger.of(context);
                 Navigator.of(dialogContext).pop();
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   const SnackBar(
                     content: Text('คัดลอกรายงานแล้ว ตรวจทานก่อนส่งให้ AI'),
                   ),
