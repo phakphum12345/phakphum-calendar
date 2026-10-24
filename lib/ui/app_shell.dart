@@ -561,7 +561,7 @@ class _AppShellState extends State<AppShell> {
                           const SizedBox(width: 8),
                           const Expanded(
                             child: Text(
-                              'แนะนำ: AI SUPPORT',
+                              'AI SUPPORT',
                               style: TextStyle(fontWeight: FontWeight.w700),
                             ),
                           ),
