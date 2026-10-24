@@ -294,7 +294,7 @@ void main() {
     expect(find.text('Shift Tools'), findsOneWidget);
     expect(find.text('แหล่งข้อมูลเวร'), findsOneWidget);
     expect(find.byType(NavigationRail), findsOneWidget);
-    expect(find.text('Sync Google Account'), findsOneWidget);
+    expect(find.text('Sync Google Account'), findsNothing);
     expect(find.text('รีเฟรช/อ่านใหม่ตอนนี้'), findsOneWidget);
     expect(find.text('ชื่อที่ต้องค้นหา'), findsOneWidget);
     expect(find.text('กรอกชื่อให้ตรงกับชื่อในตารางเวร'), findsOneWidget);
