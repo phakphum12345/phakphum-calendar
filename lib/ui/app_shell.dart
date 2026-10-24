@@ -1974,6 +1974,14 @@ class _DashboardPageState extends State<_DashboardPage> {
                             label: const Text('รีเฟรช/อ่านใหม่ตอนนี้'),
                           ),
                           OutlinedButton.icon(
+                            key: const Key('ai-roster-import-support'),
+                            onPressed: !controller.busy
+                                ? () => unawaited(_showAiRosterSupport())
+                                : null,
+                            icon: const Icon(Icons.auto_awesome_outlined),
+                            label: const Text('AI ซัพพอร์ต: อ่านเวรผิด'),
+                          ),
+                          OutlinedButton.icon(
                             key: const Key('sync-historical-timeline'),
                             onPressed:
                                 controller.auth.isSignedIn &&
