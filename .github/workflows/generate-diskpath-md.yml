@@ -76,9 +76,7 @@ jobs:
           echo "DISKPATH AUTO-GENERATION: pushed updated manifests to ${TARGET_REF}"
 
       - name: Enforce DISKPATH synchronization
-        if: github.event_name != 'workflow_dispatch' &&
-            !(github.event_name == 'pull_request' &&
-              github.event.pull_request.head.repo.full_name != github.repository)
+        if: github.event_name != 'workflow_dispatch'
         run: |
           set -euo pipefail
 
