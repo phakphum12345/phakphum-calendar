@@ -37,6 +37,7 @@ import '../services/drive_ownership_service.dart';
 import '../services/google_auth_service.dart';
 import '../services/shift_color_service.dart';
 import 'first_login_setup_dialog.dart';
+import 'google_sign_in_button.dart';
 
 enum _UtilityPage {
   notifications,
@@ -1528,7 +1529,6 @@ class _DashboardPageState extends State<_DashboardPage> {
                 controller: controller,
                 perform: widget.perform,
                 configureGoogleOAuth: widget.configureGoogleOAuth,
-                syncGoogleAccount: widget.syncGoogleAccount,
               ),
               const SizedBox(height: 16),
               Card(
@@ -2362,13 +2362,11 @@ class _GoogleAccountCard extends StatelessWidget {
     required this.controller,
     required this.perform,
     required this.configureGoogleOAuth,
-    required this.syncGoogleAccount,
   });
 
   final AppController controller;
   final Future<void> Function(Future<void> Function()) perform;
   final Future<void> Function() configureGoogleOAuth;
-  final Future<void> Function() syncGoogleAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -2416,21 +2414,39 @@ class _GoogleAccountCard extends StatelessWidget {
                       ),
                     ),
                   ),
-                  FilledButton.icon(
-                    onPressed: controller.busy ||
-                            (controller.auth.oauthConfigured &&
-                                !controller.auth.signInReady) ||
-                            (!controller.auth.oauthConfigured &&
-                                !controller.auth.canConfigureWebOAuth)
-                        ? null
-                        : syncGoogleAccount,
-                    icon: Icon(
-                      controller.auth.oauthConfigured
-                          ? Icons.sync
-                          : Icons.login,
+                  if (controller.auth.oauthConfigured)
+                    if (controller.auth.initialized &&
+                        !controller.auth.signInReady)
+                      OutlinedButton.icon(
+                        onPressed: null,
+                        icon: const Icon(Icons.error_outline),
+                        label: const Text('Google Login ไม่พร้อม'),
+                      )
+                    else
+                      GoogleLoginButton(
+                        enabled:
+                            controller.auth.signInReady && !controller.busy,
+                        onPressed: () => perform(controller.signIn),
+                      )
+                  else if (controller.auth.canConfigureWebOAuth)
+                    OutlinedButton.icon(
+                      onPressed: controller.busy ? null : configureGoogleOAuth,
+                      icon: const Icon(Icons.settings_outlined),
+                      label: const Text('ตั้งค่า Google OAuth'),
+                    )
+                  else
+                    Tooltip(
+                      message: controller.auth.oauthUnavailableMessage ?? '',
+                      child: OutlinedButton.icon(
+                        onPressed: null,
+                        icon: const Icon(Icons.key_off_outlined),
+                        label: Text(
+                          controller.auth.platformSupported
+                              ? 'ยังไม่ได้ตั้งค่า Google OAuth'
+                              : 'Google Login ใช้ผ่าน Web',
+                        ),
+                      ),
                     ),
-                    label: const Text('Sync Google Account'),
-                  ),
                 ],
               )
             : Wrap(
