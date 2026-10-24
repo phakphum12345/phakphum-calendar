@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 744,
+  "file_count": 746,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -98,8 +98,8 @@
     },
     {
       "path": ".github/workflows/generate-diskpath-md.yml",
-      "size": 2761,
-      "sha256": "4f55d3eb957ff8281bce8fddf450d463e4588a024ab82fab64fdd8c5c5df274f"
+      "size": 2954,
+      "sha256": "13bf40ff0d2b9004d710750a976ec1e5ae96b9e52eaecbf65ab9d3337c3b9368"
     },
     {
       "path": ".github/workflows/ios.yml",
@@ -113,8 +113,8 @@
     },
     {
       "path": ".github/workflows/web.yml",
-      "size": 2891,
-      "sha256": "a2de2663fbde56ea69e350a304ca42a66e648e3224ea18cbc057d55f43022630"
+      "size": 3193,
+      "sha256": "e3e25b3fb2b5dc5369ff7094fd81ef63c1af2960a3971a104750b3f5ed34fa5b"
     },
     {
       "path": ".github/workflows/windows.yml",
@@ -775,6 +775,11 @@
       "path": "docs/REAL_ROSTER_PROFILE.md",
       "size": 1316,
       "sha256": "29c63cc02f2a49550489c35649dd265ec9114a9518c4d600ce4dad5be1913e5d"
+    },
+    {
+      "path": "docs/SCE_3_0_DELIVERY_ROADMAP.md",
+      "size": 11829,
+      "sha256": "685e4807928b8be63f638de871c65e1dbb2627a1cf21f0c9d4ada741ace1c73f"
     },
     {
       "path": "docs/SCE_3_0_IMPLEMENTATION_MAP.md",
@@ -3170,6 +3175,11 @@
       "path": "test/features/calendar_sync/domain/calendar_sync_protocol_test.dart",
       "size": 2849,
       "sha256": "f5117baaf65f79d84c925c543b75d80c1fb1dc52ab59a66a79e4c8ee866a6971"
+    },
+    {
+      "path": "test/features/dashboard/application/dashboard_summary_service_test.dart",
+      "size": 4456,
+      "sha256": "f79b38159dba6a8de918f0b970497bf42512f2115b3535cf604c769ed43ba112"
     },
     {
       "path": "test/google_api_client_test.dart",
