@@ -10,8 +10,8 @@ on:
       - "DISKPATH.json"
       - "DISKPATH.md"
 
-# Same-repository PRs may receive the generated manifest commit.
-# Fork PRs retain read-only behavior because GitHub does not grant write tokens.
+# Auto-repair manifests on main, manual dispatch branches, and same-repository PRs.
+# Fork PRs stay read-only: GitHub does not grant the base repository token write access to forks.
 permissions:
   contents: write
 
@@ -52,10 +52,14 @@ jobs:
           set -euo pipefail
           git diff --check
 
-      - name: Commit generated manifests to same-repository PR branch
-        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+      - name: Commit generated manifests automatically
+        if: >-
+          (github.event_name == 'pull_request' &&
+           github.event.pull_request.head.repo.full_name == github.repository) ||
+          (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+          github.event_name == 'workflow_dispatch'
         env:
-          PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          TARGET_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -63,16 +67,18 @@ jobs:
           git add -- DISKPATH.json DISKPATH.md
 
           if git diff --cached --quiet; then
-            echo "DISKPATH AUTO-GENERATION: no manifest changes needed."
+            echo "DISKPATH AUTO-GENERATION: manifests already current."
             exit 0
           fi
 
           git commit -m "chore: automatically regenerate DISKPATH manifests"
-          git push origin "HEAD:${PR_HEAD_REF}"
-          echo "DISKPATH AUTO-GENERATION: committed updated manifests to ${PR_HEAD_REF}"
+          git push origin "HEAD:${TARGET_REF}"
+          echo "DISKPATH AUTO-GENERATION: pushed updated manifests to ${TARGET_REF}"
 
       - name: Enforce DISKPATH synchronization
-        if: github.event_name != 'workflow_dispatch'
+        if: github.event_name != 'workflow_dispatch' &&
+            !(github.event_name == 'pull_request' &&
+              github.event.pull_request.head.repo.full_name != github.repository)
         run: |
           set -euo pipefail
 
@@ -84,6 +90,6 @@ jobs:
 
           echo "DISKPATH ENFORCEMENT: FAIL"
           echo "DISKPATH.json and/or DISKPATH.md are out of date."
-          echo "The generator ran, but automatic commit is available only for same-repository pull requests."
+          echo "Automatic repair is unavailable for fork PRs; regenerate and commit the manifests in the fork."
           git diff -- DISKPATH.json DISKPATH.md
           exit 1
