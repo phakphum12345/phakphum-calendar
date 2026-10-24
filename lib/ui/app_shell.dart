@@ -545,55 +545,6 @@ class _AppShellState extends State<AppShell> {
                 ),
                 subtitle: Text('ใช้ยืนยันว่าชีตหลักเป็นของบัญชีที่ล็อกอิน'),
               ),
-              Card(
-                color: Theme.of(dialogContext).colorScheme.primaryContainer.withValues(alpha: 0.42),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.auto_awesome_outlined,
-                            color: Theme.of(dialogContext).colorScheme.primary,
-                          ),
-                          const SizedBox(width: 8),
-                          const Expanded(
-                            child: Text(
-                              'AI SUPPORT',
-                              style: TextStyle(fontWeight: FontWeight.w700),
-                            ),
-                          ),
-                          const Chip(label: Text('แนะนำ')),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      const Text(
-                        'ช่วยตรวจสอบเมื่ออ่านตารางเวรผิด เวรหาย วันที่คลาดเคลื่อน '
-                        'หรือพบรายการซ้ำ พร้อมแนะนำขั้นตอนแก้ไขแบบเจาะจง',
-                      ),
-                      const SizedBox(height: 8),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          onPressed: () {
-                            Navigator.pop(dialogContext);
-                            unawaited(_showAiRosterSupport());
-                          },
-                          icon: const Icon(Icons.support_agent_outlined),
-                          label: const Text('เปิด AI SUPPORT'),
-                        ),
-                      ),
-                      const Text(
-                        'ระบบจะไม่ส่งข้อมูลออกไปเอง และไม่แก้ไข Google Sheets หรือ Calendar',
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
               const Text(
                 'สิทธิ์เขียน Calendar, Drive และ Sheets จะยังไม่ถูกขอในขั้นตอนนี้',
                 style: TextStyle(fontSize: 12),
