@@ -766,7 +766,31 @@ class AppController extends ChangeNotifier implements ControllerState {
     });
   }
 
-  Future<void> loadRoster({bool background = false}) async {
+  /// Explicitly reloads the selected Google Sheet and its historical Drive
+  /// revisions for Timeline. This operation is read-only and must never trigger
+  /// automatic writes to Google Calendar.
+  Future<void> syncHistoricalTimeline() async {
+    if (busy) throw StateError('กำลังทำงานอื่นอยู่ กรุณารอสักครู่');
+    if (!auth.isSignedIn) throw StateError('กรุณาเข้าสู่ระบบ Google ก่อน');
+    if (!hasSelectedSourceSheet) {
+      throw StateError('กรุณาเลือก Google Sheets ที่ต้องการซิงค์ Timeline ก่อน');
+    }
+
+    await loadRoster(allowAutomaticCalendarSync: false);
+    if (error != null) return;
+
+    final warning = timelineWarning;
+    status = warning == null
+        ? 'ซิงค์ Timeline ย้อนหลังสำเร็จ: โหลด $_loadedRevisionCount revision จาก Google Drive (อ่านอย่างเดียว)'
+        : 'อ่านตารางเวรแล้ว แต่ Timeline ย้อนหลังมีข้อจำกัด: $warning';
+    await _addAudit('sheet.timeline.sync', status!, warning == null);
+    notifyListeners();
+  }
+
+  Future<void> loadRoster({
+    bool background = false,
+    bool allowAutomaticCalendarSync = true,
+  }) async {
     await _run('อ่านตารางเวร', () async {
       final sourceUrl = localSourceLabel == null ? currentSourceUrl : '';
       if (sourceUrl.isEmpty) {
@@ -904,7 +928,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     });
     _scheduleAutoRefresh();
     // Optionally perform automatic prepare+sync when enabled.
-    if (settings.autoSync && auth.isSignedIn) {
+    if (allowAutomaticCalendarSync && settings.autoSync && auth.isSignedIn) {
       try {
         if (pendingAlertCount == 0) {
           await prepareCalendarSync();
