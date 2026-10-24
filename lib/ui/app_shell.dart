@@ -1982,6 +1982,20 @@ class _DashboardPageState extends State<_DashboardPage> {
                             label: const Text('AI ซัพพอร์ต: อ่านเวรผิด'),
                           ),
                           OutlinedButton.icon(
+                            key: const Key('sync-historical-timeline'),
+                            onPressed:
+                                controller.auth.isSignedIn &&
+                                    controller.hasSelectedSourceSheet &&
+                                    !controller.busy
+                                ? () => widget.perform(() async {
+                                    await _saveSettings();
+                                    await controller.syncHistoricalTimeline();
+                                  })
+                                : null,
+                            icon: const Icon(Icons.history_toggle_off_outlined),
+                            label: const Text('ซิงค์ Timeline ย้อนหลัง'),
+                          ),
+                          OutlinedButton.icon(
                             onPressed:
                                 controller.auth.isSignedIn &&
                                     controller.shifts.isNotEmpty &&
