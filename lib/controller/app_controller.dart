@@ -812,13 +812,15 @@ class AppController extends ChangeNotifier implements ControllerState {
         for (final shift in legacyParsed) {
           parsedBySourceKey.putIfAbsent(shift.sourceKey, () => shift);
         }
+        var recoveredMonthlyCount = 0;
         for (final shift in monthlyParsed) {
-          parsedBySourceKey.putIfAbsent(shift.sourceKey, () => shift);
+          if (parsedBySourceKey.containsKey(shift.sourceKey)) continue;
+          parsedBySourceKey[shift.sourceKey] = shift;
+          recoveredMonthlyCount++;
         }
         final parsed = parsedBySourceKey.values.toList(growable: false)
           ..sort((left, right) => left.start.compareTo(right.start));
         final usedMonthlyFallback = legacyParsed.isEmpty && monthlyParsed.isNotEmpty;
-        final recoveredMonthlyCount = parsed.length - legacyParsed.length;
         final monthlyReportSource = parsedMonthlyAll.sections.isEmpty
             ? MonthlyRosterParseReport.fromShifts(parsed)
             : parsedMonthlyAll;
