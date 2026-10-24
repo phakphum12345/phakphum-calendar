@@ -805,9 +805,20 @@ class AppController extends ChangeNotifier implements ControllerState {
             .parseForWorkers(parsedMonthlyAll, targetNames: searchNames)
             .map(_applyShiftOverride)
             .toList(growable: false);
-        final usedMonthlyFallback =
-            legacyParsed.isEmpty && monthlyParsed.isNotEmpty;
-        final parsed = legacyParsed.isEmpty ? monthlyParsed : legacyParsed;
+        // Both parsers recognize different roster layouts. Prefer legacy
+        // results when a source identity matches, but retain monthly-grid
+        // records that the legacy parser did not discover.
+        final parsedBySourceKey = <String, Shift>{};
+        for (final shift in legacyParsed) {
+          parsedBySourceKey.putIfAbsent(shift.sourceKey, () => shift);
+        }
+        for (final shift in monthlyParsed) {
+          parsedBySourceKey.putIfAbsent(shift.sourceKey, () => shift);
+        }
+        final parsed = parsedBySourceKey.values.toList(growable: false)
+          ..sort((left, right) => left.start.compareTo(right.start));
+        final usedMonthlyFallback = legacyParsed.isEmpty && monthlyParsed.isNotEmpty;
+        final recoveredMonthlyCount = parsed.length - legacyParsed.length;
         final monthlyReportSource = parsedMonthlyAll.sections.isEmpty
             ? MonthlyRosterParseReport.fromShifts(parsed)
             : parsedMonthlyAll;
@@ -816,6 +827,11 @@ class AppController extends ChangeNotifier implements ControllerState {
           _allMonthlyRoster,
         );
         _loadedRosterShifts = parsed;
+        if (recoveredMonthlyCount > 0) {
+          status =
+              'ตัวอ่านรายเดือนช่วยเพิ่มเวรที่ตัวอ่านเดิมไม่พบ '
+              '$recoveredMonthlyCount รายการ';
+        }
         _setDefaultSyncDateRange(parsed);
         final rangedParsed = _filterToSyncDateRange(parsed);
         _currentAllRosterShifts = _parseAllRosterSnapshots(
