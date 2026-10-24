@@ -3173,8 +3173,8 @@
     },
     {
       "path": "test/features/dashboard/application/dashboard_summary_service_test.dart",
-      "size": 4063,
-      "sha256": "434c54201fdecf3870f2dddf1a72f519c124ad4151d24a43be0014c6beb3436f"
+      "size": 4456,
+      "sha256": "f79b38159dba6a8de918f0b970497bf42512f2115b3535cf604c769ed43ba112"
     },
     {
       "path": "test/google_api_client_test.dart",

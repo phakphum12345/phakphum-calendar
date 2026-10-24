@@ -662,7 +662,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/excel_preview_table_test.dart` | 2584 | `784f34f60f3d54d29b645128ed9f6c5ba8c9fa6c870f5f532a0c0137c91b9b82` |
 | `test/excel_reader_service_test.dart` | 4083 | `4d273ecd87aa133ab6aded4439449095c0042e9a8424224b69daa052cdc82c16` |
 | `test/features/calendar_sync/domain/calendar_sync_protocol_test.dart` | 2849 | `f5117baaf65f79d84c925c543b75d80c1fb1dc52ab59a66a79e4c8ee866a6971` |
-| `test/features/dashboard/application/dashboard_summary_service_test.dart` | 4063 | `434c54201fdecf3870f2dddf1a72f519c124ad4151d24a43be0014c6beb3436f` |
+| `test/features/dashboard/application/dashboard_summary_service_test.dart` | 4456 | `f79b38159dba6a8de918f0b970497bf42512f2115b3535cf604c769ed43ba112` |
 | `test/google_api_client_test.dart` | 2014 | `0213c7a53ac160d3bd29d967c2f3294a06e4c1d31946c1ba926d25486cc6d810` |
 | `test/google_auth_service_test.dart` | 855 | `7c020e73fe723f7a10809801b9a7fe5a8e40dee8dc2ce5795c10002b639bc84e` |
 | `test/google_calendar_sync_gateway_test.dart` | 3724 | `73f96f9b21fb7b5cb65eca3996f24cad06e16a16f2ce601b31ef32d5caf8bbec` |
