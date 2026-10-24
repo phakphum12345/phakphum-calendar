@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 744,
+  "file_count": 745,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -3170,6 +3170,11 @@
       "path": "test/features/calendar_sync/domain/calendar_sync_protocol_test.dart",
       "size": 2849,
       "sha256": "f5117baaf65f79d84c925c543b75d80c1fb1dc52ab59a66a79e4c8ee866a6971"
+    },
+    {
+      "path": "test/features/dashboard/application/dashboard_summary_service_test.dart",
+      "size": 4063,
+      "sha256": "434c54201fdecf3870f2dddf1a72f519c124ad4151d24a43be0014c6beb3436f"
     },
     {
       "path": "test/google_api_client_test.dart",
