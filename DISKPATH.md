@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `744`
+- Tracked files: `745`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -183,6 +183,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `docs/PLATFORM_SUPPORT.md` | 2207 | `519f4deb785d0f8d972c541dae211d518d85efd11e0ce155385b6a885b4c43d3` |
 | `docs/PROJECT_AUDIT.md` | 23667 | `c833f9d4e5b55e994bf82a4656240e60bc75257407f917c9673995d62c4fc46f` |
 | `docs/REAL_ROSTER_PROFILE.md` | 1316 | `29c63cc02f2a49550489c35649dd265ec9114a9518c4d600ce4dad5be1913e5d` |
+| `docs/SCE_3_0_DELIVERY_ROADMAP.md` | 11829 | `685e4807928b8be63f638de871c65e1dbb2627a1cf21f0c9d4ada741ace1c73f` |
 | `docs/SCE_3_0_IMPLEMENTATION_MAP.md` | 3052 | `e969fdc2a6e9507781782db27df28e9c75cb5979479c14d26bdbcfdbc1b67432` |
 | `docs/SCE_3_0_SYSTEM_DESIGN.md` | 13671 | `2aa35351076bde8a31194239619050bfa6b22dc4014e0d52c734638e39263b06` |
 | `docs/SYNC_RELIABILITY.md` | 1388 | `bf1da1c7346ae8dac8a0cee0d56bac6d545b4dd9e3b3d6e6e1ecf48e1b454b1c` |
