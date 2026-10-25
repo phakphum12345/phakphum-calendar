@@ -285,6 +285,7 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
         growable: false,
       ),
     );
+    mappingController.applySuggestedMapping(controller.suggestMapping());
   }
 
   Future<void> _openColumnMapping() async {
