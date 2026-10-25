@@ -1688,8 +1688,8 @@
     },
     {
       "path": "lib/features/excel_import/application/import_engine.dart",
-      "size": 5314,
-      "sha256": "f4ac87f5790b9cdc700a06885e450c5673d45bef03f4cb596031224e0b3cc785"
+      "size": 7885,
+      "sha256": "e8fc6ffef24ff52ddbbd444c541436937bb7f6ecec558f1e910ac3a92bed98a5"
     },
     {
       "path": "lib/features/excel_import/data/excel_reader_service.dart",
@@ -1768,13 +1768,13 @@
     },
     {
       "path": "lib/features/excel_import/presentation/controllers/column_mapping_controller.dart",
-      "size": 5051,
-      "sha256": "5fc8162c49be1c46e49c56babc402ea72550467943d57fe27c13d65ed5441a03"
+      "size": 5852,
+      "sha256": "66c65e699e608d3bc0fc0c21e062d4f1e006988de4e8df2b075be1c7ae271827"
     },
     {
       "path": "lib/features/excel_import/presentation/controllers/excel_import_controller.dart",
-      "size": 4981,
-      "sha256": "c81af275c91e452e24726e9da20872996067a5b85e366cf0520aeea2662947f4"
+      "size": 5190,
+      "sha256": "6fd584eaeea53e7c85391b2e7c49f390ce48729a0310d6cd2962689b7461bbc4"
     },
     {
       "path": "lib/features/excel_import/presentation/pages/column_mapping_page.dart",
@@ -1783,13 +1783,13 @@
     },
     {
       "path": "lib/features/excel_import/presentation/pages/import_excel_page.dart",
-      "size": 17836,
-      "sha256": "6d96a3dc21091e8c8913350194681abce083905e31a7b65bff177ae0ddb80563"
+      "size": 18981,
+      "sha256": "9356c4c995a33d3925e6a77deacf815d629d9f90c2105d7891f6b3c000eae4af"
     },
     {
       "path": "lib/features/excel_import/presentation/pages/import_summary_page.dart",
-      "size": 3811,
-      "sha256": "d4fd932b411e9c55197c6a6a7a5277b03269c429848b5ebad2d29fd7d41c4b6a"
+      "size": 5729,
+      "sha256": "5b21c1a92702b28e56773f4204148d6bb746baab8d9ab819530ac409e6c1926d"
     },
     {
       "path": "lib/features/excel_import/presentation/widgets/column_dropdown.dart",
@@ -2533,13 +2533,13 @@
     },
     {
       "path": "lib/features/shift_templates/application/shift_template_controller.dart",
-      "size": 4049,
-      "sha256": "2c1c1d1ecedb135c93d47da11d267adad357ea75778e5ea5c50abab425c8300f"
+      "size": 4051,
+      "sha256": "308919108797ba74ae8ea5a85d93a7d798f2386af91a590bf5091b2e40546500"
     },
     {
       "path": "lib/features/shift_templates/infrastructure/shared_preferences_shift_template_repository.dart",
-      "size": 4724,
-      "sha256": "f069c228b7630ef0b8491f7b9ff5d6d30166252b4a4fbb36548038df05d6c53b"
+      "size": 4979,
+      "sha256": "2e5808d58770ba6eb96fa0113a27a6e2f351e6bb0aa9738e31c4833bbf989cec"
     },
     {
       "path": "lib/features/shift_templates/infrastructure/shift_template_json_codec.dart",
@@ -2548,8 +2548,8 @@
     },
     {
       "path": "lib/features/shift_templates/presentation/shift_templates_page.dart",
-      "size": 9636,
-      "sha256": "37415c9003d0964f1d19562ac2312ff3c293a2b598f71ed4154fb3b01e9f888d"
+      "size": 10632,
+      "sha256": "4a85dcaf80f2e3313a16cf52f683f945f167387b72648e167dc56f14b9e308f4"
     },
     {
       "path": "lib/features/simulation/application/simulation_controller.dart",
@@ -3123,8 +3123,8 @@
     },
     {
       "path": "test/column_mapping_controller_test.dart",
-      "size": 2134,
-      "sha256": "69fd903334ecf5d683423ecf54f3adac7c3f5b230036c21f9c37521a238a0693"
+      "size": 2879,
+      "sha256": "302b692896b006417574bdac6bb04e3c1d70452d539d4859fff6fa14aa5e7e96"
     },
     {
       "path": "test/column_mapping_page_test.dart",
@@ -3218,13 +3218,13 @@
     },
     {
       "path": "test/import_engine_test.dart",
-      "size": 3970,
-      "sha256": "638aeeabd9235a67f30eda7294cb5aca9c957f81ada83733865c58af5f26caa9"
+      "size": 5290,
+      "sha256": "5c02ed0112782b97ed6d70fc10c70b8258259df9e002982ee70e57c0b2991d35"
     },
     {
       "path": "test/import_excel_page_test.dart",
-      "size": 5049,
-      "sha256": "5a15b3cb08a329a6874ddcd69c5a2f4806aba8066b2fc7ab269887a8d19da97a"
+      "size": 5497,
+      "sha256": "14148be0c02c8792220b2bac57c6d29f1b01793507d71cb557cda14f39aab945"
     },
     {
       "path": "test/import_summary_page_test.dart",
@@ -3503,8 +3503,8 @@
     },
     {
       "path": "test/shift_template_test.dart",
-      "size": 3771,
-      "sha256": "416cf7c7607708f419fe569074f0bdce0101404c619b41c451e429f2e0969738"
+      "size": 4008,
+      "sha256": "3444d1b4c792b78aca89bef7510f8803fbb40b23297589d1e4d86cac34a7387c"
     },
     {
       "path": "test/shift_time_service_test.dart",
