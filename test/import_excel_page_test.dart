@@ -95,6 +95,16 @@ void main() {
       find.text('1 Shift Records created from 1 data rows.'),
       findsOneWidget,
     );
+    final beforeConfirmation = await dependencies.scheduleRepository.findById(
+      'imported',
+    );
+    expect(beforeConfirmation, isA<Success<Schedule?>>());
+    expect((beforeConfirmation as Success<Schedule?>).value, isNull);
+
+    await tester.tap(find.text('ยืนยันและบันทึกตารางเวร'));
+    await tester.pumpAndSettle();
+    expect(find.text('บันทึกแล้ว'), findsOneWidget);
+
     final persisted = await dependencies.scheduleRepository.findById(
       'imported',
     );
