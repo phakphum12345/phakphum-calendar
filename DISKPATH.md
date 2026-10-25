@@ -672,7 +672,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/google_sheets_import_data_source_test.dart` | 9255 | `92034f1852cc24b119145efe005af8b0eaf0718b6dd771937e303580579e26e6` |
 | `test/idempotency_service_test.dart` | 1237 | `9b780fd4776b7f6598397ed7f6f0e175768b3d88d6ceaeb4e42e2909cfabd8eb` |
 | `test/import_engine_test.dart` | 5290 | `5c02ed0112782b97ed6d70fc10c70b8258259df9e002982ee70e57c0b2991d35` |
-| `test/import_excel_page_test.dart` | 5497 | `14148be0c02c8792220b2bac57c6d29f1b01793507d71cb557cda14f39aab945` |
+| `test/import_excel_page_test.dart` | 5815 | `33d48119ce0ef179cdb38ba6721f58fb30967eb530f2bac8a286ca4a75d9fb06` |
 | `test/import_summary_page_test.dart` | 2034 | `317296d263caf12a40d80fefc80e8360c0a02ea20ca9ce95a2e361d9116ef4ba` |
 | `test/local_roster_file_service_test.dart` | 1900 | `86cdb5bd6c033723c8475fbdede202d630cabcb03d421bb3a745fdfe1c0ff614` |
 | `test/localization_widget_test.dart` | 3440 | `840bb439b0be32f2a9151705f1086abceacc86af904addb69ac0298682b6026c` |
