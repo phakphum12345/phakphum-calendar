@@ -582,7 +582,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/google_api_client.dart` | 589 | `95d32f2e3bd5f722201e0440d9545de40424b67ad56d264c1dd62a7742d0ae49` |
 | `lib/services/google_auth_service.dart` | 10389 | `0137bf9fec9ecab1547fb1b16e4493dc05dece74e96e633e8283c5a82807b282` |
 | `lib/services/local_roster_file_service.dart` | 5387 | `db5336a2eb195d18c0027528d0ef0f167fb02b5c558919e98d861614da6b83db` |
-| `lib/services/roster_revision_service.dart` | 9315 | `c2d95b9880dd2b51087d1ec629d0e943262a529f35c718ab68b5a3ae397d7322` |
+| `lib/services/roster_revision_service.dart` | 9305 | `39ea12f3e9e6bb396a6775c3cb3f33a3327475d9ed1b39d2e45c3674f2d2789a` |
 | `lib/services/roster_timeline_generator.dart` | 1531 | `7ed54286153b0075d6d979a82ea0cecd72aec47b3cea150fef2fdf152acc683e` |
 | `lib/services/settings_service.dart` | 8208 | `732d6754db002c00ef7e37e3ba7534d72eafc491c4582c715c8a5c83c359511d` |
 | `lib/services/sheets_service.dart` | 9135 | `10f60cc6de94fbc0eb6c91961935b509f32e54e347d004d5f9f4bd7ac19a328b` |
