@@ -124,6 +124,13 @@ class ExcelImportController extends ChangeNotifier implements ControllerState {
     notifyListeners();
   }
 
+  /// Suggests mappings from the full selected worksheet, not only its preview.
+  ColumnMapping suggestMapping() {
+    return _importEngine.suggestMapping(
+      rows: _externalImportRows ?? rows,
+    );
+  }
+
   Future<void> importRows(ColumnMapping mapping) async {
     if (loading || selectedWorksheet == null) return;
     loading = true;
