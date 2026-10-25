@@ -157,6 +157,21 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
                           worksheet: controller.selectedWorksheet!,
                           rows: controller.rows,
                         ),
+                        const SizedBox(height: 12),
+                        if (controller.completed &&
+                            controller.importSummary != null)
+                          Card(
+                            child: ListTile(
+                              leading: const Icon(Icons.auto_awesome),
+                              title: const Text('วิเคราะห์และสร้างข้อมูลอัตโนมัติแล้ว'),
+                              subtitle: Text(
+                                'สร้างได้ ${controller.importSummary!.importedRows} รายการ'
+                                ' • ข้าม ${controller.importSummary!.skippedRows}'
+                                ' • ข้อผิดพลาด ${controller.importSummary!.errorCount}'
+                                ' • คำเตือน ${controller.importSummary!.warningCount}',
+                              ),
+                            ),
+                          ),
                         const SizedBox(height: 16),
                         FilledButton.icon(
                           onPressed: _openColumnMapping,
@@ -286,6 +301,9 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
       ),
     );
     mappingController.applySuggestedMapping(controller.suggestMapping());
+    if (mappingController.isValid) {
+      await controller.importRows(mappingController.mapping);
+    }
   }
 
   Future<void> _openColumnMapping() async {
