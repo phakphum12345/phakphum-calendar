@@ -1,7 +1,29 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:phakphum_calendar/features/excel_import/domain/column_mapping.dart';
 import 'package:phakphum_calendar/features/excel_import/presentation/controllers/column_mapping_controller.dart';
 
 void main() {
+  test('applies automatic suggestions only for available columns', () {
+    final controller = ColumnMappingController();
+    addTearDown(controller.dispose);
+    controller.loadAvailableColumns(['A', 'B', 'C']);
+
+    controller.applySuggestedMapping(
+      const ColumnMapping(
+        dateColumn: 'A',
+        shiftColumn: 'B',
+        employeeColumn: 'C',
+        departmentColumn: 'D',
+      ),
+    );
+
+    expect(controller.mapping.dateColumn, 'A');
+    expect(controller.mapping.shiftColumn, 'B');
+    expect(controller.mapping.employeeColumn, 'C');
+    expect(controller.mapping.departmentColumn, isNull);
+    expect(controller.isValid, isTrue);
+  });
+
   test('loads available columns and validates required mappings', () {
     final controller = ColumnMappingController();
     addTearDown(controller.dispose);
