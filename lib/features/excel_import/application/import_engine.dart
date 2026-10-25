@@ -67,7 +67,7 @@ class ImportEngine {
   String _normalizeHeader(String value) => value
       .trim()
       .toLowerCase()
-      .replaceAll(RegExp(r'[\\s_\\-./():]+'), '');
+      .replaceAll(RegExp(r'[\s_\-./():]+'), '');
 
   ImportEngineResult convertRows({
     required List<ExcelRow> rows,
