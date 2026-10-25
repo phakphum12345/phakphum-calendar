@@ -365,7 +365,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/employees/infrastructure/shared_preferences_employee_repository.dart` | 8886 | `555403b304ecd6a1f9fe74889f4b4c3aaec0d67c22f7af2568e3a24df9724205` |
 | `lib/features/employees/presentation/controllers/employee_directory_controller.dart` | 13528 | `e2f18f953d4c02b05a4a23890a700f52cd66dca2e4d9cf4060d3d56d8a776957` |
 | `lib/features/employees/presentation/pages/employee_directory_page.dart` | 22704 | `7f485c7d3a649d0e81858265c85a902402379d7d17ada14cef7425d5f26ecad5` |
-| `lib/features/excel_import/application/import_engine.dart` | 5314 | `f4ac87f5790b9cdc700a06885e450c5673d45bef03f4cb596031224e0b3cc785` |
+| `lib/features/excel_import/application/import_engine.dart` | 7885 | `e8fc6ffef24ff52ddbbd444c541436937bb7f6ecec558f1e910ac3a92bed98a5` |
 | `lib/features/excel_import/data/excel_reader_service.dart` | 5967 | `90a6f0e844645d9313fbb6d11c2de8feb931fe68dafa58d01d1758d202e9de42` |
 | `lib/features/excel_import/data/google_sheets_import_data_source.dart` | 4499 | `67378f36ef6ea0c54026c30b7f138ba639a1977ddb967ce4df7d21d8b56bf784` |
 | `lib/features/excel_import/data/spreadsheet_ownership_verifier.dart` | 883 | `da7261193fac4bc1b8d6b555d27f75f684a02562d47efd9e6577731fa07fac0f` |
@@ -381,11 +381,11 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/excel_import/domain/shift_record.dart` | 384 | `f93738969758e8220a53885ebcee25a4dbd0a663e7eb08f2b9eb3a3d6d3070bb` |
 | `lib/features/excel_import/domain/workbook_info.dart` | 323 | `651142a94448d502bbb20b6bd2e53cdd38b9b87f2f081c24295833a665865786` |
 | `lib/features/excel_import/domain/worksheet_info.dart` | 206 | `43b49d2db76e5e2c2eaed638b127c112c729fa06f965a4d72681d2af4386e237` |
-| `lib/features/excel_import/presentation/controllers/column_mapping_controller.dart` | 5051 | `5fc8162c49be1c46e49c56babc402ea72550467943d57fe27c13d65ed5441a03` |
-| `lib/features/excel_import/presentation/controllers/excel_import_controller.dart` | 4981 | `c81af275c91e452e24726e9da20872996067a5b85e366cf0520aeea2662947f4` |
+| `lib/features/excel_import/presentation/controllers/column_mapping_controller.dart` | 5852 | `66c65e699e608d3bc0fc0c21e062d4f1e006988de4e8df2b075be1c7ae271827` |
+| `lib/features/excel_import/presentation/controllers/excel_import_controller.dart` | 5190 | `6fd584eaeea53e7c85391b2e7c49f390ce48729a0310d6cd2962689b7461bbc4` |
 | `lib/features/excel_import/presentation/pages/column_mapping_page.dart` | 3966 | `f392845e285f40f168643e69b785694771f68f9e8accad5274248a71e8bec3b5` |
-| `lib/features/excel_import/presentation/pages/import_excel_page.dart` | 17836 | `6d96a3dc21091e8c8913350194681abce083905e31a7b65bff177ae0ddb80563` |
-| `lib/features/excel_import/presentation/pages/import_summary_page.dart` | 3811 | `d4fd932b411e9c55197c6a6a7a5277b03269c429848b5ebad2d29fd7d41c4b6a` |
+| `lib/features/excel_import/presentation/pages/import_excel_page.dart` | 18981 | `9356c4c995a33d3925e6a77deacf815d629d9f90c2105d7891f6b3c000eae4af` |
+| `lib/features/excel_import/presentation/pages/import_summary_page.dart` | 5729 | `5b21c1a92702b28e56773f4204148d6bb746baab8d9ab819530ac409e6c1926d` |
 | `lib/features/excel_import/presentation/widgets/column_dropdown.dart` | 1163 | `5b0f1c5e908aa8f648534f1b1c7be266d9e7fb3e3a31e54a508ee0c8efaeebd1` |
 | `lib/features/excel_import/presentation/widgets/duplicate_warning_card.dart` | 938 | `a89801a1a28aa6e262077230dc3f7602032d864d57ffd4f95925d2c8e4f37413` |
 | `lib/features/excel_import/presentation/widgets/empty_import_view.dart` | 1326 | `38e043abdcc80faae14e3865eb1810852cd57c1aef369dc0c23f3969dfd2aa45` |
@@ -534,10 +534,10 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/shift_parser/domain/shift_parser_input.dart` | 445 | `43407a491b9989f452cdc1ee10299bcc259ff87099886746f687e7928bc18896` |
 | `lib/features/shift_parser/domain/thai_roster_period_parser.dart` | 7464 | `1dc13a60c9058399e143ec5f4d508b0805742ecaf1c2edda09ede4d9b3d12332` |
 | `lib/features/shift_templates/README.md` | 1011 | `00d61cb297445bc4e4ece51386122056f8e4d521d60f10516cc2758c5d780200` |
-| `lib/features/shift_templates/application/shift_template_controller.dart` | 4049 | `2c1c1d1ecedb135c93d47da11d267adad357ea75778e5ea5c50abab425c8300f` |
-| `lib/features/shift_templates/infrastructure/shared_preferences_shift_template_repository.dart` | 4724 | `f069c228b7630ef0b8491f7b9ff5d6d30166252b4a4fbb36548038df05d6c53b` |
+| `lib/features/shift_templates/application/shift_template_controller.dart` | 4051 | `308919108797ba74ae8ea5a85d93a7d798f2386af91a590bf5091b2e40546500` |
+| `lib/features/shift_templates/infrastructure/shared_preferences_shift_template_repository.dart` | 4979 | `2e5808d58770ba6eb96fa0113a27a6e2f351e6bb0aa9738e31c4833bbf989cec` |
 | `lib/features/shift_templates/infrastructure/shift_template_json_codec.dart` | 5087 | `75e316a81d27c032aa7f1878c06eb20b3d7586498d6baa565d323ce14313ca85` |
-| `lib/features/shift_templates/presentation/shift_templates_page.dart` | 9636 | `37415c9003d0964f1d19562ac2312ff3c293a2b598f71ed4154fb3b01e9f888d` |
+| `lib/features/shift_templates/presentation/shift_templates_page.dart` | 10632 | `4a85dcaf80f2e3313a16cf52f683f945f167387b72648e167dc56f14b9e308f4` |
 | `lib/features/simulation/application/simulation_controller.dart` | 2030 | `034bc00fda5689ef148f887042ddd339a61559de9f8702a8a862b5deb82d9239` |
 | `lib/features/simulation/application/simulation_engine.dart` | 1366 | `2bb78522169dfe4331f89d350e2300d9f69e0f05ad493d8c013686f525f14357` |
 | `lib/features/simulation/application/simulation_plan_builder.dart` | 2096 | `9fbd68c91a450ff74e7ecaa018ffd626635a91044e6c7a86d27d95c39bb8c581` |
@@ -652,7 +652,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/calendar_workflow_facade_test.dart` | 1863 | `992db03d6f3fbe65b888a62817e2f35670866b610e7a3743e95088c45d159833` |
 | `test/canonical_import_calendar_vertical_slice_test.dart` | 8459 | `69b5ccecd56647cd9521056b63c2c19909ca47d1e673c51c865ddb64d5d95369` |
 | `test/canonical_schedule_adapter_test.dart` | 3750 | `993bc0099caae48e267296d9ead3186f4ab295acfd613774505a4fd587930255` |
-| `test/column_mapping_controller_test.dart` | 2134 | `69fd903334ecf5d683423ecf54f3adac7c3f5b230036c21f9c37521a238a0693` |
+| `test/column_mapping_controller_test.dart` | 2879 | `302b692896b006417574bdac6bb04e3c1d70452d539d4859fff6fa14aa5e7e96` |
 | `test/column_mapping_page_test.dart` | 1803 | `e95c61363c519472cc569ac3c1091ead87661c65963dc39f63bb07ae6e6ac38e` |
 | `test/column_mapping_test.dart` | 747 | `5d1d1b2da532ae7faf1c59e2de5d1a71c316aa5fd32036322c66f1ea43a639f0` |
 | `test/dashboard_summary_service_test.dart` | 1283 | `b48617e4129b2ca7d5999933f3fa408fb4d60ccee337fec18b9e24500e05238a` |
@@ -671,8 +671,8 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/google_employee_sync_service_test.dart` | 3691 | `266b6dd3b9a7e72df07735dd1bd9f47da626798b51292f5eb63e25c1e514d98f` |
 | `test/google_sheets_import_data_source_test.dart` | 9255 | `92034f1852cc24b119145efe005af8b0eaf0718b6dd771937e303580579e26e6` |
 | `test/idempotency_service_test.dart` | 1237 | `9b780fd4776b7f6598397ed7f6f0e175768b3d88d6ceaeb4e42e2909cfabd8eb` |
-| `test/import_engine_test.dart` | 3970 | `638aeeabd9235a67f30eda7294cb5aca9c957f81ada83733865c58af5f26caa9` |
-| `test/import_excel_page_test.dart` | 5049 | `5a15b3cb08a329a6874ddcd69c5a2f4806aba8066b2fc7ab269887a8d19da97a` |
+| `test/import_engine_test.dart` | 5290 | `5c02ed0112782b97ed6d70fc10c70b8258259df9e002982ee70e57c0b2991d35` |
+| `test/import_excel_page_test.dart` | 5815 | `33d48119ce0ef179cdb38ba6721f58fb30967eb530f2bac8a286ca4a75d9fb06` |
 | `test/import_summary_page_test.dart` | 2034 | `317296d263caf12a40d80fefc80e8360c0a02ea20ca9ce95a2e361d9116ef4ba` |
 | `test/local_roster_file_service_test.dart` | 1900 | `86cdb5bd6c033723c8475fbdede202d630cabcb03d421bb3a745fdfe1c0ff614` |
 | `test/localization_widget_test.dart` | 3440 | `840bb439b0be32f2a9151705f1086abceacc86af904addb69ac0298682b6026c` |
@@ -728,7 +728,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/shift_color_service_test.dart` | 2613 | `bcfa14b6cba028fb052199dedcdc2491fe3d8ea0901a75dc6d46ae81bdf9d14f` |
 | `test/shift_exchange_controller_test.dart` | 1421 | `878d06e2cba1d8c4b5eb8b6b6ff27e95d312e15f07f9e4dc3e9b9b1e9817dda0` |
 | `test/shift_parser_test.dart` | 8769 | `36db26d12c22376c9a2aa5b9d51055470159d4b0f725faa0a06a9187ae11398c` |
-| `test/shift_template_test.dart` | 3771 | `416cf7c7607708f419fe569074f0bdce0101404c619b41c451e429f2e0969738` |
+| `test/shift_template_test.dart` | 4008 | `3444d1b4c792b78aca89bef7510f8803fbb40b23297589d1e4d86cac34a7387c` |
 | `test/shift_time_service_test.dart` | 1160 | `0236957c9779ddd75789c0fae49a18a9cb060a8b41e81728cd1d59728a1f53d7` |
 | `test/support/canonical_schedule_fixture.dart` | 3076 | `8c3427f39d66b1aedfea0309ac7a75dfe131a792639884bc3711ff2a83017f52` |
 | `test/support/in_memory_schedule_store.dart` | 645 | `baa26a13ae7712c0679259ac3f14ee72b996ef9a2e3175a03763212a04cf4ba1` |

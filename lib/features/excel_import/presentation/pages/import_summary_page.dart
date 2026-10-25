@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/result/result.dart';
 import '../../../../domain/entities/schedule.dart';
 import '../../../../l10n/l10n.dart';
-import '../../../../core/result/result.dart';
 import '../../../schedule/data/imported_schedule_adapter.dart';
 import '../../../schedule/presentation/controllers/schedule_controller.dart';
 import '../../../schedule/presentation/pages/imported_month_calendar_page.dart';
@@ -11,13 +11,14 @@ import '../../domain/shift_record.dart';
 import '../widgets/import_statistics.dart';
 import '../widgets/issue_list.dart';
 
-class ImportSummaryPage extends StatelessWidget {
+class ImportSummaryPage extends StatefulWidget {
   const ImportSummaryPage({
     required this.summary,
     required this.records,
     this.schedule,
     this.scheduleControllerFactory,
     this.persistenceResult,
+    this.scheduleSaver,
     super.key,
   });
 
@@ -26,9 +27,19 @@ class ImportSummaryPage extends StatelessWidget {
   final Schedule? schedule;
   final ScheduleController Function(Schedule)? scheduleControllerFactory;
   final Result<Schedule>? persistenceResult;
+  final Future<Result<Schedule>> Function(Schedule)? scheduleSaver;
+
+  @override
+  State<ImportSummaryPage> createState() => _ImportSummaryPageState();
+}
+
+class _ImportSummaryPageState extends State<ImportSummaryPage> {
+  bool _saving = false;
+  Result<Schedule>? _saveResult;
 
   @override
   Widget build(BuildContext context) {
+    final persistenceResult = _saveResult ?? widget.persistenceResult;
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.importSummary)),
       body: SafeArea(
@@ -49,12 +60,12 @@ class ImportSummaryPage extends StatelessWidget {
                   const SizedBox(height: 8),
                   Text(
                     context.l10n.importCreatedRecords(
-                      records.length,
-                      summary.totalRows,
+                      widget.records.length,
+                      widget.summary.totalRows,
                     ),
                   ),
                   const SizedBox(height: 24),
-                  ImportStatistics(summary: summary),
+                  ImportStatistics(summary: widget.summary),
                   if (persistenceResult case Failure<Schedule>(
                     message: final message,
                   )) ...[
@@ -66,9 +77,31 @@ class ImportSummaryPage extends StatelessWidget {
                       ),
                     ),
                   ],
+                  if (widget.scheduleSaver != null) ...[
+                    const SizedBox(height: 16),
+                    FilledButton.icon(
+                      onPressed: _saving ||
+                              persistenceResult is Success<Schedule>
+                          ? null
+                          : _saveSchedule,
+                      icon: _saving
+                          ? const SizedBox.square(
+                              dimension: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.save),
+                      label: Text(
+                        _saving
+                            ? 'กำลังบันทึก...'
+                            : persistenceResult is Success<Schedule>
+                            ? 'บันทึกแล้ว'
+                            : 'ยืนยันและบันทึกตารางเวร',
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   FilledButton.icon(
-                    onPressed: records.any((record) => record.date != null)
+                    onPressed: widget.records.any((record) => record.date != null)
                         ? () => _openCalendar(context)
                         : null,
                     icon: const Icon(Icons.calendar_month),
@@ -82,7 +115,7 @@ class ImportSummaryPage extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  IssueList(issues: summary.issues),
+                  IssueList(issues: widget.summary.issues),
                 ],
               ),
             ),
@@ -92,14 +125,29 @@ class ImportSummaryPage extends StatelessWidget {
     );
   }
 
+  Future<void> _saveSchedule() async {
+    final save = widget.scheduleSaver;
+    if (save == null || _saving) return;
+    setState(() => _saving = true);
+    final schedule = widget.schedule ??
+        const ImportedScheduleAdapter().createSchedule(widget.records);
+    final result = await save(schedule);
+    if (!mounted) return;
+    setState(() {
+      _saveResult = result;
+      _saving = false;
+    });
+  }
+
   void _openCalendar(BuildContext context) {
     final canonicalSchedule =
-        schedule ?? const ImportedScheduleAdapter().createSchedule(records);
+        widget.schedule ??
+        const ImportedScheduleAdapter().createSchedule(widget.records);
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ImportedMonthCalendarPage(
           schedule: canonicalSchedule,
-          controllerFactory: scheduleControllerFactory,
+          controllerFactory: widget.scheduleControllerFactory,
         ),
       ),
     );

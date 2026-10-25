@@ -68,13 +68,17 @@ void main() {
 
     expect(find.textContaining('อ่าน "Roster" แล้ว 2 แถว'), findsOneWidget);
     expect(find.byType(ExcelPreviewTable), findsOneWidget);
-    expect(find.text('Next: Column Mapping'), findsOneWidget);
+    expect(find.text('วิเคราะห์และสร้างข้อมูลอัตโนมัติแล้ว'), findsOneWidget);
+    expect(mappingController.mapping.dateColumn, 'A');
+    expect(mappingController.mapping.shiftColumn, 'B');
+    expect(mappingController.mapping.employeeColumn, 'C');
+    expect(find.text('Edit Column Mapping'), findsOneWidget);
     expect(find.text('A'), findsOneWidget);
     expect(find.text('B'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('Next: Column Mapping'));
+    await tester.ensureVisible(find.text('Edit Column Mapping'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Next: Column Mapping'));
+    await tester.tap(find.text('Edit Column Mapping'));
     await tester.pumpAndSettle();
 
     expect(find.byType(ColumnMappingPage), findsOneWidget);
@@ -95,6 +99,16 @@ void main() {
       find.text('1 Shift Records created from 1 data rows.'),
       findsOneWidget,
     );
+    final beforeConfirmation = await dependencies.scheduleRepository.findById(
+      'imported',
+    );
+    expect(beforeConfirmation, isA<Success<Schedule?>>());
+    expect((beforeConfirmation as Success<Schedule?>).value, isNull);
+
+    await tester.tap(find.text('ยืนยันและบันทึกตารางเวร'));
+    await tester.pumpAndSettle();
+    expect(find.text('บันทึกแล้ว'), findsOneWidget);
+
     final persisted = await dependencies.scheduleRepository.findById(
       'imported',
     );

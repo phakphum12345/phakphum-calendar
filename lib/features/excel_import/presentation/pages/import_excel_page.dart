@@ -157,6 +157,21 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
                           worksheet: controller.selectedWorksheet!,
                           rows: controller.rows,
                         ),
+                        const SizedBox(height: 12),
+                        if (controller.completed &&
+                            controller.importSummary != null)
+                          Card(
+                            child: ListTile(
+                              leading: const Icon(Icons.auto_awesome),
+                              title: const Text('วิเคราะห์และสร้างข้อมูลอัตโนมัติแล้ว'),
+                              subtitle: Text(
+                                'สร้างได้ ${controller.importSummary!.importedRows} รายการ'
+                                ' • ข้าม ${controller.importSummary!.skippedRows}'
+                                ' • ข้อผิดพลาด ${controller.importSummary!.errorCount}'
+                                ' • คำเตือน ${controller.importSummary!.warningCount}',
+                              ),
+                            ),
+                          ),
                         const SizedBox(height: 16),
                         FilledButton.icon(
                           onPressed: _openColumnMapping,
@@ -285,6 +300,10 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
         growable: false,
       ),
     );
+    mappingController.applySuggestedMapping(controller.suggestMapping());
+    if (mappingController.isValid) {
+      await controller.importRows(mappingController.mapping);
+    }
   }
 
   Future<void> _openColumnMapping() async {
@@ -306,7 +325,6 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
     final schedule =
         widget.importedScheduleFactory?.call(records) ??
         const ImportedScheduleAdapter().createSchedule(records);
-    final persistenceResult = await widget.scheduleSaver?.call(schedule);
     if (!mounted) return;
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
@@ -315,7 +333,7 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
           records: records,
           schedule: schedule,
           scheduleControllerFactory: widget.scheduleControllerFactory,
-          persistenceResult: persistenceResult,
+          scheduleSaver: widget.scheduleSaver,
         ),
       ),
     );
