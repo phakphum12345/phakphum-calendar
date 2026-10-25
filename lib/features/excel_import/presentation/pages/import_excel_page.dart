@@ -325,7 +325,6 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
     final schedule =
         widget.importedScheduleFactory?.call(records) ??
         const ImportedScheduleAdapter().createSchedule(records);
-    final persistenceResult = await widget.scheduleSaver?.call(schedule);
     if (!mounted) return;
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
@@ -334,7 +333,7 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
           records: records,
           schedule: schedule,
           scheduleControllerFactory: widget.scheduleControllerFactory,
-          persistenceResult: persistenceResult,
+          scheduleSaver: widget.scheduleSaver,
         ),
       ),
     );
