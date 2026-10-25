@@ -66,7 +66,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `NOTICE` | 101 | `466fa508291567626fb52fdf58e15ce228338a594f9c368d0324af3b9b9087b5` |
 | `PROJECT_CONSTITUTION.md` | 866 | `eedb48be10263e7911a13132efca01abb75086c5fcc8e1eb713961777c10ccba` |
 | `PROJECT_RULES.md` | 659 | `71fe177e689a61a01ede7fcc30f329beaead72aef84815440a364f7a540d51d6` |
-| `README.md` | 51204 | `7e6e43108660d6670717466d6f24b6082d115657e7c97a6d7d473cda464535f1` |
+| `README.md` | 20464 | `79d75b38097b5af1b8073fb714d58f008f739572d4cbca15dd855cc9cf4d1480` |
 | `ROADMAP.md` | 304 | `82dba86d50a0a334e77f748a6f68863aa8a03d79f1e47dfe76297a8cb1c509dc` |
 | `SDD.md` | 975 | `bf5598e72477d8f1bf4845589b720dfb7ac9f7de5d7ada9a1158800d7a593be5` |
 | `SECURITY.md` | 3392 | `a98cac784973ee96ed39e04d7e03730a8f22b1dd3b6892f10d5a008fde9cbe1c` |
