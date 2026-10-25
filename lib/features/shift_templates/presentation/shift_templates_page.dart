@@ -75,7 +75,8 @@ class _ShiftTemplatesPageState extends State<ShiftTemplatesPage> {
                   subtitle: Text(
                     '${_time(template.startTime)}–${_time(template.endTime)}'
                     '${template.overnight ? ' • ${context.l10n.overnight}' : ''}'
-                    ' • ${_hours(template.workingHours)} h',
+                    ' • ${_hours(template.workingHours)} h'
+                    '${template.location?.trim().isNotEmpty == true ? ' • ${template.location}' : ''}',
                   ),
                   trailing: PopupMenuButton<_TemplateAction>(
                     onSelected: (action) {
@@ -145,6 +146,9 @@ class _ShiftTemplateDialogState extends State<_ShiftTemplateDialog> {
   late final shortName = TextEditingController(
     text: widget.template?.shortName ?? '',
   );
+  late final location = TextEditingController(
+    text: widget.template?.location ?? '',
+  );
   late final workingHours = TextEditingController(
     text: '${widget.template?.workingHours ?? 8}',
   );
@@ -164,6 +168,7 @@ class _ShiftTemplateDialogState extends State<_ShiftTemplateDialog> {
     code.dispose();
     name.dispose();
     shortName.dispose();
+    location.dispose();
     workingHours.dispose();
     rate.dispose();
     super.dispose();
@@ -188,6 +193,14 @@ class _ShiftTemplateDialogState extends State<_ShiftTemplateDialog> {
               _requiredField(name, context.l10n.shiftName),
               const SizedBox(height: 12),
               _requiredField(shortName, context.l10n.shortName),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: location,
+                decoration: const InputDecoration(
+                  labelText: 'สถานที่ / หน่วยงาน (ไม่บังคับ)',
+                  helperText: 'ตั้งชื่อเวรและรหัสแยกตามสถานที่ได้',
+                ),
+              ),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -243,7 +256,12 @@ class _ShiftTemplateDialogState extends State<_ShiftTemplateDialog> {
   TextFormField _requiredField(TextEditingController controller, String label) {
     return TextFormField(
       controller: controller,
-      decoration: InputDecoration(labelText: '$label *'),
+      decoration: InputDecoration(
+        labelText: '$label *',
+        helperText: label == context.l10n.shiftCode
+            ? 'ใช้รหัสไทย อังกฤษ หรือกำหนดเองได้'
+            : null,
+      ),
       validator: (value) => value == null || value.trim().isEmpty
           ? context.l10n.requiredField
           : null,
@@ -276,7 +294,8 @@ class _ShiftTemplateDialogState extends State<_ShiftTemplateDialog> {
     Navigator.pop(
       context,
       ShiftTemplate(
-        id: widget.template?.id ?? 'shift:${normalizedCode.toLowerCase()}',
+        id: widget.template?.id ??
+            'shift:${location.text.trim().toLowerCase()}:${normalizedCode.toLowerCase()}',
         code: normalizedCode,
         name: name.text.trim(),
         shortName: shortName.text.trim(),
@@ -285,6 +304,7 @@ class _ShiftTemplateDialogState extends State<_ShiftTemplateDialog> {
         color: color,
         workingHours: double.parse(workingHours.text),
         rate: double.parse(rate.text),
+        location: location.text.trim().isEmpty ? null : location.text.trim(),
         active: widget.template?.active ?? true,
         sortOrder: widget.template?.sortOrder ?? widget.nextOrder,
       ),
