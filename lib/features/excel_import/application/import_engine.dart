@@ -18,7 +18,7 @@ class ImportEngine {
 
     final headers = rows.first.cells
         .where((cell) => cell.displayValue.trim().isNotEmpty)
-        .toList(growable: false)
+        .toList()
       ..sort((left, right) => left.columnIndex.compareTo(right.columnIndex));
     final usedColumns = <int>{};
 
