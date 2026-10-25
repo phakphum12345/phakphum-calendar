@@ -16,6 +16,42 @@ void main() {
     notesColumn: 'F',
   );
 
+  test('suggests mappings for Thai roster headers', () {
+    final mapping = engine.suggestMapping(
+      rows: [
+        _row(0, ['วันที่', 'ชื่อเวร', 'ชื่อ-สกุล', 'หน่วยงาน', 'สถานที่', 'หมายเหตุ']),
+        _row(1, ['2026-07-24', 'เช้า', 'Anan', 'ER', 'Building A', 'On call']),
+      ],
+    );
+
+    expect(mapping.dateColumn, 'A');
+    expect(mapping.shiftColumn, 'B');
+    expect(mapping.employeeColumn, 'C');
+    expect(mapping.departmentColumn, 'D');
+    expect(mapping.locationColumn, 'E');
+    expect(mapping.notesColumn, 'F');
+  });
+
+  test('suggests mappings for common English roster headers', () {
+    final mapping = engine.suggestMapping(
+      rows: [
+        _row(0, ['Shift Date', 'Duty Type', 'Staff Name', 'Ward', 'Workplace', 'Remarks']),
+      ],
+    );
+
+    expect(mapping.dateColumn, 'A');
+    expect(mapping.shiftColumn, 'B');
+    expect(mapping.employeeColumn, 'C');
+    expect(mapping.departmentColumn, 'D');
+    expect(mapping.locationColumn, 'E');
+    expect(mapping.notesColumn, 'F');
+  });
+
+  test('returns an empty suggestion when there are no rows', () {
+    expect(engine.suggestMapping(rows: []).dateColumn, isNull);
+    expect(engine.suggestMapping(rows: []).shiftColumn, isNull);
+  });
+
   test('converts a valid Excel row into a ShiftRecord', () {
     final result = engine.convertRows(
       rows: [
