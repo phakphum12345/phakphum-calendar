@@ -66,10 +66,18 @@ void main() {
 
       expect(seededIds, [
         'shift:morning',
+        'shift:day',
         'shift:evening',
         'shift:night',
-        'shift:on-call',
       ]);
+      expect(
+        controller.templates.map((value) => value.code),
+        ['ช', 'ก', 'บ', 'ด'],
+      );
+      expect(
+        controller.templates.map((value) => value.shortName),
+        ['ช', 'ก', 'บ', 'ด'],
+      );
       expect(controller.templates.map((value) => value.id), seededIds);
       expect(repository.values, hasLength(4));
     },
