@@ -9,6 +9,66 @@ import '../domain/shift_record.dart';
 class ImportEngine {
   const ImportEngine();
 
+  /// Infers column mappings from common Thai and English roster headers.
+  ///
+  /// The result is a suggestion only: callers should still let users review
+  /// ambiguous or missing required columns before saving imported data.
+  ColumnMapping suggestMapping({required List<ExcelRow> rows}) {
+    if (rows.isEmpty) return const ColumnMapping();
+
+    final headers = rows.first.cells
+        .where((cell) => cell.displayValue.trim().isNotEmpty)
+        .toList(growable: false)
+      ..sort((left, right) => left.columnIndex.compareTo(right.columnIndex));
+    final usedColumns = <int>{};
+
+    String? findColumn(List<String> aliases) {
+      for (final alias in aliases) {
+        final normalizedAlias = _normalizeHeader(alias);
+        for (final cell in headers) {
+          if (usedColumns.contains(cell.columnIndex)) continue;
+          if (_normalizeHeader(cell.displayValue) == normalizedAlias) {
+            usedColumns.add(cell.columnIndex);
+            return ExcelColumnName.fromIndex(cell.columnIndex);
+          }
+        }
+      }
+      return null;
+    }
+
+    return ColumnMapping(
+      dateColumn: findColumn(const [
+        'date', 'shift date', 'roster date', 'วันที่', 'วันที่ปฏิบัติงาน',
+        'วันที่เวร', 'วันปฏิบัติงาน',
+      ]),
+      shiftColumn: findColumn(const [
+        'shift', 'shift type', 'duty', 'duty type', 'เวร', 'ชื่อเวร',
+        'รหัสเวร', 'ประเภทเวร',
+      ]),
+      employeeColumn: findColumn(const [
+        'employee', 'employee name', 'staff', 'staff name', 'person',
+        'name', 'ชื่อ', 'ชื่อ-สกุล', 'ชื่อสกุล', 'ผู้ปฏิบัติงาน',
+        'บุคลากร', 'พนักงาน',
+      ]),
+      departmentColumn: findColumn(const [
+        'department', 'dept', 'unit', 'ward', 'แผนก', 'หน่วยงาน',
+        'กลุ่มงาน',
+      ]),
+      locationColumn: findColumn(const [
+        'location', 'site', 'hospital', 'workplace', 'place',
+        'สถานที่', 'สถานที่ปฏิบัติงาน', 'จุดปฏิบัติงาน',
+      ]),
+      notesColumn: findColumn(const [
+        'notes', 'note', 'remarks', 'remark', 'หมายเหตุ', 'รายละเอียด',
+      ]),
+    );
+  }
+
+  String _normalizeHeader(String value) => value
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp(r'[\\s_\\-./():]+'), '');
+
   ImportEngineResult convertRows({
     required List<ExcelRow> rows,
     required ColumnMapping mapping,
