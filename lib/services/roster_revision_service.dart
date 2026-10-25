@@ -71,7 +71,7 @@ class RosterRevisionService implements RosterRevisionGateway {
     });
 
     final documents = <RosterRevisionDocument>[];
-    const parallelDownloads = 4;
+    const parallelDownloads = 2;
     for (
       var offset = 0;
       offset < revisions.length;
@@ -128,7 +128,7 @@ class RosterRevisionService implements RosterRevisionGateway {
     });
 
     final documents = <RosterRevisionDocument>[];
-    const parallelDownloads = 4;
+    const parallelDownloads = 2;
     for (
       var offset = 0;
       offset < revisions.length;
@@ -148,6 +148,51 @@ class RosterRevisionService implements RosterRevisionGateway {
       (left, right) => left.modifiedAt.compareTo(right.modifiedAt),
     );
     return documents;
+  }
+
+  /// Retries transient Drive export throttling without re-listing history.
+  /// Keep concurrency low because each revision export is a separate request.
+  Future<http.Response> _downloadRevisionExport(
+    http.Client client,
+    String exportUrl,
+  ) async {
+    const maxAttempts = 4;
+    const retryableStatuses = <int>{429, 500, 502, 503, 504};
+    Object? lastError;
+
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        final response = await _downloadRevisionExport(client, exportUrl);
+        if (!retryableStatuses.contains(response.statusCode) ||
+            attempt == maxAttempts) {
+          return response;
+        }
+        final retryAfter = response.headers['retry-after'];
+        final retryAfterSeconds = int.tryParse(retryAfter ?? '');
+        final retryAfterDate = retryAfter == null
+            ? null
+            : DateTime.tryParse(retryAfter);
+        final dateDelay = retryAfterDate?.difference(DateTime.now());
+        final backoff = Duration(milliseconds: 500 * (1 << (attempt - 1)));
+        final requestedDelay = retryAfterSeconds != null
+            ? Duration(seconds: retryAfterSeconds)
+            : dateDelay != null && !dateDelay.isNegative
+            ? dateDelay
+            : backoff;
+        // Avoid a server-supplied Retry-After making the UI wait indefinitely.
+        final delay = requestedDelay > const Duration(seconds: 8)
+            ? const Duration(seconds: 8)
+            : requestedDelay;
+        await Future<void>.delayed(delay);
+      } on Object catch (error) {
+        lastError = error;
+        if (attempt == maxAttempts) rethrow;
+        await Future<void>.delayed(
+          Duration(milliseconds: 500 * (1 << (attempt - 1))),
+        );
+      }
+    }
+    throw StateError('Could not download revision export: $lastError');
   }
 
   Future<RosterRevisionDocument?> _readRevision(
@@ -170,7 +215,7 @@ class RosterRevisionService implements RosterRevisionGateway {
     if (cached != null) return cached;
 
     try {
-      final response = await client.get(Uri.parse(exportUrl));
+      final response = await _downloadRevisionExport(client, exportUrl);
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw StateError(
           'Could not download revision $revisionId '
@@ -211,7 +256,7 @@ class RosterRevisionService implements RosterRevisionGateway {
     }
 
     try {
-      final response = await client.get(Uri.parse(exportUrl));
+      final response = await _downloadRevisionExport(client, exportUrl);
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw StateError(
           'Could not download revision $revisionId '
