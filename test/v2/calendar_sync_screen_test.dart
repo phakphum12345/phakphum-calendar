@@ -49,7 +49,9 @@ void main() {
     expect(syncButton.onPressed, isNull);
   });
 
-  testWidgets('keeps the sync screen open and reports a failed sync', (tester) async {
+  testWidgets(
+    'keeps the sync screen open and reports a failed sync',
+    (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: CalendarSyncScreen(
@@ -68,9 +70,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.byType(CalendarSyncScreen), findsOneWidget);
-    expect(find.byKey(const Key('calendarSyncErrorSnackBar')), findsOneWidget);
-    expect(find.textContaining('Google response stream timed out'), findsOneWidget);
-  });
+    expect(
+      find.byKey(const Key('calendarSyncErrorSnackBar')),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('Google response stream timed out'),
+      findsOneWidget,
+    );
+    },
+  );
 
   testWidgets('shows progress while busy', (tester) async {
     await tester.pumpWidget(
