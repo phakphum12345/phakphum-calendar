@@ -3573,8 +3573,8 @@
     },
     {
       "path": "test/v2/calendar_sync_screen_test.dart",
-      "size": 2182,
-      "sha256": "a392aabd6579f86409eddcfc77e1d1cb0c0f6b53470399cbbe2d3d54415f8d0e"
+      "size": 3089,
+      "sha256": "c8693da552c71dda1ceebe5e474f6a72e382802b442d16d4c8d32eba06b92326"
     },
     {
       "path": "test/v2/calendar_sync_service_test.dart",

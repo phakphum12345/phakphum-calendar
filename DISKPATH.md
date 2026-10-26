@@ -742,7 +742,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/v2/calendar_sync_executor_test.dart` | 13145 | `1c5bd21e627d73213622cae0b139513370da7e5550a511e81f7641b6a0295109` |
 | `test/v2/calendar_sync_planner_test.dart` | 7932 | `08ac90d1771e1fccd3053f83f388af3d1b7d737fabc363926e07fd2fe8e938c6` |
 | `test/v2/calendar_sync_progress_test.dart` | 4754 | `580b0af47475b5f1db2705027e56b7bc1bb0264daaa7a686ef1748e0bb5c4a95` |
-| `test/v2/calendar_sync_screen_test.dart` | 2182 | `a392aabd6579f86409eddcfc77e1d1cb0c0f6b53470399cbbe2d3d54415f8d0e` |
+| `test/v2/calendar_sync_screen_test.dart` | 3089 | `c8693da552c71dda1ceebe5e474f6a72e382802b442d16d4c8d32eba06b92326` |
 | `test/v2/calendar_sync_service_test.dart` | 10117 | `9ca30fe50473dff50d480e23276deee7370aaa7fc51add08e8e33017a202bda8` |
 | `test/v2/google_calendar_event_mapper_test.dart` | 10509 | `65cc1637237410db88ce55452b2a243259872c98b8dd0e306f95c754cc15d9c4` |
 | `test/v2/rule_engine_test.dart` | 1535 | `e0735d9ed5ed75f54e091d7e5be6bf1f5a2f6f46bb423cfa848386881787585c` |
