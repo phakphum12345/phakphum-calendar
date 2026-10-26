@@ -20,8 +20,8 @@ class GoogleApiClient extends http.BaseClient {
     final response = await _inner.send(request).timeout(_timeout);
     // A timeout on send() only bounds waiting for response headers. Google API
     // responses are streamed, so also bound idle time while the body is read.
-    return response.copyWith(
-      stream: response.stream.timeout(
+    return http.StreamedResponse(
+      response.stream.timeout(
         _timeout,
         onTimeout: (sink) {
           sink.addError(
@@ -32,6 +32,13 @@ class GoogleApiClient extends http.BaseClient {
           sink.close();
         },
       ),
+      response.statusCode,
+      contentLength: response.contentLength,
+      request: response.request,
+      headers: response.headers,
+      isRedirect: response.isRedirect,
+      persistentConnection: response.persistentConnection,
+      reasonPhrase: response.reasonPhrase,
     );
   }
 
