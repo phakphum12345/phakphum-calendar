@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 746,
+  "file_count": 747,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -865,6 +865,11 @@
       "path": "docs/adr/ADR-0014-multi-source-multi-period-review.md",
       "size": 1376,
       "sha256": "ddad342731c19761300348cf7e7590ab7253e9b4836c93baad4bb72a949285db"
+    },
+    {
+      "path": "docs/google-workspace-setup.html",
+      "size": 5829,
+      "sha256": "69bec594a366e629476a68f6c56726aad265ec227626c90bf4b9445d5bbe6cb9"
     },
     {
       "path": "docs/wiki/ARCHITECTURE.md",
