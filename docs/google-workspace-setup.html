@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="คู่มือตั้งค่า Google Workspace และ OAuth สำหรับ Phakphum Calendar">
+  <title>ตั้งค่า Google Workspace — Phakphum Calendar</title>
+  <style>
+    :root { color-scheme: light dark; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+    body { max-width: 860px; margin: 0 auto; padding: 24px; line-height: 1.65; }
+    h1, h2 { line-height: 1.25; }
+    .note { border-left: 4px solid #64748b; padding: 12px 16px; background: color-mix(in srgb, CanvasText 5%, Canvas); }
+    code { overflow-wrap: anywhere; }
+    a { text-underline-offset: 3px; }
+    li { margin: .4rem 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <p><a href="../README.md">← กลับไปคู่มือหลัก</a></p>
+    <h1>ตั้งค่า Google Workspace และ OAuth</h1>
+    <p>คู่มือสำหรับเชื่อมต่อ Phakphum Calendar กับ Google Sheets, Google Drive และ Google Calendar</p>
+  </header>
+
+  <main>
+    <section>
+      <h2>1. เตรียม Google Cloud project</h2>
+      <ol>
+        <li>เปิด <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer">Google Cloud Console</a> แล้วเลือกหรือสร้างโปรเจกต์ที่คุณควบคุม</li>
+        <li>เปิดใช้งาน Google Drive API, Google Sheets API และ Google Calendar API</li>
+        <li>เปิด Google People API เฉพาะเมื่อจะใช้การนำเข้าหรือส่งออกรายชื่อผู้ติดต่อ</li>
+        <li>ตั้งค่า OAuth consent screen และเพิ่มบัญชีทดสอบ หากแอปยังอยู่ในสถานะ Testing</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>2. สร้าง OAuth Client สำหรับเว็บ</h2>
+      <ol>
+        <li>ไปที่ <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">APIs &amp; Services → Credentials</a></li>
+        <li>เลือก Create Credentials → OAuth client ID แล้วเลือกชนิด Web application</li>
+        <li>เพิ่ม Authorized JavaScript origins สำหรับที่อยู่ที่ใช้งานจริง ตัวอย่างเช่น <code>https://phakphum12345.github.io</code></li>
+        <li>หากรันเว็บในเครื่อง ให้เพิ่ม origin ที่ตรงกับพอร์ตจริง เช่น <code>http://localhost:8080</code></li>
+        <li>คัดลอกค่า Client ID ที่ลงท้ายด้วย <code>.apps.googleusercontent.com</code> ไปตั้งค่าในขั้นตอน build/configuration ของแอป</li>
+      </ol>
+      <p class="note"><strong>สำคัญ:</strong> ใช้ Client ID เท่านั้น ห้ามใส่ Client Secret, access token, refresh token หรือ private key ลงในหน้าเว็บ, source control หรือข้อความสาธารณะ</p>
+    </section>
+
+    <section>
+      <h2>3. ตรวจสอบก่อนเชื่อมต่อ</h2>
+      <ul>
+        <li>ตรวจว่า origin ในเบราว์เซอร์ตรงกับ Authorized JavaScript origins ทุกตัวอักษร รวมถึง protocol และ port</li>
+        <li>ตรวจว่า OAuth consent screen อนุญาตบัญชี Google ที่ใช้ทดสอบ</li>
+        <li>อนุญาตเฉพาะสิทธิ์ที่แอปแสดงและจำเป็นต่อการทำงาน</li>
+        <li>ก่อนบันทึกหรือซิงก์ตารางเวร ให้ตรวจตัวอย่างข้อมูลและยืนยันรายการที่ต้องการเสมอ</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>4. แก้ปัญหาเบื้องต้น</h2>
+      <ul>
+        <li><strong>origin_mismatch:</strong> เพิ่ม origin ที่ตรงกับ URL จริงใน OAuth client แล้วบันทึกการตั้งค่า</li>
+        <li><strong>หน้าต่างเข้าสู่ระบบปิดทันที:</strong> ตรวจ Console ของเบราว์เซอร์, Client ID, consent screen และการตั้งค่า OAuth ของ build ที่ deploy อยู่</li>
+        <li><strong>ยังซิงก์ไม่ได้:</strong> ตรวจ API ที่เปิดใช้และสิทธิ์ที่อนุญาต แล้วลองเชื่อมต่อใหม่</li>
+      </ul>
+      <p>ดูรายละเอียดเพิ่มเติมได้ที่ <a href="GOOGLE_SETUP.md">Google Cloud and OAuth Setup</a> และ <a href="INSTALLATION_AND_USER_GUIDE.md">คู่มือติดตั้งและใช้งาน</a></p>
+    </section>
+  </main>
+
+  <footer>
+    <p><small>คู่มือนี้ให้แนวทางการตั้งค่าเท่านั้น ไม่ได้ยืนยันว่า OAuth หรือการซิงก์ของบัญชีใดทำงานสำเร็จแล้ว</small></p>
+  </footer>
+</body>
+</html>
