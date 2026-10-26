@@ -22,6 +22,21 @@ class _HangingClient extends http.BaseClient {
   }
 }
 
+class _StalledBodyClient extends http.BaseClient {
+  final StreamController<List<int>> _body =
+      StreamController<List<int>>();
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    return http.StreamedResponse(_body.stream, 200, request: request);
+  }
+
+  @override
+  void close() {
+    _body.close();
+  }
+}
+
 class _ImmediateClient extends http.BaseClient {
   http.BaseRequest? received;
   bool closed = false;
@@ -74,6 +89,21 @@ void main() {
       client.get(Uri.parse('https://example.test/calendar')),
       throwsA(isA<TimeoutException>()),
     );
+  });
+
+  test('bounds a stalled response body stream', () async {
+    final inner = _StalledBodyClient();
+    final client = GoogleApiClient(
+      const <String, String>{},
+      inner,
+      const Duration(milliseconds: 50),
+    );
+
+    await expectLater(
+      client.get(Uri.parse('https://example.test/calendar')),
+      throwsA(isA<TimeoutException>()),
+    );
+    client.close();
   });
 
   test('delegates close to inner client', () {
