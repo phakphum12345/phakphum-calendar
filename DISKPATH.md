@@ -579,7 +579,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/calendar_service.dart` | 12343 | `ca0bcb23a432ac63f48bc6d705894aaf1952dcd412550e9f4610271805947152` |
 | `lib/services/drive_archive_service.dart` | 2913 | `37ce39a437c4c889b98d413ddd6de4f6e2f9499766531ffad6803ba7dd16e570` |
 | `lib/services/drive_ownership_service.dart` | 9290 | `e30489316965e91f008baf31d6fe2f1f3c592643257399117462e125c2d6f9e1` |
-| `lib/services/google_api_client.dart` | 1109 | `10eb16ce5d37149eaab07610b6312bb8695caed535dd1e0c367e112ca515fccf` |
+| `lib/services/google_api_client.dart` | 1384 | `0d04e46fc86a024cc6a6b1c5b4ecb1238d3e18db9f5273ced7e85cdb18f94b96` |
 | `lib/services/google_auth_service.dart` | 10389 | `0137bf9fec9ecab1547fb1b16e4493dc05dece74e96e633e8283c5a82807b282` |
 | `lib/services/local_roster_file_service.dart` | 5387 | `db5336a2eb195d18c0027528d0ef0f167fb02b5c558919e98d861614da6b83db` |
 | `lib/services/roster_revision_service.dart` | 9315 | `c2d95b9880dd2b51087d1ec629d0e943262a529f35c718ab68b5a3ae397d7322` |
