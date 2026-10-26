@@ -2758,8 +2758,8 @@
     },
     {
       "path": "lib/services/google_api_client.dart",
-      "size": 589,
-      "sha256": "95d32f2e3bd5f722201e0440d9545de40424b67ad56d264c1dd62a7742d0ae49"
+      "size": 1109,
+      "sha256": "10eb16ce5d37149eaab07610b6312bb8695caed535dd1e0c367e112ca515fccf"
     },
     {
       "path": "lib/services/google_auth_service.dart",
@@ -3183,8 +3183,8 @@
     },
     {
       "path": "test/google_api_client_test.dart",
-      "size": 2014,
-      "sha256": "0213c7a53ac160d3bd29d967c2f3294a06e4c1d31946c1ba926d25486cc6d810"
+      "size": 2748,
+      "sha256": "61c4ae92e4552b4555b2b1f3a0623fc85fc623cae0f2905c7cc04e1b791234ca"
     },
     {
       "path": "test/google_auth_service_test.dart",

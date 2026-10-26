@@ -579,7 +579,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/calendar_service.dart` | 12343 | `ca0bcb23a432ac63f48bc6d705894aaf1952dcd412550e9f4610271805947152` |
 | `lib/services/drive_archive_service.dart` | 2913 | `37ce39a437c4c889b98d413ddd6de4f6e2f9499766531ffad6803ba7dd16e570` |
 | `lib/services/drive_ownership_service.dart` | 9290 | `e30489316965e91f008baf31d6fe2f1f3c592643257399117462e125c2d6f9e1` |
-| `lib/services/google_api_client.dart` | 589 | `95d32f2e3bd5f722201e0440d9545de40424b67ad56d264c1dd62a7742d0ae49` |
+| `lib/services/google_api_client.dart` | 1109 | `10eb16ce5d37149eaab07610b6312bb8695caed535dd1e0c367e112ca515fccf` |
 | `lib/services/google_auth_service.dart` | 10389 | `0137bf9fec9ecab1547fb1b16e4493dc05dece74e96e633e8283c5a82807b282` |
 | `lib/services/local_roster_file_service.dart` | 5387 | `db5336a2eb195d18c0027528d0ef0f167fb02b5c558919e98d861614da6b83db` |
 | `lib/services/roster_revision_service.dart` | 9315 | `c2d95b9880dd2b51087d1ec629d0e943262a529f35c718ab68b5a3ae397d7322` |
@@ -664,7 +664,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/excel_reader_service_test.dart` | 4083 | `4d273ecd87aa133ab6aded4439449095c0042e9a8424224b69daa052cdc82c16` |
 | `test/features/calendar_sync/domain/calendar_sync_protocol_test.dart` | 2849 | `f5117baaf65f79d84c925c543b75d80c1fb1dc52ab59a66a79e4c8ee866a6971` |
 | `test/features/dashboard/application/dashboard_summary_service_test.dart` | 4456 | `f79b38159dba6a8de918f0b970497bf42512f2115b3535cf604c769ed43ba112` |
-| `test/google_api_client_test.dart` | 2014 | `0213c7a53ac160d3bd29d967c2f3294a06e4c1d31946c1ba926d25486cc6d810` |
+| `test/google_api_client_test.dart` | 2748 | `61c4ae92e4552b4555b2b1f3a0623fc85fc623cae0f2905c7cc04e1b791234ca` |
 | `test/google_auth_service_test.dart` | 855 | `7c020e73fe723f7a10809801b9a7fe5a8e40dee8dc2ce5795c10002b639bc84e` |
 | `test/google_calendar_sync_gateway_test.dart` | 3724 | `73f96f9b21fb7b5cb65eca3996f24cad06e16a16f2ce601b31ef32d5caf8bbec` |
 | `test/google_calendar_workflow_integration_test.dart` | 16248 | `45eec9caa94922fcb15f8434d123fda377b1239e889a54519983c8fdb29d88d1` |
