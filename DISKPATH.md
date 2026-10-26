@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `746`
+- Tracked files: `747`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -201,6 +201,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `docs/adr/ADR-0012-text-first-roster-comparison.md` | 845 | `239cbf3677b2831a91c0eecc99ea2fe27bbc5f8685e48d1f24f49c1e09f71656` |
 | `docs/adr/ADR-0013-block-on-unknown-shift-time.md` | 445 | `5c7b32feb0d1b6e418d9dc09144ed5aa6b87e991b1900e548467234c96235cd4` |
 | `docs/adr/ADR-0014-multi-source-multi-period-review.md` | 1376 | `ddad342731c19761300348cf7e7590ab7253e9b4836c93baad4bb72a949285db` |
+| `docs/google-workspace-setup.html` | 5829 | `69bec594a366e629476a68f6c56726aad265ec227626c90bf4b9445d5bbe6cb9` |
 | `docs/wiki/ARCHITECTURE.md` | 2497 | `983ca3b8f7959c48972089643d0fa0ee7f9e4e757311e3a70306c4d23b308968` |
 | `docs/wiki/CODING_STANDARDS.md` | 2058 | `97d31c48ff09dce90cba2ff513136a94f2abde37eb2249dd0bbc804b1f569ffb` |
 | `docs/wiki/CONTRIBUTING.md` | 1597 | `c16a41dfda1df8f06f400c784b02d4baac0ac2c1c4e20cd3a6a12aaadb2adb3e` |
