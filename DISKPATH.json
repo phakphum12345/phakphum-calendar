@@ -2763,8 +2763,8 @@
     },
     {
       "path": "lib/services/google_api_client.dart",
-      "size": 589,
-      "sha256": "95d32f2e3bd5f722201e0440d9545de40424b67ad56d264c1dd62a7742d0ae49"
+      "size": 1384,
+      "sha256": "0d04e46fc86a024cc6a6b1c5b4ecb1238d3e18db9f5273ced7e85cdb18f94b96"
     },
     {
       "path": "lib/services/google_auth_service.dart",
@@ -3188,8 +3188,8 @@
     },
     {
       "path": "test/google_api_client_test.dart",
-      "size": 2014,
-      "sha256": "0213c7a53ac160d3bd29d967c2f3294a06e4c1d31946c1ba926d25486cc6d810"
+      "size": 2748,
+      "sha256": "61c4ae92e4552b4555b2b1f3a0623fc85fc623cae0f2905c7cc04e1b791234ca"
     },
     {
       "path": "test/google_auth_service_test.dart",
@@ -3578,8 +3578,8 @@
     },
     {
       "path": "test/v2/calendar_sync_screen_test.dart",
-      "size": 2182,
-      "sha256": "a392aabd6579f86409eddcfc77e1d1cb0c0f6b53470399cbbe2d3d54415f8d0e"
+      "size": 3089,
+      "sha256": "c8693da552c71dda1ceebe5e474f6a72e382802b442d16d4c8d32eba06b92326"
     },
     {
       "path": "test/v2/calendar_sync_service_test.dart",
