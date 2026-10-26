@@ -162,7 +162,7 @@ class RosterRevisionService implements RosterRevisionGateway {
 
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        final response = await _downloadRevisionExport(client, exportUrl);
+        final response = await client.get(Uri.parse(exportUrl));
         if (!retryableStatuses.contains(response.statusCode) ||
             attempt == maxAttempts) {
           return response;
