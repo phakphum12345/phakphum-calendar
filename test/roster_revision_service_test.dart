@@ -37,14 +37,16 @@ void main() {
       return http.Response('{}', 404);
     });
 
-    await expectLater(
-      const RosterRevisionService().readHistoryTransient(
-        client,
-        'spreadsheet-id',
-      ),
-      throwsA(isA<StateError>()),
+    final skippedRevisionIds = <String>[];
+    final documents = await const RosterRevisionService().readHistoryTransient(
+      client,
+      'spreadsheet-id',
+      onRevisionSkipped: (revisionId, _) => skippedRevisionIds.add(revisionId),
     );
 
+    // A failed export is reported but does not abort the entire history read.
+    expect(documents, isEmpty);
+    expect(skippedRevisionIds, ['revision-1']);
     expect(exportRequests, 1);
     client.close();
   });
