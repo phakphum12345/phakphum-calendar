@@ -880,8 +880,15 @@ class AppController extends ChangeNotifier implements ControllerState {
         } else {
           timelineWarning = null;
           try {
+            var skippedRevisionCount = 0;
             final historicalRevisions = await const RosterRevisionService()
-                .readHistoryTransient(client, spreadsheetId);
+                .readHistoryTransient(
+                  client,
+                  spreadsheetId,
+                  onRevisionSkipped: (revisionId, error) {
+                    skippedRevisionCount++;
+                  },
+                );
             _loadedRevisionCount = historicalRevisions.length + 1;
             _revisionTimelines = timelineGenerator.generateFromDocuments([
               ...historicalRevisions,
@@ -891,6 +898,14 @@ class AppController extends ChangeNotifier implements ControllerState {
               timelineWarning =
                   'Google Drive ไม่พบประวัติ revision ที่อ่านได้ '
                   'จึงแสดงเฉพาะรายชื่อเวรปัจจุบัน';
+            }
+            if (skippedRevisionCount > 0) {
+              final skippedWarning =
+                  'ข้าม revision ที่อ่านไม่ได้ $skippedRevisionCount รายการ; '
+                  'Timeline อาจไม่ครบ';
+              timelineWarning = timelineWarning == null
+                  ? skippedWarning
+                  : '$timelineWarning; $skippedWarning';
             }
           } on Object catch (caught, stackTrace) {
             _loadedRevisionCount = 1;
