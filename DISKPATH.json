@@ -793,8 +793,8 @@
     },
     {
       "path": "docs/SHIFT_PAY_RULES.md",
-      "size": 2496,
-      "sha256": "eeebec4d69a9202fc79ea6770b25468a8caa5b18109795175ea11e4672cdda7a"
+      "size": 3166,
+      "sha256": "c409f5a2ebc4d55d02822890d6f4de749744a7337dbd18a452b39668ee2b0347"
     },
     {
       "path": "docs/SYNC_RELIABILITY.md",
@@ -3523,8 +3523,8 @@
     },
     {
       "path": "test/shift_pay_calculator_test.dart",
-      "size": 4050,
-      "sha256": "9851d654e180fd31ad976521d60c8432c6e7046f2d7b8aa60794ac2d8ddfea80"
+      "size": 5893,
+      "sha256": "93aa5aebb148661c22a40ce3a73291d6b5dc0786edf242fc63b62313aa75780b"
     },
     {
       "path": "test/shift_template_test.dart",
