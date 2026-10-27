@@ -28,8 +28,6 @@ class TimelineArchiveService {
     return '$_recordPrefix${scope}_$revisionHash';
   }
 
-  /// Persist one revision idempotently. Re-reading the same revision replaces
-  /// its record instead of creating duplicates.
   Future<void> putRevision({
     required String accountId,
     required String fileId,
@@ -53,21 +51,20 @@ class TimelineArchiveService {
           },
       ],
     };
-    final saved = await prefs.setString(key, jsonEncode(record));
-    if (!saved) {
-      throw StateError('Could not persist Timeline revision ${document.revisionId}.');
+    if (!await prefs.setString(key, jsonEncode(record))) {
+      throw StateError(
+        'Could not persist Timeline revision ${document.revisionId}.',
+      );
     }
 
     final indexKey = '$_indexPrefix$scope';
     final ids = (prefs.getStringList(indexKey) ?? <String>[]).toSet()
       ..add(document.revisionId);
-    final indexSaved = await prefs.setStringList(indexKey, ids.toList()..sort());
-    if (!indexSaved) {
+    if (!await prefs.setStringList(indexKey, ids.toList()..sort())) {
       throw StateError('Could not update Timeline archive index.');
     }
   }
 
-  /// Load archived revisions ordered by their original modification time.
   Future<List<RosterRevisionDocument>> readRevisions({
     required String accountId,
     required String fileId,
@@ -83,29 +80,26 @@ class TimelineArchiveService {
         final map = jsonDecode(raw) as Map<String, dynamic>;
         final snapshots = (map['snapshots'] as List<dynamic>? ?? const [])
             .map((item) {
-              final value = item as Map<String, dynamic>;
-              return SheetSnapshot(
-                title: value['title'] as String? ?? '',
-                rows: (value['rows'] as List<dynamic>? ?? const [])
-                    .map((row) => (row as List<dynamic>).cast<Object?>())
+          final value = item as Map<String, dynamic>;
+          return SheetSnapshot(
+            title: value['title'] as String? ?? '',
+            rows: (value['rows'] as List<dynamic>? ?? const [])
+                .map((row) => (row as List<dynamic>).cast<Object?>())
+                .toList(),
+            backgroundColors:
+                (value['backgroundColors'] as List<dynamic>? ?? const [])
+                    .map((row) => (row as List<dynamic>)
+                        .map((cell) => cell as int?)
+                        .toList())
                     .toList(),
-                backgroundColors:
-                    (value['backgroundColors'] as List<dynamic>? ?? const [])
-                        .map((row) => (row as List<dynamic>)
-                            .map((cell) => cell as int?)
-                            .toList())
-                        .toList(),
-              );
-            })
-            .toList();
+          );
+        }).toList();
         documents.add(RosterRevisionDocument(
           revisionId: map['revisionId'] as String,
           modifiedAt: DateTime.parse(map['modifiedAt'] as String),
           snapshots: snapshots,
         ));
       } on Object {
-        // A corrupt record is omitted from results; the sync status remains
-        // incomplete rather than deleting or overwriting other valid records.
         continue;
       }
     }
@@ -113,7 +107,6 @@ class TimelineArchiveService {
     return documents;
   }
 
-  /// Save the next revision index only after all earlier records were stored.
   Future<void> saveCheckpoint({
     required String accountId,
     required String fileId,
@@ -131,8 +124,9 @@ class TimelineArchiveService {
       'updatedAt': DateTime.now().toUtc().toIso8601String(),
       if (lastError != null) 'lastError': lastError,
     });
-    final saved = await prefs.setString('$_checkpointPrefix$scope', payload);
-    if (!saved) throw StateError('Could not persist Timeline sync checkpoint.');
+    if (!await prefs.setString('$_checkpointPrefix$scope', payload)) {
+      throw StateError('Could not persist Timeline sync checkpoint.');
+    }
   }
 
   Future<Map<String, dynamic>?> readCheckpoint({
