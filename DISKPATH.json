@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 748,
+  "file_count": 749,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -2693,8 +2693,8 @@
     },
     {
       "path": "lib/models/audit_entry.dart",
-      "size": 755,
-      "sha256": "434b2712916db1be9121560039c1add1df893c18c97988abbca8720fb218327b"
+      "size": 1973,
+      "sha256": "7c0f67f220a98d699cb03e6d4be843a5e5df9f411553cd73fc9292494c63b096"
     },
     {
       "path": "lib/models/calendar_busy_period.dart",
@@ -2833,8 +2833,8 @@
     },
     {
       "path": "lib/ui/audit_log_page.dart",
-      "size": 1240,
-      "sha256": "550aa1ac28816344c928a4335ed337e4224a7442df5ecdd8d433bcb627eb362b"
+      "size": 2201,
+      "sha256": "eec96b9ad15d43454beadf1f446ac3a421d4e17d8f59fba2244a19e7d2a13d95"
     },
     {
       "path": "lib/ui/first_login_setup_dialog.dart",
@@ -3085,6 +3085,11 @@
       "path": "test/app_edition_test.dart",
       "size": 722,
       "sha256": "62761aa843e001483ca7466764e0f6ba4efb1ae9ea1eaac7f9a28b72e0140878"
+    },
+    {
+      "path": "test/audit_entry_test.dart",
+      "size": 1779,
+      "sha256": "a5b7971be45a0046c27fbd075b1b8404f367294e5328dd546829776e3301de23"
     },
     {
       "path": "test/calendar_color_service_test.dart",
