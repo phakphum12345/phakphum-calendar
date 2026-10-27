@@ -2036,11 +2036,15 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   Future<void> _addAudit(String action, String message, bool success) async {
+    // Use the stable authenticated account ID, never a display name, for actor
+    // attribution. A null ID deliberately remains "unknown" in the audit UI.
+    final actorId = auth.account?.id.trim();
     final entry = AuditEntry(
       timestamp: DateTime.now(),
       action: action,
       message: message,
       success: success,
+      actorId: actorId == null || actorId.isEmpty ? null : actorId,
     );
     auditEntries.insert(0, entry);
     await _settingsService.appendAudit(entry);
