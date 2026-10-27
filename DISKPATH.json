@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 749,
+  "file_count": 752,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -792,6 +792,11 @@
       "sha256": "2aa35351076bde8a31194239619050bfa6b22dc4014e0d52c734638e39263b06"
     },
     {
+      "path": "docs/SHIFT_PAY_RULES.md",
+      "size": 3841,
+      "sha256": "7cbf442fc4bbd7328232cb683c563ecbcb72ca01e8dee285442e7b1bd4518a44"
+    },
+    {
       "path": "docs/SYNC_RELIABILITY.md",
       "size": 1388,
       "sha256": "bf1da1c7346ae8dac8a0cee0d56bac6d545b4dd9e3b3d6e6e1ecf48e1b454b1c"
@@ -1178,8 +1183,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 98933,
-      "sha256": "1c388f95e987863ba640d842bf8277031f35090b9ae8c2eba2b1ce041c2c12c7"
+      "size": 99204,
+      "sha256": "1ce9a0f2cb71edd236ae6bb3865b7fd18a7185922b3c2ff324a7eaaea1fb254b"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
@@ -1325,6 +1330,11 @@
       "path": "lib/domain/services/notification_service.dart",
       "size": 439,
       "sha256": "75f51d1554a9cf6cb6d7bacd14220466a81e7bb997f29ce58b88344f3bc5bfe4"
+    },
+    {
+      "path": "lib/domain/services/shift_pay_calculator.dart",
+      "size": 9141,
+      "sha256": "4584d22c835310eae1914e15574348421f1f1270198c5d622b8caa392e348940"
     },
     {
       "path": "lib/features/access_control/domain/access_control.dart",
@@ -3515,6 +3525,11 @@
       "path": "test/shift_parser_test.dart",
       "size": 8769,
       "sha256": "36db26d12c22376c9a2aa5b9d51055470159d4b0f725faa0a06a9187ae11398c"
+    },
+    {
+      "path": "test/shift_pay_calculator_test.dart",
+      "size": 8172,
+      "sha256": "675b703930f851e71b109100335e4fdccf5c2eba2bac03df775da31c7a49606c"
     },
     {
       "path": "test/shift_template_test.dart",
