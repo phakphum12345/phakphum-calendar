@@ -119,6 +119,61 @@ void main() {
       expect(result.amount, 800);
     });
 
+
+    test('weekday night shift can compensate for morning work without extra pay', () {
+      final result = calculator.calculate(
+        input: ShiftPayInput(
+          date: DateTime(2026, 10, 26), // Monday
+          employmentType: EmploymentType.salaried,
+          shiftTypeId: 'night',
+          hours: 8,
+          department: 'Radiology',
+        ),
+        rules: const [
+          ShiftPayRule(
+            id: 'night-replaces-morning',
+            employmentType: EmploymentType.salaried,
+            dayCategory: WorkDayCategory.regularWeekday,
+            shiftTypeId: 'night',
+            treatment: ShiftPayTreatment.compensatoryTime,
+            compensatesShiftTypeId: 'morning',
+            compensatoryWeekdays: {1, 2, 3, 4, 5},
+          ),
+        ],
+      );
+
+      expect(result.hasRule, isTrue);
+      expect(result.amount, 0);
+      expect(result.isCoveredBySalary, isFalse);
+      expect(result.isCompensatoryTime, isTrue);
+      expect(result.compensatesShiftTypeId, 'morning');
+    });
+
+    test('compensatory shift rule only applies on configured weekdays', () {
+      final result = calculator.calculate(
+        input: ShiftPayInput(
+          date: DateTime(2026, 10, 31), // Saturday
+          employmentType: EmploymentType.salaried,
+          shiftTypeId: 'night',
+          hours: 8,
+        ),
+        rules: const [
+          ShiftPayRule(
+            id: 'weekday-night-replacement',
+            employmentType: EmploymentType.salaried,
+            dayCategory: WorkDayCategory.weeklyDayOff,
+            shiftTypeId: 'night',
+            treatment: ShiftPayTreatment.compensatoryTime,
+            compensatesShiftTypeId: 'morning',
+            compensatoryWeekdays: {1, 2, 3, 4, 5},
+          ),
+        ],
+      );
+
+      expect(result.hasRule, isFalse);
+      expect(result.amount, isNull);
+    });
+
     test('missing rule is reported as unconfigured, not unpaid', () {
       final result = calculator.calculate(
         input: ShiftPayInput(
