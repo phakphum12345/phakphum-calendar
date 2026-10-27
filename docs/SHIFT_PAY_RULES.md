@@ -17,11 +17,12 @@ This is intentionally not a built-in national holiday calendar: organizations mu
 Each `ShiftPayRule` is specific to:
 - employment type: `salaried` or `dailyPaid`;
 - day category: regular weekday, official holiday, weekly day off, or festival;
-- shift period: morning, afternoon, or night.
+- organization-defined shift type (for example morning, night, 12-hour, on-call, or a local shift); the type ID is not limited to a fixed enum.
 
-A rule can optionally scope to a department and/or location. More specific scopes override general rules. Rules must be configured separately where the policy differs.
+A rule can optionally scope to a department and/or location. More specific scopes override general rules. Rules must be configured separately where the policy differs. A scheduled shift and an entitlement to extra pay are separate concepts.
 
-- Set `salaryIncluded: true` when that shift is covered by normal salary and has no additional shift payment under the rule. The calculated additional amount is zero.
+- Set `salaryIncluded: true` or `treatment: ShiftPayTreatment.includedInSalary` when the shift is covered by normal salary and has no additional shift payment. The calculated additional amount is zero.
+- Use `treatment: ShiftPayTreatment.compensatoryTime` when a shift (for example, a night shift) substitutes for another shift such as the morning shift instead of generating extra cash pay. Set `compensatesShiftTypeId` and explicitly configure `compensatoryWeekdays` using Monday = 1 through Sunday = 7. The rule applies only on those configured weekdays; it does not assume that every night shift is compensatory or that weekdays always follow the same schedule.
 - Use `fixedAmount` for a fixed additional amount per shift, or `hourlyRate` with the actual shift hours. `multiplier` applies to the selected amount.
 - If no rule matches, the result has `hasRule == false` and `amount == null`. This means the rule is not configured, not that the shift is unpaid.
 
