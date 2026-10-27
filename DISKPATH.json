@@ -1333,8 +1333,8 @@
     },
     {
       "path": "lib/domain/services/shift_pay_calculator.dart",
-      "size": 5631,
-      "sha256": "6e39313607ccba10319f0371a78077787739bd444dc5cbe0923184dbad445e56"
+      "size": 5627,
+      "sha256": "6a6e534811efbf62069b5c1e3d2eda7b16be168d58349ecd5d2c6d29b853aaa6"
     },
     {
       "path": "lib/features/access_control/domain/access_control.dart",
