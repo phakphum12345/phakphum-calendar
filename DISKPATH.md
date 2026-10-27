@@ -294,7 +294,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/domain/services/google_sheets_service.dart` | 216 | `ec420b4f87f3400106470879119b0488c411a76c7eb10cb1bcee4834561c0413` |
 | `lib/domain/services/import_service.dart` | 333 | `f1d954dfecd57eb2eced7428a40104ac4049dd5da80ac39cceae12cc25226970` |
 | `lib/domain/services/notification_service.dart` | 439 | `75f51d1554a9cf6cb6d7bacd14220466a81e7bb997f29ce58b88344f3bc5bfe4` |
-| `lib/domain/services/shift_pay_calculator.dart` | 8037 | `a81623d7685d0fe02809a5829ac7e130d6fa1455207d34537bdb3efa41c5d047` |
+| `lib/domain/services/shift_pay_calculator.dart` | 9141 | `4584d22c835310eae1914e15574348421f1f1270198c5d622b8caa392e348940` |
 | `lib/features/access_control/domain/access_control.dart` | 1196 | `c4e8ed6711c42ce042956cb1abffec4738dff06250fdd7de50bc1a81083b1c64` |
 | `lib/features/admin/application/admin_dashboard_service.dart` | 801 | `c5187bff99d3e3809fc055ddeceed3f35abb169e253176868141363d1c12f40e` |
 | `lib/features/admin/domain/admin_access_config.dart` | 2933 | `7fd23bef1d54301b313661f1ded92ca9a2f5583efef5c39c4b65b4a36614a0de` |
