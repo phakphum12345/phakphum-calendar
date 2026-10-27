@@ -2788,8 +2788,8 @@
     },
     {
       "path": "lib/services/roster_revision_service.dart",
-      "size": 9704,
-      "sha256": "38fc6088b72d941e5e3f3fd80d7fc14cef805ba22a198295ae63a6f9a9e5919d"
+      "size": 9725,
+      "sha256": "6dd4edc58563953b43ce5aeaeb8459194cc856dbc079c3a1f09b71a358eee31f"
     },
     {
       "path": "lib/services/roster_timeline_generator.dart",
@@ -3343,8 +3343,8 @@
     },
     {
       "path": "test/roster_revision_service_test.dart",
-      "size": 3636,
-      "sha256": "cef59acab091d910b29c047981a7c18cf12e43c9708a1ffeec4934d01d90f081"
+      "size": 3656,
+      "sha256": "626890606153330b3bca7e548d334c2cbdda278772b1b8ee7dfeb4077d240bbd"
     },
     {
       "path": "test/roster_sync_period_filter_test.dart",

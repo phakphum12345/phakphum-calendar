@@ -585,7 +585,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/google_api_client.dart` | 1384 | `0d04e46fc86a024cc6a6b1c5b4ecb1238d3e18db9f5273ced7e85cdb18f94b96` |
 | `lib/services/google_auth_service.dart` | 10389 | `0137bf9fec9ecab1547fb1b16e4493dc05dece74e96e633e8283c5a82807b282` |
 | `lib/services/local_roster_file_service.dart` | 5387 | `db5336a2eb195d18c0027528d0ef0f167fb02b5c558919e98d861614da6b83db` |
-| `lib/services/roster_revision_service.dart` | 9704 | `38fc6088b72d941e5e3f3fd80d7fc14cef805ba22a198295ae63a6f9a9e5919d` |
+| `lib/services/roster_revision_service.dart` | 9725 | `6dd4edc58563953b43ce5aeaeb8459194cc856dbc079c3a1f09b71a358eee31f` |
 | `lib/services/roster_timeline_generator.dart` | 1531 | `7ed54286153b0075d6d979a82ea0cecd72aec47b3cea150fef2fdf152acc683e` |
 | `lib/services/settings_service.dart` | 8208 | `732d6754db002c00ef7e37e3ba7534d72eafc491c4582c715c8a5c83c359511d` |
 | `lib/services/sheets_service.dart` | 9135 | `10f60cc6de94fbc0eb6c91961935b509f32e54e347d004d5f9f4bd7ac19a328b` |
@@ -696,7 +696,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/roster_assignment_timeline_test.dart` | 3069 | `7167990cb66590bade074be13fe5339988fbdc60a2dabf4f14493e60322e6ff0` |
 | `test/roster_name_entry_test.dart` | 1534 | `15dc0da8acc3b28d6d8b81fc11cc4281ad068678c64f0754dcabd87136ee77c6` |
 | `test/roster_reference_comparison_test.dart` | 1607 | `d16ca98671685e19099f51a87e4cc023dae166057b3aa436ba5991a040749cc1` |
-| `test/roster_revision_service_test.dart` | 3636 | `cef59acab091d910b29c047981a7c18cf12e43c9708a1ffeec4934d01d90f081` |
+| `test/roster_revision_service_test.dart` | 3656 | `626890606153330b3bca7e548d334c2cbdda278772b1b8ee7dfeb4077d240bbd` |
 | `test/roster_sync_period_filter_test.dart` | 2584 | `42879ab0bc3ed8edc7342b8a6663acb9c3a9065b560b0bd4752c23a029062a57` |
 | `test/rule_engine_consolidation_test.dart` | 3180 | `70ebce500581f1f93962d2d453a027d66899d66099ef4a2d637f155dc1f3b1fa` |
 | `test/rule_engine_foundation_test.dart` | 8149 | `31ad1aa480817e4c9ac012e51b332ff10c6a75b5f7aaef5844d239e6fe623884` |
