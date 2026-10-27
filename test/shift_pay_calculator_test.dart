@@ -39,7 +39,7 @@ void main() {
         input: ShiftPayInput(
           date: DateTime(2026, 10, 26),
           employmentType: EmploymentType.salaried,
-          shiftPeriod: ShiftPeriod.morning,
+          shiftTypeId: 'morning',
           hours: 8,
           department: 'Radiology',
           location: 'Building A',
@@ -65,7 +65,7 @@ void main() {
         input: ShiftPayInput(
           date: DateTime(2026, 10, 26),
           employmentType: EmploymentType.dailyPaid,
-          shiftPeriod: ShiftPeriod.night,
+          shiftTypeId: 'night',
           hours: 10,
         ),
         rules: const [
@@ -92,7 +92,7 @@ void main() {
         input: ShiftPayInput(
           date: DateTime(2026, 10, 26),
           employmentType: EmploymentType.dailyPaid,
-          shiftPeriod: ShiftPeriod.afternoon,
+          shiftTypeId: 'afternoon',
           hours: 8,
           department: 'Emergency',
         ),
