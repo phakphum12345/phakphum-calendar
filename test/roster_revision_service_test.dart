@@ -52,6 +52,7 @@ void main() {
     expect(exportRequests, 1);
     client.close();
   });
+
   test('keeps readable revisions when another revision export fails', () async {
     final skippedRevisionIds = <String>[];
     final client = MockClient((request) async {
@@ -99,7 +100,10 @@ void main() {
       onRevisionSkipped: (revisionId, _) => skippedRevisionIds.add(revisionId),
     );
 
-    expect(documents.map((document) => document.revisionId), ['revision-good']);
+    expect(
+      documents.map((document) => document.revisionId),
+      ['revision-good'],
+    );
     expect(skippedRevisionIds, ['revision-bad']);
     client.close();
   });
