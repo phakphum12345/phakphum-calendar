@@ -28,3 +28,8 @@ A rule can optionally scope to a department and/or location. More specific scope
 ## Important payroll boundary
 
 Do not treat this calculator as legal or statutory payroll guidance. Actual rates, eligibility, holiday definitions, overtime, salary inclusion, and rounding must be reviewed and configured by the responsible organization. The engine deliberately does not invent rates or assume one policy fits every department.
+
+
+## Configurable shift types
+
+Use `ShiftTypeDefinition` to describe the shift types the organization actually uses. Each definition has an organization-defined ID and name, start/end minutes, an overnight flag, and an active flag. The IDs referenced by pay rules are strings, not a closed morning/afternoon/night enum, so new shift types can be added without changing the calculator. The current pull request adds the domain model; a settings screen and persistence for these definitions still need to be implemented.
