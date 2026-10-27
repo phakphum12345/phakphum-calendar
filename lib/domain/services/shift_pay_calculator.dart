@@ -15,10 +15,31 @@ enum EmploymentType {
   dailyPaid,
 }
 
-enum ShiftPeriod {
-  morning,
-  afternoon,
-  night,
+/// Configurable shift definition. IDs are organization-defined; there is no
+/// required list of shift periods. Examples include morning, 12-hour, on-call,
+/// split, relief, or department-specific shifts.
+class ShiftTypeDefinition {
+  const ShiftTypeDefinition({
+    required this.id,
+    required this.name,
+    required this.startMinutes,
+    required this.endMinutes,
+    this.endsNextDay = false,
+    this.active = true,
+  }) : assert(startMinutes >= 0 && startMinutes < 1440),
+       assert(endMinutes >= 0 && endMinutes < 1440);
+
+  final String id;
+  final String name;
+  final int startMinutes;
+  final int endMinutes;
+  final bool endsNextDay;
+  final bool active;
+
+  int get durationMinutes {
+    final raw = endMinutes - startMinutes;
+    return endsNextDay || raw < 0 ? raw + 1440 : raw;
+  }
 }
 
 class WorkDayPolicy {
@@ -60,7 +81,7 @@ class ShiftPayRule {
     required this.id,
     required this.employmentType,
     required this.dayCategory,
-    required this.shiftPeriod,
+    required this.shiftTypeId,
     this.department,
     this.location,
     this.salaryIncluded = false,
@@ -76,7 +97,7 @@ class ShiftPayRule {
   final String id;
   final EmploymentType employmentType;
   final WorkDayCategory dayCategory;
-  final ShiftPeriod shiftPeriod;
+  final String shiftTypeId;
   final String? department;
   final String? location;
 
@@ -144,7 +165,7 @@ class ShiftPayCalculator {
       if (!rule.active ||
           rule.employmentType != input.employmentType ||
           rule.dayCategory != dayCategory ||
-          rule.shiftPeriod != input.shiftPeriod) {
+          rule.shiftTypeId != input.shiftTypeId) {
         return false;
       }
       if (rule.department != null &&
