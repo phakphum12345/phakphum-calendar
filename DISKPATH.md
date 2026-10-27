@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `748`
+- Tracked files: `751`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -186,6 +186,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `docs/SCE_3_0_DELIVERY_ROADMAP.md` | 11829 | `685e4807928b8be63f638de871c65e1dbb2627a1cf21f0c9d4ada741ace1c73f` |
 | `docs/SCE_3_0_IMPLEMENTATION_MAP.md` | 3052 | `e969fdc2a6e9507781782db27df28e9c75cb5979479c14d26bdbcfdbc1b67432` |
 | `docs/SCE_3_0_SYSTEM_DESIGN.md` | 13671 | `2aa35351076bde8a31194239619050bfa6b22dc4014e0d52c734638e39263b06` |
+| `docs/SHIFT_PAY_RULES.md` | 1977 | `d0f46d25f1819e0cd8553f991bba034443f52f49e44af829a0c96871c6b7a8fd` |
 | `docs/SYNC_RELIABILITY.md` | 1388 | `bf1da1c7346ae8dac8a0cee0d56bac6d545b4dd9e3b3d6e6e1ecf48e1b454b1c` |
 | `docs/adr/ADR-0001-project-structure.md` | 561 | `c308f72d365dcc18de908148f5ff335dd00cc822a8e3f0f4f298917a9297ce9f` |
 | `docs/adr/ADR-0002-state-management.md` | 408 | `1923c9e6e55047a54a8de57637a869e46e8e38cc9ec55c0a4b26e4c5db2d83fd` |
@@ -293,6 +294,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/domain/services/google_sheets_service.dart` | 216 | `ec420b4f87f3400106470879119b0488c411a76c7eb10cb1bcee4834561c0413` |
 | `lib/domain/services/import_service.dart` | 333 | `f1d954dfecd57eb2eced7428a40104ac4049dd5da80ac39cceae12cc25226970` |
 | `lib/domain/services/notification_service.dart` | 439 | `75f51d1554a9cf6cb6d7bacd14220466a81e7bb997f29ce58b88344f3bc5bfe4` |
+| `lib/domain/services/shift_pay_calculator.dart` | 5631 | `6e39313607ccba10319f0371a78077787739bd444dc5cbe0923184dbad445e56` |
 | `lib/features/access_control/domain/access_control.dart` | 1196 | `c4e8ed6711c42ce042956cb1abffec4738dff06250fdd7de50bc1a81083b1c64` |
 | `lib/features/admin/application/admin_dashboard_service.dart` | 801 | `c5187bff99d3e3809fc055ddeceed3f35abb169e253176868141363d1c12f40e` |
 | `lib/features/admin/domain/admin_access_config.dart` | 2933 | `7fd23bef1d54301b313661f1ded92ca9a2f5583efef5c39c4b65b4a36614a0de` |
@@ -730,6 +732,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/shift_color_service_test.dart` | 2613 | `bcfa14b6cba028fb052199dedcdc2491fe3d8ea0901a75dc6d46ae81bdf9d14f` |
 | `test/shift_exchange_controller_test.dart` | 1421 | `878d06e2cba1d8c4b5eb8b6b6ff27e95d312e15f07f9e4dc3e9b9b1e9817dda0` |
 | `test/shift_parser_test.dart` | 8769 | `36db26d12c22376c9a2aa5b9d51055470159d4b0f725faa0a06a9187ae11398c` |
+| `test/shift_pay_calculator_test.dart` | 4130 | `b0b50bf3c1d5c589a95bcd41532835f7b21d26cae061d89571bdf7bfbf0f3583` |
 | `test/shift_template_test.dart` | 4008 | `3444d1b4c792b78aca89bef7510f8803fbb40b23297589d1e4d86cac34a7387c` |
 | `test/shift_time_service_test.dart` | 1160 | `0236957c9779ddd75789c0fae49a18a9cb060a8b41e81728cd1d59728a1f53d7` |
 | `test/support/canonical_schedule_fixture.dart` | 3076 | `8c3427f39d66b1aedfea0309ac7a75dfe131a792639884bc3711ff2a83017f52` |
