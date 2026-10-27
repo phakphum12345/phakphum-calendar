@@ -22,6 +22,24 @@ enum ShiftPayTreatment {
   compensatoryTime,
 }
 
+/// Why a person is assigned to a shift; policies may differ by purpose.
+enum ShiftAssignmentPurpose {
+  regularCoverage,
+  breakRelief,
+  premiumDuty,
+  replacement,
+  other,
+}
+
+/// Labels the configured extra-pay component without assuming a legal rate.
+enum ShiftPayComponent {
+  shiftAllowance,
+  premium,
+  differential,
+  breakRelief,
+  other,
+}
+
 /// Configurable shift definition. IDs are organization-defined; there is no
 /// required list of shift periods. Examples include morning, 12-hour, on-call,
 /// split, relief, or department-specific shifts.
@@ -91,6 +109,9 @@ class ShiftPayRule {
     required this.shiftTypeId,
     this.department,
     this.location,
+    this.workPoint,
+    this.assignmentPurpose = ShiftAssignmentPurpose.regularCoverage,
+    this.payComponent = ShiftPayComponent.shiftAllowance,
     this.salaryIncluded = false,
     this.treatment = ShiftPayTreatment.additionalPay,
     this.compensatesShiftTypeId,
@@ -110,6 +131,11 @@ class ShiftPayRule {
   final String shiftTypeId;
   final String? department;
   final String? location;
+
+  /// Optional site-specific work point, e.g. a ward, desk, or relief station.
+  final String? workPoint;
+  final ShiftAssignmentPurpose assignmentPurpose;
+  final ShiftPayComponent payComponent;
 
   /// True when the shift is covered by normal salary and earns no additional
   /// shift-pay under this rule.
@@ -140,6 +166,8 @@ class ShiftPayInput {
     required this.hours,
     this.department,
     this.location,
+    this.workPoint,
+    this.assignmentPurpose = ShiftAssignmentPurpose.regularCoverage,
   }) : assert(hours >= 0);
 
   final DateTime date;
@@ -148,6 +176,8 @@ class ShiftPayInput {
   final double hours;
   final String? department;
   final String? location;
+  final String? workPoint;
+  final ShiftAssignmentPurpose assignmentPurpose;
 }
 
 class ShiftPayCalculation {
@@ -192,6 +222,7 @@ class ShiftPayCalculator {
           rule.employmentType != input.employmentType ||
           rule.dayCategory != dayCategory ||
           rule.shiftTypeId != input.shiftTypeId ||
+          rule.assignmentPurpose != input.assignmentPurpose ||
           (rule.treatment == ShiftPayTreatment.compensatoryTime &&
               !rule.compensatoryWeekdays.contains(input.date.weekday))) {
         return false;
@@ -202,6 +233,10 @@ class ShiftPayCalculator {
       }
       if (rule.location != null &&
           _normalize(rule.location) != _normalize(input.location)) {
+        return false;
+      }
+      if (rule.workPoint != null &&
+          _normalize(rule.workPoint) != _normalize(input.workPoint)) {
         return false;
       }
       return true;
@@ -253,8 +288,9 @@ class ShiftPayCalculator {
   }
 
   int _specificity(ShiftPayRule rule) =>
-      (rule.department == null ? 0 : 2) +
-      (rule.location == null ? 0 : 1);
+      (rule.department == null ? 0 : 4) +
+      (rule.location == null ? 0 : 2) +
+      (rule.workPoint == null ? 0 : 1);
 
   String? _normalize(String? value) {
     final normalized = value?.trim().toLowerCase();
