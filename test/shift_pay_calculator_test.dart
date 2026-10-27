@@ -174,6 +174,72 @@ void main() {
       expect(result.amount, isNull);
     });
 
+
+    test('one-hour break relief can use a fixed site premium', () {
+      final result = calculator.calculate(
+        input: ShiftPayInput(
+          date: DateTime(2026, 10, 27),
+          employmentType: EmploymentType.salaried,
+          shiftTypeId: 'lunch-relief-1200-1300',
+          hours: 1,
+          department: 'Outpatient',
+          location: 'Site B',
+          workPoint: 'Counter 3',
+          assignmentPurpose: ShiftAssignmentPurpose.breakRelief,
+        ),
+        rules: const [
+          ShiftPayRule(
+            id: 'counter-3-lunch-premium',
+            employmentType: EmploymentType.salaried,
+            dayCategory: WorkDayCategory.regularWeekday,
+            shiftTypeId: 'lunch-relief-1200-1300',
+            department: 'Outpatient',
+            location: 'Site B',
+            workPoint: 'Counter 3',
+            assignmentPurpose: ShiftAssignmentPurpose.breakRelief,
+            payComponent: ShiftPayComponent.premium,
+            fixedAmount: 175,
+          ),
+        ],
+      );
+
+      expect(result.hasRule, isTrue);
+      expect(result.amount, 175);
+      expect(result.rule?.payComponent, ShiftPayComponent.premium);
+    });
+
+    test('break-relief premium at another point remains unconfigured', () {
+      final result = calculator.calculate(
+        input: ShiftPayInput(
+          date: DateTime(2026, 10, 27),
+          employmentType: EmploymentType.salaried,
+          shiftTypeId: 'lunch-relief-1200-1300',
+          hours: 1,
+          department: 'Outpatient',
+          location: 'Site B',
+          workPoint: 'Counter 4',
+          assignmentPurpose: ShiftAssignmentPurpose.breakRelief,
+        ),
+        rules: const [
+          ShiftPayRule(
+            id: 'counter-3-lunch-premium',
+            employmentType: EmploymentType.salaried,
+            dayCategory: WorkDayCategory.regularWeekday,
+            shiftTypeId: 'lunch-relief-1200-1300',
+            department: 'Outpatient',
+            location: 'Site B',
+            workPoint: 'Counter 3',
+            assignmentPurpose: ShiftAssignmentPurpose.breakRelief,
+            payComponent: ShiftPayComponent.premium,
+            fixedAmount: 175,
+          ),
+        ],
+      );
+
+      expect(result.hasRule, isFalse);
+      expect(result.amount, isNull);
+    });
+
     test('missing rule is reported as unconfigured, not unpaid', () {
       final result = calculator.calculate(
         input: ShiftPayInput(
