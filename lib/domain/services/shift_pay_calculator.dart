@@ -114,7 +114,7 @@ class ShiftPayInput {
   const ShiftPayInput({
     required this.date,
     required this.employmentType,
-    required this.shiftPeriod,
+    required this.shiftTypeId,
     required this.hours,
     this.department,
     this.location,
@@ -122,7 +122,7 @@ class ShiftPayInput {
 
   final DateTime date;
   final EmploymentType employmentType;
-  final ShiftPeriod shiftPeriod;
+  final String shiftTypeId;
   final double hours;
   final String? department;
   final String? location;
