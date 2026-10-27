@@ -186,7 +186,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `docs/SCE_3_0_DELIVERY_ROADMAP.md` | 11829 | `685e4807928b8be63f638de871c65e1dbb2627a1cf21f0c9d4ada741ace1c73f` |
 | `docs/SCE_3_0_IMPLEMENTATION_MAP.md` | 3052 | `e969fdc2a6e9507781782db27df28e9c75cb5979479c14d26bdbcfdbc1b67432` |
 | `docs/SCE_3_0_SYSTEM_DESIGN.md` | 13671 | `2aa35351076bde8a31194239619050bfa6b22dc4014e0d52c734638e39263b06` |
-| `docs/SHIFT_PAY_RULES.md` | 3166 | `c409f5a2ebc4d55d02822890d6f4de749744a7337dbd18a452b39668ee2b0347` |
+| `docs/SHIFT_PAY_RULES.md` | 3841 | `7cbf442fc4bbd7328232cb683c563ecbcb72ca01e8dee285442e7b1bd4518a44` |
 | `docs/SYNC_RELIABILITY.md` | 1388 | `bf1da1c7346ae8dac8a0cee0d56bac6d545b4dd9e3b3d6e6e1ecf48e1b454b1c` |
 | `docs/adr/ADR-0001-project-structure.md` | 561 | `c308f72d365dcc18de908148f5ff335dd00cc822a8e3f0f4f298917a9297ce9f` |
 | `docs/adr/ADR-0002-state-management.md` | 408 | `1923c9e6e55047a54a8de57637a869e46e8e38cc9ec55c0a4b26e4c5db2d83fd` |
@@ -732,7 +732,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/shift_color_service_test.dart` | 2613 | `bcfa14b6cba028fb052199dedcdc2491fe3d8ea0901a75dc6d46ae81bdf9d14f` |
 | `test/shift_exchange_controller_test.dart` | 1421 | `878d06e2cba1d8c4b5eb8b6b6ff27e95d312e15f07f9e4dc3e9b9b1e9817dda0` |
 | `test/shift_parser_test.dart` | 8769 | `36db26d12c22376c9a2aa5b9d51055470159d4b0f725faa0a06a9187ae11398c` |
-| `test/shift_pay_calculator_test.dart` | 5893 | `93aa5aebb148661c22a40ce3a73291d6b5dc0786edf242fc63b62313aa75780b` |
+| `test/shift_pay_calculator_test.dart` | 8172 | `675b703930f851e71b109100335e4fdccf5c2eba2bac03df775da31c7a49606c` |
 | `test/shift_template_test.dart` | 4008 | `3444d1b4c792b78aca89bef7510f8803fbb40b23297589d1e4d86cac34a7387c` |
 | `test/shift_time_service_test.dart` | 1160 | `0236957c9779ddd75789c0fae49a18a9cb060a8b41e81728cd1d59728a1f53d7` |
 | `test/support/canonical_schedule_fixture.dart` | 3076 | `8c3427f39d66b1aedfea0309ac7a75dfe131a792639884bc3711ff2a83017f52` |
