@@ -294,7 +294,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/domain/services/google_sheets_service.dart` | 216 | `ec420b4f87f3400106470879119b0488c411a76c7eb10cb1bcee4834561c0413` |
 | `lib/domain/services/import_service.dart` | 333 | `f1d954dfecd57eb2eced7428a40104ac4049dd5da80ac39cceae12cc25226970` |
 | `lib/domain/services/notification_service.dart` | 439 | `75f51d1554a9cf6cb6d7bacd14220466a81e7bb997f29ce58b88344f3bc5bfe4` |
-| `lib/domain/services/shift_pay_calculator.dart` | 6375 | `b1a9aa0eccee8bdbf39983ded73b0f0dfed7578661d2743076a5d78161ddee76` |
+| `lib/domain/services/shift_pay_calculator.dart` | 6370 | `aefe5d32b2d5563e4ba28c28a70731dc6530369f3e7f32a59290e9677fc5e1b4` |
 | `lib/features/access_control/domain/access_control.dart` | 1196 | `c4e8ed6711c42ce042956cb1abffec4738dff06250fdd7de50bc1a81083b1c64` |
 | `lib/features/admin/application/admin_dashboard_service.dart` | 801 | `c5187bff99d3e3809fc055ddeceed3f35abb169e253176868141363d1c12f40e` |
 | `lib/features/admin/domain/admin_access_config.dart` | 2933 | `7fd23bef1d54301b313661f1ded92ca9a2f5583efef5c39c4b65b4a36614a0de` |
@@ -732,7 +732,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/shift_color_service_test.dart` | 2613 | `bcfa14b6cba028fb052199dedcdc2491fe3d8ea0901a75dc6d46ae81bdf9d14f` |
 | `test/shift_exchange_controller_test.dart` | 1421 | `878d06e2cba1d8c4b5eb8b6b6ff27e95d312e15f07f9e4dc3e9b9b1e9817dda0` |
 | `test/shift_parser_test.dart` | 8769 | `36db26d12c22376c9a2aa5b9d51055470159d4b0f725faa0a06a9187ae11398c` |
-| `test/shift_pay_calculator_test.dart` | 4100 | `30398bb95cfbd9c9dc39f70de9fa3fef1ac75893392cf6b3ad0bd15f9a5a4d5f` |
+| `test/shift_pay_calculator_test.dart` | 4050 | `9851d654e180fd31ad976521d60c8432c6e7046f2d7b8aa60794ac2d8ddfea80` |
 | `test/shift_template_test.dart` | 4008 | `3444d1b4c792b78aca89bef7510f8803fbb40b23297589d1e4d86cac34a7387c` |
 | `test/shift_time_service_test.dart` | 1160 | `0236957c9779ddd75789c0fae49a18a9cb060a8b41e81728cd1d59728a1f53d7` |
 | `test/support/canonical_schedule_fixture.dart` | 3076 | `8c3427f39d66b1aedfea0309ac7a75dfe131a792639884bc3711ff2a83017f52` |
