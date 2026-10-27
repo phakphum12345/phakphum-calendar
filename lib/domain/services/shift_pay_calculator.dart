@@ -22,7 +22,7 @@ enum ShiftPeriod {
 }
 
 class WorkDayPolicy {
-  const WorkDayPolicy({this.weeklyDaysOff = const <int>{6, 7}});
+  const WorkDayPolicy({this.weeklyDaysOff = const <int>{}});
 
   /// DateTime weekday numbers: Monday = 1 ... Sunday = 7.
   final Set<int> weeklyDaysOff;
