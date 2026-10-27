@@ -122,7 +122,7 @@ class TimelineArchiveService {
       'total': total < 0 ? 0 : total,
       'complete': complete,
       'updatedAt': DateTime.now().toUtc().toIso8601String(),
-      if (lastError != null) 'lastError': lastError,
+      'lastError': ?lastError,
     });
     if (!await prefs.setString('$_checkpointPrefix$scope', payload)) {
       throw StateError('Could not persist Timeline sync checkpoint.');
