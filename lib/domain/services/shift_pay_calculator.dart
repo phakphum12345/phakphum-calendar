@@ -15,6 +15,13 @@ enum EmploymentType {
   dailyPaid,
 }
 
+/// Describes why a shift does or does not create additional cash pay.
+enum ShiftPayTreatment {
+  additionalPay,
+  includedInSalary,
+  compensatoryTime,
+}
+
 /// Configurable shift definition. IDs are organization-defined; there is no
 /// required list of shift periods. Examples include morning, 12-hour, on-call,
 /// split, relief, or department-specific shifts.
@@ -85,6 +92,9 @@ class ShiftPayRule {
     this.department,
     this.location,
     this.salaryIncluded = false,
+    this.treatment = ShiftPayTreatment.additionalPay,
+    this.compensatesShiftTypeId,
+    this.compensatoryWeekdays = const <int>{},
     this.fixedAmount,
     this.hourlyRate,
     this.multiplier = 1,
@@ -92,7 +102,8 @@ class ShiftPayRule {
   }) : assert(fixedAmount == null || fixedAmount >= 0),
        assert(hourlyRate == null || hourlyRate >= 0),
        assert(multiplier >= 0),
-       assert(salaryIncluded || fixedAmount != null || hourlyRate != null);
+       assert(salaryIncluded || treatment != ShiftPayTreatment.additionalPay || fixedAmount != null || hourlyRate != null),
+       assert(compensatoryWeekdays.every((day) => day >= 1 && day <= 7));
 
   final String id;
   final EmploymentType employmentType;
@@ -104,6 +115,18 @@ class ShiftPayRule {
   /// True when the shift is covered by normal salary and earns no additional
   /// shift-pay under this rule.
   final bool salaryIncluded;
+
+  /// Explicit treatment for salary-covered or time-compensated shifts.
+  /// `salaryIncluded` remains supported for backwards compatibility.
+  final ShiftPayTreatment treatment;
+
+  /// Optional shift type this shift compensates, e.g. a night shift replacing
+  /// a normal morning shift on configured weekdays.
+  final String? compensatesShiftTypeId;
+
+  /// DateTime weekday numbers: Monday = 1 ... Sunday = 7. Empty means no
+  /// weekday-specific substitution has been configured.
+  final Set<int> compensatoryWeekdays;
   final double? fixedAmount;
   final double? hourlyRate;
   final double multiplier;
@@ -134,6 +157,8 @@ class ShiftPayCalculation {
     required this.rule,
     required this.amount,
     required this.isCoveredBySalary,
+    this.isCompensatoryTime = false,
+    this.compensatesShiftTypeId,
   });
 
   final WorkDayCategory dayCategory;
@@ -143,6 +168,8 @@ class ShiftPayCalculation {
   final ShiftPayRule? rule;
   final double? amount;
   final bool isCoveredBySalary;
+  final bool isCompensatoryTime;
+  final String? compensatesShiftTypeId;
 
   bool get hasRule => rule != null;
 }
@@ -190,12 +217,26 @@ class ShiftPayCalculator {
     }
 
     final rule = candidates.first;
-    if (rule.salaryIncluded) {
+    if (rule.treatment == ShiftPayTreatment.compensatoryTime &&
+        rule.compensatoryWeekdays.contains(input.date.weekday)) {
+      return ShiftPayCalculation(
+        dayCategory: dayCategory,
+        rule: rule,
+        amount: 0,
+        isCoveredBySalary: false,
+        isCompensatoryTime: true,
+        compensatesShiftTypeId: rule.compensatesShiftTypeId,
+      );
+    }
+    if (rule.salaryIncluded ||
+        rule.treatment == ShiftPayTreatment.includedInSalary) {
       return ShiftPayCalculation(
         dayCategory: dayCategory,
         rule: rule,
         amount: 0,
         isCoveredBySalary: true,
+        isCompensatoryTime: false,
+        compensatesShiftTypeId: null,
       );
     }
 
@@ -206,6 +247,8 @@ class ShiftPayCalculator {
       rule: rule,
       amount: base == null ? null : base * rule.multiplier,
       isCoveredBySalary: false,
+      isCompensatoryTime: false,
+      compensatesShiftTypeId: null,
     );
   }
 
