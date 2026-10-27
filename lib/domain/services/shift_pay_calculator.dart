@@ -102,8 +102,7 @@ class ShiftPayRule {
   }) : assert(fixedAmount == null || fixedAmount >= 0),
        assert(hourlyRate == null || hourlyRate >= 0),
        assert(multiplier >= 0),
-       assert(salaryIncluded || treatment != ShiftPayTreatment.additionalPay || fixedAmount != null || hourlyRate != null),
-       assert(compensatoryWeekdays.every((day) => day >= 1 && day <= 7));
+       assert(salaryIncluded || treatment != ShiftPayTreatment.additionalPay || fixedAmount != null || hourlyRate != null);
 
   final String id;
   final EmploymentType employmentType;
@@ -192,7 +191,9 @@ class ShiftPayCalculator {
       if (!rule.active ||
           rule.employmentType != input.employmentType ||
           rule.dayCategory != dayCategory ||
-          rule.shiftTypeId != input.shiftTypeId) {
+          rule.shiftTypeId != input.shiftTypeId ||
+          (rule.treatment == ShiftPayTreatment.compensatoryTime &&
+              !rule.compensatoryWeekdays.contains(input.date.weekday))) {
         return false;
       }
       if (rule.department != null &&
@@ -217,8 +218,7 @@ class ShiftPayCalculator {
     }
 
     final rule = candidates.first;
-    if (rule.treatment == ShiftPayTreatment.compensatoryTime &&
-        rule.compensatoryWeekdays.contains(input.date.weekday)) {
+    if (rule.treatment == ShiftPayTreatment.compensatoryTime) {
       return ShiftPayCalculation(
         dayCategory: dayCategory,
         rule: rule,
