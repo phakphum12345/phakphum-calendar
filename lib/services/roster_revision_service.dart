@@ -261,7 +261,9 @@ class RosterRevisionService implements RosterRevisionGateway {
         exportUrl.isEmpty) {
       onRevisionSkipped?.call(
         revisionId?.isNotEmpty == true ? revisionId! : 'unknown',
-        const FormatException('Revision metadata or XLSX export link is missing.'),
+        const FormatException(
+          'Revision metadata or XLSX export link is missing.',
+        ),
       );
       return null;
     }
