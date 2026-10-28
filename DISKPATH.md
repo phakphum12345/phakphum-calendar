@@ -186,7 +186,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `docs/SCE_3_0_DELIVERY_ROADMAP.md` | 11829 | `685e4807928b8be63f638de871c65e1dbb2627a1cf21f0c9d4ada741ace1c73f` |
 | `docs/SCE_3_0_IMPLEMENTATION_MAP.md` | 3052 | `e969fdc2a6e9507781782db27df28e9c75cb5979479c14d26bdbcfdbc1b67432` |
 | `docs/SCE_3_0_SYSTEM_DESIGN.md` | 13671 | `2aa35351076bde8a31194239619050bfa6b22dc4014e0d52c734638e39263b06` |
-| `docs/SHIFT_PAY_RULES.md` | 3841 | `7cbf442fc4bbd7328232cb683c563ecbcb72ca01e8dee285442e7b1bd4518a44` |
+| `docs/SHIFT_PAY_RULES.md` | 5478 | `9b69f502e3d31d504735790f6378c6ea53d5a5936c9e8252d39ef9aecd75cd1e` |
 | `docs/SYNC_RELIABILITY.md` | 1388 | `bf1da1c7346ae8dac8a0cee0d56bac6d545b4dd9e3b3d6e6e1ecf48e1b454b1c` |
 | `docs/adr/ADR-0001-project-structure.md` | 561 | `c308f72d365dcc18de908148f5ff335dd00cc822a8e3f0f4f298917a9297ce9f` |
 | `docs/adr/ADR-0002-state-management.md` | 408 | `1923c9e6e55047a54a8de57637a869e46e8e38cc9ec55c0a4b26e4c5db2d83fd` |
@@ -537,7 +537,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/shift_parser/domain/shift_parser_input.dart` | 445 | `43407a491b9989f452cdc1ee10299bcc259ff87099886746f687e7928bc18896` |
 | `lib/features/shift_parser/domain/thai_roster_period_parser.dart` | 7464 | `1dc13a60c9058399e143ec5f4d508b0805742ecaf1c2edda09ede4d9b3d12332` |
 | `lib/features/shift_templates/README.md` | 1011 | `00d61cb297445bc4e4ece51386122056f8e4d521d60f10516cc2758c5d780200` |
-| `lib/features/shift_templates/application/shift_template_controller.dart` | 4051 | `308919108797ba74ae8ea5a85d93a7d798f2386af91a590bf5091b2e40546500` |
+| `lib/features/shift_templates/application/shift_template_controller.dart` | 4538 | `6ff49e1728427890af05981d61ade2bbec159c818293edba6701815de007bb43` |
 | `lib/features/shift_templates/infrastructure/shared_preferences_shift_template_repository.dart` | 4979 | `2e5808d58770ba6eb96fa0113a27a6e2f351e6bb0aa9738e31c4833bbf989cec` |
 | `lib/features/shift_templates/infrastructure/shift_template_json_codec.dart` | 5087 | `75e316a81d27c032aa7f1878c06eb20b3d7586498d6baa565d323ce14313ca85` |
 | `lib/features/shift_templates/presentation/shift_templates_page.dart` | 10632 | `4a85dcaf80f2e3313a16cf52f683f945f167387b72648e167dc56f14b9e308f4` |
@@ -735,7 +735,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/shift_exchange_controller_test.dart` | 1421 | `878d06e2cba1d8c4b5eb8b6b6ff27e95d312e15f07f9e4dc3e9b9b1e9817dda0` |
 | `test/shift_parser_test.dart` | 8769 | `36db26d12c22376c9a2aa5b9d51055470159d4b0f725faa0a06a9187ae11398c` |
 | `test/shift_pay_calculator_test.dart` | 8172 | `675b703930f851e71b109100335e4fdccf5c2eba2bac03df775da31c7a49606c` |
-| `test/shift_template_test.dart` | 4008 | `3444d1b4c792b78aca89bef7510f8803fbb40b23297589d1e4d86cac34a7387c` |
+| `test/shift_template_test.dart` | 4409 | `9453e8c114094f855d57274a1959d85d32fb0e2195c9823908187f82d4ddb48c` |
 | `test/shift_time_service_test.dart` | 1160 | `0236957c9779ddd75789c0fae49a18a9cb060a8b41e81728cd1d59728a1f53d7` |
 | `test/support/canonical_schedule_fixture.dart` | 3076 | `8c3427f39d66b1aedfea0309ac7a75dfe131a792639884bc3711ff2a83017f52` |
 | `test/support/in_memory_schedule_store.dart` | 645 | `baa26a13ae7712c0679259ac3f14ee72b996ef9a2e3175a03763212a04cf4ba1` |
