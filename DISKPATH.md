@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `752`
+- Tracked files: `754`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -264,7 +264,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `l10n.yaml` | 151 | `c3ce52cbd012e898f809811d21f21ead3bb3afd08b49a4efe4da74080248664d` |
 | `lib/app.dart` | 7679 | `599df85fd9c6a6abaa17e5646dd59969ef67bbe5a9d722030c1c5d4c83247ce1` |
 | `lib/bootstrap/app_bootstrap.dart` | 380 | `cada71fb830d954d0bd4df8e8892b7e0b62a5844a01d00daf1cd0007c9f23cb0` |
-| `lib/controller/app_controller.dart` | 99851 | `aa168ce0eb8e2849da57ef45bc2ca2c01ad7d94388cdce8f769bf36fd14419aa` |
+| `lib/controller/app_controller.dart` | 101353 | `3f02193c092181878372a3fac7ddcb1c8876bca93baeea960c95f7acf71f0f1c` |
 | `lib/core/di/app_dependencies.dart` | 21906 | `4075fdbcb457fd20199b251966063c71408d27ce8a8301bbfce9f160dff36b14` |
 | `lib/core/google/authorized_google_client_factory.dart` | 971 | `8a5504571f4d8e93d096d3f3bb3140564e58729510ac66c021a95361b2d362c8` |
 | `lib/core/google/google_scopes.dart` | 629 | `437eaa6b551e7fcfc6993603d2acb6c3a5be6818d0289ed2b20b0fc1af2d29b2` |
@@ -594,6 +594,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/shift_parser.dart` | 13192 | `ef0d9ce912d0fcd8d3eb05d6bd8f1c9411fd2653b98fd407a758d9211b522520` |
 | `lib/services/shift_time_service.dart` | 2193 | `612c7b2f23bb5c5405ff64455cb9a1172a0ac3e4a5a852b6b43eca9e16d31495` |
 | `lib/services/swap_request_service.dart` | 1857 | `84df2fac3ba6319c7fbbd7e16a757aeeac3041b2cedf6d3bbb926dc361b48f45` |
+| `lib/services/timeline_archive_service.dart` | 5298 | `132b18e75f1b62b41666a76afd73e11388dce3f95694ca0091fbfedcf2ccf11f` |
 | `lib/shared/presentation/app_status_page.dart` | 2355 | `632e9de1c6f386b0ef04fdc15e0870c0ac633859493fa2acea07e8c7926dabfd` |
 | `lib/ui/app_shell.dart` | 204794 | `8b404b1a3b191030b484dcc0834b23bede261a97ba924a48a9a4f8dd9e0037b9` |
 | `lib/ui/audit_log_page.dart` | 2201 | `eec96b9ad15d43454beadf1f446ac3a421d4e17d8f59fba2244a19e7d2a13d95` |
@@ -741,6 +742,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/swap_request_service_test.dart` | 721 | `13b430ea5a944f506d49c28997d72e0f84994ba47d0d5b23d6cf46b8c8dc2273` |
 | `test/tenant_guard_test.dart` | 1901 | `342ec8e11672a12ee348a3ea16596c77d5a4472899d6465b8ea704dfdc00a4c1` |
 | `test/thai_roster_every_single_date_test.dart` | 2593 | `5d712ef2716dc267d64146d1b6378665141cee79cf6259737a7202d56023e5ca` |
+| `test/timeline_archive_service_test.dart` | 2518 | `2416f6efe42c6a98f86ce13f2aba3696d8a6e25b750f119690b846901daeaf34` |
 | `test/v2/access_control_test.dart` | 598 | `e34ab8a283d9b35b1e8d7a43725cacea5660eebb0bc5ca7a70889e302d496997` |
 | `test/v2/calendar_diff_engine_test.dart` | 4909 | `50935bd3117a6a1ca4e6fdf44720bcf3e3a492c27b782f5b4a833da737b3df28` |
 | `test/v2/calendar_sync_actions_test.dart` | 2571 | `c255290463c71d2ad7b24c9cc271b2355c9ac3b432a0ca55dad162c7cd898b58` |
