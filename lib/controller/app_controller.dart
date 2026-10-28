@@ -892,7 +892,7 @@ class AppController extends ChangeNotifier implements ControllerState {
                 );
             // Persist every successfully downloaded revision before rendering it.
             // The archive is scoped to the signed-in account and source file.
-            final accountId = auth.account.email?.trim();
+            final accountId = auth.account?.email.trim();
             if (accountId != null && accountId.isNotEmpty) {
               try {
                 const archive = TimelineArchiveService();
