@@ -34,3 +34,30 @@ Do not treat this calculator as legal or statutory payroll guidance. Actual rate
 ## Configurable shift types
 
 Use `ShiftTypeDefinition` to describe the shift types the organization actually uses. Each definition has an organization-defined ID and name, start/end minutes, an overnight flag, and an active flag. The IDs referenced by pay rules are strings, not a closed morning/afternoon/night enum, so new shift types can be added without changing the calculator. For example, a one-hour shift from 12:00–13:00 can be configured as its own shift type. The current pull request adds the domain model; a settings screen and persistence for these definitions still need to be implemented.
+
+
+## Lunch break and break-relief defaults
+
+For a brand-new installation with no saved shift templates, the editable template
+catalog uses `shift:day` as a **ช่วงพักกลางวัน (lunch break)** from 12:00 to
+13:00 with zero working hours and no default rate. The historical ID is retained
+to make the default's identity stable. This is a template default, not a payroll
+rule and not proof that the break is unpaid under any employment policy.
+
+Users can edit the time and template for each location. If someone covers a work
+point while another worker takes a break, record that assignment separately using
+`ShiftAssignmentPurpose.breakRelief`, the actual hours, work point, location,
+and an explicitly configured `ShiftPayRule` if the organization provides a
+break-relief payment. A missing pay rule means “not configured,” not “unpaid.”
+
+The initial catalog is seeded only when the template repository is empty. Existing
+saved templates are deliberately not rewritten automatically, because they may
+contain user-customized times, rates, locations, or IDs. Existing installations
+must review/edit their saved `shift:day` template explicitly; importing or syncing
+a roster must not silently change historical assignments.
+
+Shift names such as morning, afternoon, night, and on-call describe scheduling
+patterns; they do not independently imply an allowance. Organization-defined
+workday, location, employment type, assignment purpose, and pay rules determine
+whether additional compensation is configured. Night duty may be configured as
+regular coverage or as compensatory time replacing a morning duty.
