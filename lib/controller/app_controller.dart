@@ -36,6 +36,7 @@ import '../services/google_auth_service.dart';
 import '../services/google_api_client.dart';
 import '../services/local_roster_file_service.dart';
 import '../services/roster_revision_service.dart';
+import '../services/timeline_archive_service.dart';
 import '../services/settings_service.dart';
 import '../services/sheets_service.dart';
 import '../services/shift_alert_service.dart';
@@ -889,6 +890,36 @@ class AppController extends ChangeNotifier implements ControllerState {
                     skippedRevisionCount++;
                   },
                 );
+            // Persist every successfully downloaded revision before rendering it.
+            // The archive is scoped to the signed-in account and source file.
+            final accountId = auth.account?.email?.trim();
+            if (accountId != null && accountId.isNotEmpty) {
+              try {
+                const archive = TimelineArchiveService();
+                for (final revision in historicalRevisions) {
+                  await archive.putRevision(
+                    accountId: accountId,
+                    fileId: spreadsheetId,
+                    document: revision,
+                  );
+                }
+              } on Object catch (archiveError) {
+                final archiveWarning =
+                    'อ่าน Timeline ได้ แต่บันทึกประวัติถาวรไม่สำเร็จ: '
+                    '$archiveError';
+                timelineWarning = timelineWarning == null
+                    ? archiveWarning
+                    : '$timelineWarning; $archiveWarning';
+                await _addAudit(
+                  'sheet.timeline.archive.failed',
+                  archiveWarning,
+                  false,
+                );
+              }
+            } else {
+              timelineWarning =
+                  'ยังไม่ได้บันทึก Timeline archive เพราะไม่พบอีเมลบัญชี Google';
+            }
             _loadedRevisionCount = historicalRevisions.length + 1;
             _revisionTimelines = timelineGenerator.generateFromDocuments([
               ...historicalRevisions,
