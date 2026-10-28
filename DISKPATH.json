@@ -1183,8 +1183,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 99204,
-      "sha256": "1ce9a0f2cb71edd236ae6bb3865b7fd18a7185922b3c2ff324a7eaaea1fb254b"
+      "size": 99851,
+      "sha256": "aa168ce0eb8e2849da57ef45bc2ca2c01ad7d94388cdce8f769bf36fd14419aa"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
@@ -2788,8 +2788,8 @@
     },
     {
       "path": "lib/services/roster_revision_service.dart",
-      "size": 9305,
-      "sha256": "39ea12f3e9e6bb396a6775c3cb3f33a3327475d9ed1b39d2e45c3674f2d2789a"
+      "size": 9725,
+      "sha256": "6dd4edc58563953b43ce5aeaeb8459194cc856dbc079c3a1f09b71a358eee31f"
     },
     {
       "path": "lib/services/roster_timeline_generator.dart",
@@ -3343,8 +3343,8 @@
     },
     {
       "path": "test/roster_revision_service_test.dart",
-      "size": 1378,
-      "sha256": "0583cc7915760d8d84efdb50c3ba69925e7a52e97e66c590baa366e4bb482423"
+      "size": 3656,
+      "sha256": "626890606153330b3bca7e548d334c2cbdda278772b1b8ee7dfeb4077d240bbd"
     },
     {
       "path": "test/roster_sync_period_filter_test.dart",
