@@ -76,7 +76,7 @@ void main() {
       );
       expect(
         controller.templates.map((value) => value.shortName),
-        ['ช', 'ก', 'บ', 'ด'],
+        ['ช', 'พัก', 'บ', 'ด'],
       );
       expect(controller.templates.map((value) => value.id), seededIds);
       expect(repository.values, hasLength(4));
