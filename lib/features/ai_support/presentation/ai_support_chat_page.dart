@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../ai_roster_analyzer/application/ai_roster_analyzer.dart';
+import '../../ai_roster_analyzer/domain/roster_analysis_models.dart';
+
 /// A safe, provider-neutral support chat shell.
 ///
 /// Replies are local guidance only. This page does not call an AI service,
@@ -43,7 +46,7 @@ class _AiSupportChatPageState extends State<AiSupportChatPage> {
     setState(() {
       _messages.add(_ChatMessage(text: text, fromUser: true));
       _messages.add(_ChatMessage(
-        text: _localGuidance(text),
+        text: _analyzePastedTable(text) ?? _localGuidance(text),
         fromUser: false,
       ));
       _input.clear();
@@ -57,6 +60,92 @@ class _AiSupportChatPageState extends State<AiSupportChatPage> {
         );
       }
     });
+  }
+
+  /// Analyze a pasted tabular roster locally; this never writes or syncs data.
+  String? _analyzePastedTable(String text) {
+    if (!text.contains('\\n')) return null;
+    final lines = text
+        .split(RegExp(r'\\r?\\n'))
+        .map((line) => line.trimRight())
+        .where((line) => line.trim().isNotEmpty)
+        .toList();
+    if (lines.length < 2) return null;
+
+    final delimiter = lines.first.contains('\\t') ? '\\t' : ',';
+    final columns = _splitDelimitedLine(lines.first, delimiter)
+        .map((value) => value.trim())
+        .toList();
+    if (columns.length < 2) return null;
+
+    final rows = <Map<String, String>>[];
+    for (final line in lines.skip(1)) {
+      final values = _splitDelimitedLine(line, delimiter);
+      if (values.every((value) => value.trim().isEmpty)) continue;
+      rows.add({
+        for (var index = 0; index < columns.length; index++)
+          columns[index]: index < values.length ? values[index].trim() : '',
+      });
+    }
+    if (rows.isEmpty) return null;
+
+    final analysis = const AiRosterAnalyzer().analyzeFrames([
+      RosterInputFrame(
+        source: const RosterAnalysisSource(
+          type: RosterAnalysisSourceType.pastedTable,
+          name: 'ตารางที่วางใน AI Support',
+        ),
+        columns: columns,
+        rows: rows,
+      ),
+    ]);
+    final unknown = analysis.records
+        .where((record) => record.kind == RosterDutyKind.unknown)
+        .length;
+    final lowConfidence = analysis.records
+        .where((record) => record.confidence < 0.85)
+        .length;
+    final dateWarnings = analysis.records
+        .where((record) => record.notes.any((note) => note.contains('วันที่')))
+        .length;
+    final warnings = <String>[
+      ...analysis.warnings,
+      if (unknown > 0) 'มีรายการที่ยังจำแนกประเภทเวรไม่ได้ $unknown รายการ',
+      if (lowConfidence > 0) 'มีรายการความเชื่อมั่นต่ำกว่า 85% จำนวน $lowConfidence รายการ',
+      if (dateWarnings > 0) 'มีรายการที่อ่านวันที่ไม่สำเร็จ $dateWarnings รายการ',
+    ];
+
+    return 'ผลตรวจตารางที่วาง (วิเคราะห์ในเครื่อง)\\n'
+        '• แถวข้อมูลที่ตรวจพบ: ${rows.length}\\n'
+        '• รายการที่วิเคราะห์ได้: ${analysis.records.length}\\n'
+        '• รายการที่ต้องตรวจเพิ่ม: ${warnings.length}\\n'
+        '${warnings.isEmpty ? 'ไม่พบคำเตือนจากการตรวจเบื้องต้น' : warnings.map((warning) => '• $warning').join('\\n')}'
+        '\\n\\nผลนี้เป็นเพียงการคัดกรองเบื้องต้น โปรดเทียบกับต้นฉบับก่อนบันทึก '
+        'และไม่มีการแก้ไขหรือซิงก์ข้อมูล';
+  }
+
+  List<String> _splitDelimitedLine(String line, String delimiter) {
+    final values = <String>[];
+    final buffer = StringBuffer();
+    var quoted = false;
+    for (var index = 0; index < line.length; index++) {
+      final char = line[index];
+      if (char == '"') {
+        if (quoted && index + 1 < line.length && line[index + 1] == '"') {
+          buffer.write('"');
+          index++;
+        } else {
+          quoted = !quoted;
+        }
+      } else if (!quoted && char == delimiter) {
+        values.add(buffer.toString());
+        buffer.clear();
+      } else {
+        buffer.write(char);
+      }
+    }
+    values.add(buffer.toString());
+    return values;
   }
 
   String _localGuidance(String question) {
