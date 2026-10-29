@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 762,
+  "file_count": 765,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -702,6 +702,11 @@
       "sha256": "e175d44fe3d3148fe2b007196834843fd7028bbecca7e927770505670c6d01f0"
     },
     {
+      "path": "docs/AI_SUPPORT_CHAT.md",
+      "size": 999,
+      "sha256": "aa76105c9c70bb9bd49f3f281bb0778e15dfa6ed8a8398bccff48bc2c367f37b"
+    },
+    {
       "path": "docs/API_FOUNDATION.md",
       "size": 851,
       "sha256": "e2fad2e3f128f0c6c3a20479148b0b603c15634ad22a6b877c5e6bb1fc3a6d8d"
@@ -1385,6 +1390,11 @@
       "path": "lib/features/ai_roster_analyzer/domain/roster_analysis_models.dart",
       "size": 4569,
       "sha256": "ae172707a44ecef1c9b98d3d4eb925142ad0cf1f0a2ad8f5691bd55871ba9163"
+    },
+    {
+      "path": "lib/features/ai_support/presentation/ai_support_chat_page.dart",
+      "size": 10241,
+      "sha256": "9e2d82f0ff456c2ef3039fd8a331eb83a7315596715180eb97d3e50b81cae0a0"
     },
     {
       "path": "lib/features/api/application/idempotency_service.dart",
@@ -2873,8 +2883,8 @@
     },
     {
       "path": "lib/ui/app_shell.dart",
-      "size": 204794,
-      "sha256": "8b404b1a3b191030b484dcc0834b23bede261a97ba924a48a9a4f8dd9e0037b9"
+      "size": 205139,
+      "sha256": "9017f7d5345633fba292e19729a472a8f8ce9b61fb2434f31a3dacc59f2774ed"
     },
     {
       "path": "lib/ui/audit_log_page.dart",
@@ -3120,6 +3130,11 @@
       "path": "test/admin_dashboard_service_test.dart",
       "size": 962,
       "sha256": "63bd741c39abc644abaadbffd3f095ef49f8afcb854e1a44585acae6a6f4994b"
+    },
+    {
+      "path": "test/ai_support_chat_page_test.dart",
+      "size": 1901,
+      "sha256": "6bcd1e22fc74f15d0d72460cdd83c55921288ef563ad656fd52a50fcb2e051b7"
     },
     {
       "path": "test/app_dependencies_test.dart",
