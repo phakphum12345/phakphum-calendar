@@ -793,8 +793,8 @@
     },
     {
       "path": "docs/SHIFT_PAY_RULES.md",
-      "size": 3841,
-      "sha256": "7cbf442fc4bbd7328232cb683c563ecbcb72ca01e8dee285442e7b1bd4518a44"
+      "size": 5478,
+      "sha256": "9b69f502e3d31d504735790f6378c6ea53d5a5936c9e8252d39ef9aecd75cd1e"
     },
     {
       "path": "docs/SYNC_RELIABILITY.md",
@@ -2548,8 +2548,8 @@
     },
     {
       "path": "lib/features/shift_templates/application/shift_template_controller.dart",
-      "size": 4051,
-      "sha256": "308919108797ba74ae8ea5a85d93a7d798f2386af91a590bf5091b2e40546500"
+      "size": 4538,
+      "sha256": "6ff49e1728427890af05981d61ade2bbec159c818293edba6701815de007bb43"
     },
     {
       "path": "lib/features/shift_templates/infrastructure/shared_preferences_shift_template_repository.dart",
@@ -3538,8 +3538,8 @@
     },
     {
       "path": "test/shift_template_test.dart",
-      "size": 4008,
-      "sha256": "3444d1b4c792b78aca89bef7510f8803fbb40b23297589d1e4d86cac34a7387c"
+      "size": 4409,
+      "sha256": "9453e8c114094f855d57274a1959d85d32fb0e2195c9823908187f82d4ddb48c"
     },
     {
       "path": "test/shift_time_service_test.dart",

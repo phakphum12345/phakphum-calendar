@@ -111,13 +111,17 @@ const defaultShiftTemplates = [
     sortOrder: 0,
   ),
   ShiftTemplate(
+    // Keep the historical ID so existing references remain recognizable.
+    // This default is seeded only when no templates exist; saved user settings
+    // are never overwritten by the default catalog.
     id: 'shift:day',
-    code: 'ก',
-    name: 'เวรกลางวัน',
-    shortName: 'ก',
-    startTime: Duration(hours: 8),
-    endTime: Duration(hours: 16),
-    workingHours: 8,
+    code: 'พัก',
+    name: 'ช่วงพักกลางวัน',
+    shortName: 'พัก',
+    description: 'ค่าเริ่มต้นเป็นช่วงพัก ไม่ใช่เวรทำงาน; ปรับเวลาและเปลี่ยนเป็นงานแทนได้ตามสถานที่',
+    startTime: Duration(hours: 12),
+    endTime: Duration(hours: 13),
+    workingHours: 0,
     color: 0xFF00897B,
     sortOrder: 1,
   ),
