@@ -703,8 +703,8 @@
     },
     {
       "path": "docs/AI_SUPPORT_CHAT.md",
-      "size": 999,
-      "sha256": "aa76105c9c70bb9bd49f3f281bb0778e15dfa6ed8a8398bccff48bc2c367f37b"
+      "size": 1192,
+      "sha256": "93c123a267a3331e4a004dbd34ea9dfa93802da689b0f99bb786808bc15013bd"
     },
     {
       "path": "docs/API_FOUNDATION.md",
@@ -1393,8 +1393,8 @@
     },
     {
       "path": "lib/features/ai_support/presentation/ai_support_chat_page.dart",
-      "size": 10241,
-      "sha256": "9e2d82f0ff456c2ef3039fd8a331eb83a7315596715180eb97d3e50b81cae0a0"
+      "size": 14283,
+      "sha256": "2a2c08ea4615226acdec8c739b70fa2d4c3b1d8cd8b1d5d4b3ab6a1ad0892890"
     },
     {
       "path": "lib/features/api/application/idempotency_service.dart",
@@ -3133,8 +3133,8 @@
     },
     {
       "path": "test/ai_support_chat_page_test.dart",
-      "size": 1901,
-      "sha256": "6bcd1e22fc74f15d0d72460cdd83c55921288ef563ad656fd52a50fcb2e051b7"
+      "size": 2592,
+      "sha256": "57eb2df2bcd3b63e0714026946ed07c6ce4a8fa16e64f9cbdaa20fb5c51a4372"
     },
     {
       "path": "test/app_dependencies_test.dart",

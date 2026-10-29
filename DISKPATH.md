@@ -168,7 +168,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `backend/tests/Unit/ExampleTest.php` | 243 | `ffacae5c1a2a44c809420af5b3b404910da1b12167d58764dac6d10b8ba8cfaf` |
 | `backend/vite.config.js` | 632 | `f413e14379e2db8b200c63a6326b925f6d47cc0df458c77bfe188cfc23e8081f` |
 | `docs/AI_ROSTER_ANALYZER_LOGIC_TH.md` | 8389 | `e175d44fe3d3148fe2b007196834843fd7028bbecca7e927770505670c6d01f0` |
-| `docs/AI_SUPPORT_CHAT.md` | 999 | `aa76105c9c70bb9bd49f3f281bb0778e15dfa6ed8a8398bccff48bc2c367f37b` |
+| `docs/AI_SUPPORT_CHAT.md` | 1192 | `93c123a267a3331e4a004dbd34ea9dfa93802da689b0f99bb786808bc15013bd` |
 | `docs/API_FOUNDATION.md` | 851 | `e2fad2e3f128f0c6c3a20479148b0b603c15634ad22a6b877c5e6bb1fc3a6d8d` |
 | `docs/CALENDAR_PREVIEW_AND_SYNC.md` | 1252 | `4515247cfce12b61cbb77765f992aa063516b0bbd27827cf303aba8499a13503` |
 | `docs/CI_AUTO_DETECTION.md` | 1336 | `8b7812e0e85690c2ee1caf352890a8eeb9b2fdea541769aa1c15e404e9810495` |
@@ -306,7 +306,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/ai_roster_analyzer/ai_roster_analyzer.dart` | 91 | `34fa5cd68d732dbb4e4e99ff0d47db77d669cec21589ff6482bd646bddef8c42` |
 | `lib/features/ai_roster_analyzer/application/ai_roster_analyzer.dart` | 13421 | `a4c283425cb6c0c23c2c6318433a009aaf7256da94d009fb65c9797f51becc41` |
 | `lib/features/ai_roster_analyzer/domain/roster_analysis_models.dart` | 4569 | `ae172707a44ecef1c9b98d3d4eb925142ad0cf1f0a2ad8f5691bd55871ba9163` |
-| `lib/features/ai_support/presentation/ai_support_chat_page.dart` | 10241 | `9e2d82f0ff456c2ef3039fd8a331eb83a7315596715180eb97d3e50b81cae0a0` |
+| `lib/features/ai_support/presentation/ai_support_chat_page.dart` | 14283 | `2a2c08ea4615226acdec8c739b70fa2d4c3b1d8cd8b1d5d4b3ab6a1ad0892890` |
 | `lib/features/api/application/idempotency_service.dart` | 894 | `e1cf8afbc8e0e0a005362d97e7caacf95e1482a5c390be6a163b89bf07202cae` |
 | `lib/features/api/domain/api_contract.dart` | 1130 | `a529875ae93c7fc0fba2d5b7ceaad5fd710c890edf5fd8fa3318eefd41c4cfe4` |
 | `lib/features/audit/domain/audit_event.dart` | 900 | `d2c60196081c21d2e4c6868d4cbcd5df3f4c9314eb0e55ebf1d64056729e082f` |
@@ -654,7 +654,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `scripts/detect-ci-targets.sh` | 1625 | `e1ca37b123ef9ca5df126977bc7d04142105cf409da0e982c51716f733fcaf55` |
 | `test/admin_access_config_test.dart` | 1524 | `49f26ea088215c2f7c82d3ebd38099e6d8d5653ca1a4773b2ca9902e5435c0d2` |
 | `test/admin_dashboard_service_test.dart` | 962 | `63bd741c39abc644abaadbffd3f095ef49f8afcb854e1a44585acae6a6f4994b` |
-| `test/ai_support_chat_page_test.dart` | 1901 | `6bcd1e22fc74f15d0d72460cdd83c55921288ef563ad656fd52a50fcb2e051b7` |
+| `test/ai_support_chat_page_test.dart` | 2592 | `57eb2df2bcd3b63e0714026946ed07c6ce4a8fa16e64f9cbdaa20fb5c51a4372` |
 | `test/app_dependencies_test.dart` | 11894 | `f34637e5075ebd631e9f8a314c540f14c42b11629fd8d7f494cc064cf9ec5a82` |
 | `test/app_edition_test.dart` | 722 | `62761aa843e001483ca7466764e0f6ba4efb1ae9ea1eaac7f9a28b72e0140878` |
 | `test/audit_entry_test.dart` | 1779 | `a5b7971be45a0046c27fbd075b1b8404f367294e5328dd546829776e3301de23` |
