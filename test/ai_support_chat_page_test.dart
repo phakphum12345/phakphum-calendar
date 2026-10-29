@@ -17,7 +17,7 @@ void main() {
 
     await tester.enterText(
       find.byKey(const Key('ai-support-input')),
-      'วันที่,ชื่อ,เวร\\n2026-10-29,สมชาย,เวรเช้า',
+      'วันที่,ชื่อ,เวร\n2026-10-29,สมชาย,เวรเช้า',
     );
     await tester.tap(find.byKey(const Key('ai-support-send')));
     await tester.pumpAndSettle();
