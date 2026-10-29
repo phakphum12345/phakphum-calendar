@@ -445,7 +445,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/reports/infrastructure/printing_report_output_gateway.dart` | 1596 | `40103b5268f7841b63a78558075d2f698950997c32acf071d4af0d9b34add05c` |
 | `lib/features/reports/presentation/controllers/monthly_schedule_report_controller.dart` | 6148 | `c80203a61bff83778cf1a1cae2664027e0d2ff4cecb3b5c8c014288eee464bd3` |
 | `lib/features/reports/presentation/pages/monthly_schedule_report_page.dart` | 7747 | `2f16005951526f529ae01e81f181698433e88826a7425c80ff16d21fb9c719f1` |
-| `lib/features/roster_ai/application/hybrid_roster_ai_analyzer.dart` | 3586 | `02e2466764b8045282d8d32ce6e88b726ba0d46f196912a55225ab43876b951c` |
+| `lib/features/roster_ai/application/hybrid_roster_ai_analyzer.dart` | 3550 | `55048f08745c465dd76a5cd4ac003c23ba6479649f3276fe1378f0b93fed6768` |
 | `lib/features/roster_ai/domain/roster_ai_models.dart` | 2138 | `31c2f0ea19df210e497dec4be1ae8d286e82bbfb53055f201bd18ab0c527405d` |
 | `lib/features/roster_ai/domain/roster_ai_provider.dart` | 671 | `b636091ce80a3f599bb8d3236b239e8825e1a10a4663e3c834d9b0ec2bf56f58` |
 | `lib/features/roster_names/domain/roster_name_entry.dart` | 2284 | `d1811cf1d0c7479b4c7547af802c90f707c76902d9ffd7cf0f7befd219454f1c` |
