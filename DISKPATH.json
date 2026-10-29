@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 757,
+  "file_count": 762,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -740,6 +740,11 @@
       "path": "docs/GOOGLE_SETUP.md",
       "size": 2196,
       "sha256": "79da078521c34792514a536dba282e9845e7f35d26502ad356a78846b7dc3284"
+    },
+    {
+      "path": "docs/HYBRID_ROSTER_AI.md",
+      "size": 2659,
+      "sha256": "c60732e0d3b6ead770366fa08c05b61674df5aef54dd492bf737014d20940db7"
     },
     {
       "path": "docs/INSTALLATION_AND_USER_GUIDE.md",
@@ -2087,6 +2092,21 @@
       "sha256": "2f16005951526f529ae01e81f181698433e88826a7425c80ff16d21fb9c719f1"
     },
     {
+      "path": "lib/features/roster_ai/application/hybrid_roster_ai_analyzer.dart",
+      "size": 3505,
+      "sha256": "4a10250b621192f7e4a5233526d4bf4c92969bce6d6eb8e0682a9e8fd9f75add"
+    },
+    {
+      "path": "lib/features/roster_ai/domain/roster_ai_models.dart",
+      "size": 2138,
+      "sha256": "31c2f0ea19df210e497dec4be1ae8d286e82bbfb53055f201bd18ab0c527405d"
+    },
+    {
+      "path": "lib/features/roster_ai/domain/roster_ai_provider.dart",
+      "size": 671,
+      "sha256": "b636091ce80a3f599bb8d3236b239e8825e1a10a4663e3c834d9b0ec2bf56f58"
+    },
+    {
       "path": "lib/features/roster_names/domain/roster_name_entry.dart",
       "size": 2284,
       "sha256": "d1811cf1d0c7479b4c7547af802c90f707c76902d9ffd7cf0f7befd219454f1c"
@@ -3245,6 +3265,11 @@
       "path": "test/google_sheets_import_data_source_test.dart",
       "size": 9255,
       "sha256": "92034f1852cc24b119145efe005af8b0eaf0718b6dd771937e303580579e26e6"
+    },
+    {
+      "path": "test/hybrid_roster_ai_analyzer_test.dart",
+      "size": 3945,
+      "sha256": "eecebfa1228c97439fee3f15dc27bf92ade9c5916af79b24b166156e38895fcd"
     },
     {
       "path": "test/idempotency_service_test.dart",

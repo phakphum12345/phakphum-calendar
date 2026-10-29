@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `757`
+- Tracked files: `762`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -176,6 +176,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `docs/DURABLE_HISTORY_AND_RESUME.md` | 693 | `0608bc829ecc5a7c2b8001d75aefc8644817b7377884e7607716c72537418cfc` |
 | `docs/END_TO_END_WORKFLOW.md` | 925 | `2514d7222962cf9fa564f9acfa4181dea02d290ecf57e49ebac153232569a95a` |
 | `docs/GOOGLE_SETUP.md` | 2196 | `79da078521c34792514a536dba282e9845e7f35d26502ad356a78846b7dc3284` |
+| `docs/HYBRID_ROSTER_AI.md` | 2659 | `c60732e0d3b6ead770366fa08c05b61674df5aef54dd492bf737014d20940db7` |
 | `docs/INSTALLATION_AND_USER_GUIDE.md` | 20183 | `3d05d1e411495be2d97f9e8838598c3baf88290ada30d51f154d5a74ba6327b9` |
 | `docs/INTEGRATION_STATUS.md` | 1213 | `3f1f58a1b84f313c7685d82761f6d8dcb2768f3b8a24428894425b54343cbcab` |
 | `docs/NEW_APP_STRUCTURE_TH.md` | 9311 | `d5ac9ae4f7ecd84082008da5506af13729ef81450d3c31e1a8bc214e4550f6ff` |
@@ -445,6 +446,9 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/reports/infrastructure/printing_report_output_gateway.dart` | 1596 | `40103b5268f7841b63a78558075d2f698950997c32acf071d4af0d9b34add05c` |
 | `lib/features/reports/presentation/controllers/monthly_schedule_report_controller.dart` | 6148 | `c80203a61bff83778cf1a1cae2664027e0d2ff4cecb3b5c8c014288eee464bd3` |
 | `lib/features/reports/presentation/pages/monthly_schedule_report_page.dart` | 7747 | `2f16005951526f529ae01e81f181698433e88826a7425c80ff16d21fb9c719f1` |
+| `lib/features/roster_ai/application/hybrid_roster_ai_analyzer.dart` | 3505 | `4a10250b621192f7e4a5233526d4bf4c92969bce6d6eb8e0682a9e8fd9f75add` |
+| `lib/features/roster_ai/domain/roster_ai_models.dart` | 2138 | `31c2f0ea19df210e497dec4be1ae8d286e82bbfb53055f201bd18ab0c527405d` |
+| `lib/features/roster_ai/domain/roster_ai_provider.dart` | 671 | `b636091ce80a3f599bb8d3236b239e8825e1a10a4663e3c834d9b0ec2bf56f58` |
 | `lib/features/roster_names/domain/roster_name_entry.dart` | 2284 | `d1811cf1d0c7479b4c7547af802c90f707c76902d9ffd7cf0f7befd219454f1c` |
 | `lib/features/roster_names/presentation/roster_name_list_page.dart` | 21545 | `18c38d775fd9fa33c4a564a084ea6b252d4a6115cc9463f297eeae6239ec3a87` |
 | `lib/features/rule_engine/application/rule_engine.dart` | 1165 | `f4e45e79e2639ae97272c886d7e020657ba7165ced6d5f74159669534fcd8749` |
@@ -677,6 +681,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/google_calendar_workflow_integration_test.dart` | 16248 | `45eec9caa94922fcb15f8434d123fda377b1239e889a54519983c8fdb29d88d1` |
 | `test/google_employee_sync_service_test.dart` | 3691 | `266b6dd3b9a7e72df07735dd1bd9f47da626798b51292f5eb63e25c1e514d98f` |
 | `test/google_sheets_import_data_source_test.dart` | 9255 | `92034f1852cc24b119145efe005af8b0eaf0718b6dd771937e303580579e26e6` |
+| `test/hybrid_roster_ai_analyzer_test.dart` | 3945 | `eecebfa1228c97439fee3f15dc27bf92ade9c5916af79b24b166156e38895fcd` |
 | `test/idempotency_service_test.dart` | 1237 | `9b780fd4776b7f6598397ed7f6f0e175768b3d88d6ceaeb4e42e2909cfabd8eb` |
 | `test/import_engine_test.dart` | 5290 | `5c02ed0112782b97ed6d70fc10c70b8258259df9e002982ee70e57c0b2991d35` |
 | `test/import_excel_page_test.dart` | 5815 | `33d48119ce0ef179cdb38ba6721f58fb30967eb530f2bac8a286ca4a75d9fb06` |
