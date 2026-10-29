@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 770,
+  "file_count": 771,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -110,6 +110,11 @@
       "path": ".github/workflows/linux.yml",
       "size": 2470,
       "sha256": "850db3a8e9c539389df9eb6e7d801bf40de6b82accd595e90870c200b3e5db9b"
+    },
+    {
+      "path": ".github/workflows/roster-knowledge-schema.yml",
+      "size": 2161,
+      "sha256": "06d43b9147d1f0b9eac633759aebc5cff0142931a84e4c0c9ee89bf3518a4065"
     },
     {
       "path": ".github/workflows/web.yml",
