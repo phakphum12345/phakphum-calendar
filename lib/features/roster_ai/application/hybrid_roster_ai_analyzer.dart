@@ -7,11 +7,10 @@ import '../domain/roster_ai_provider.dart';
 /// records, save data, or sync to Google Calendar.
 class HybridRosterAIAnalyzer {
   const HybridRosterAIAnalyzer({
-    required RosterRuleResolver rules,
+    required this._rules,
     RosterAIProvider? aiProvider,
     this.minimumConfidence = 0.85,
-  }) : _rules = rules,
-       _aiProvider = aiProvider;
+  }) : _aiProvider = aiProvider;
 
   final RosterRuleResolver _rules;
   final RosterAIProvider? _aiProvider;
