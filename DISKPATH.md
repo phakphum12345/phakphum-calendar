@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `754`
+- Tracked files: `755`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -169,6 +169,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `backend/vite.config.js` | 632 | `f413e14379e2db8b200c63a6326b925f6d47cc0df458c77bfe188cfc23e8081f` |
 | `docs/AI_ROSTER_ANALYZER_LOGIC_TH.md` | 8389 | `e175d44fe3d3148fe2b007196834843fd7028bbecca7e927770505670c6d01f0` |
 | `docs/API_FOUNDATION.md` | 851 | `e2fad2e3f128f0c6c3a20479148b0b603c15634ad22a6b877c5e6bb1fc3a6d8d` |
+| `docs/APP_WIDE_UX_REDESIGN.md` | 4654 | `100689ca7e02212a619e39ae4fff1a5006ebf5cd1dbbd5ee7adf639051a77b89` |
 | `docs/CALENDAR_PREVIEW_AND_SYNC.md` | 1252 | `4515247cfce12b61cbb77765f992aa063516b0bbd27827cf303aba8499a13503` |
 | `docs/CI_AUTO_DETECTION.md` | 1336 | `8b7812e0e85690c2ee1caf352890a8eeb9b2fdea541769aa1c15e404e9810495` |
 | `docs/COMPARISON_FOUNDATION.md` | 1087 | `c51936347c65c7f6e8019d18d653d530c01dacd763d702779ad76117847f208f` |
