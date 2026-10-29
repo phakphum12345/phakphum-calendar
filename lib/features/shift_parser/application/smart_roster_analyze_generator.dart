@@ -83,5 +83,5 @@ class SmartRosterAnalyzeGenerator {
       '${_normalize(shift.assignedName)}';
 
   String _normalize(String value) =>
-      value.trim().toLowerCase().replaceAll(RegExp(r'\\s+'), '');
+      value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '');
 }
