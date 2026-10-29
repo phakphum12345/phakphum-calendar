@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `754`
+- Tracked files: `757`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -187,6 +187,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `docs/SCE_3_0_IMPLEMENTATION_MAP.md` | 3052 | `e969fdc2a6e9507781782db27df28e9c75cb5979479c14d26bdbcfdbc1b67432` |
 | `docs/SCE_3_0_SYSTEM_DESIGN.md` | 13671 | `2aa35351076bde8a31194239619050bfa6b22dc4014e0d52c734638e39263b06` |
 | `docs/SHIFT_PAY_RULES.md` | 5478 | `9b69f502e3d31d504735790f6378c6ea53d5a5936c9e8252d39ef9aecd75cd1e` |
+| `docs/SMART_ROSTER_ANALYZE_GENERATOR.md` | 1719 | `5a1df4cd269e81e07988dbffdb711f0ad7814f7af2c13eb717220ac3b58b06b6` |
 | `docs/SYNC_RELIABILITY.md` | 1388 | `bf1da1c7346ae8dac8a0cee0d56bac6d545b4dd9e3b3d6e6e1ecf48e1b454b1c` |
 | `docs/adr/ADR-0001-project-structure.md` | 561 | `c308f72d365dcc18de908148f5ff335dd00cc822a8e3f0f4f298917a9297ce9f` |
 | `docs/adr/ADR-0002-state-management.md` | 408 | `1923c9e6e55047a54a8de57637a869e46e8e38cc9ec55c0a4b26e4c5db2d83fd` |
@@ -264,7 +265,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `l10n.yaml` | 151 | `c3ce52cbd012e898f809811d21f21ead3bb3afd08b49a4efe4da74080248664d` |
 | `lib/app.dart` | 7679 | `599df85fd9c6a6abaa17e5646dd59969ef67bbe5a9d722030c1c5d4c83247ce1` |
 | `lib/bootstrap/app_bootstrap.dart` | 380 | `cada71fb830d954d0bd4df8e8892b7e0b62a5844a01d00daf1cd0007c9f23cb0` |
-| `lib/controller/app_controller.dart` | 101353 | `3f02193c092181878372a3fac7ddcb1c8876bca93baeea960c95f7acf71f0f1c` |
+| `lib/controller/app_controller.dart` | 101527 | `d39dce214c47ec2291997ee7e411caffdd6d374ba6d47af979b01ee497f618db` |
 | `lib/core/di/app_dependencies.dart` | 21906 | `4075fdbcb457fd20199b251966063c71408d27ce8a8301bbfce9f160dff36b14` |
 | `lib/core/google/authorized_google_client_factory.dart` | 971 | `8a5504571f4d8e93d096d3f3bb3140564e58729510ac66c021a95361b2d362c8` |
 | `lib/core/google/google_scopes.dart` | 629 | `437eaa6b551e7fcfc6993603d2acb6c3a5be6818d0289ed2b20b0fc1af2d29b2` |
@@ -520,6 +521,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/shift_exchange/presentation/pages/shift_exchange_page.dart` | 4094 | `fd5473594d17fec03331e548a3e1123335e888621b226255bab77d486c93f57e` |
 | `lib/features/shift_parser/application/hospital_roster_parser.dart` | 5495 | `8ca60d01705bb52e4faa478ad61c28a0f67d104291fd3165ef3e8dfd30f10168` |
 | `lib/features/shift_parser/application/monthly_roster_section_parser.dart` | 13462 | `c9ceb14081e4f00a1ff5fd496c174a2c4e66ef5a8198463be174f7610fa3a80a` |
+| `lib/features/shift_parser/application/smart_roster_analyze_generator.dart` | 2805 | `0f94606576069cdf897804589a9c17494b2237515e6135bac1d1c74e3eb47acc` |
 | `lib/features/shift_parser/application/snapshot_normalizer.dart` | 1809 | `ad12901e35e5e9f33ed815547ecc051d117e0e3fddcc9f5b0f567e99a16e36f6` |
 | `lib/features/shift_parser/domain/a1_notation.dart` | 631 | `264700bc1ec9e89932ad9f17dca3811b15595dd8c392f3cd44a5efa8b29d4746` |
 | `lib/features/shift_parser/domain/color_mapping.dart` | 958 | `a2ffc6aac1ba4aee64a1afefebf659328ab4bb579b3459f02330b7e4a0321f36` |
@@ -737,6 +739,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/shift_pay_calculator_test.dart` | 8172 | `675b703930f851e71b109100335e4fdccf5c2eba2bac03df775da31c7a49606c` |
 | `test/shift_template_test.dart` | 4409 | `9453e8c114094f855d57274a1959d85d32fb0e2195c9823908187f82d4ddb48c` |
 | `test/shift_time_service_test.dart` | 1160 | `0236957c9779ddd75789c0fae49a18a9cb060a8b41e81728cd1d59728a1f53d7` |
+| `test/smart_roster_analyze_generator_test.dart` | 2393 | `436efd1d6b28f045a267cf843d65d0d919f9ae3965aa6981e04ace4424714ef1` |
 | `test/support/canonical_schedule_fixture.dart` | 3076 | `8c3427f39d66b1aedfea0309ac7a75dfe131a792639884bc3711ff2a83017f52` |
 | `test/support/in_memory_schedule_store.dart` | 645 | `baa26a13ae7712c0679259ac3f14ee72b996ef9a2e3175a03763212a04cf4ba1` |
 | `test/swap_request_service_test.dart` | 721 | `13b430ea5a944f506d49c28997d72e0f84994ba47d0d5b23d6cf46b8c8dc2273` |
