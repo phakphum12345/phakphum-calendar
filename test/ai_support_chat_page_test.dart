@@ -12,6 +12,20 @@ void main() {
     expect(find.text('ต้องตรวจอะไรก่อนซิงก์?'), findsOneWidget);
   });
 
+  testWidgets('analyzes a pasted roster locally without syncing', (tester) async {
+    await tester.pumpWidget(const MaterialApp(home: AiSupportChatPage()));
+
+    await tester.enterText(
+      find.byKey(const Key('ai-support-input')),
+      'วันที่,ชื่อ,เวร\n2026-10-29,สมชาย,เวรเช้า',
+    );
+    await tester.tap(find.byKey(const Key('ai-support-send')));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('ผลตรวจตารางที่วาง'), findsOneWidget);
+    expect(find.textContaining('ไม่มีการแก้ไขหรือซิงก์ข้อมูล'), findsOneWidget);
+  });
+
   testWidgets('sending a sync question gives guidance without syncing', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: AiSupportChatPage()));
 
