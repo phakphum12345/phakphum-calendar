@@ -64,15 +64,15 @@ class _AiSupportChatPageState extends State<AiSupportChatPage> {
 
   /// Analyze a pasted tabular roster locally; this never writes or syncs data.
   String? _analyzePastedTable(String text) {
-    if (!text.contains('\\n')) return null;
+    if (!text.contains('\n')) return null;
     final lines = text
-        .split(RegExp(r'\\r?\\n'))
+        .split(RegExp(r'\r?\n'))
         .map((line) => line.trimRight())
         .where((line) => line.trim().isNotEmpty)
         .toList();
     if (lines.length < 2) return null;
 
-    final delimiter = lines.first.contains('\\t') ? '\\t' : ',';
+    final delimiter = lines.first.contains('\t') ? '\t' : ',';
     final columns = _splitDelimitedLine(lines.first, delimiter)
         .map((value) => value.trim())
         .toList();
@@ -115,12 +115,12 @@ class _AiSupportChatPageState extends State<AiSupportChatPage> {
       if (dateWarnings > 0) 'มีรายการที่อ่านวันที่ไม่สำเร็จ $dateWarnings รายการ',
     ];
 
-    return 'ผลตรวจตารางที่วาง (วิเคราะห์ในเครื่อง)\\n'
-        '• แถวข้อมูลที่ตรวจพบ: ${rows.length}\\n'
-        '• รายการที่วิเคราะห์ได้: ${analysis.records.length}\\n'
-        '• รายการที่ต้องตรวจเพิ่ม: ${warnings.length}\\n'
-        '${warnings.isEmpty ? 'ไม่พบคำเตือนจากการตรวจเบื้องต้น' : warnings.map((warning) => '• $warning').join('\\n')}'
-        '\\n\\nผลนี้เป็นเพียงการคัดกรองเบื้องต้น โปรดเทียบกับต้นฉบับก่อนบันทึก '
+    return 'ผลตรวจตารางที่วาง (วิเคราะห์ในเครื่อง)\n'
+        '• แถวข้อมูลที่ตรวจพบ: ${rows.length}\n'
+        '• รายการที่วิเคราะห์ได้: ${analysis.records.length}\n'
+        '• รายการที่ต้องตรวจเพิ่ม: ${warnings.length}\n'
+        '${warnings.isEmpty ? 'ไม่พบคำเตือนจากการตรวจเบื้องต้น' : warnings.map((warning) => '• $warning').join('\n')}'
+        '\n\nผลนี้เป็นเพียงการคัดกรองเบื้องต้น โปรดเทียบกับต้นฉบับก่อนบันทึก '
         'และไม่มีการแก้ไขหรือซิงก์ข้อมูล';
   }
 
