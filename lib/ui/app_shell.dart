@@ -455,6 +455,10 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
+  Future<void> _openAiSupport() => Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(builder: (_) => const AiSupportChatPage()),
+  );
+
   Future<void> _openShiftTemplates() {
     return Navigator.of(context).push<void>(
       MaterialPageRoute(
