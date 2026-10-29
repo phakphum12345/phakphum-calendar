@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 754,
+  "file_count": 757,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -797,6 +797,11 @@
       "sha256": "9b69f502e3d31d504735790f6378c6ea53d5a5936c9e8252d39ef9aecd75cd1e"
     },
     {
+      "path": "docs/SMART_ROSTER_ANALYZE_GENERATOR.md",
+      "size": 1719,
+      "sha256": "5a1df4cd269e81e07988dbffdb711f0ad7814f7af2c13eb717220ac3b58b06b6"
+    },
+    {
       "path": "docs/SYNC_RELIABILITY.md",
       "size": 1388,
       "sha256": "bf1da1c7346ae8dac8a0cee0d56bac6d545b4dd9e3b3d6e6e1ecf48e1b454b1c"
@@ -1183,8 +1188,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 101353,
-      "sha256": "3f02193c092181878372a3fac7ddcb1c8876bca93baeea960c95f7acf71f0f1c"
+      "size": 101942,
+      "sha256": "20dac3901f2dc926dd3b06c5e3f2c00f521b623d0617fbf05e154c98bca87d79"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
@@ -2462,6 +2467,11 @@
       "sha256": "c9ceb14081e4f00a1ff5fd496c174a2c4e66ef5a8198463be174f7610fa3a80a"
     },
     {
+      "path": "lib/features/shift_parser/application/smart_roster_analyze_generator.dart",
+      "size": 2805,
+      "sha256": "0f94606576069cdf897804589a9c17494b2237515e6135bac1d1c74e3eb47acc"
+    },
+    {
       "path": "lib/features/shift_parser/application/snapshot_normalizer.dart",
       "size": 1809,
       "sha256": "ad12901e35e5e9f33ed815547ecc051d117e0e3fddcc9f5b0f567e99a16e36f6"
@@ -3545,6 +3555,11 @@
       "path": "test/shift_time_service_test.dart",
       "size": 1160,
       "sha256": "0236957c9779ddd75789c0fae49a18a9cb060a8b41e81728cd1d59728a1f53d7"
+    },
+    {
+      "path": "test/smart_roster_analyze_generator_test.dart",
+      "size": 2393,
+      "sha256": "436efd1d6b28f045a267cf843d65d0d919f9ae3965aa6981e04ace4424714ef1"
     },
     {
       "path": "test/support/canonical_schedule_fixture.dart",
