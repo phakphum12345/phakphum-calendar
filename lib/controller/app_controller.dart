@@ -22,6 +22,7 @@ import '../domain/repositories/schedule_repository.dart';
 import '../features/schedule/data/legacy_schedule_adapter.dart';
 import '../features/google_sheets/domain/sheet_color.dart';
 import '../features/shift_parser/application/monthly_roster_section_parser.dart';
+import '../features/shift_parser/application/smart_roster_analyze_generator.dart';
 import '../features/shift_parser/domain/monthly_roster_section.dart';
 import '../features/shift_parser/domain/normalized_cell.dart';
 import '../features/shift_parser/domain/roster_sync_period_filter.dart';
@@ -830,21 +831,14 @@ class AppController extends ChangeNotifier implements ControllerState {
             .parseForWorkers(parsedMonthlyAll, targetNames: searchNames)
             .map(_applyShiftOverride)
             .toList(growable: false);
-        // Both parsers recognize different roster layouts. Prefer legacy
-        // results when a source identity matches, but retain monthly-grid
-        // records that the legacy parser did not discover.
-        final parsedBySourceKey = <String, Shift>{};
-        for (final shift in legacyParsed) {
-          parsedBySourceKey.putIfAbsent(shift.sourceKey, () => shift);
-        }
-        var recoveredMonthlyCount = 0;
-        for (final shift in monthlyParsed) {
-          if (parsedBySourceKey.containsKey(shift.sourceKey)) continue;
-          parsedBySourceKey[shift.sourceKey] = shift;
-          recoveredMonthlyCount++;
-        }
-        final parsed = parsedBySourceKey.values.toList(growable: false)
-          ..sort((left, right) => left.start.compareTo(right.start));
+        // Analyze both readers together; monthly-only candidates are retained
+        // for review and are not synced until the normal sync confirmation flow.
+        final smartAnalysis = const SmartRosterAnalyzeGenerator().analyze(
+          legacyShifts: legacyParsed,
+          monthlyShifts: monthlyParsed,
+        );
+        final recoveredMonthlyCount = smartAnalysis.recoveredCount;
+        final parsed = smartAnalysis.mergedShifts;
         final usedMonthlyFallback = legacyParsed.isEmpty && monthlyParsed.isNotEmpty;
         final monthlyReportSource = parsedMonthlyAll.sections.isEmpty
             ? MonthlyRosterParseReport.fromShifts(parsed)
@@ -1037,7 +1031,13 @@ class AppController extends ChangeNotifier implements ControllerState {
           .parseForWorkers(parsedMonthlyAll, targetNames: searchNames)
           .map(_applyShiftOverride)
           .toList(growable: false);
-      final parsed = legacyParsed.isEmpty ? monthlyParsed : legacyParsed;
+      // Use the same analyzer for local imports as for Google Sheets so a
+      // partially successful legacy parse cannot hide monthly-only records.
+      final smartAnalysis = const SmartRosterAnalyzeGenerator().analyze(
+        legacyShifts: legacyParsed,
+        monthlyShifts: monthlyParsed,
+      );
+      final parsed = smartAnalysis.mergedShifts;
       final monthlyReportSource = parsedMonthlyAll.sections.isEmpty
           ? MonthlyRosterParseReport.fromShifts(parsed)
           : parsedMonthlyAll;
@@ -1152,7 +1152,9 @@ class AppController extends ChangeNotifier implements ControllerState {
       lastRefresh = DateTime.now();
       status =
           'นำเข้าตารางรายเดือน ${monthlyRoster.sections.length} บล็อก '
-          '${monthlyRoster.assignments.length} ช่อง; ไฟล์ไม่ถูกอัปโหลด';
+          '${monthlyRoster.assignments.length} ช่อง; '
+          'ตัวอ่านอัจฉริยะกู้คืนเพิ่ม ${smartAnalysis.recoveredCount} เวร; '
+          'ไฟล์ไม่ถูกอัปโหลด';
       await _addAudit(
         'monthly_roster.local.read',
         'อ่านไฟล์ตารางรายเดือนในหน่วยความจำ; '
