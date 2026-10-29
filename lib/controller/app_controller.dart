@@ -1139,10 +1139,20 @@ class AppController extends ChangeNotifier implements ControllerState {
         spreadsheetId: 'local-monthly-${document.extension}',
         applyPeriodFilter: false,
       );
+      final legacyParsed = _parseAllRosterSnapshots(
+        document.snapshots,
+        fallback: const [],
+      );
+      final monthlyParsed = const MonthlyRosterShiftAdapter()
+          .parseForWorkers(parsedMonthly, targetNames: rosterSearchNames)
+          .map(_applyShiftOverride)
+          .toList(growable: false);
+      final smartAnalysis = const SmartRosterAnalyzeGenerator().analyze(
+        legacyShifts: legacyParsed,
+        monthlyShifts: monthlyParsed,
+      );
       _allMonthlyRoster = parsedMonthly.sections.isEmpty
-          ? MonthlyRosterParseReport.fromShifts(
-              _parseAllRosterSnapshots(document.snapshots, fallback: const []),
-            )
+          ? MonthlyRosterParseReport.fromShifts(smartAnalysis.mergedShifts)
           : parsedMonthly;
       monthlyRoster = _filterMonthlyReportToSelectedPeriods(
         _allMonthlyRoster,
