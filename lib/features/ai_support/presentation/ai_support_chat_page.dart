@@ -1,0 +1,219 @@
+import 'package:flutter/material.dart';
+
+/// A safe, provider-neutral support chat shell.
+///
+/// Replies are local guidance only. This page does not call an AI service,
+/// read roster data, save changes, or sync to Google Calendar.
+class AiSupportChatPage extends StatefulWidget {
+  const AiSupportChatPage({super.key});
+
+  @override
+  State<AiSupportChatPage> createState() => _AiSupportChatPageState();
+}
+
+class _AiSupportChatPageState extends State<AiSupportChatPage> {
+  final _input = TextEditingController();
+  final _scrollController = ScrollController();
+  final List<_ChatMessage> _messages = [
+    const _ChatMessage(
+      text: 'สวัสดีครับ ผมคือ AI Support รุ่นทดลอง\n'
+          'ตอนนี้ช่วยแนะนำขั้นตอนทั่วไปได้ ยังไม่ได้เชื่อมต่อ AI จริง '
+          'และจะไม่แก้ไขหรือซิงก์ข้อมูลแทนคุณ',
+      fromUser: false,
+    ),
+  ];
+
+  static const _suggestions = [
+    'ช่วยตรวจเวรที่อ่านไม่ครบ',
+    'อธิบายรหัสเวร เช้า/บ่าย/ดึก',
+    'ต้องตรวจอะไรก่อนซิงก์?',
+    'นำเข้า Excel หรือ CSV',
+  ];
+
+  @override
+  void dispose() {
+    _input.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _send([String? suggested]) {
+    final text = (suggested ?? _input.text).trim();
+    if (text.isEmpty) return;
+    setState(() {
+      _messages.add(_ChatMessage(text: text, fromUser: true));
+      _messages.add(_ChatMessage(
+        text: _localGuidance(text),
+        fromUser: false,
+      ));
+      _input.clear();
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  String _localGuidance(String question) {
+    final value = question.toLowerCase();
+    if (value.contains('ซิงก์') || value.contains('sync')) {
+      return 'ก่อนซิงก์: 1) ตรวจวันและเดือน 2) ตรวจชื่อผู้ปฏิบัติงาน '
+          '3) ตรวจรหัสและเวลาเวร 4) ตรวจรายการซ้ำ/รายการที่ขาด '
+          '5) ยืนยันรายการที่จะส่งทุกครั้ง\n\n'
+          'หน้านี้ยังไม่เริ่มซิงก์ให้ และไม่ได้เปลี่ยนข้อมูลใด ๆ';
+    }
+    if (value.contains('excel') || value.contains('csv') ||
+        value.contains('นำเข้า')) {
+      return 'เลือกไฟล์ต้นฉบับผ่านเมนูนำเข้า แล้วตรวจการจับคู่คอลัมน์ '
+          'ชื่อบุคลากร วันที่ และรหัสเวร จากนั้นดูตัวอย่างก่อนบันทึก '
+          'หากอ่านไม่ตรง ให้หยุดและแก้การจับคู่ก่อนดำเนินการต่อ';
+    }
+    if (value.contains('รหัสเวร') || value.contains('เช้า') ||
+        value.contains('บ่าย') || value.contains('ดึก')) {
+      return 'ควรใช้รหัสเวรที่กำหนดไว้ในเทมเพลตของหน่วยงานเป็นหลัก '
+          'อย่าเดาเวลาเมื่อรหัสไม่ตรงกัน ให้ตรวจชื่อเวร เวลาเริ่ม-สิ้นสุด '
+          'และกรณีข้ามเที่ยงคืน แล้วให้ผู้ใช้ยืนยันค่าที่ถูกต้อง';
+    }
+    if (value.contains('อ่าน') || value.contains('ไม่ครบ') ||
+        value.contains('ผิด')) {
+      return 'เพื่อหาสาเหตุ ให้เทียบวัน/เดือน ชื่อคน และรหัสเวรจากต้นฉบับ '
+          'กับรายการที่นำเข้า ทำเครื่องหมายรายการที่ขาด ซ้ำ หรือไม่แน่ใจ '
+          'อย่าแก้หรือซิงก์รายการที่ยังไม่ได้ตรวจสอบ';
+    }
+    return 'ผมรับคำถามไว้ในหน้าจอนี้แล้ว แต่ยังไม่มีบริการ AI เชื่อมต่อ '
+        'จึงตอบได้เฉพาะแนวทางพื้นฐาน: ตรวจข้อมูลกับต้นฉบับ '
+        'และยืนยันทุกค่าที่ไม่แน่ใจก่อนบันทึกหรือซิงก์';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Scaffold(
+      appBar: AppBar(
+        title: const Row(
+          children: [
+            CircleAvatar(child: Icon(Icons.support_agent_outlined)),
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('AI Support'),
+                  Text('ผู้ช่วยเรื่องปฏิทินเวร',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.normal)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              color: colors.tertiaryContainer,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, size: 20),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text('โหมดทดลอง: ยังไม่เชื่อม AI จริง • ไม่มีการบันทึกหรือซิงก์อัตโนมัติ'),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                controller: _scrollController,
+                padding: const EdgeInsets.all(16),
+                children: [
+                  for (final message in _messages)
+                    Align(
+                      alignment: message.fromUser
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: Container(
+                        constraints: const BoxConstraints(maxWidth: 620),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.all(14),
+                        decoration: BoxDecoration(
+                          color: message.fromUser
+                              ? colors.primaryContainer
+                              : colors.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Text(message.text),
+                      ),
+                    ),
+                  if (_messages.length == 1) ...[
+                    const SizedBox(height: 4),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text('ลองถามเรื่องเหล่านี้',
+                          style: Theme.of(context).textTheme.titleSmall),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        for (final suggestion in _suggestions)
+                          ActionChip(
+                            label: Text(suggestion),
+                            onPressed: () => _send(suggestion),
+                          ),
+                      ],
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Expanded(
+                    child: TextField(
+                      key: const Key('ai-support-input'),
+                      controller: _input,
+                      minLines: 1,
+                      maxLines: 4,
+                      textInputAction: TextInputAction.send,
+                      onSubmitted: (_) => _send(),
+                      decoration: const InputDecoration(
+                        hintText: 'พิมพ์คำถามเกี่ยวกับเวร...',
+                        prefixIcon: Icon(Icons.chat_bubble_outline),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filled(
+                    key: const Key('ai-support-send'),
+                    tooltip: 'ส่งข้อความ',
+                    onPressed: _send,
+                    icon: const Icon(Icons.send_rounded),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ChatMessage {
+  const _ChatMessage({required this.text, required this.fromUser});
+  final String text;
+  final bool fromUser;
+}
