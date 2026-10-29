@@ -2088,8 +2088,8 @@
     },
     {
       "path": "lib/features/roster_ai/application/hybrid_roster_ai_analyzer.dart",
-      "size": 3550,
-      "sha256": "55048f08745c465dd76a5cd4ac003c23ba6479649f3276fe1378f0b93fed6768"
+      "size": 3505,
+      "sha256": "4a10250b621192f7e4a5233526d4bf4c92969bce6d6eb8e0682a9e8fd9f75add"
     },
     {
       "path": "lib/features/roster_ai/domain/roster_ai_models.dart",
