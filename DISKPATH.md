@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `768`
+- Tracked files: `770`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -681,6 +681,8 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/excel_reader_service_test.dart` | 4083 | `4d273ecd87aa133ab6aded4439449095c0042e9a8424224b69daa052cdc82c16` |
 | `test/features/calendar_sync/domain/calendar_sync_protocol_test.dart` | 2849 | `f5117baaf65f79d84c925c543b75d80c1fb1dc52ab59a66a79e4c8ee866a6971` |
 | `test/features/dashboard/application/dashboard_summary_service_test.dart` | 4456 | `f79b38159dba6a8de918f0b970497bf42512f2115b3535cf604c769ed43ba112` |
+| `test/fixtures/roster_knowledge/invalid_extra_property_entry.json` | 1190 | `6b65bade71f8802af126948a6664e899e7112dcc457c3c8a1a18552d76771443` |
+| `test/fixtures/roster_knowledge/valid_organization_scoped_entry.json` | 1129 | `943217fa4f4c9683e71039b2d93792196e1d43f9026e487c314cf056a4afecb6` |
 | `test/google_api_client_test.dart` | 2748 | `61c4ae92e4552b4555b2b1f3a0623fc85fc623cae0f2905c7cc04e1b791234ca` |
 | `test/google_auth_service_test.dart` | 855 | `7c020e73fe723f7a10809801b9a7fe5a8e40dee8dc2ce5795c10002b639bc84e` |
 | `test/google_calendar_sync_gateway_test.dart` | 3724 | `73f96f9b21fb7b5cb65eca3996f24cad06e16a16f2ce601b31ef32d5caf8bbec` |

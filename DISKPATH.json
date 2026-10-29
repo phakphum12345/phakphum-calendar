@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 768,
+  "file_count": 770,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -3265,6 +3265,16 @@
       "path": "test/features/dashboard/application/dashboard_summary_service_test.dart",
       "size": 4456,
       "sha256": "f79b38159dba6a8de918f0b970497bf42512f2115b3535cf604c769ed43ba112"
+    },
+    {
+      "path": "test/fixtures/roster_knowledge/invalid_extra_property_entry.json",
+      "size": 1190,
+      "sha256": "6b65bade71f8802af126948a6664e899e7112dcc457c3c8a1a18552d76771443"
+    },
+    {
+      "path": "test/fixtures/roster_knowledge/valid_organization_scoped_entry.json",
+      "size": 1129,
+      "sha256": "943217fa4f4c9683e71039b2d93792196e1d43f9026e487c314cf056a4afecb6"
     },
     {
       "path": "test/google_api_client_test.dart",
