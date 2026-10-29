@@ -11,6 +11,7 @@ import '../domain/entities/schedule.dart';
 import '../features/reports/presentation/controllers/monthly_schedule_report_controller.dart';
 import '../features/reports/presentation/pages/monthly_schedule_report_page.dart';
 import '../features/admin/presentation/admin_access_page.dart';
+import '../features/ai_support/presentation/ai_support_chat_page.dart';
 import '../features/edition/domain/app_edition.dart';
 import '../features/roster_names/presentation/roster_name_list_page.dart';
 import '../features/employees/presentation/pages/employee_directory_page.dart';
@@ -339,6 +340,7 @@ class _AppShellState extends State<AppShell> {
                 ],
               ),
               actions: [
+                IconButton(tooltip: 'AI Support', icon: const Icon(Icons.support_agent_outlined), onPressed: _openAiSupport),
                 IconButton(tooltip: 'Timeline ย้อนหลัง', icon: const Icon(Icons.history_toggle_off_outlined), onPressed: () => unawaited(_openUtilityPage(_UtilityPage.history))),
                 IconButton(
                   key: const Key('locale-switch'),
