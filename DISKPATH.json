@@ -702,6 +702,11 @@
       "sha256": "e175d44fe3d3148fe2b007196834843fd7028bbecca7e927770505670c6d01f0"
     },
     {
+      "path": "docs/AI_SUPPORT_CHAT.md",
+      "size": 999,
+      "sha256": "aa76105c9c70bb9bd49f3f281bb0778e15dfa6ed8a8398bccff48bc2c367f37b"
+    },
+    {
       "path": "docs/API_FOUNDATION.md",
       "size": 851,
       "sha256": "e2fad2e3f128f0c6c3a20479148b0b603c15634ad22a6b877c5e6bb1fc3a6d8d"
@@ -745,6 +750,11 @@
       "path": "docs/GOOGLE_SETUP.md",
       "size": 2196,
       "sha256": "79da078521c34792514a536dba282e9845e7f35d26502ad356a78846b7dc3284"
+    },
+    {
+      "path": "docs/HYBRID_ROSTER_AI.md",
+      "size": 2659,
+      "sha256": "c60732e0d3b6ead770366fa08c05b61674df5aef54dd492bf737014d20940db7"
     },
     {
       "path": "docs/INSTALLATION_AND_USER_GUIDE.md",
@@ -800,6 +810,11 @@
       "path": "docs/SHIFT_PAY_RULES.md",
       "size": 5478,
       "sha256": "9b69f502e3d31d504735790f6378c6ea53d5a5936c9e8252d39ef9aecd75cd1e"
+    },
+    {
+      "path": "docs/SMART_ROSTER_ANALYZE_GENERATOR.md",
+      "size": 1719,
+      "sha256": "5a1df4cd269e81e07988dbffdb711f0ad7814f7af2c13eb717220ac3b58b06b6"
     },
     {
       "path": "docs/SYNC_RELIABILITY.md",
@@ -1188,8 +1203,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 101353,
-      "sha256": "3f02193c092181878372a3fac7ddcb1c8876bca93baeea960c95f7acf71f0f1c"
+      "size": 101942,
+      "sha256": "20dac3901f2dc926dd3b06c5e3f2c00f521b623d0617fbf05e154c98bca87d79"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
@@ -1380,6 +1395,11 @@
       "path": "lib/features/ai_roster_analyzer/domain/roster_analysis_models.dart",
       "size": 4569,
       "sha256": "ae172707a44ecef1c9b98d3d4eb925142ad0cf1f0a2ad8f5691bd55871ba9163"
+    },
+    {
+      "path": "lib/features/ai_support/presentation/ai_support_chat_page.dart",
+      "size": 10241,
+      "sha256": "9e2d82f0ff456c2ef3039fd8a331eb83a7315596715180eb97d3e50b81cae0a0"
     },
     {
       "path": "lib/features/api/application/idempotency_service.dart",
@@ -2087,6 +2107,21 @@
       "sha256": "2f16005951526f529ae01e81f181698433e88826a7425c80ff16d21fb9c719f1"
     },
     {
+      "path": "lib/features/roster_ai/application/hybrid_roster_ai_analyzer.dart",
+      "size": 3505,
+      "sha256": "4a10250b621192f7e4a5233526d4bf4c92969bce6d6eb8e0682a9e8fd9f75add"
+    },
+    {
+      "path": "lib/features/roster_ai/domain/roster_ai_models.dart",
+      "size": 2138,
+      "sha256": "31c2f0ea19df210e497dec4be1ae8d286e82bbfb53055f201bd18ab0c527405d"
+    },
+    {
+      "path": "lib/features/roster_ai/domain/roster_ai_provider.dart",
+      "size": 671,
+      "sha256": "b636091ce80a3f599bb8d3236b239e8825e1a10a4663e3c834d9b0ec2bf56f58"
+    },
+    {
       "path": "lib/features/roster_names/domain/roster_name_entry.dart",
       "size": 2284,
       "sha256": "d1811cf1d0c7479b4c7547af802c90f707c76902d9ffd7cf0f7befd219454f1c"
@@ -2465,6 +2500,11 @@
       "path": "lib/features/shift_parser/application/monthly_roster_section_parser.dart",
       "size": 13462,
       "sha256": "c9ceb14081e4f00a1ff5fd496c174a2c4e66ef5a8198463be174f7610fa3a80a"
+    },
+    {
+      "path": "lib/features/shift_parser/application/smart_roster_analyze_generator.dart",
+      "size": 2805,
+      "sha256": "0f94606576069cdf897804589a9c17494b2237515e6135bac1d1c74e3eb47acc"
     },
     {
       "path": "lib/features/shift_parser/application/snapshot_normalizer.dart",
@@ -2848,8 +2888,8 @@
     },
     {
       "path": "lib/ui/app_shell.dart",
-      "size": 204794,
-      "sha256": "8b404b1a3b191030b484dcc0834b23bede261a97ba924a48a9a4f8dd9e0037b9"
+      "size": 205139,
+      "sha256": "9017f7d5345633fba292e19729a472a8f8ce9b61fb2434f31a3dacc59f2774ed"
     },
     {
       "path": "lib/ui/audit_log_page.dart",
@@ -3097,6 +3137,11 @@
       "sha256": "63bd741c39abc644abaadbffd3f095ef49f8afcb854e1a44585acae6a6f4994b"
     },
     {
+      "path": "test/ai_support_chat_page_test.dart",
+      "size": 1901,
+      "sha256": "6bcd1e22fc74f15d0d72460cdd83c55921288ef563ad656fd52a50fcb2e051b7"
+    },
+    {
       "path": "test/app_dependencies_test.dart",
       "size": 11894,
       "sha256": "f34637e5075ebd631e9f8a314c540f14c42b11629fd8d7f494cc064cf9ec5a82"
@@ -3240,6 +3285,11 @@
       "path": "test/google_sheets_import_data_source_test.dart",
       "size": 9255,
       "sha256": "92034f1852cc24b119145efe005af8b0eaf0718b6dd771937e303580579e26e6"
+    },
+    {
+      "path": "test/hybrid_roster_ai_analyzer_test.dart",
+      "size": 3945,
+      "sha256": "eecebfa1228c97439fee3f15dc27bf92ade9c5916af79b24b166156e38895fcd"
     },
     {
       "path": "test/idempotency_service_test.dart",
@@ -3550,6 +3600,11 @@
       "path": "test/shift_time_service_test.dart",
       "size": 1160,
       "sha256": "0236957c9779ddd75789c0fae49a18a9cb060a8b41e81728cd1d59728a1f53d7"
+    },
+    {
+      "path": "test/smart_roster_analyze_generator_test.dart",
+      "size": 2393,
+      "sha256": "436efd1d6b28f045a267cf843d65d0d919f9ae3965aa6981e04ace4424714ef1"
     },
     {
       "path": "test/support/canonical_schedule_fixture.dart",
