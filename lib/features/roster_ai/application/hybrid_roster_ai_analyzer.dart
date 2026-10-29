@@ -7,13 +7,13 @@ import '../domain/roster_ai_provider.dart';
 /// records, save data, or sync to Google Calendar.
 class HybridRosterAIAnalyzer {
   const HybridRosterAIAnalyzer({
-    required this._rules,
-    RosterAIProvider? aiProvider,
+    required this.rules,
+    this.aiProvider,
     this.minimumConfidence = 0.85,
-  }) : _aiProvider = aiProvider;
+  });
 
-  final RosterRuleResolver _rules;
-  final RosterAIProvider? _aiProvider;
+  final RosterRuleResolver rules;
+  final RosterAIProvider? aiProvider;
   final double minimumConfidence;
 
   Future<List<RosterFieldAnalysis>> analyze(
@@ -22,7 +22,7 @@ class HybridRosterAIAnalyzer {
     final results = <RosterFieldAnalysis>[];
 
     for (final input in inputs) {
-      final ruleDecision = _rules.resolve(input);
+      final ruleDecision = rules.resolve(input);
       if (!ruleDecision.isAmbiguous) {
         final value = ruleDecision.value;
         if (value != null && input.allowedValues.contains(value)) {
@@ -47,7 +47,7 @@ class HybridRosterAIAnalyzer {
         continue;
       }
 
-      final provider = _aiProvider;
+      final provider = aiProvider;
       if (provider == null) {
         results.add(
           RosterFieldAnalysis(
