@@ -412,19 +412,137 @@ class _AppShellState extends State<AppShell> {
             ),
             bottomNavigationBar: wide
                 ? null
-                : NavigationBar(
-                    selectedIndex: selectedIndex,
-                    labelBehavior:
-                        NavigationDestinationLabelBehavior.onlyShowSelected,
-                    onDestinationSelected: (index) =>
-                        setState(() => selectedIndex = index),
-                    destinations: destinations,
+                : Builder(
+                    builder: (navigationContext) {
+                      final reportIndex = destinations.indexWhere(
+                        (destination) =>
+                            destination.label == context.l10n.reports,
+                      );
+                      final primaryIndexes = <int>[
+                        0,
+                        1,
+                        if (reportIndex >= 0) reportIndex,
+                      ];
+                      final selectedPrimaryIndex =
+                          primaryIndexes.indexOf(selectedIndex);
+                      return NavigationBar(
+                        selectedIndex: selectedPrimaryIndex >= 0
+                            ? selectedPrimaryIndex
+                            : primaryIndexes.length,
+                        labelBehavior:
+                            NavigationDestinationLabelBehavior.onlyShowSelected,
+                        onDestinationSelected: (index) {
+                          if (index < primaryIndexes.length) {
+                            setState(
+                              () => selectedIndex = primaryIndexes[index],
+                            );
+                          } else {
+                            unawaited(
+                              _openMobileWorkspaceMenu(
+                                navigationContext,
+                                destinations,
+                                primaryIndexes,
+                              ),
+                            );
+                          }
+                        },
+                        destinations: [
+                          for (final index in primaryIndexes)
+                            destinations[index],
+                          NavigationDestination(
+                            icon: const Icon(Icons.menu_rounded),
+                            selectedIcon: const Icon(Icons.menu_open_rounded),
+                            label: context.l10n.more,
+                          ),
+                        ],
+                      );
+                    },
                   ),
           );
         },
       );
     },
   );
+
+  Future<void> _openMobileWorkspaceMenu(
+    BuildContext context,
+    List<NavigationDestination> destinations,
+    List<int> primaryIndexes,
+  ) async {
+    final secondaryIndexes = <int>[
+      for (var index = 0; index < destinations.length; index++)
+        if (!primaryIndexes.contains(index)) index,
+    ];
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.78,
+          ),
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+                child: Text(
+                  'พื้นที่ทำงานและการตั้งค่า',
+                  style: Theme.of(sheetContext).textTheme.titleMedium,
+                ),
+              ),
+              for (final index in secondaryIndexes)
+                ListTile(
+                  leading: destinations[index].icon,
+                  title: Text(destinations[index].label),
+                  trailing: selectedIndex == index
+                      ? const Icon(Icons.check_rounded)
+                      : null,
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    if (mounted) setState(() => selectedIndex = index);
+                  },
+                ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.notifications_outlined),
+                title: Text(context.l10n.notifications),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  unawaited(_openUtilityPage(_UtilityPage.notifications));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.history_outlined),
+                title: Text(context.l10n.history),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  unawaited(_openUtilityPage(_UtilityPage.history));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.apps_outlined),
+                title: Text(context.l10n.tools),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  unawaited(_openUtilityPage(_UtilityPage.tools));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.view_agenda_outlined),
+                title: const Text('แม่แบบและค่าเริ่มต้นเวร'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  unawaited(_openShiftTemplates());
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Future<void> _openUtilityPage(_UtilityPage page) {
     final child = switch (page) {
