@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `766`
+- Tracked files: `768`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -186,6 +186,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `docs/PLATFORM_SUPPORT.md` | 2207 | `519f4deb785d0f8d972c541dae211d518d85efd11e0ce155385b6a885b4c43d3` |
 | `docs/PROJECT_AUDIT.md` | 23667 | `c833f9d4e5b55e994bf82a4656240e60bc75257407f917c9673995d62c4fc46f` |
 | `docs/REAL_ROSTER_PROFILE.md` | 1316 | `29c63cc02f2a49550489c35649dd265ec9114a9518c4d600ce4dad5be1913e5d` |
+| `docs/ROSTER_KNOWLEDGE_BASE_ARCHITECTURE_TH.md` | 6665 | `b5bc3b8d2a58fb1ce43ec53d38215742053840d4d47d1518006437a17235219f` |
 | `docs/SCE_3_0_DELIVERY_ROADMAP.md` | 11829 | `685e4807928b8be63f638de871c65e1dbb2627a1cf21f0c9d4ada741ace1c73f` |
 | `docs/SCE_3_0_IMPLEMENTATION_MAP.md` | 3052 | `e969fdc2a6e9507781782db27df28e9c75cb5979479c14d26bdbcfdbc1b67432` |
 | `docs/SCE_3_0_SYSTEM_DESIGN.md` | 13671 | `2aa35351076bde8a31194239619050bfa6b22dc4014e0d52c734638e39263b06` |
@@ -652,6 +653,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `macos/RunnerTests/RunnerTests.swift` | 290 | `6bc180bc77c7def7a21d197233e25dff42cc493ab9d294632edafc18fdf0ac44` |
 | `pubspec.lock` | 29693 | `baeda33c5f9fd74c3e5a28af78b4f6d7a44b5d9cf2247c198fd2edd70d241cda` |
 | `pubspec.yaml` | 5018 | `93669722fc1db450ffcb7924e585a682e78c346938a57e8ca033ef813f9c6453` |
+| `schemas/roster-knowledge-entry.schema.json` | 3636 | `88bbff8191f09a5d3074fb30f1538266d193e8f1595ba4871b4c18a0f84ed3ab` |
 | `scripts/detect-ci-targets.sh` | 1625 | `e1ca37b123ef9ca5df126977bc7d04142105cf409da0e982c51716f733fcaf55` |
 | `test/admin_access_config_test.dart` | 1524 | `49f26ea088215c2f7c82d3ebd38099e6d8d5653ca1a4773b2ca9902e5435c0d2` |
 | `test/admin_dashboard_service_test.dart` | 962 | `63bd741c39abc644abaadbffd3f095ef49f8afcb854e1a44585acae6a6f4994b` |

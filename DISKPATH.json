@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 766,
+  "file_count": 768,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -790,6 +790,11 @@
       "path": "docs/REAL_ROSTER_PROFILE.md",
       "size": 1316,
       "sha256": "29c63cc02f2a49550489c35649dd265ec9114a9518c4d600ce4dad5be1913e5d"
+    },
+    {
+      "path": "docs/ROSTER_KNOWLEDGE_BASE_ARCHITECTURE_TH.md",
+      "size": 6665,
+      "sha256": "b5bc3b8d2a58fb1ce43ec53d38215742053840d4d47d1518006437a17235219f"
     },
     {
       "path": "docs/SCE_3_0_DELIVERY_ROADMAP.md",
@@ -3120,6 +3125,11 @@
       "path": "pubspec.yaml",
       "size": 5018,
       "sha256": "93669722fc1db450ffcb7924e585a682e78c346938a57e8ca033ef813f9c6453"
+    },
+    {
+      "path": "schemas/roster-knowledge-entry.schema.json",
+      "size": 3636,
+      "sha256": "88bbff8191f09a5d3074fb30f1538266d193e8f1595ba4871b4c18a0f84ed3ab"
     },
     {
       "path": "scripts/detect-ci-targets.sh",
