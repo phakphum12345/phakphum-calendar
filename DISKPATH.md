@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `766`
+- Tracked files: `771`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -50,6 +50,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `.github/workflows/generate-diskpath-md.yml` | 2954 | `13bf40ff0d2b9004d710750a976ec1e5ae96b9e52eaecbf65ab9d3337c3b9368` |
 | `.github/workflows/ios.yml` | 3293 | `5dc716ed94b3cfd421df674aa831d4b6f21c6e3390a054eb12dd02aea1b52934` |
 | `.github/workflows/linux.yml` | 2470 | `850db3a8e9c539389df9eb6e7d801bf40de6b82accd595e90870c200b3e5db9b` |
+| `.github/workflows/roster-knowledge-schema.yml` | 2161 | `06d43b9147d1f0b9eac633759aebc5cff0142931a84e4c0c9ee89bf3518a4065` |
 | `.github/workflows/web.yml` | 3193 | `e3e25b3fb2b5dc5369ff7094fd81ef63c1af2960a3971a104750b3f5ed34fa5b` |
 | `.github/workflows/windows.yml` | 3290 | `c9dc273d17a356f7c551e86d1b534b19ec8db2c09be1b660a4f82d05d6d6ed77` |
 | `.gitignore` | 885 | `ef2df2e38b6ccf9af7295cb26bd630a71101fef2ffed5eae26c51b23eb09440c` |
@@ -186,6 +187,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `docs/PLATFORM_SUPPORT.md` | 2207 | `519f4deb785d0f8d972c541dae211d518d85efd11e0ce155385b6a885b4c43d3` |
 | `docs/PROJECT_AUDIT.md` | 23667 | `c833f9d4e5b55e994bf82a4656240e60bc75257407f917c9673995d62c4fc46f` |
 | `docs/REAL_ROSTER_PROFILE.md` | 1316 | `29c63cc02f2a49550489c35649dd265ec9114a9518c4d600ce4dad5be1913e5d` |
+| `docs/ROSTER_KNOWLEDGE_BASE_ARCHITECTURE_TH.md` | 6665 | `b5bc3b8d2a58fb1ce43ec53d38215742053840d4d47d1518006437a17235219f` |
 | `docs/SCE_3_0_DELIVERY_ROADMAP.md` | 11829 | `685e4807928b8be63f638de871c65e1dbb2627a1cf21f0c9d4ada741ace1c73f` |
 | `docs/SCE_3_0_IMPLEMENTATION_MAP.md` | 3052 | `e969fdc2a6e9507781782db27df28e9c75cb5979479c14d26bdbcfdbc1b67432` |
 | `docs/SCE_3_0_SYSTEM_DESIGN.md` | 13671 | `2aa35351076bde8a31194239619050bfa6b22dc4014e0d52c734638e39263b06` |
@@ -652,6 +654,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `macos/RunnerTests/RunnerTests.swift` | 290 | `6bc180bc77c7def7a21d197233e25dff42cc493ab9d294632edafc18fdf0ac44` |
 | `pubspec.lock` | 29693 | `baeda33c5f9fd74c3e5a28af78b4f6d7a44b5d9cf2247c198fd2edd70d241cda` |
 | `pubspec.yaml` | 5018 | `93669722fc1db450ffcb7924e585a682e78c346938a57e8ca033ef813f9c6453` |
+| `schemas/roster-knowledge-entry.schema.json` | 3636 | `88bbff8191f09a5d3074fb30f1538266d193e8f1595ba4871b4c18a0f84ed3ab` |
 | `scripts/detect-ci-targets.sh` | 1625 | `e1ca37b123ef9ca5df126977bc7d04142105cf409da0e982c51716f733fcaf55` |
 | `test/admin_access_config_test.dart` | 1524 | `49f26ea088215c2f7c82d3ebd38099e6d8d5653ca1a4773b2ca9902e5435c0d2` |
 | `test/admin_dashboard_service_test.dart` | 962 | `63bd741c39abc644abaadbffd3f095ef49f8afcb854e1a44585acae6a6f4994b` |
@@ -679,6 +682,8 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/excel_reader_service_test.dart` | 4083 | `4d273ecd87aa133ab6aded4439449095c0042e9a8424224b69daa052cdc82c16` |
 | `test/features/calendar_sync/domain/calendar_sync_protocol_test.dart` | 2849 | `f5117baaf65f79d84c925c543b75d80c1fb1dc52ab59a66a79e4c8ee866a6971` |
 | `test/features/dashboard/application/dashboard_summary_service_test.dart` | 4456 | `f79b38159dba6a8de918f0b970497bf42512f2115b3535cf604c769ed43ba112` |
+| `test/fixtures/roster_knowledge/invalid_extra_property_entry.json` | 1190 | `6b65bade71f8802af126948a6664e899e7112dcc457c3c8a1a18552d76771443` |
+| `test/fixtures/roster_knowledge/valid_organization_scoped_entry.json` | 1129 | `943217fa4f4c9683e71039b2d93792196e1d43f9026e487c314cf056a4afecb6` |
 | `test/google_api_client_test.dart` | 2748 | `61c4ae92e4552b4555b2b1f3a0623fc85fc623cae0f2905c7cc04e1b791234ca` |
 | `test/google_auth_service_test.dart` | 855 | `7c020e73fe723f7a10809801b9a7fe5a8e40dee8dc2ce5795c10002b639bc84e` |
 | `test/google_calendar_sync_gateway_test.dart` | 3724 | `73f96f9b21fb7b5cb65eca3996f24cad06e16a16f2ce601b31ef32d5caf8bbec` |

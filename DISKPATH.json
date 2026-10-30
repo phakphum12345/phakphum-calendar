@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 766,
+  "file_count": 771,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -110,6 +110,11 @@
       "path": ".github/workflows/linux.yml",
       "size": 2470,
       "sha256": "850db3a8e9c539389df9eb6e7d801bf40de6b82accd595e90870c200b3e5db9b"
+    },
+    {
+      "path": ".github/workflows/roster-knowledge-schema.yml",
+      "size": 2161,
+      "sha256": "06d43b9147d1f0b9eac633759aebc5cff0142931a84e4c0c9ee89bf3518a4065"
     },
     {
       "path": ".github/workflows/web.yml",
@@ -790,6 +795,11 @@
       "path": "docs/REAL_ROSTER_PROFILE.md",
       "size": 1316,
       "sha256": "29c63cc02f2a49550489c35649dd265ec9114a9518c4d600ce4dad5be1913e5d"
+    },
+    {
+      "path": "docs/ROSTER_KNOWLEDGE_BASE_ARCHITECTURE_TH.md",
+      "size": 6665,
+      "sha256": "b5bc3b8d2a58fb1ce43ec53d38215742053840d4d47d1518006437a17235219f"
     },
     {
       "path": "docs/SCE_3_0_DELIVERY_ROADMAP.md",
@@ -3122,6 +3132,11 @@
       "sha256": "93669722fc1db450ffcb7924e585a682e78c346938a57e8ca033ef813f9c6453"
     },
     {
+      "path": "schemas/roster-knowledge-entry.schema.json",
+      "size": 3636,
+      "sha256": "88bbff8191f09a5d3074fb30f1538266d193e8f1595ba4871b4c18a0f84ed3ab"
+    },
+    {
       "path": "scripts/detect-ci-targets.sh",
       "size": 1625,
       "sha256": "e1ca37b123ef9ca5df126977bc7d04142105cf409da0e982c51716f733fcaf55"
@@ -3255,6 +3270,16 @@
       "path": "test/features/dashboard/application/dashboard_summary_service_test.dart",
       "size": 4456,
       "sha256": "f79b38159dba6a8de918f0b970497bf42512f2115b3535cf604c769ed43ba112"
+    },
+    {
+      "path": "test/fixtures/roster_knowledge/invalid_extra_property_entry.json",
+      "size": 1190,
+      "sha256": "6b65bade71f8802af126948a6664e899e7112dcc457c3c8a1a18552d76771443"
+    },
+    {
+      "path": "test/fixtures/roster_knowledge/valid_organization_scoped_entry.json",
+      "size": 1129,
+      "sha256": "943217fa4f4c9683e71039b2d93792196e1d43f9026e487c314cf056a4afecb6"
     },
     {
       "path": "test/google_api_client_test.dart",
