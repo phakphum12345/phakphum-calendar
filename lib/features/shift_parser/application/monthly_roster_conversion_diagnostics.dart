@@ -56,5 +56,5 @@ extension MonthlyRosterShiftAdapterDiagnostics on MonthlyRosterShiftAdapter {
   }
 
   String _compact(String value) =>
-      value.trim().replaceAll(RegExp(r'\\s+'), '').toLowerCase();
+      value.trim().replaceAll(RegExp(r'\s+'), '').toLowerCase();
 }
