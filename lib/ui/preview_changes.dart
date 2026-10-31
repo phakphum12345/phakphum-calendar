@@ -80,6 +80,52 @@ class _PreviewChangesPageState extends State<PreviewChangesPage> {
               ],
             ),
           ),
+          if (widget.controller.monthlyRosterConversion.hasUnconvertedAssignments)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+              child: Card(
+                color: Theme.of(context).colorScheme.errorContainer,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'พบรายการเวรที่อ่านได้แต่ยังแปลงไม่ได้ '
+                        '${widget.controller.monthlyRosterConversion.unconvertedCount} รายการ',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onErrorContainer,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        'รายการเหล่านี้จะไม่ถูกส่งไปซิงก์ จนกว่าจะกำหนดกติกาเวรให้ถูกต้อง',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onErrorContainer,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      for (final assignment in widget.controller.monthlyRosterConversion.unconvertedAssignments.take(8))
+                        Text(
+                          '${assignment.date.day}/${assignment.date.month}/${assignment.date.year + 543} · '
+                          '${assignment.workerName} · ${assignment.rowLabel} · ${assignment.sourceCell}',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onErrorContainer,
+                          ),
+                        ),
+                      if (widget.controller.monthlyRosterConversion.unconvertedCount > 8)
+                        Text(
+                          'และอีก ${widget.controller.monthlyRosterConversion.unconvertedCount - 8} รายการ',
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onErrorContainer,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           const Divider(height: 1),
           Expanded(
             child: ListView.separated(
