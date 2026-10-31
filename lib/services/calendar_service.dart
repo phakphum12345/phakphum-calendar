@@ -271,10 +271,13 @@ class CalendarService implements LegacyCalendarGateway {
   static String withTimelineRecord(String existingDescription, String record) {
     const marker = '--- Timeline ---';
     final markerIndex = existingDescription.indexOf(marker);
-    final baseDescription = (markerIndex < 0
-            ? existingDescription
-            : existingDescription.substring(0, markerIndex))
-        .replaceFirst(RegExp(r'(?:\\n)+
+    var baseDescription = markerIndex < 0
+        ? existingDescription
+        : existingDescription.substring(0, markerIndex);
+    while (baseDescription.endsWith(r'\n')) {
+      baseDescription = baseDescription.substring(0, baseDescription.length - 2);
+    }
+    baseDescription = baseDescription.trimRight();
     return baseDescription.isEmpty
         ? '$marker\\n$record'
         : '$baseDescription\\n\\n$marker\\n$record';
