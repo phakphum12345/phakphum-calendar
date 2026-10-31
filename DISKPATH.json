@@ -2818,8 +2818,8 @@
     },
     {
       "path": "lib/services/calendar_service.dart",
-      "size": 17025,
-      "sha256": "e1cea4acaf0782dad6883282e8e2b4ab74c7a796aacde892da7975e675bae9db"
+      "size": 13188,
+      "sha256": "5ae416d6a3b0d0151a4a090ee01e4e935dbeac275789f3e940c1699f70ca2c17"
     },
     {
       "path": "lib/services/drive_archive_service.dart",
