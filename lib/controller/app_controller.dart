@@ -2077,12 +2077,17 @@ class AppController extends ChangeNotifier implements ControllerState {
           token = matched == null ? page.nextPageToken : null;
         } while (token != null && token.isNotEmpty);
 
-        if (matched?.id != null) {
-          matched.description = CalendarService.withTimelineRecord(
-            matched.description?.trim() ?? '',
+        final matchedEvent = matched;
+        if (matchedEvent != null && matchedEvent.id != null) {
+          matchedEvent.description = CalendarService.withTimelineRecord(
+            matchedEvent.description?.trim() ?? '',
             record,
           );
-          await api.events.update(matched, 'primary', matched.id!);
+          await api.events.update(
+            matchedEvent,
+            'primary',
+            matchedEvent.id!,
+          );
           sourceEventStatus =
               'พบรายการเวรต้นฉบับและเพิ่มรายละเอียด Timeline แล้ว';
         } else if (action != 'SHIFT_CREATED') {
