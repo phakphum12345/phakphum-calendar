@@ -2078,7 +2078,7 @@ class AppController extends ChangeNotifier implements ControllerState {
         } while (token != null && token.isNotEmpty);
 
         if (matched?.id != null) {
-          matched.description = CalendarService.withTimelineRecord(
+          matched!.description = CalendarService.withTimelineRecord(
             matched!.description?.trim() ?? '',
             record,
           );
