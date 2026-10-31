@@ -591,7 +591,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/models/swap_request.dart` | 1253 | `1cb1b80512e3ceb84f2e55e5321bcd59d91275d28fc4c7343af56cd8a95b75d4` |
 | `lib/models/tool_definition.dart` | 4983 | `15339590972d63e803fb492a294cc40d8dc6ccd880888e9f4fbfbfc282db6dbc` |
 | `lib/services/calendar_color_service.dart` | 3013 | `3d4899b6b91683002069c7371b199e3f0519bdd84a87db2986d063b5cd474f03` |
-| `lib/services/calendar_service.dart` | 17026 | `986db9c8d4973ad359cd134c2b7b90ccda232715bb2d72fd857b65023530f877` |
+| `lib/services/calendar_service.dart` | 17025 | `e1cea4acaf0782dad6883282e8e2b4ab74c7a796aacde892da7975e675bae9db` |
 | `lib/services/drive_archive_service.dart` | 2913 | `37ce39a437c4c889b98d413ddd6de4f6e2f9499766531ffad6803ba7dd16e570` |
 | `lib/services/drive_ownership_service.dart` | 9290 | `e30489316965e91f008baf31d6fe2f1f3c592643257399117462e125c2d6f9e1` |
 | `lib/services/google_api_client.dart` | 1384 | `0d04e46fc86a024cc6a6b1c5b4ecb1238d3e18db9f5273ced7e85cdb18f94b96` |
