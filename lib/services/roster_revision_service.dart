@@ -62,7 +62,14 @@ class RosterRevisionService implements RosterRevisionGateway {
       pageToken = response.nextPageToken;
     } while (pageToken != null && pageToken.isNotEmpty);
 
-    revisions.sort((left, right) {
+    // Existing durable revisions are excluded before export downloads.
+    // This keeps repeat reads incremental instead of downloading the entire
+    // Drive history and discarding duplicates afterwards.
+    final missingRevisions = revisions
+        .where((revision) =>
+            revision.id == null || !knownRevisionIds.contains(revision.id))
+        .toList(growable: false);
+    missingRevisions.sort((left, right) {
       final leftTime =
           left.modifiedTime ?? DateTime.fromMillisecondsSinceEpoch(0);
       final rightTime =
@@ -74,7 +81,7 @@ class RosterRevisionService implements RosterRevisionGateway {
     const parallelDownloads = 2;
     for (
       var offset = 0;
-      offset < revisions.length;
+      offset < missingRevisions.length;
       offset += parallelDownloads
     ) {
       final end = offset + parallelDownloads < revisions.length
@@ -99,6 +106,7 @@ class RosterRevisionService implements RosterRevisionGateway {
   Future<List<RosterRevisionDocument>> readHistoryTransient(
     http.Client client,
     String fileId, {
+    Set<String> knownRevisionIds = const <String>{},
     void Function(String revisionId, Object error)? onRevisionSkipped,
   }) async {
     final api = drive.DriveApi(client);
@@ -135,10 +143,10 @@ class RosterRevisionService implements RosterRevisionGateway {
       offset < revisions.length;
       offset += parallelDownloads
     ) {
-      final end = offset + parallelDownloads < revisions.length
+      final end = offset + parallelDownloads < missingRevisions.length
           ? offset + parallelDownloads
-          : revisions.length;
-      final batch = revisions.sublist(offset, end);
+          : missingRevisions.length;
+      final batch = missingRevisions.sublist(offset, end);
       final loaded = await Future.wait([
         for (final revision in batch)
           _readRevisionTransient(
