@@ -271,9 +271,113 @@ class CalendarService implements LegacyCalendarGateway {
   static String withTimelineRecord(String existingDescription, String record) {
     const marker = '--- Timeline ---';
     final markerIndex = existingDescription.indexOf(marker);
-    final baseDescription = markerIndex < 0
-        ? existingDescription.trimRight()
-        : existingDescription.substring(0, markerIndex).trimRight();
+    final baseDescription = (markerIndex < 0
+            ? existingDescription
+            : existingDescription.substring(0, markerIndex))
+        .replaceFirst(RegExp(r'(?:\\n)+
+    return baseDescription.isEmpty
+        ? '$marker\\n$record'
+        : '$baseDescription\\n\\n$marker\\n$record';
+  }
+
+  static String descriptionFor(Shift shift) {
+    final relationship = shift.relationshipComment?.trim() ?? '';
+    return <String>[
+      shift.generated
+          ? 'สร้างอัตโนมัติเป็นเวรออฟหลังเวรดึก'
+          : 'สร้างจากตารางเวร (อ่านอย่างเดียว)',
+      'ชื่อเวรจากชีต: ${shift.rowLabel}',
+      'ผู้ปฏิบัติงานในตาราง: ${shift.assignedName}',
+      if (relationship.isNotEmpty) relationship,
+      if (shift.sourceColorHex != null)
+        'สีเซลล์ต้นฉบับ: ${shift.sourceColorHex}',
+      'ชีต: ${shift.sheetTitle} เซลล์ ${shift.cell}',
+      'ประเภท: ${shift.category.label}',
+    ].join('\n');
+  }
+
+  static String displayLegacyKeyFor(Shift shift) =>
+      _legacyKey(summaryFor(shift), shift.start);
+
+  static bool matchesLegacyEvent(Shift shift, String legacyKey) =>
+      legacyKey == legacyKeyFor(shift) ||
+      legacyKey == displayLegacyKeyFor(shift);
+
+  static bool matchesEquivalentPeriod(Shift shift, CalendarBusyPeriod period) =>
+      CalendarEventMatcher.isEquivalent(
+        rosterTitle: shift.displayName,
+        sourceLabel: shift.rowLabel,
+        rosterStart: shift.start,
+        rosterEnd: shift.end,
+        calendarTitle: period.title,
+        calendarStart: period.start,
+        calendarEnd: period.end,
+      );
+
+  static bool matchesExisting(Shift shift, Set<String> keys) =>
+      keys.contains(keyFor(shift)) ||
+      keys.contains(legacyKeyFor(shift)) ||
+      keys.contains(displayLegacyKeyFor(shift)) ||
+      keys.contains(managedTimeKeyFor(shift));
+
+  static String managedTimeKeyFor(Shift shift) =>
+      _managedTimeKey(summaryFor(shift), shift.start, shift.end);
+
+  @override
+  bool matchesExistingShift(Shift shift, Set<String> keys) =>
+      matchesExisting(shift, keys);
+
+  static String _legacyKey(String summary, DateTime wallTime) =>
+      'legacy|$summary|${wallTime.year.toString().padLeft(4, '0')}-'
+      '${wallTime.month.toString().padLeft(2, '0')}-'
+      '${wallTime.day.toString().padLeft(2, '0')}T'
+      '${wallTime.hour.toString().padLeft(2, '0')}:'
+      '${wallTime.minute.toString().padLeft(2, '0')}';
+
+  static String _managedTimeKey(String title, DateTime start, DateTime end) =>
+      'managed-time|${_managedTitleIdentity(title)}|'
+      '${_wallIdentity(start)}|${_wallIdentity(end)}';
+
+  static String _managedTitleIdentity(String value) =>
+      value.trim().replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
+
+  static String _wallIdentity(DateTime value) =>
+      '${value.year.toString().padLeft(4, '0')}-'
+      '${value.month.toString().padLeft(2, '0')}-'
+      '${value.day.toString().padLeft(2, '0')}T'
+      '${value.hour.toString().padLeft(2, '0')}:'
+      '${value.minute.toString().padLeft(2, '0')}:'
+      '${value.second.toString().padLeft(2, '0')}';
+
+  DateTime? _wallTime(calendar.EventDateTime? value) {
+    final instant = value?.dateTime;
+    if (instant != null) {
+      final bangkok = instant.toUtc().add(const Duration(hours: 7));
+      return DateTime(
+        bangkok.year,
+        bangkok.month,
+        bangkok.day,
+        bangkok.hour,
+        bangkok.minute,
+        bangkok.second,
+        bangkok.millisecond,
+        bangkok.microsecond,
+      );
+    }
+    final date = value?.date;
+    return date == null ? null : DateTime(date.year, date.month, date.day);
+  }
+
+  DateTime _bangkokInstant(DateTime wallTime) => DateTime.utc(
+    wallTime.year,
+    wallTime.month,
+    wallTime.day,
+    wallTime.hour - 7,
+    wallTime.minute,
+  );
+}
+), '')
+        .trimRight();
     return baseDescription.isEmpty
         ? '$marker\\n$record'
         : '$baseDescription\\n\\n$marker\\n$record';
