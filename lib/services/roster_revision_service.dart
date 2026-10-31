@@ -62,14 +62,7 @@ class RosterRevisionService implements RosterRevisionGateway {
       pageToken = response.nextPageToken;
     } while (pageToken != null && pageToken.isNotEmpty);
 
-    // Existing durable revisions are excluded before export downloads.
-    // This keeps repeat reads incremental instead of downloading the entire
-    // Drive history and discarding duplicates afterwards.
-    final missingRevisions = revisions
-        .where((revision) =>
-            revision.id == null || !knownRevisionIds.contains(revision.id))
-        .toList(growable: false);
-    missingRevisions.sort((left, right) {
+    revisions.sort((left, right) {
       final leftTime =
           left.modifiedTime ?? DateTime.fromMillisecondsSinceEpoch(0);
       final rightTime =
@@ -81,7 +74,7 @@ class RosterRevisionService implements RosterRevisionGateway {
     const parallelDownloads = 2;
     for (
       var offset = 0;
-      offset < missingRevisions.length;
+      offset < revisions.length;
       offset += parallelDownloads
     ) {
       final end = offset + parallelDownloads < revisions.length
@@ -128,19 +121,24 @@ class RosterRevisionService implements RosterRevisionGateway {
       pageToken = response.nextPageToken;
     } while (pageToken != null && pageToken.isNotEmpty);
 
-    revisions.sort((left, right) {
-      final leftTime =
-          left.modifiedTime ?? DateTime.fromMillisecondsSinceEpoch(0);
-      final rightTime =
-          right.modifiedTime ?? DateTime.fromMillisecondsSinceEpoch(0);
-      return leftTime.compareTo(rightTime);
-    });
+    // Filter known IDs before issuing export downloads.
+    final missingRevisions = revisions
+        .where((revision) =>
+            revision.id == null || !knownRevisionIds.contains(revision.id))
+        .toList(growable: false)
+      ..sort((left, right) {
+        final leftTime =
+            left.modifiedTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final rightTime =
+            right.modifiedTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return leftTime.compareTo(rightTime);
+      });
 
     final documents = <RosterRevisionDocument>[];
     const parallelDownloads = 2;
     for (
       var offset = 0;
-      offset < revisions.length;
+      offset < missingRevisions.length;
       offset += parallelDownloads
     ) {
       final end = offset + parallelDownloads < missingRevisions.length
