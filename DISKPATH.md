@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `773`
+- Tracked files: `775`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -531,6 +531,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/shift_exchange/presentation/controllers/shift_exchange_controller.dart` | 1393 | `0c53e696383ba7e668e2b0317f98c49995b5d0003e6feda007f92577116c2b66` |
 | `lib/features/shift_exchange/presentation/pages/shift_exchange_page.dart` | 4094 | `fd5473594d17fec03331e548a3e1123335e888621b226255bab77d486c93f57e` |
 | `lib/features/shift_parser/application/hospital_roster_parser.dart` | 5495 | `8ca60d01705bb52e4faa478ad61c28a0f67d104291fd3165ef3e8dfd30f10168` |
+| `lib/features/shift_parser/application/monthly_roster_conversion_diagnostics.dart` | 2174 | `70d1ba6b70a0a8544f879079fe3a2d6163d521c9bc7c63430aea8a421131309a` |
 | `lib/features/shift_parser/application/monthly_roster_section_parser.dart` | 13462 | `c9ceb14081e4f00a1ff5fd496c174a2c4e66ef5a8198463be174f7610fa3a80a` |
 | `lib/features/shift_parser/application/smart_roster_analyze_generator.dart` | 2805 | `0f94606576069cdf897804589a9c17494b2237515e6135bac1d1c74e3eb47acc` |
 | `lib/features/shift_parser/application/snapshot_normalizer.dart` | 1809 | `ad12901e35e5e9f33ed815547ecc051d117e0e3fddcc9f5b0f567e99a16e36f6` |
@@ -702,6 +703,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/manual_roster_editor_test.dart` | 5374 | `fb65001fa4ca8fbbf216dc698a43217e9bff0353dc270347c08a401297fb7bb9` |
 | `test/monthly_roster_all_dates_test.dart` | 4902 | `a5fdab96f0c2399f12b252acfeea1452e5a1cfb4a443e8064e2caad400b08bb0` |
 | `test/monthly_roster_all_years_leap_test.dart` | 3326 | `fe5e32facccbb1976e00fe56ccad0c2dc6f272878cb97817f5ba4d60cfa2284b` |
+| `test/monthly_roster_conversion_diagnostics_test.dart` | 2397 | `1a5803abfea9a89ddd4f864485480b80937f32f360f7f3cfb8b911d5f7460ef0` |
 | `test/monthly_roster_cross_month_date_test.dart` | 6660 | `f23c05b37ab721ac9d715f589560cab86abd69f5e17d23c0c9d865c4a3c47bc9` |
 | `test/monthly_roster_section_parser_test.dart` | 9773 | `710fa33c84a88746247dc58a59b2e12df1153c1f1a5825f660f1e29bc74e40b1` |
 | `test/monthly_roster_template_test.dart` | 2146 | `43491b9121bd0031c97ed10e8772bec1337d74a39e312e788e9138ba59123076` |

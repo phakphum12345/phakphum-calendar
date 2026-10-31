@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 773,
+  "file_count": 775,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -2517,6 +2517,11 @@
       "sha256": "8ca60d01705bb52e4faa478ad61c28a0f67d104291fd3165ef3e8dfd30f10168"
     },
     {
+      "path": "lib/features/shift_parser/application/monthly_roster_conversion_diagnostics.dart",
+      "size": 2174,
+      "sha256": "70d1ba6b70a0a8544f879079fe3a2d6163d521c9bc7c63430aea8a421131309a"
+    },
+    {
       "path": "lib/features/shift_parser/application/monthly_roster_section_parser.dart",
       "size": 13462,
       "sha256": "c9ceb14081e4f00a1ff5fd496c174a2c4e66ef5a8198463be174f7610fa3a80a"
@@ -3370,6 +3375,11 @@
       "path": "test/monthly_roster_all_years_leap_test.dart",
       "size": 3326,
       "sha256": "fe5e32facccbb1976e00fe56ccad0c2dc6f272878cb97817f5ba4d60cfa2284b"
+    },
+    {
+      "path": "test/monthly_roster_conversion_diagnostics_test.dart",
+      "size": 2397,
+      "sha256": "1a5803abfea9a89ddd4f864485480b80937f32f360f7f3cfb8b911d5f7460ef0"
     },
     {
       "path": "test/monthly_roster_cross_month_date_test.dart",
