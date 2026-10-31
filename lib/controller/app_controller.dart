@@ -876,61 +876,104 @@ class AppController extends ChangeNotifier implements ControllerState {
           timelineWarning = null;
           try {
             var skippedRevisionCount = 0;
-            final historicalRevisions = await const RosterRevisionService()
-                .readHistoryTransient(
-                  client,
-                  spreadsheetId,
-                  onRevisionSkipped: (revisionId, error) {
-                    skippedRevisionCount++;
-                  },
-                );
-            // Persist every successfully downloaded revision before rendering it.
-            // The archive is scoped to the signed-in account and source file.
             final accountId = auth.account?.email.trim();
+            const archive = TimelineArchiveService();
+            var archivedRevisions = <RosterRevisionDocument>[];
+
+            // Render the durable local archive first. A temporary Drive or
+            // network failure must not hide history already saved on this device.
             if (accountId != null && accountId.isNotEmpty) {
               try {
-                const archive = TimelineArchiveService();
-                for (final revision in historicalRevisions) {
-                  await archive.putRevision(
-                    accountId: accountId,
-                    fileId: spreadsheetId,
-                    document: revision,
-                  );
-                }
-              } on Object catch (archiveError) {
+                archivedRevisions = await archive.readRevisions(
+                  accountId: accountId,
+                  fileId: spreadsheetId,
+                );
+              } on Object catch (archiveReadError) {
                 final archiveWarning =
-                    'อ่าน Timeline ได้ แต่บันทึกประวัติถาวรไม่สำเร็จ: '
-                    '$archiveError';
-                timelineWarning = timelineWarning == null
-                    ? archiveWarning
-                    : '$timelineWarning; $archiveWarning';
+                    'อ่านคลัง Timeline ในเครื่องไม่สำเร็จ: $archiveReadError';
+                timelineWarning = archiveWarning;
                 await _addAudit(
-                  'sheet.timeline.archive.failed',
+                  'sheet.timeline.archive.read.failed',
                   archiveWarning,
                   false,
                 );
               }
             } else {
               timelineWarning =
-                  'ยังไม่ได้บันทึก Timeline archive เพราะไม่พบอีเมลบัญชี Google';
+                  'ไม่พบอีเมลบัญชี Google จึงไม่สามารถแยกคลัง Timeline ตามบัญชีได้';
             }
-            _loadedRevisionCount = historicalRevisions.length + 1;
-            _revisionTimelines = timelineGenerator.generateFromDocuments([
-              ...historicalRevisions,
-              currentRevision,
-            ]);
-            if (historicalRevisions.isEmpty) {
-              timelineWarning =
-                  'Google Drive ไม่พบประวัติ revision ที่อ่านได้ '
-                  'จึงแสดงเฉพาะรายชื่อเวรปัจจุบัน';
-            }
-            if (skippedRevisionCount > 0) {
-              final skippedWarning =
-                  'ข้าม revision ที่อ่านไม่ได้ $skippedRevisionCount รายการ; '
-                  'Timeline อาจไม่ครบ';
+
+            try {
+              final knownRevisionIds = archivedRevisions
+                  .map((revision) => revision.revisionId)
+                  .toSet();
+              final missingRevisions = await const RosterRevisionService()
+                  .readHistoryTransient(
+                    client,
+                    spreadsheetId,
+                    knownRevisionIds: knownRevisionIds,
+                    onRevisionSkipped: (revisionId, error) {
+                      skippedRevisionCount++;
+                    },
+                  );
+
+              // Persist each downloaded revision before adding it to the
+              // in-memory timeline. If a write fails, the local archive remains
+              // valid and the warning makes the incomplete refresh visible.
+              if (accountId != null && accountId.isNotEmpty) {
+                for (final revision in missingRevisions) {
+                  await archive.putRevision(
+                    accountId: accountId,
+                    fileId: spreadsheetId,
+                    document: revision,
+                  );
+                }
+              }
+
+              final mergedRevisions = <String, RosterRevisionDocument>{
+                for (final revision in archivedRevisions)
+                  revision.revisionId: revision,
+                for (final revision in missingRevisions)
+                  revision.revisionId: revision,
+              }.values.toList()
+                ..sort((left, right) =>
+                    left.modifiedAt.compareTo(right.modifiedAt));
+
+              _loadedRevisionCount = mergedRevisions.length + 1;
+              _revisionTimelines = timelineGenerator.generateFromDocuments([
+                ...mergedRevisions,
+                currentRevision,
+              ]);
+              if (mergedRevisions.isEmpty) {
+                timelineWarning =
+                    'ไม่พบประวัติ revision ที่อ่านได้ จึงแสดงเฉพาะรายชื่อเวรปัจจุบัน';
+              }
+              if (skippedRevisionCount > 0) {
+                final skippedWarning =
+                    'ข้าม revision ที่อ่านไม่ได้ $skippedRevisionCount รายการ; '
+                    'Timeline อาจไม่ครบ';
+                timelineWarning = timelineWarning == null
+                    ? skippedWarning
+                    : '$timelineWarning; $skippedWarning';
+              }
+            } on Object catch (historyError) {
+              _loadedRevisionCount = archivedRevisions.length + 1;
+              _revisionTimelines = timelineGenerator.generateFromDocuments([
+                ...archivedRevisions,
+                currentRevision,
+              ]);
+              final fallbackWarning = archivedRevisions.isEmpty
+                  ? 'อ่านประวัติ Timeline จาก Drive ไม่สำเร็จและไม่มีคลังในเครื่อง: $historyError'
+                  : 'Drive ยังอ่านประวัติใหม่ไม่ได้ จึงใช้ Timeline ที่บันทึกในเครื่อง '
+                        '(${archivedRevisions.length} revision): $historyError';
               timelineWarning = timelineWarning == null
-                  ? skippedWarning
-                  : '$timelineWarning; $skippedWarning';
+                  ? fallbackWarning
+                  : '$timelineWarning; $fallbackWarning';
+              await _addAudit(
+                'sheet.timeline.drive.failed',
+                fallbackWarning,
+                false,
+              );
             }
           } on Object catch (caught, stackTrace) {
             _loadedRevisionCount = 1;
