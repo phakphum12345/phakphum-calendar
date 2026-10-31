@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/testing.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:phakphum_calendar/models/shift.dart';
 import 'package:phakphum_calendar/services/roster_revision_service.dart';
@@ -89,4 +91,45 @@ void main() {
     expect(checkpoint?['complete'], false);
     expect(checkpoint?['lastError'], 'HTTP 429');
   });
+  test('does not download Drive exports already present in local archive',
+      () async {
+    final requests = <http.Request>[];
+    final client = MockClient((request) async {
+      requests.add(request);
+      return http.Response(
+        '''
+        {
+          "revisions": [
+            {
+              "id": "revision-1",
+              "modifiedTime": "2026-09-28T00:00:00.000Z",
+              "exportLinks": {
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+                    "https://example.test/revision-1.xlsx"
+              }
+            }
+          ]
+        }
+        ''',
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+
+    try {
+      final revisions = await const RosterRevisionService()
+          .readHistoryTransient(
+            client,
+            'sheet-1',
+            knownRevisionIds: {'revision-1'},
+          );
+
+      expect(revisions, isEmpty);
+      expect(requests, hasLength(1));
+      expect(requests.single.url.path, contains('/revisions'));
+    } finally {
+      client.close();
+    }
+  });
+
 }

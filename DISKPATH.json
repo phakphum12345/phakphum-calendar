@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 771,
+  "file_count": 772,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -853,8 +853,8 @@
     },
     {
       "path": "docs/adr/ADR-0005-google-authentication.md",
-      "size": 710,
-      "sha256": "d75f4dc7aa8af77e42eb7f877a1a01e39c9b2015a24e9df58dc0e8e75ce89dc8"
+      "size": 3821,
+      "sha256": "ecc49d04421ff207648c87aa8ca007b421dce1664f17f4c23ef5a92db90c74ae"
     },
     {
       "path": "docs/adr/ADR-0006-drive-file-selection.md",
@@ -890,6 +890,11 @@
       "path": "docs/adr/ADR-0012-text-first-roster-comparison.md",
       "size": 845,
       "sha256": "239cbf3677b2831a91c0eecc99ea2fe27bbc5f8685e48d1f24f49c1e09f71656"
+    },
+    {
+      "path": "docs/adr/ADR-0012-timeline-persistence-and-drive-backup.md",
+      "size": 7929,
+      "sha256": "9fa9f9c28ee1f16641b4fe874c706cdaae4b75aa550637d8d9c6c9ec4ae02af9"
     },
     {
       "path": "docs/adr/ADR-0013-block-on-unknown-shift-time.md",
@@ -1213,8 +1218,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 101942,
-      "sha256": "20dac3901f2dc926dd3b06c5e3f2c00f521b623d0617fbf05e154c98bca87d79"
+      "size": 104108,
+      "sha256": "1b20d00283fbe359d6779c66328cc6cc4a88f4c940ee4588109e54d58818087e"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
@@ -2843,8 +2848,8 @@
     },
     {
       "path": "lib/services/roster_revision_service.dart",
-      "size": 9725,
-      "sha256": "6dd4edc58563953b43ce5aeaeb8459194cc856dbc079c3a1f09b71a358eee31f"
+      "size": 10046,
+      "sha256": "5abe378db7c2296fcf0321c6a4ef2573618a2f9768c729df3862de553052666e"
     },
     {
       "path": "lib/services/roster_timeline_generator.dart",
@@ -3658,8 +3663,8 @@
     },
     {
       "path": "test/timeline_archive_service_test.dart",
-      "size": 2518,
-      "sha256": "2416f6efe42c6a98f86ce13f2aba3696d8a6e25b750f119690b846901daeaf34"
+      "size": 3703,
+      "sha256": "fdf8af1c9b3a40f796f422a847f16291b9b314cbd4359096f1b3dbef3ec9efb2"
     },
     {
       "path": "test/v2/access_control_test.dart",

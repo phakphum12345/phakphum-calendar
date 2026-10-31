@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `771`
+- Tracked files: `772`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -198,7 +198,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `docs/adr/ADR-0002-state-management.md` | 408 | `1923c9e6e55047a54a8de57637a869e46e8e38cc9ec55c0a4b26e4c5db2d83fd` |
 | `docs/adr/ADR-0003-local-storage.md` | 425 | `2adfd55c31e03c78a7a85ae731acd0ff0a95aca8241e97710b1d739368093d00` |
 | `docs/adr/ADR-0004-calendar-sync.md` | 445 | `f25b6b2c9e02a751d778e4075334fdf32a3326c020e15acdc9b058537e86c7b1` |
-| `docs/adr/ADR-0005-google-authentication.md` | 710 | `d75f4dc7aa8af77e42eb7f877a1a01e39c9b2015a24e9df58dc0e8e75ce89dc8` |
+| `docs/adr/ADR-0005-google-authentication.md` | 3821 | `ecc49d04421ff207648c87aa8ca007b421dce1664f17f4c23ef5a92db90c74ae` |
 | `docs/adr/ADR-0006-drive-file-selection.md` | 946 | `626ac1bb39dda53d3bceb666ad83e28f8c3d3d09fd294ddd3411defbf25ac16b` |
 | `docs/adr/ADR-0007-sheet-normalization.md` | 818 | `054d105ee271fb28e96bfe3113b1c1b330bf6ab69575147f4b34c996d7fe10bd` |
 | `docs/adr/ADR-0008-comparison-before-sync.md` | 718 | `7f165b99adde5563e52832fda80960cea8f0f46929c6a891737abeeab85dd741` |
@@ -206,6 +206,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `docs/adr/ADR-0010-sync-reliability.md` | 637 | `db90088b22e0c305c0739b0033f2ff1a47c68eb36543e4e818d91d26c011aa90` |
 | `docs/adr/ADR-0011-durable-history-storage.md` | 326 | `4aa58fd4a76ff92a0c5a02f7e3005a5c943744f11558079149b26cd3e5a8533f` |
 | `docs/adr/ADR-0012-text-first-roster-comparison.md` | 845 | `239cbf3677b2831a91c0eecc99ea2fe27bbc5f8685e48d1f24f49c1e09f71656` |
+| `docs/adr/ADR-0012-timeline-persistence-and-drive-backup.md` | 7929 | `9fa9f9c28ee1f16641b4fe874c706cdaae4b75aa550637d8d9c6c9ec4ae02af9` |
 | `docs/adr/ADR-0013-block-on-unknown-shift-time.md` | 445 | `5c7b32feb0d1b6e418d9dc09144ed5aa6b87e991b1900e548467234c96235cd4` |
 | `docs/adr/ADR-0014-multi-source-multi-period-review.md` | 1376 | `ddad342731c19761300348cf7e7590ab7253e9b4836c93baad4bb72a949285db` |
 | `docs/google-workspace-setup.html` | 5829 | `69bec594a366e629476a68f6c56726aad265ec227626c90bf4b9445d5bbe6cb9` |
@@ -270,7 +271,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `l10n.yaml` | 151 | `c3ce52cbd012e898f809811d21f21ead3bb3afd08b49a4efe4da74080248664d` |
 | `lib/app.dart` | 7679 | `599df85fd9c6a6abaa17e5646dd59969ef67bbe5a9d722030c1c5d4c83247ce1` |
 | `lib/bootstrap/app_bootstrap.dart` | 380 | `cada71fb830d954d0bd4df8e8892b7e0b62a5844a01d00daf1cd0007c9f23cb0` |
-| `lib/controller/app_controller.dart` | 101942 | `20dac3901f2dc926dd3b06c5e3f2c00f521b623d0617fbf05e154c98bca87d79` |
+| `lib/controller/app_controller.dart` | 104108 | `1b20d00283fbe359d6779c66328cc6cc4a88f4c940ee4588109e54d58818087e` |
 | `lib/core/di/app_dependencies.dart` | 21906 | `4075fdbcb457fd20199b251966063c71408d27ce8a8301bbfce9f160dff36b14` |
 | `lib/core/google/authorized_google_client_factory.dart` | 971 | `8a5504571f4d8e93d096d3f3bb3140564e58729510ac66c021a95361b2d362c8` |
 | `lib/core/google/google_scopes.dart` | 629 | `437eaa6b551e7fcfc6993603d2acb6c3a5be6818d0289ed2b20b0fc1af2d29b2` |
@@ -596,7 +597,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/google_api_client.dart` | 1384 | `0d04e46fc86a024cc6a6b1c5b4ecb1238d3e18db9f5273ced7e85cdb18f94b96` |
 | `lib/services/google_auth_service.dart` | 10389 | `0137bf9fec9ecab1547fb1b16e4493dc05dece74e96e633e8283c5a82807b282` |
 | `lib/services/local_roster_file_service.dart` | 5387 | `db5336a2eb195d18c0027528d0ef0f167fb02b5c558919e98d861614da6b83db` |
-| `lib/services/roster_revision_service.dart` | 9725 | `6dd4edc58563953b43ce5aeaeb8459194cc856dbc079c3a1f09b71a358eee31f` |
+| `lib/services/roster_revision_service.dart` | 10046 | `5abe378db7c2296fcf0321c6a4ef2573618a2f9768c729df3862de553052666e` |
 | `lib/services/roster_timeline_generator.dart` | 1531 | `7ed54286153b0075d6d979a82ea0cecd72aec47b3cea150fef2fdf152acc683e` |
 | `lib/services/settings_service.dart` | 8208 | `732d6754db002c00ef7e37e3ba7534d72eafc491c4582c715c8a5c83c359511d` |
 | `lib/services/sheets_service.dart` | 9135 | `10f60cc6de94fbc0eb6c91961935b509f32e54e347d004d5f9f4bd7ac19a328b` |
@@ -759,7 +760,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/swap_request_service_test.dart` | 721 | `13b430ea5a944f506d49c28997d72e0f84994ba47d0d5b23d6cf46b8c8dc2273` |
 | `test/tenant_guard_test.dart` | 1901 | `342ec8e11672a12ee348a3ea16596c77d5a4472899d6465b8ea704dfdc00a4c1` |
 | `test/thai_roster_every_single_date_test.dart` | 2593 | `5d712ef2716dc267d64146d1b6378665141cee79cf6259737a7202d56023e5ca` |
-| `test/timeline_archive_service_test.dart` | 2518 | `2416f6efe42c6a98f86ce13f2aba3696d8a6e25b750f119690b846901daeaf34` |
+| `test/timeline_archive_service_test.dart` | 3703 | `fdf8af1c9b3a40f796f422a847f16291b9b314cbd4359096f1b3dbef3ec9efb2` |
 | `test/v2/access_control_test.dart` | 598 | `e34ab8a283d9b35b1e8d7a43725cacea5660eebb0bc5ca7a70889e302d496997` |
 | `test/v2/calendar_diff_engine_test.dart` | 4909 | `50935bd3117a6a1ca4e6fdf44720bcf3e3a492c27b782f5b4a833da737b3df28` |
 | `test/v2/calendar_sync_actions_test.dart` | 2571 | `c255290463c71d2ad7b24c9cc271b2355c9ac3b432a0ca55dad162c7cd898b58` |
