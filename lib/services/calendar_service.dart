@@ -282,7 +282,6 @@ class CalendarService implements LegacyCalendarGateway {
         ? '$marker\\n$record'
         : '$baseDescription\\n\\n$marker\\n$record';
   }
-
   static String descriptionFor(Shift shift) {
     final relationship = shift.relationshipComment?.trim() ?? '';
     return <String>[
