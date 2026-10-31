@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `772`
+- Tracked files: `773`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -168,6 +168,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `backend/tests/TestCase.php` | 142 | `c7c209f5579c42647c1f7b2a79ac828e8b54ac62a98442045a6e94fa2c0d0ebc` |
 | `backend/tests/Unit/ExampleTest.php` | 243 | `ffacae5c1a2a44c809420af5b3b404910da1b12167d58764dac6d10b8ba8cfaf` |
 | `backend/vite.config.js` | 632 | `f413e14379e2db8b200c63a6326b925f6d47cc0df458c77bfe188cfc23e8081f` |
+| `docs/AI_PROVIDER_RESEARCH_FOUNDATION.md` | 5750 | `6e764001cdb42eba5e01acfa0209e15e1c3136677d97df92d0034dda87cf1b43` |
 | `docs/AI_ROSTER_ANALYZER_LOGIC_TH.md` | 8389 | `e175d44fe3d3148fe2b007196834843fd7028bbecca7e927770505670c6d01f0` |
 | `docs/AI_SUPPORT_CHAT.md` | 1192 | `93c123a267a3331e4a004dbd34ea9dfa93802da689b0f99bb786808bc15013bd` |
 | `docs/API_FOUNDATION.md` | 851 | `e2fad2e3f128f0c6c3a20479148b0b603c15634ad22a6b877c5e6bb1fc3a6d8d` |

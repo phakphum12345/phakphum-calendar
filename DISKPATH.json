@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 772,
+  "file_count": 773,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -700,6 +700,11 @@
       "path": "backend/vite.config.js",
       "size": 632,
       "sha256": "f413e14379e2db8b200c63a6326b925f6d47cc0df458c77bfe188cfc23e8081f"
+    },
+    {
+      "path": "docs/AI_PROVIDER_RESEARCH_FOUNDATION.md",
+      "size": 5750,
+      "sha256": "6e764001cdb42eba5e01acfa0209e15e1c3136677d97df92d0034dda87cf1b43"
     },
     {
       "path": "docs/AI_ROSTER_ANALYZER_LOGIC_TH.md",
