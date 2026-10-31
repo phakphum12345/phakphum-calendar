@@ -2078,10 +2078,10 @@ class AppController extends ChangeNotifier implements ControllerState {
         } while (token != null && token.isNotEmpty);
 
         if (matched?.id != null) {
-          final oldDescription = matched!.description?.trim() ?? '';
-          matched.description = oldDescription.isEmpty
-              ? record
-              : '$oldDescription\n\n--- Timeline ---\n$record';
+          matched.description = CalendarService.withTimelineRecord(
+            matched!.description?.trim() ?? '',
+            record,
+          );
           await api.events.update(matched, 'primary', matched.id!);
           sourceEventStatus =
               'พบรายการเวรต้นฉบับและเพิ่มรายละเอียด Timeline แล้ว';
