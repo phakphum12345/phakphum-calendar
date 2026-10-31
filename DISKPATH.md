@@ -591,7 +591,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/models/swap_request.dart` | 1253 | `1cb1b80512e3ceb84f2e55e5321bcd59d91275d28fc4c7343af56cd8a95b75d4` |
 | `lib/models/tool_definition.dart` | 4983 | `15339590972d63e803fb492a294cc40d8dc6ccd880888e9f4fbfbfc282db6dbc` |
 | `lib/services/calendar_color_service.dart` | 3013 | `3d4899b6b91683002069c7371b199e3f0519bdd84a87db2986d063b5cd474f03` |
-| `lib/services/calendar_service.dart` | 13188 | `5ae416d6a3b0d0151a4a090ee01e4e935dbeac275789f3e940c1699f70ca2c17` |
+| `lib/services/calendar_service.dart` | 13337 | `336e8bad2c642153122535ce10d32aab56c05ac08e35835f24b4aa71cce92a45` |
 | `lib/services/drive_archive_service.dart` | 2913 | `37ce39a437c4c889b98d413ddd6de4f6e2f9499766531ffad6803ba7dd16e570` |
 | `lib/services/drive_ownership_service.dart` | 9290 | `e30489316965e91f008baf31d6fe2f1f3c592643257399117462e125c2d6f9e1` |
 | `lib/services/google_api_client.dart` | 1384 | `0d04e46fc86a024cc6a6b1c5b4ecb1238d3e18db9f5273ced7e85cdb18f94b96` |
@@ -666,7 +666,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/calendar_color_service_test.dart` | 942 | `c8d6238ab098971cddaacda11b0cb00f6cf6df57f967878106e9191df985f78c` |
 | `test/calendar_event_matcher_test.dart` | 3007 | `8b2104f19c9e308504a7a71d822ebf203ba9b4006f043a5379cf8472d6c6f642` |
 | `test/calendar_foundation_test.dart` | 3787 | `115a14fa6a89d199be6976147ece58ed88a0ac7f978dab534005d04188b27477` |
-| `test/calendar_relationship_description_test.dart` | 3984 | `8cf3fb23ae834fa3ed0fb3e94c836cf4e3404fad54f3c9926408eb4d71298910` |
+| `test/calendar_relationship_description_test.dart` | 3972 | `87e71575f513a86e94c3d990dd20db4f5919870a5b3d837e5fc9649fb3a683af` |
 | `test/calendar_service_managed_event_test.dart` | 5326 | `aeb0b85ba5c80bcb3c6002e2951f8d44ae6ba977579c68213f8dd20dc659bee4` |
 | `test/calendar_workflow_facade_test.dart` | 1863 | `992db03d6f3fbe65b888a62817e2f35670866b610e7a3743e95088c45d159833` |
 | `test/canonical_import_calendar_vertical_slice_test.dart` | 8459 | `69b5ccecd56647cd9521056b63c2c19909ca47d1e673c51c865ddb64d5d95369` |

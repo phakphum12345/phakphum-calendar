@@ -274,14 +274,17 @@ class CalendarService implements LegacyCalendarGateway {
     var baseDescription = markerIndex < 0
         ? existingDescription
         : existingDescription.substring(0, markerIndex);
+    // Remove malformed literal escape sequences written by older versions,
+    // then trim real line endings before rebuilding the canonical section.
     while (baseDescription.endsWith(r'\n')) {
       baseDescription = baseDescription.substring(0, baseDescription.length - 2);
     }
     baseDescription = baseDescription.trimRight();
     return baseDescription.isEmpty
-        ? '$marker\\n$record'
-        : '$baseDescription\\n\\n$marker\\n$record';
+        ? '$marker\n$record'
+        : '$baseDescription\n\n$marker\n$record';
   }
+
   static String descriptionFor(Shift shift) {
     final relationship = shift.relationshipComment?.trim() ?? '';
     return <String>[
