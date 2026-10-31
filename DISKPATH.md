@@ -272,7 +272,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `l10n.yaml` | 151 | `c3ce52cbd012e898f809811d21f21ead3bb3afd08b49a4efe4da74080248664d` |
 | `lib/app.dart` | 7679 | `599df85fd9c6a6abaa17e5646dd59969ef67bbe5a9d722030c1c5d4c83247ce1` |
 | `lib/bootstrap/app_bootstrap.dart` | 380 | `cada71fb830d954d0bd4df8e8892b7e0b62a5844a01d00daf1cd0007c9f23cb0` |
-| `lib/controller/app_controller.dart` | 104180 | `26165ae797cd9234581bc9c578ad143efd7d30910ccb84d677536b1ba12c0b19` |
+| `lib/controller/app_controller.dart` | 105048 | `2473816223f719142cd62b92c62530faff81f3d6cd2d78e70a1447a8eaf02511` |
 | `lib/core/di/app_dependencies.dart` | 21906 | `4075fdbcb457fd20199b251966063c71408d27ce8a8301bbfce9f160dff36b14` |
 | `lib/core/google/authorized_google_client_factory.dart` | 971 | `8a5504571f4d8e93d096d3f3bb3140564e58729510ac66c021a95361b2d362c8` |
 | `lib/core/google/google_scopes.dart` | 629 | `437eaa6b551e7fcfc6993603d2acb6c3a5be6818d0289ed2b20b0fc1af2d29b2` |
@@ -616,7 +616,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/ui/google_sign_in_button.dart` | 102 | `250dcb07d7da55efdcbe2f2f164ef395050f5b635e044e48f16575dc035ad2b7` |
 | `lib/ui/google_sign_in_button_stub.dart` | 485 | `a7dc983f3b084047340e7899c25abe7f89fc45401653e3a41ecc83f868504656` |
 | `lib/ui/google_sign_in_button_web.dart` | 600 | `b817de5a6e8960ca5e42cc386c7f85f0a41c75e01c350ed783dedc1d8cedb9ca` |
-| `lib/ui/preview_changes.dart` | 13166 | `1215deb946d07927c6106f1a33dc8689f46a154e81a1fdaa2bba677a503ffad9` |
+| `lib/ui/preview_changes.dart` | 15753 | `e3d69bd1c0cd2ab12c6696420d5a50dd3e3d4d280a92c42988b8a4e5dd26f523` |
 | `linux/.gitignore` | 18 | `5ded4f1a9d10d34bf6ee5beb0711d88ee2ef07b0f07ace9ed77935a246e8eb82` |
 | `linux/CMakeLists.txt` | 4936 | `a43721e26e39fd37d9e6720118ceed3fae38296dbca1e00e4911db0fd7738622` |
 | `linux/flutter/CMakeLists.txt` | 2815 | `787189e2623313cfee590a0b553338eb9fc68b3af922ddd77c5d39c75f989aeb` |
