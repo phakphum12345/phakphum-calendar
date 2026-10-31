@@ -22,6 +22,7 @@ import '../domain/repositories/schedule_repository.dart';
 import '../features/schedule/data/legacy_schedule_adapter.dart';
 import '../features/google_sheets/domain/sheet_color.dart';
 import '../features/shift_parser/application/monthly_roster_section_parser.dart';
+import '../features/shift_parser/application/monthly_roster_conversion_diagnostics.dart';
 import '../features/shift_parser/application/smart_roster_analyze_generator.dart';
 import '../features/shift_parser/domain/monthly_roster_section.dart';
 import '../features/shift_parser/domain/normalized_cell.dart';
@@ -245,6 +246,11 @@ class AppController extends ChangeNotifier implements ControllerState {
     sections: [],
     warnings: [],
   );
+  MonthlyRosterConversionReport monthlyRosterConversion =
+      const MonthlyRosterConversionReport(
+        shifts: [],
+        unconvertedAssignments: [],
+      );
   DateTime? syncRangeStart;
   DateTime? syncRangeEnd;
   final Map<String, _ShiftOverride> _shiftOverrides = {};
@@ -827,10 +833,18 @@ class AppController extends ChangeNotifier implements ControllerState {
           spreadsheetId: spreadsheetId,
           applyPeriodFilter: false,
         );
-        final monthlyParsed = const MonthlyRosterShiftAdapter()
-            .parseForWorkers(parsedMonthlyAll, targetNames: searchNames)
-            .map(_applyShiftOverride)
-            .toList(growable: false);
+        final monthlyConversion = const MonthlyRosterShiftAdapter()
+            .parseForWorkersWithDiagnostics(
+              parsedMonthlyAll,
+              targetNames: searchNames,
+            );
+        monthlyRosterConversion = MonthlyRosterConversionReport(
+          shifts: List.unmodifiable(
+            monthlyConversion.shifts.map(_applyShiftOverride),
+          ),
+          unconvertedAssignments: monthlyConversion.unconvertedAssignments,
+        );
+        final monthlyParsed = monthlyRosterConversion.shifts;
         // Analyze both readers together; monthly-only candidates are retained
         // for review and are not synced until the normal sync confirmation flow.
         final smartAnalysis = const SmartRosterAnalyzeGenerator().analyze(
@@ -1070,10 +1084,18 @@ class AppController extends ChangeNotifier implements ControllerState {
         spreadsheetId: 'local-${document.extension}',
         applyPeriodFilter: false,
       );
-      final monthlyParsed = const MonthlyRosterShiftAdapter()
-          .parseForWorkers(parsedMonthlyAll, targetNames: searchNames)
-          .map(_applyShiftOverride)
-          .toList(growable: false);
+      final monthlyConversion = const MonthlyRosterShiftAdapter()
+          .parseForWorkersWithDiagnostics(
+            parsedMonthlyAll,
+            targetNames: searchNames,
+          );
+      monthlyRosterConversion = MonthlyRosterConversionReport(
+        shifts: List.unmodifiable(
+          monthlyConversion.shifts.map(_applyShiftOverride),
+        ),
+        unconvertedAssignments: monthlyConversion.unconvertedAssignments,
+      );
+      final monthlyParsed = monthlyRosterConversion.shifts;
       // Use the same analyzer for local imports as for Google Sheets so a
       // partially successful legacy parse cannot hide monthly-only records.
       final smartAnalysis = const SmartRosterAnalyzeGenerator().analyze(
