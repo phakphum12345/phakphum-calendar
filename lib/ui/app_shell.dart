@@ -4069,12 +4069,57 @@ class _PreviewPage extends StatelessWidget {
     });
   }
 
+  Widget _unconvertedAssignmentsWarning(BuildContext context) {
+    final report = controller.monthlyRosterConversion;
+    if (!report.hasUnconvertedAssignments) return const SizedBox.shrink();
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      child: Card(
+        color: colors.errorContainer,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'พบรายการเวรที่อ่านได้แต่ยังแปลงไม่ได้ ${report.unconvertedCount} รายการ',
+                style: TextStyle(
+                  color: colors.onErrorContainer,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'รายการเหล่านี้จะไม่ถูกส่งไปซิงก์ จนกว่าจะกำหนดกติกาเวรให้ถูกต้อง',
+                style: TextStyle(color: colors.onErrorContainer),
+              ),
+              const SizedBox(height: 8),
+              for (final assignment in report.unconvertedAssignments.take(8))
+                Text(
+                  '${assignment.date.day}/${assignment.date.month}/${assignment.date.year + 543} · '
+                  '${assignment.workerName} · ${assignment.rowLabel} · ${assignment.sourceCell}',
+                  style: TextStyle(color: colors.onErrorContainer),
+                ),
+              if (report.unconvertedCount > 8)
+                Text(
+                  'และอีก ${report.unconvertedCount - 8} รายการ',
+                  style: TextStyle(color: colors.onErrorContainer),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (controller.shifts.isEmpty) {
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          _unconvertedAssignmentsWarning(context),
           const _EmptyState(
             icon: Icons.event_note_outlined,
             title: 'ยังไม่มีรายการตัวอย่าง',
@@ -4091,6 +4136,7 @@ class _PreviewPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        _unconvertedAssignmentsWarning(context),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
           child: Align(
