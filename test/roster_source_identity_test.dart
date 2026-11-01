@@ -48,7 +48,7 @@ void main() {
     final result = const MonthlyRosterShiftAdapter()
         .parseForWorkersWithDiagnostics(report, targetNames: ['ภาคภูมิ']);
 
-    expect(result.shifts, hasLength(2));
+    expect(result.shifts.length, 2);
     expect(result.shifts.map((shift) => shift.sourceIdentityKey).toSet(), hasLength(2));
     expect(result.shifts.map((shift) => shift.sourceSheetId), [101, 202]);
     expect(
