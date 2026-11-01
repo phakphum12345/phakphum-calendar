@@ -3453,8 +3453,8 @@
     },
     {
       "path": "test/roster_source_identity_test.dart",
-      "size": 5034,
-      "sha256": "d74e420a25e71890f4cdb26346192db8a5778736ed1bddda7800b9be873c5edc"
+      "size": 5030,
+      "sha256": "2a0d86aa7902dfb92bd16c2ad3d62fb55dfd8aabddab1b954762f9e73c431705"
     },
     {
       "path": "test/roster_sync_period_filter_test.dart",
