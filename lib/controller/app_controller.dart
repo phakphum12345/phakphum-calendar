@@ -2263,7 +2263,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       );
       for (final rawShift in periodShifts) {
         final shift = _attachRosterSourceIdentity(rawShift, snapshots);
-        parsedByKey[shift.sourceKey] = _applyShiftOverride(shift);
+        parsedByKey[shift.sourceIdentityKey] = _applyShiftOverride(shift);
       }
     }
     return parsedByKey.values.toList()
