@@ -91,6 +91,65 @@ void main() {
     );
   });
 
+  test('monthly assignments expose exact source URL only with stable metadata', () {
+    final linked = MonthlyRosterAssignment(
+      sectionTitle: 'เวรเดือนพฤศจิกายน 2569',
+      rowLabel: 'ห้องฉุกเฉิน',
+      rowIndex: 4,
+      workerName: 'ผู้ปฏิบัติงาน',
+      date: DateTime(2026, 11, 1),
+      sourceCell: 'C8',
+      spreadsheetId: 'sheet-file',
+      sheetId: 303,
+      sheetTitle: 'เวรฉุกเฉิน',
+    );
+    final local = MonthlyRosterAssignment(
+      sectionTitle: 'นำเข้าจากไฟล์',
+      rowLabel: 'เวรเช้า',
+      rowIndex: 0,
+      workerName: 'ผู้ปฏิบัติงาน',
+      date: DateTime(2026, 11, 1),
+      sourceCell: 'C8',
+    );
+
+    expect(
+      linked.sourceUrl,
+      'https://docs.google.com/spreadsheets/d/sheet-file/edit#gid=303&range=C8',
+    );
+    expect(local.sourceUrl, isNull);
+  });
+
+  test('monthly report search matches sheet title, cell, and row locator', () {
+    final report = MonthlyRosterParseReport(
+      sections: [
+        MonthlyRosterSection(
+          title: 'เวรเดือนพฤศจิกายน 2569',
+          headerRowIndex: 0,
+          assignments: [
+            MonthlyRosterAssignment(
+              sectionTitle: 'เวรเดือนพฤศจิกายน 2569',
+              rowLabel: 'ห้องฉุกเฉิน',
+              rowIndex: 7,
+              workerName: 'ผู้ปฏิบัติงาน',
+              date: DateTime(2026, 11, 1),
+              sourceCell: 'D8',
+              spreadsheetId: 'spreadsheet-xyz',
+              sheetId: 303,
+              sheetTitle: 'เวรฉุกเฉิน',
+            ),
+          ],
+        ),
+      ],
+      warnings: const [],
+    );
+
+    expect(report.filtered(query: 'เวรฉุกเฉิน').assignments, hasLength(1));
+    expect(report.filtered(query: 'D8').assignments, hasLength(1));
+    expect(report.filtered(query: 'row 8').assignments, hasLength(1));
+    expect(report.filtered(query: 'spreadsheet-xyz').assignments, hasLength(1));
+    expect(report.filtered(query: 'not-found').assignments, isEmpty);
+  });
+
   test('diagnostics match by spreadsheet, sheet and A1 cell', () {
     final report = MonthlyRosterParseReport(
       sections: [
