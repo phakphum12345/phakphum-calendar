@@ -588,7 +588,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/models/roster_period.dart` | 452 | `6075bd0d304ed6a242aaff73ea9276ab43227312ad4ff24f76b09f7916071f32` |
 | `lib/models/roster_reference_comparison.dart` | 1888 | `94f9afc5588eacfbfb57ec07f105d1b06f65b30a5a777817cabeda93475c810f` |
 | `lib/models/saved_sheet.dart` | 3324 | `6698d929b467a4decaee950205f2db63ccb020cfa3e490b68007f45c0839e520` |
-| `lib/models/shift.dart` | 7112 | `44c806767b411a3bc051c0b5fa1828ca40b695485ebb50ec2dbfa0b0a11ae827` |
+| `lib/models/shift.dart` | 7460 | `944ccb30b533e2eabe599e1c725809a6a6285d8fb53b77b20eea0890b55ea6e7` |
 | `lib/models/shift_alert.dart` | 1473 | `91d42f3e53e1ac9d55f553bd325ec19436d82fa6feb4d9fcd0760e33706795ff` |
 | `lib/models/swap_request.dart` | 1253 | `1cb1b80512e3ceb84f2e55e5321bcd59d91275d28fc4c7343af56cd8a95b75d4` |
 | `lib/models/tool_definition.dart` | 4983 | `15339590972d63e803fb492a294cc40d8dc6ccd880888e9f4fbfbfc282db6dbc` |
@@ -718,7 +718,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/roster_name_entry_test.dart` | 1534 | `15dc0da8acc3b28d6d8b81fc11cc4281ad068678c64f0754dcabd87136ee77c6` |
 | `test/roster_reference_comparison_test.dart` | 1607 | `d16ca98671685e19099f51a87e4cc023dae166057b3aa436ba5991a040749cc1` |
 | `test/roster_revision_service_test.dart` | 3656 | `626890606153330b3bca7e548d334c2cbdda278772b1b8ee7dfeb4077d240bbd` |
-| `test/roster_source_identity_test.dart` | 4621 | `25895a9cc7a45ab29ebbed1bf1c1d0760b03ea56bbf4c0718160a28947ec53f5` |
+| `test/roster_source_identity_test.dart` | 4728 | `39f8e50685f124a9c58df477d02b3cd5ecb000c5b3dd3cc1e488be7029d0b0f3` |
 | `test/roster_sync_period_filter_test.dart` | 2584 | `42879ab0bc3ed8edc7342b8a6663acb9c3a9065b560b0bd4752c23a029062a57` |
 | `test/rule_engine_consolidation_test.dart` | 3180 | `70ebce500581f1f93962d2d453a027d66899d66099ef4a2d637f155dc1f3b1fa` |
 | `test/rule_engine_foundation_test.dart` | 8149 | `31ad1aa480817e4c9ac012e51b332ff10c6a75b5f7aaef5844d239e6fe623884` |

@@ -2803,8 +2803,8 @@
     },
     {
       "path": "lib/models/shift.dart",
-      "size": 7112,
-      "sha256": "44c806767b411a3bc051c0b5fa1828ca40b695485ebb50ec2dbfa0b0a11ae827"
+      "size": 7460,
+      "sha256": "944ccb30b533e2eabe599e1c725809a6a6285d8fb53b77b20eea0890b55ea6e7"
     },
     {
       "path": "lib/models/shift_alert.dart",
@@ -3453,8 +3453,8 @@
     },
     {
       "path": "test/roster_source_identity_test.dart",
-      "size": 4621,
-      "sha256": "25895a9cc7a45ab29ebbed1bf1c1d0760b03ea56bbf4c0718160a28947ec53f5"
+      "size": 4728,
+      "sha256": "39f8e50685f124a9c58df477d02b3cd5ecb000c5b3dd3cc1e488be7029d0b0f3"
     },
     {
       "path": "test/roster_sync_period_filter_test.dart",
