@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 775,
+  "file_count": 776,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -1223,8 +1223,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 105182,
-      "sha256": "b4b02caf68588eaf6779f853553d501e73a894ea22dec5389298a45dc666272a"
+      "size": 105952,
+      "sha256": "1422324cd6d0f7a7d49171d50b3e6a794225022dcdcb04e4b3e0b682ce63b516"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
@@ -2518,18 +2518,18 @@
     },
     {
       "path": "lib/features/shift_parser/application/monthly_roster_conversion_diagnostics.dart",
-      "size": 2174,
-      "sha256": "70d1ba6b70a0a8544f879079fe3a2d6163d521c9bc7c63430aea8a421131309a"
+      "size": 2402,
+      "sha256": "72edb75ec277cbb5dd5c173b4482faafa7e371fc788d1f46522e18e8dc531306"
     },
     {
       "path": "lib/features/shift_parser/application/monthly_roster_section_parser.dart",
-      "size": 13462,
-      "sha256": "c9ceb14081e4f00a1ff5fd496c174a2c4e66ef5a8198463be174f7610fa3a80a"
+      "size": 13725,
+      "sha256": "e6754395eba15825a79ba6456788c4537e1b93337ec8cbaecc1e91e4e1614fa5"
     },
     {
       "path": "lib/features/shift_parser/application/smart_roster_analyze_generator.dart",
-      "size": 2805,
-      "sha256": "0f94606576069cdf897804589a9c17494b2237515e6135bac1d1c74e3eb47acc"
+      "size": 2821,
+      "sha256": "1b395e6440350e48357a37ec285aa172b0f962fd180822ea67bef63f2116c1c0"
     },
     {
       "path": "lib/features/shift_parser/application/snapshot_normalizer.dart",
@@ -2548,8 +2548,8 @@
     },
     {
       "path": "lib/features/shift_parser/domain/monthly_roster_section.dart",
-      "size": 5596,
-      "sha256": "f080e0a7ba309468dbc4b0a7441b2e258553d6f6df1b0bc5ed6e0ae3ed0bfee3"
+      "size": 6050,
+      "sha256": "a74eda50d2bd3e410e0f77e19f19c3b081526f36f3b31cbd98b4f86e2d67a8ae"
     },
     {
       "path": "lib/features/shift_parser/domain/monthly_roster_template.dart",
@@ -2783,8 +2783,8 @@
     },
     {
       "path": "lib/models/roster_assignment_timeline.dart",
-      "size": 2394,
-      "sha256": "28dfea9099c6f4485f97027dec67072564ac7dae161a601a032cd06f9485239c"
+      "size": 2548,
+      "sha256": "d28a83bdc6408cc29723ba1099f4c49a40ccc3fc05f9f3e30db3e1a125b6d259"
     },
     {
       "path": "lib/models/roster_period.dart",
@@ -2803,8 +2803,8 @@
     },
     {
       "path": "lib/models/shift.dart",
-      "size": 5780,
-      "sha256": "658b89a13c918e9685746394b45515824e3250a0a9ed2b2e90725d7f9f5962ef"
+      "size": 7112,
+      "sha256": "44c806767b411a3bc051c0b5fa1828ca40b695485ebb50ec2dbfa0b0a11ae827"
     },
     {
       "path": "lib/models/shift_alert.dart",
@@ -2873,8 +2873,8 @@
     },
     {
       "path": "lib/services/sheets_service.dart",
-      "size": 9135,
-      "sha256": "10f60cc6de94fbc0eb6c91961935b509f32e54e347d004d5f9f4bd7ac19a328b"
+      "size": 9460,
+      "sha256": "c9f24d050fa2427ba4304250dbc0110fd26bf0401732f0b61396118068ac83f5"
     },
     {
       "path": "lib/services/shift_alert_service.dart",
@@ -2903,8 +2903,8 @@
     },
     {
       "path": "lib/services/timeline_archive_service.dart",
-      "size": 5298,
-      "sha256": "132b18e75f1b62b41666a76afd73e11388dce3f95694ca0091fbfedcf2ccf11f"
+      "size": 5595,
+      "sha256": "fbfbead93d8383584b3cc52b57fff74131331754f3ee94385ae47400053cecb7"
     },
     {
       "path": "lib/shared/presentation/app_status_page.dart",
@@ -3433,8 +3433,8 @@
     },
     {
       "path": "test/roster_assignment_timeline_test.dart",
-      "size": 3069,
-      "sha256": "7167990cb66590bade074be13fe5339988fbdc60a2dabf4f14493e60322e6ff0"
+      "size": 4152,
+      "sha256": "76d802d9a75b2a5ce1341df913e5be662125cc28d80c94b8be07ec05a9cdcaf1"
     },
     {
       "path": "test/roster_name_entry_test.dart",
@@ -3450,6 +3450,11 @@
       "path": "test/roster_revision_service_test.dart",
       "size": 3656,
       "sha256": "626890606153330b3bca7e548d334c2cbdda278772b1b8ee7dfeb4077d240bbd"
+    },
+    {
+      "path": "test/roster_source_identity_test.dart",
+      "size": 4621,
+      "sha256": "25895a9cc7a45ab29ebbed1bf1c1d0760b03ea56bbf4c0718160a28947ec53f5"
     },
     {
       "path": "test/roster_sync_period_filter_test.dart",

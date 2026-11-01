@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `775`
+- Tracked files: `776`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -272,7 +272,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `l10n.yaml` | 151 | `c3ce52cbd012e898f809811d21f21ead3bb3afd08b49a4efe4da74080248664d` |
 | `lib/app.dart` | 7679 | `599df85fd9c6a6abaa17e5646dd59969ef67bbe5a9d722030c1c5d4c83247ce1` |
 | `lib/bootstrap/app_bootstrap.dart` | 380 | `cada71fb830d954d0bd4df8e8892b7e0b62a5844a01d00daf1cd0007c9f23cb0` |
-| `lib/controller/app_controller.dart` | 105182 | `b4b02caf68588eaf6779f853553d501e73a894ea22dec5389298a45dc666272a` |
+| `lib/controller/app_controller.dart` | 105952 | `1422324cd6d0f7a7d49171d50b3e6a794225022dcdcb04e4b3e0b682ce63b516` |
 | `lib/core/di/app_dependencies.dart` | 21906 | `4075fdbcb457fd20199b251966063c71408d27ce8a8301bbfce9f160dff36b14` |
 | `lib/core/google/authorized_google_client_factory.dart` | 971 | `8a5504571f4d8e93d096d3f3bb3140564e58729510ac66c021a95361b2d362c8` |
 | `lib/core/google/google_scopes.dart` | 629 | `437eaa6b551e7fcfc6993603d2acb6c3a5be6818d0289ed2b20b0fc1af2d29b2` |
@@ -531,13 +531,13 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/shift_exchange/presentation/controllers/shift_exchange_controller.dart` | 1393 | `0c53e696383ba7e668e2b0317f98c49995b5d0003e6feda007f92577116c2b66` |
 | `lib/features/shift_exchange/presentation/pages/shift_exchange_page.dart` | 4094 | `fd5473594d17fec03331e548a3e1123335e888621b226255bab77d486c93f57e` |
 | `lib/features/shift_parser/application/hospital_roster_parser.dart` | 5495 | `8ca60d01705bb52e4faa478ad61c28a0f67d104291fd3165ef3e8dfd30f10168` |
-| `lib/features/shift_parser/application/monthly_roster_conversion_diagnostics.dart` | 2174 | `70d1ba6b70a0a8544f879079fe3a2d6163d521c9bc7c63430aea8a421131309a` |
-| `lib/features/shift_parser/application/monthly_roster_section_parser.dart` | 13462 | `c9ceb14081e4f00a1ff5fd496c174a2c4e66ef5a8198463be174f7610fa3a80a` |
-| `lib/features/shift_parser/application/smart_roster_analyze_generator.dart` | 2805 | `0f94606576069cdf897804589a9c17494b2237515e6135bac1d1c74e3eb47acc` |
+| `lib/features/shift_parser/application/monthly_roster_conversion_diagnostics.dart` | 2402 | `72edb75ec277cbb5dd5c173b4482faafa7e371fc788d1f46522e18e8dc531306` |
+| `lib/features/shift_parser/application/monthly_roster_section_parser.dart` | 13725 | `e6754395eba15825a79ba6456788c4537e1b93337ec8cbaecc1e91e4e1614fa5` |
+| `lib/features/shift_parser/application/smart_roster_analyze_generator.dart` | 2821 | `1b395e6440350e48357a37ec285aa172b0f962fd180822ea67bef63f2116c1c0` |
 | `lib/features/shift_parser/application/snapshot_normalizer.dart` | 1809 | `ad12901e35e5e9f33ed815547ecc051d117e0e3fddcc9f5b0f567e99a16e36f6` |
 | `lib/features/shift_parser/domain/a1_notation.dart` | 631 | `264700bc1ec9e89932ad9f17dca3811b15595dd8c392f3cd44a5efa8b29d4746` |
 | `lib/features/shift_parser/domain/color_mapping.dart` | 958 | `a2ffc6aac1ba4aee64a1afefebf659328ab4bb579b3459f02330b7e4a0321f36` |
-| `lib/features/shift_parser/domain/monthly_roster_section.dart` | 5596 | `f080e0a7ba309468dbc4b0a7441b2e258553d6f6df1b0bc5ed6e0ae3ed0bfee3` |
+| `lib/features/shift_parser/domain/monthly_roster_section.dart` | 6050 | `a74eda50d2bd3e410e0f77e19f19c3b081526f36f3b31cbd98b4f86e2d67a8ae` |
 | `lib/features/shift_parser/domain/monthly_roster_template.dart` | 4314 | `45b758bd5712c2c3d1e18d3098b898817768b8c2faa29c9ea25b86ab7c438edf` |
 | `lib/features/shift_parser/domain/normalized_cell.dart` | 616 | `d793718577123fff5323180d9ffacb8fc722d6b1e8c04b8554c6008f70fc60de` |
 | `lib/features/shift_parser/domain/parse_warning.dart` | 415 | `86a08865776b930f2887f7a77691e012586b622b152fc39af1cda18c40c5715c` |
@@ -584,11 +584,11 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/models/app_settings.dart` | 4167 | `6ff84106068b5a2680a470cbe4b71bd1d40eab2590733df3bfc4b3f708f87ce6` |
 | `lib/models/audit_entry.dart` | 1973 | `7c0f67f220a98d699cb03e6d4be843a5e5df9f411553cd73fc9292494c63b096` |
 | `lib/models/calendar_busy_period.dart` | 552 | `ef2dc05ae45a0a17f74478b7931deae7f740cdeef56fd6c106cb84e2389d0dd6` |
-| `lib/models/roster_assignment_timeline.dart` | 2394 | `28dfea9099c6f4485f97027dec67072564ac7dae161a601a032cd06f9485239c` |
+| `lib/models/roster_assignment_timeline.dart` | 2548 | `d28a83bdc6408cc29723ba1099f4c49a40ccc3fc05f9f3e30db3e1a125b6d259` |
 | `lib/models/roster_period.dart` | 452 | `6075bd0d304ed6a242aaff73ea9276ab43227312ad4ff24f76b09f7916071f32` |
 | `lib/models/roster_reference_comparison.dart` | 1888 | `94f9afc5588eacfbfb57ec07f105d1b06f65b30a5a777817cabeda93475c810f` |
 | `lib/models/saved_sheet.dart` | 3324 | `6698d929b467a4decaee950205f2db63ccb020cfa3e490b68007f45c0839e520` |
-| `lib/models/shift.dart` | 5780 | `658b89a13c918e9685746394b45515824e3250a0a9ed2b2e90725d7f9f5962ef` |
+| `lib/models/shift.dart` | 7112 | `44c806767b411a3bc051c0b5fa1828ca40b695485ebb50ec2dbfa0b0a11ae827` |
 | `lib/models/shift_alert.dart` | 1473 | `91d42f3e53e1ac9d55f553bd325ec19436d82fa6feb4d9fcd0760e33706795ff` |
 | `lib/models/swap_request.dart` | 1253 | `1cb1b80512e3ceb84f2e55e5321bcd59d91275d28fc4c7343af56cd8a95b75d4` |
 | `lib/models/tool_definition.dart` | 4983 | `15339590972d63e803fb492a294cc40d8dc6ccd880888e9f4fbfbfc282db6dbc` |
@@ -602,13 +602,13 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/roster_revision_service.dart` | 10046 | `5abe378db7c2296fcf0321c6a4ef2573618a2f9768c729df3862de553052666e` |
 | `lib/services/roster_timeline_generator.dart` | 1531 | `7ed54286153b0075d6d979a82ea0cecd72aec47b3cea150fef2fdf152acc683e` |
 | `lib/services/settings_service.dart` | 8208 | `732d6754db002c00ef7e37e3ba7534d72eafc491c4582c715c8a5c83c359511d` |
-| `lib/services/sheets_service.dart` | 9135 | `10f60cc6de94fbc0eb6c91961935b509f32e54e347d004d5f9f4bd7ac19a328b` |
+| `lib/services/sheets_service.dart` | 9460 | `c9f24d050fa2427ba4304250dbc0110fd26bf0401732f0b61396118068ac83f5` |
 | `lib/services/shift_alert_service.dart` | 9323 | `681366fa6eaf18b1d1d940b1a68058ea4138855e473bd769111e158d11c958b1` |
 | `lib/services/shift_color_service.dart` | 3429 | `8385c92e56d2438944daaa9286de441944896467fd3f2f010b5dd98a31cbcc70` |
 | `lib/services/shift_parser.dart` | 13192 | `ef0d9ce912d0fcd8d3eb05d6bd8f1c9411fd2653b98fd407a758d9211b522520` |
 | `lib/services/shift_time_service.dart` | 2193 | `612c7b2f23bb5c5405ff64455cb9a1172a0ac3e4a5a852b6b43eca9e16d31495` |
 | `lib/services/swap_request_service.dart` | 1857 | `84df2fac3ba6319c7fbbd7e16a757aeeac3041b2cedf6d3bbb926dc361b48f45` |
-| `lib/services/timeline_archive_service.dart` | 5298 | `132b18e75f1b62b41666a76afd73e11388dce3f95694ca0091fbfedcf2ccf11f` |
+| `lib/services/timeline_archive_service.dart` | 5595 | `fbfbead93d8383584b3cc52b57fff74131331754f3ee94385ae47400053cecb7` |
 | `lib/shared/presentation/app_status_page.dart` | 2355 | `632e9de1c6f386b0ef04fdc15e0870c0ac633859493fa2acea07e8c7926dabfd` |
 | `lib/ui/app_shell.dart` | 211940 | `be367a1c34ea1f1d764a46b4b6dbc16e7b9a386250ee82ad03c0936642268adb` |
 | `lib/ui/audit_log_page.dart` | 2201 | `eec96b9ad15d43454beadf1f446ac3a421d4e17d8f59fba2244a19e7d2a13d95` |
@@ -714,10 +714,11 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/off_after_cross_month_roster_boundary_test.dart` | 2733 | `10382634904a67541a8a39f4744a95d3cbccd3911f6226b6696d9439dd41747b` |
 | `test/plugin_registry_test.dart` | 1487 | `02d16914879b047c97f0d1c0d9929cc4ae4a3551ab3fde79d6361b8ff0853f29` |
 | `test/radiology_roster_structure_test.dart` | 4209 | `e526b10d9c6039756439032c4062739886780b735aeea99beff9e04119e1d843` |
-| `test/roster_assignment_timeline_test.dart` | 3069 | `7167990cb66590bade074be13fe5339988fbdc60a2dabf4f14493e60322e6ff0` |
+| `test/roster_assignment_timeline_test.dart` | 4152 | `76d802d9a75b2a5ce1341df913e5be662125cc28d80c94b8be07ec05a9cdcaf1` |
 | `test/roster_name_entry_test.dart` | 1534 | `15dc0da8acc3b28d6d8b81fc11cc4281ad068678c64f0754dcabd87136ee77c6` |
 | `test/roster_reference_comparison_test.dart` | 1607 | `d16ca98671685e19099f51a87e4cc023dae166057b3aa436ba5991a040749cc1` |
 | `test/roster_revision_service_test.dart` | 3656 | `626890606153330b3bca7e548d334c2cbdda278772b1b8ee7dfeb4077d240bbd` |
+| `test/roster_source_identity_test.dart` | 4621 | `25895a9cc7a45ab29ebbed1bf1c1d0760b03ea56bbf4c0718160a28947ec53f5` |
 | `test/roster_sync_period_filter_test.dart` | 2584 | `42879ab0bc3ed8edc7342b8a6663acb9c3a9065b560b0bd4752c23a029062a57` |
 | `test/rule_engine_consolidation_test.dart` | 3180 | `70ebce500581f1f93962d2d453a027d66899d66099ef4a2d637f155dc1f3b1fa` |
 | `test/rule_engine_foundation_test.dart` | 8149 | `31ad1aa480817e4c9ac012e51b332ff10c6a75b5f7aaef5844d239e6fe623884` |
