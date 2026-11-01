@@ -264,6 +264,7 @@ void main() {
         SheetSnapshot(
           title: 'ธันวาคม 2569',
           rows: [
+            ...List.generate(12, (_) => <Object?>['']),
             ['ตารางเวรประจำเดือน พฤศจิกายน พ.ศ. 2569'],
             days,
             gen,
