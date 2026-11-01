@@ -38,7 +38,7 @@ class SmartRosterAnalyzeGenerator {
     final mergedBySource = <String, Shift>{};
     final legacy = legacyShifts.toList(growable: false);
     for (final shift in legacy) {
-      mergedBySource.putIfAbsent(shift.sourceKey, () => shift);
+      mergedBySource.putIfAbsent(shift.sourceIdentityKey, () => shift);
     }
 
     final recovered = <Shift>[];
@@ -51,7 +51,7 @@ class SmartRosterAnalyzeGenerator {
     }
 
     for (final candidate in monthlyShifts) {
-      if (mergedBySource.containsKey(candidate.sourceKey)) continue;
+      if (mergedBySource.containsKey(candidate.sourceIdentityKey)) continue;
 
       final sameDayWorker =
           legacyByDayAndWorker[_dayWorkerKey(candidate)] ?? const <Shift>[];
