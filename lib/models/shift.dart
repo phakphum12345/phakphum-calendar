@@ -76,7 +76,6 @@ class Shift {
 
   /// Stable source identity; legacy/imported shifts retain their historical key.
   String get sourceKey {
-    final day = '${start.year.toString().padLeft(4, '0')}-${start.month.toString().padLeft(2, '0')}-${start.day.toString().padLeft(2, '0')}';
     if (sourceSpreadsheetId != null && sourceSheetId != null && cell.isNotEmpty) {
       return '${sourceSpreadsheetId!}|${sourceSheetId!}|${cell.toUpperCase()}';
     }
