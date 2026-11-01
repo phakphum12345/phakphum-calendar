@@ -27,6 +27,9 @@ class MonthlyRosterAssignment {
     required this.date,
     required this.sourceCell,
     this.backgroundColor,
+    this.spreadsheetId,
+    this.sheetId,
+    this.sheetTitle,
   });
 
   final String sectionTitle;
@@ -36,6 +39,13 @@ class MonthlyRosterAssignment {
   final DateTime date;
   final String sourceCell;
   final String? backgroundColor;
+  final String? spreadsheetId;
+  final int? sheetId;
+  final String? sheetTitle;
+
+  String get sourceIdentityKey => spreadsheetId != null && sheetId != null
+      ? '$spreadsheetId|$sheetId|${sourceCell.toUpperCase()}'
+      : sourceCell.toUpperCase();
 }
 
 class MonthlyRosterParseReport {
@@ -85,6 +95,9 @@ class MonthlyRosterParseReport {
             ),
             sourceCell: shift.cell,
             backgroundColor: shift.sourceColorHex,
+            spreadsheetId: shift.sourceSpreadsheetId,
+            sheetId: shift.sourceSheetId,
+            sheetTitle: shift.sheetTitle,
           ),
         );
       }
