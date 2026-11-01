@@ -754,7 +754,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/shift_alert_service_test.dart` | 9326 | `2e3487892a8a2faabe185511aba40271ad0e446fdf38db88ba03a261dc80c777` |
 | `test/shift_color_service_test.dart` | 2613 | `bcfa14b6cba028fb052199dedcdc2491fe3d8ea0901a75dc6d46ae81bdf9d14f` |
 | `test/shift_exchange_controller_test.dart` | 1421 | `878d06e2cba1d8c4b5eb8b6b6ff27e95d312e15f07f9e4dc3e9b9b1e9817dda0` |
-| `test/shift_parser_test.dart` | 11014 | `1790f594bec7b2ba9f557fd0730de553c7a282ecefa8c604006e7ec12f6e8f49` |
+| `test/shift_parser_test.dart` | 13872 | `5bc4a6f9f5c9c78051e06a0171e0695a4623111e0fd0da01ecff28fd55689a4d` |
 | `test/shift_pay_calculator_test.dart` | 8172 | `675b703930f851e71b109100335e4fdccf5c2eba2bac03df775da31c7a49606c` |
 | `test/shift_template_test.dart` | 4409 | `9453e8c114094f855d57274a1959d85d32fb0e2195c9823908187f82d4ddb48c` |
 | `test/shift_time_service_test.dart` | 1160 | `0236957c9779ddd75789c0fae49a18a9cb060a8b41e81728cd1d59728a1f53d7` |
