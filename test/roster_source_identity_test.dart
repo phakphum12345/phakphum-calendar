@@ -70,6 +70,8 @@ void main() {
     );
 
     expect(first.sourceIdentityKey, isNot(second.sourceIdentityKey));
+    expect(first.sourceKey, '2026-10-01|UP1|ภาคภูมิ');
+    expect(first.sourceUrl, isNotNull);
     expect(first.copyWith(excluded: true).sourceIdentityKey, first.sourceIdentityKey);
     expect(second.sourceSheetId, 202);
     expect(second.excluded, isTrue);
