@@ -144,6 +144,17 @@ class Shift {
   String get effectiveCalendarColorId =>
       calendarColorId ?? category.googleColorId;
 
+  /// Opens the exact source tab and cell when the Google source is known.
+  String? get sourceUrl {
+    if (sourceSpreadsheetId == null ||
+        sourceSheetId == null ||
+        cell.isEmpty) {
+      return null;
+    }
+    return 'https://docs.google.com/spreadsheets/d/$sourceSpreadsheetId/edit'
+        '#gid=$sourceSheetId&range=$cell';
+  }
+
   Shift withSourceIdentity({
     required String spreadsheetId,
     required int sheetId,
