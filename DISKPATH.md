@@ -610,7 +610,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/swap_request_service.dart` | 1857 | `84df2fac3ba6319c7fbbd7e16a757aeeac3041b2cedf6d3bbb926dc361b48f45` |
 | `lib/services/timeline_archive_service.dart` | 5595 | `fbfbead93d8383584b3cc52b57fff74131331754f3ee94385ae47400053cecb7` |
 | `lib/shared/presentation/app_status_page.dart` | 2355 | `632e9de1c6f386b0ef04fdc15e0870c0ac633859493fa2acea07e8c7926dabfd` |
-| `lib/ui/app_shell.dart` | 213514 | `52f0c14e725264453d093d14762eb266eca7876de519973eb92a896db1102643` |
+| `lib/ui/app_shell.dart` | 213564 | `cb6562e19af894ce9a10f97b2880efa38c7d22ffde18b3b915764758d41887d8` |
 | `lib/ui/audit_log_page.dart` | 2201 | `eec96b9ad15d43454beadf1f446ac3a421d4e17d8f59fba2244a19e7d2a13d95` |
 | `lib/ui/first_login_setup_dialog.dart` | 10532 | `38d98cd2da5a0f12f6997695783589dd3796a9123fd3f01fbf8d46c815a848d4` |
 | `lib/ui/google_sign_in_button.dart` | 102 | `250dcb07d7da55efdcbe2f2f164ef395050f5b635e044e48f16575dc035ad2b7` |
