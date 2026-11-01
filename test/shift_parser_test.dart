@@ -317,6 +317,99 @@ void main() {
     ]);
   });
 
+
+  test('reads all twelve Thai full month names without a fixed month setting', () {
+    const monthNames = [
+      'มกราคม',
+      'กุมภาพันธ์',
+      'มีนาคม',
+      'เมษายน',
+      'พฤษภาคม',
+      'มิถุนายน',
+      'กรกฎาคม',
+      'สิงหาคม',
+      'กันยายน',
+      'ตุลาคม',
+      'พฤศจิกายน',
+      'ธันวาคม',
+    ];
+    final snapshots = [
+      for (var month = 1; month <= 12; month++)
+        () {
+          final dayCount = DateTime(2027, month, 0).day;
+          final row = _row('P1 เช้า')..[15] = 'ผู้ใช้งานทดสอบ';
+          return SheetSnapshot(
+            title: 'ข้อมูลเวร',
+            rows: [
+              ['ตารางเวรเดือน ${monthNames[month - 1]} พ.ศ. 2569'],
+              ['วันที่', ...List.generate(dayCount, (index) => index + 1)],
+              row,
+            ],
+          );
+        }(),
+    ];
+
+    final shifts = parser.parseAllPeriods(
+      snapshots: snapshots,
+      targetName: 'ผู้ใช้งานทดสอบ',
+    );
+
+    expect(shifts, hasLength(12));
+    for (var month = 1; month <= 12; month++) {
+      expect(
+        shifts.any((shift) => shift.start == DateTime(2026, month, 15, 8)),
+        isTrue,
+        reason: 'Expected parser to detect month $month',
+      );
+    }
+  });
+
+  test('reads all twelve Thai month abbreviations and two-digit Buddhist years', () {
+    const monthAbbreviations = [
+      'ม.ค.',
+      'ก.พ.',
+      'มี.ค.',
+      'เม.ย.',
+      'พ.ค.',
+      'มิ.ย.',
+      'ก.ค.',
+      'ส.ค.',
+      'ก.ย.',
+      'ต.ค.',
+      'พ.ย.',
+      'ธ.ค.',
+    ];
+    final snapshots = [
+      for (var month = 1; month <= 12; month++)
+        () {
+          final dayCount = DateTime(2027, month, 0).day;
+          final row = _row('P1 เช้า')..[15] = 'ผู้ใช้งานทดสอบ';
+          return SheetSnapshot(
+            title: 'sheet-$month',
+            rows: [
+              ['เวรเดือน ${monthAbbreviations[month - 1]} 69'],
+              ['วันที่', ...List.generate(dayCount, (index) => index + 1)],
+              row,
+            ],
+          );
+        }(),
+    ];
+
+    final shifts = parser.parseAllPeriods(
+      snapshots: snapshots,
+      targetName: 'ผู้ใช้งานทดสอบ',
+    );
+
+    expect(shifts, hasLength(12));
+    for (var month = 1; month <= 12; month++) {
+      expect(
+        shifts.any((shift) => shift.start == DateTime(2026, month, 15, 8)),
+        isTrue,
+        reason: 'Expected parser to detect abbreviation for month $month',
+      );
+    }
+  });
+
 }
 
 List<Object?> _row(String label) => <Object?>[label, ...List.filled(31, '')];
