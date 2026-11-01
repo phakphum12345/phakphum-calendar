@@ -564,6 +564,10 @@ class AppController extends ChangeNotifier implements ControllerState {
         sections: [],
         warnings: [],
       );
+      monthlyRosterConversion = const MonthlyRosterConversionReport(
+        shifts: [],
+        unconvertedAssignments: [],
+      );
       _loadedRosterShifts = [];
       _currentAllRosterShifts = [];
       _referenceAllRosterShifts = [];
