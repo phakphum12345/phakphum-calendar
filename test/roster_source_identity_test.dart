@@ -73,6 +73,7 @@ void main() {
     expect(first.copyWith(excluded: true).sourceIdentityKey, first.sourceIdentityKey);
     expect(second.sourceSheetId, 202);
     expect(second.excluded, isTrue);
+    expect(first.sourceUrl, 'https://docs.google.com/spreadsheets/d/spreadsheet-1/edit#gid=101&range=B3');
   });
 
   test('diagnostics match by spreadsheet, sheet and A1 cell', () {
