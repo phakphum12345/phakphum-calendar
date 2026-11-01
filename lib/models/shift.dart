@@ -125,16 +125,20 @@ class Shift {
       ? null
       : '#${(sourceColorValue! & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 
-  /// Stable source identity; legacy/imported shifts retain their historical key.
-  String get sourceKey {
+  /// Historical key retained for user overrides and backward compatibility.
+  String get sourceKey =>
+      '${start.year.toString().padLeft(4, '0')}-'
+      '${start.month.toString().padLeft(2, '0')}-'
+      '${start.day.toString().padLeft(2, '0')}|$code|$assignedName';
+
+  /// Stable locator used for deduplication when source coordinates are known.
+  String get sourceIdentityKey {
     if (sourceSpreadsheetId != null &&
         sourceSheetId != null &&
         cell.isNotEmpty) {
       return '${sourceSpreadsheetId!}|${sourceSheetId!}|${cell.toUpperCase()}';
     }
-    return '${start.year.toString().padLeft(4, '0')}-'
-        '${start.month.toString().padLeft(2, '0')}-'
-        '${start.day.toString().padLeft(2, '0')}|$code|$assignedName';
+    return sourceKey;
   }
 
   String get effectiveCalendarColorId =>
