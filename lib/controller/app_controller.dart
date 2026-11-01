@@ -2276,9 +2276,10 @@ class AppController extends ChangeNotifier implements ControllerState {
     }
     final source = snapshots.where((snapshot) => snapshot.title == shift.sheetTitle).firstOrNull;
     final sheetId = source?.sheetId;
-    if (sheetId == null || shift.cell.isEmpty) return shift;
+    final spreadsheetId = source?.spreadsheetId;
+    if (sheetId == null || spreadsheetId == null || shift.cell.isEmpty) return shift;
     return shift.withSourceIdentity(
-      spreadsheetId: source?.spreadsheetId ?? '',
+      spreadsheetId: spreadsheetId,
       sheetId: sheetId,
     );
   }
