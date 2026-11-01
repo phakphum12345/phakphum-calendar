@@ -252,6 +252,70 @@ void main() {
     expect(shifts[0].start, DateTime(2026, 7, 1, 8));
     expect(shifts[1].start, DateTime(2026, 8, 2));
   });
+
+  test('prefers the monthly section heading over a conflicting worksheet title', () {
+    final days = <Object?>['วันที่', ...List.generate(30, (i) => i + 1)];
+    final gen = _row('GEN');
+    final genAfternoon = _row('');
+    genAfternoon[26] = 'ภาคภูมิ';
+
+    final shifts = parser.parseAllPeriods(
+      snapshots: [
+        SheetSnapshot(
+          title: 'ธันวาคม 2569',
+          rows: [
+            ['ตารางเวรประจำเดือน พฤศจิกายน พ.ศ. 2569'],
+            days,
+            gen,
+            genAfternoon,
+          ],
+        ),
+      ],
+      targetName: 'ภาคภูมิ',
+    );
+
+    expect(shifts, hasLength(1));
+    expect(shifts.single.code, 'AG');
+    expect(shifts.single.start, DateTime(2026, 11, 26, 16, 30));
+    expect(shifts.single.end, DateTime(2026, 11, 26, 20));
+  });
+
+  test('uses the nearest month heading for each monthly block in one tab', () {
+    final novemberDays = <Object?>['วันที่', ...List.generate(30, (i) => i + 1)];
+    final decemberDays = <Object?>['วันที่', ...List.generate(31, (i) => i + 1)];
+    final novemberGen = _row('GEN');
+    final novemberAfternoon = _row('');
+    novemberAfternoon[26] = 'ภาคภูมิ';
+    final decemberGen = _row('GEN');
+    final decemberAfternoon = _row('');
+    decemberAfternoon[3] = 'ภาคภูมิ';
+
+    final shifts = parser.parseAllPeriods(
+      snapshots: [
+        SheetSnapshot(
+          title: 'ธันวาคม 2569',
+          rows: [
+            ['เวรประจำเดือน พฤศจิกายน พ.ศ. 2569'],
+            novemberDays,
+            novemberGen,
+            novemberAfternoon,
+            ['เวรประจำเดือน ธันวาคม พ.ศ. 2569'],
+            decemberDays,
+            decemberGen,
+            decemberAfternoon,
+          ],
+        ),
+      ],
+      targetName: 'ภาคภูมิ',
+    );
+
+    expect(shifts, hasLength(2));
+    expect(shifts.map((shift) => shift.start), [
+      DateTime(2026, 11, 26, 16, 30),
+      DateTime(2026, 12, 3, 16, 30),
+    ]);
+  });
+
 }
 
 List<Object?> _row(String label) => <Object?>[label, ...List.filled(31, '')];
