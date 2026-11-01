@@ -84,6 +84,16 @@ class Shift {
   }
   String get effectiveCalendarColorId => calendarColorId ?? category.googleColorId;
 
+  Shift withSourceIdentity({required String spreadsheetId, required int sheetId}) => Shift(
+    code: code, rowLabel: rowLabel, assignedName: assignedName,
+    start: start, end: end, sheetTitle: sheetTitle, cell: cell,
+    category: category, excluded: excluded, generated: generated,
+    linkedShiftKey: linkedShiftKey, sourceColorValue: sourceColorValue,
+    customTitle: customTitle, calendarColorId: calendarColorId,
+    relationshipComment: relationshipComment,
+    sourceSpreadsheetId: spreadsheetId, sourceSheetId: sheetId,
+  );
+
   Shift copyWith({
     ShiftCategory? category, bool? excluded, bool? generated, DateTime? start,
     DateTime? end, String? customTitle, String? calendarColorId,
