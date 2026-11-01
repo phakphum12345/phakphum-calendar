@@ -318,7 +318,7 @@ class MonthlyRosterShiftAdapter {
         sourceSpreadsheetId: assignment.spreadsheetId,
         sourceSheetId: assignment.sheetId,
       );
-      shiftsByKey.putIfAbsent(shift.sourceKey, () => shift);
+      shiftsByKey.putIfAbsent(shift.sourceIdentityKey, () => shift);
     }
 
     return shiftsByKey.values.toList()
