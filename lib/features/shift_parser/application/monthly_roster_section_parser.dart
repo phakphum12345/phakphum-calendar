@@ -311,7 +311,7 @@ class MonthlyRosterShiftAdapter {
         assignedName: worker,
         start: start,
         end: end,
-        sheetTitle: assignment.sectionTitle,
+        sheetTitle: assignment.sheetTitle ?? assignment.sectionTitle,
         cell: assignment.sourceCell,
         category: colorMatch?.category ?? rule.category,
         sourceColorValue: sourceColor,
