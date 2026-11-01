@@ -40,7 +40,9 @@ class RosterAssignmentTimeline {
 
 String rosterPositionKey(Shift shift) =>
     '${shift.start.toIso8601String()}|${shift.end.toIso8601String()}|'
-    '${shift.code.trim().toLowerCase()}';
+    '${shift.code.trim().toLowerCase()}|'
+    '${shift.sourceSpreadsheetId ?? ''}|${shift.sourceSheetId ?? ''}|'
+    '${shift.sheetTitle.trim().toLowerCase()}|${shift.cell.trim().toUpperCase()}';
 
 Map<String, RosterAssignmentTimeline> buildRosterAssignmentTimelines(
   Iterable<RosterRevisionShifts> revisions,
