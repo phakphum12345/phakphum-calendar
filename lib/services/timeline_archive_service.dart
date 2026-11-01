@@ -43,6 +43,9 @@ class TimelineArchiveService {
         for (final snapshot in document.snapshots)
           {
             'title': snapshot.title,
+            'spreadsheetId': snapshot.spreadsheetId,
+            'sheetId': snapshot.sheetId,
+            'hidden': snapshot.hidden,
             'rows': [
               for (final row in snapshot.rows)
                 [for (final value in row) _jsonSafe(value)],
@@ -83,6 +86,9 @@ class TimelineArchiveService {
           final value = item as Map<String, dynamic>;
           return SheetSnapshot(
             title: value['title'] as String? ?? '',
+            spreadsheetId: value['spreadsheetId'] as String?,
+            sheetId: value['sheetId'] as int?,
+            hidden: value['hidden'] as bool? ?? false,
             rows: (value['rows'] as List<dynamic>? ?? const [])
                 .map((row) => (row as List<dynamic>).cast<Object?>())
                 .toList(),
