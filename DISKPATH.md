@@ -605,7 +605,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/sheets_service.dart` | 9460 | `c9f24d050fa2427ba4304250dbc0110fd26bf0401732f0b61396118068ac83f5` |
 | `lib/services/shift_alert_service.dart` | 9323 | `681366fa6eaf18b1d1d940b1a68058ea4138855e473bd769111e158d11c958b1` |
 | `lib/services/shift_color_service.dart` | 3429 | `8385c92e56d2438944daaa9286de441944896467fd3f2f010b5dd98a31cbcc70` |
-| `lib/services/shift_parser.dart` | 13192 | `ef0d9ce912d0fcd8d3eb05d6bd8f1c9411fd2653b98fd407a758d9211b522520` |
+| `lib/services/shift_parser.dart` | 14188 | `9eea16e52dfbc63cb2dc6bb0732c1f439f586543915ec6ee3022b491900bb411` |
 | `lib/services/shift_time_service.dart` | 2193 | `612c7b2f23bb5c5405ff64455cb9a1172a0ac3e4a5a852b6b43eca9e16d31495` |
 | `lib/services/swap_request_service.dart` | 1857 | `84df2fac3ba6319c7fbbd7e16a757aeeac3041b2cedf6d3bbb926dc361b48f45` |
 | `lib/services/timeline_archive_service.dart` | 5595 | `fbfbead93d8383584b3cc52b57fff74131331754f3ee94385ae47400053cecb7` |
@@ -754,7 +754,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/shift_alert_service_test.dart` | 9326 | `2e3487892a8a2faabe185511aba40271ad0e446fdf38db88ba03a261dc80c777` |
 | `test/shift_color_service_test.dart` | 2613 | `bcfa14b6cba028fb052199dedcdc2491fe3d8ea0901a75dc6d46ae81bdf9d14f` |
 | `test/shift_exchange_controller_test.dart` | 1421 | `878d06e2cba1d8c4b5eb8b6b6ff27e95d312e15f07f9e4dc3e9b9b1e9817dda0` |
-| `test/shift_parser_test.dart` | 8769 | `36db26d12c22376c9a2aa5b9d51055470159d4b0f725faa0a06a9187ae11398c` |
+| `test/shift_parser_test.dart` | 10958 | `8db5faa853540cb388b8a7456f9936644467d6615e7132a4c89f605d1f100c7f` |
 | `test/shift_pay_calculator_test.dart` | 8172 | `675b703930f851e71b109100335e4fdccf5c2eba2bac03df775da31c7a49606c` |
 | `test/shift_template_test.dart` | 4409 | `9453e8c114094f855d57274a1959d85d32fb0e2195c9823908187f82d4ddb48c` |
 | `test/shift_time_service_test.dart` | 1160 | `0236957c9779ddd75789c0fae49a18a9cb060a8b41e81728cd1d59728a1f53d7` |

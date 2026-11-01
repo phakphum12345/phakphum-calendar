@@ -2888,8 +2888,8 @@
     },
     {
       "path": "lib/services/shift_parser.dart",
-      "size": 13192,
-      "sha256": "ef0d9ce912d0fcd8d3eb05d6bd8f1c9411fd2653b98fd407a758d9211b522520"
+      "size": 14188,
+      "sha256": "9eea16e52dfbc63cb2dc6bb0732c1f439f586543915ec6ee3022b491900bb411"
     },
     {
       "path": "lib/services/shift_time_service.dart",
@@ -3633,8 +3633,8 @@
     },
     {
       "path": "test/shift_parser_test.dart",
-      "size": 8769,
-      "sha256": "36db26d12c22376c9a2aa5b9d51055470159d4b0f725faa0a06a9187ae11398c"
+      "size": 10958,
+      "sha256": "8db5faa853540cb388b8a7456f9936644467d6615e7132a4c89f605d1f100c7f"
     },
     {
       "path": "test/shift_pay_calculator_test.dart",
