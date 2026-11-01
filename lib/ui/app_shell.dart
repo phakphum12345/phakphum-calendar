@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:file_saver/file_saver.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../controller/app_controller.dart';
@@ -4013,34 +4014,72 @@ class _MonthlyRosterCell extends StatelessWidget {
 
   final MonthlyRosterAssignment? assignment;
 
+  Future<void> _openSource(BuildContext context, String sourceUrl) async {
+    final opened = await launchUrl(
+      Uri.parse(sourceUrl),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ไม่สามารถเปิดตำแหน่งต้นทางใน Google Sheets ได้')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final item = assignment;
     if (item == null) return const SizedBox(width: 72);
     final color = _colorFromHex(item.backgroundColor);
+    final sourceUrl = item.sourceUrl;
+    final sourceLabel = [
+      if ((item.sheetTitle ?? '').trim().isNotEmpty) item.sheetTitle!.trim(),
+      if (item.sourceCell.trim().isNotEmpty) item.sourceCell.trim(),
+      'แถวเวร ${item.rowIndex + 1}',
+      item.workerName,
+    ].join(' • ');
     return Tooltip(
-      message: '${item.sourceCell} • ${item.workerName}',
-      child: Container(
-        width: 92,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        decoration: BoxDecoration(
-          color: color?.withValues(alpha: 0.18),
-          border: Border.all(
-            color: color ?? Theme.of(context).colorScheme.outlineVariant,
-          ),
+      message: sourceLabel,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: ValueKey('roster-source-${item.sourceIdentityKey}'),
           borderRadius: BorderRadius.circular(6),
-        ),
-        child: Text(
-          item.workerName,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
+          onTap: sourceUrl == null ? null : () => _openSource(context, sourceUrl),
+          child: Container(
+            width: 92,
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            decoration: BoxDecoration(
+              color: color?.withValues(alpha: 0.18),
+              border: Border.all(
+                color: color ?? Theme.of(context).colorScheme.outlineVariant,
+              ),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(
+                  child: Text(
+                    item.workerName,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                if (sourceUrl != null) ...[
+                  const SizedBox(width: 4),
+                  const Icon(Icons.open_in_new, size: 12),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );
   }
 }
-
 class _PreviewPage extends StatelessWidget {
   const _PreviewPage({
     required this.controller,
