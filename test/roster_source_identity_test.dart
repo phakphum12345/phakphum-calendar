@@ -69,8 +69,8 @@ void main() {
       sheetId: 202,
     );
 
-    expect(first.sourceKey, isNot(second.sourceKey));
-    expect(first.copyWith(excluded: true).sourceKey, first.sourceKey);
+    expect(first.sourceIdentityKey, isNot(second.sourceIdentityKey));
+    expect(first.copyWith(excluded: true).sourceIdentityKey, first.sourceIdentityKey);
     expect(second.sourceSheetId, 202);
     expect(second.excluded, isTrue);
   });
