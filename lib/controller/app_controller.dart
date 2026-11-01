@@ -1266,7 +1266,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           }
           cells.add(
             NormalizedCell(
-              sheetId: sheetIndex,
+              sheetId: snapshot.sheetId ?? sheetIndex,
               sheetTitle: snapshot.title,
               a1: '',
               rowIndex: rowIndex,
@@ -1284,7 +1284,7 @@ class AppController extends ChangeNotifier implements ControllerState {
         ShiftParserInput(
           spreadsheetId: spreadsheetId,
           spreadsheetTitle: selectedSourceSheetTitle,
-          sheetId: sheetIndex,
+          sheetId: snapshot.sheetId ?? sheetIndex,
           sheetTitle: snapshot.title,
           timeZone: 'Asia/Bangkok',
           cells: cells,
