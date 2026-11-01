@@ -30,6 +30,10 @@ void main() {
         sheetTitle: 'เวรคลินิก',
       ),
     ];
+    expect(
+      assignments.map((item) => item.sourceIdentityKey),
+      ['spreadsheet-1|101|B3', 'spreadsheet-1|202|B3'],
+    );
     final report = MonthlyRosterParseReport(
       sections: [
         MonthlyRosterSection(
