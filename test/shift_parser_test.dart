@@ -336,7 +336,7 @@ void main() {
     final snapshots = [
       for (var month = 1; month <= 12; month++)
         () {
-          final dayCount = DateTime(2027, month, 0).day;
+          final dayCount = DateTime(2026, month + 1, 0).day;
           final row = _row('P1 เช้า')..[15] = 'ผู้ใช้งานทดสอบ';
           return SheetSnapshot(
             title: 'ข้อมูลเวร',
@@ -382,7 +382,7 @@ void main() {
     final snapshots = [
       for (var month = 1; month <= 12; month++)
         () {
-          final dayCount = DateTime(2027, month, 0).day;
+          final dayCount = DateTime(2026, month + 1, 0).day;
           final row = _row('P1 เช้า')..[15] = 'ผู้ใช้งานทดสอบ';
           return SheetSnapshot(
             title: 'sheet-$month',
