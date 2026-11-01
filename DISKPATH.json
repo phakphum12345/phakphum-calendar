@@ -3633,8 +3633,8 @@
     },
     {
       "path": "test/shift_parser_test.dart",
-      "size": 10958,
-      "sha256": "8db5faa853540cb388b8a7456f9936644467d6615e7132a4c89f605d1f100c7f"
+      "size": 11014,
+      "sha256": "1790f594bec7b2ba9f557fd0730de553c7a282ecefa8c604006e7ec12f6e8f49"
     },
     {
       "path": "test/shift_pay_calculator_test.dart",
