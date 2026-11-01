@@ -2245,7 +2245,9 @@ class AppController extends ChangeNotifier implements ControllerState {
       // The selected month is applied later to the visible/syncable shifts;
       // filtering here would make a later month change reuse a truncated roster.
       if (allPeriods.isNotEmpty || settings.effectivePeriods.isEmpty) {
-        return allPeriods.map(_applyShiftOverride).toList(growable: false)
+        return allPeriods
+            .map((shift) => _applyShiftOverride(_attachRosterSourceIdentity(shift, snapshots)))
+            .toList(growable: false)
           ..sort((left, right) => left.start.compareTo(right.start));
       }
     }
@@ -2259,12 +2261,26 @@ class AppController extends ChangeNotifier implements ControllerState {
         year: period.year,
         month: period.month,
       );
-      for (final shift in periodShifts) {
+      for (final rawShift in periodShifts) {
+        final shift = _attachRosterSourceIdentity(rawShift, snapshots);
         parsedByKey[shift.sourceKey] = _applyShiftOverride(shift);
       }
     }
     return parsedByKey.values.toList()
       ..sort((left, right) => left.start.compareTo(right.start));
+  }
+
+  Shift _attachRosterSourceIdentity(Shift shift, List<SheetSnapshot> snapshots) {
+    if (shift.sourceSpreadsheetId != null && shift.sourceSheetId != null) {
+      return shift;
+    }
+    final source = snapshots.where((snapshot) => snapshot.title == shift.sheetTitle).firstOrNull;
+    final sheetId = source?.sheetId;
+    if (sheetId == null || shift.cell.isEmpty) return shift;
+    return shift.withSourceIdentity(
+      spreadsheetId: source?.spreadsheetId ?? '',
+      sheetId: sheetId,
+    );
   }
 
   List<Shift> _parseAllRosterSnapshots(
