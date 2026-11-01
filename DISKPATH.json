@@ -2548,8 +2548,8 @@
     },
     {
       "path": "lib/features/shift_parser/domain/monthly_roster_section.dart",
-      "size": 6050,
-      "sha256": "a74eda50d2bd3e410e0f77e19f19c3b081526f36f3b31cbd98b4f86e2d67a8ae"
+      "size": 7064,
+      "sha256": "9bacaa9626f349b73760469a2721d66bddc2096544c75e8cc325467c8decd9e7"
     },
     {
       "path": "lib/features/shift_parser/domain/monthly_roster_template.dart",
@@ -2913,8 +2913,8 @@
     },
     {
       "path": "lib/ui/app_shell.dart",
-      "size": 211940,
-      "sha256": "be367a1c34ea1f1d764a46b4b6dbc16e7b9a386250ee82ad03c0936642268adb"
+      "size": 213514,
+      "sha256": "52f0c14e725264453d093d14762eb266eca7876de519973eb92a896db1102643"
     },
     {
       "path": "lib/ui/audit_log_page.dart",
@@ -3453,8 +3453,8 @@
     },
     {
       "path": "test/roster_source_identity_test.dart",
-      "size": 5038,
-      "sha256": "b52cb0e8aec04ce2d0b395fdce266422591528bd48bbe5cd6e8615409153f622"
+      "size": 7287,
+      "sha256": "85516c4da1234a559d608850433c62b3655f3c4569444c3ff4b877d554a23b02"
     },
     {
       "path": "test/roster_sync_period_filter_test.dart",

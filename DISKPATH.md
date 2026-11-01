@@ -537,7 +537,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/shift_parser/application/snapshot_normalizer.dart` | 1809 | `ad12901e35e5e9f33ed815547ecc051d117e0e3fddcc9f5b0f567e99a16e36f6` |
 | `lib/features/shift_parser/domain/a1_notation.dart` | 631 | `264700bc1ec9e89932ad9f17dca3811b15595dd8c392f3cd44a5efa8b29d4746` |
 | `lib/features/shift_parser/domain/color_mapping.dart` | 958 | `a2ffc6aac1ba4aee64a1afefebf659328ab4bb579b3459f02330b7e4a0321f36` |
-| `lib/features/shift_parser/domain/monthly_roster_section.dart` | 6050 | `a74eda50d2bd3e410e0f77e19f19c3b081526f36f3b31cbd98b4f86e2d67a8ae` |
+| `lib/features/shift_parser/domain/monthly_roster_section.dart` | 7064 | `9bacaa9626f349b73760469a2721d66bddc2096544c75e8cc325467c8decd9e7` |
 | `lib/features/shift_parser/domain/monthly_roster_template.dart` | 4314 | `45b758bd5712c2c3d1e18d3098b898817768b8c2faa29c9ea25b86ab7c438edf` |
 | `lib/features/shift_parser/domain/normalized_cell.dart` | 616 | `d793718577123fff5323180d9ffacb8fc722d6b1e8c04b8554c6008f70fc60de` |
 | `lib/features/shift_parser/domain/parse_warning.dart` | 415 | `86a08865776b930f2887f7a77691e012586b622b152fc39af1cda18c40c5715c` |
@@ -610,7 +610,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/swap_request_service.dart` | 1857 | `84df2fac3ba6319c7fbbd7e16a757aeeac3041b2cedf6d3bbb926dc361b48f45` |
 | `lib/services/timeline_archive_service.dart` | 5595 | `fbfbead93d8383584b3cc52b57fff74131331754f3ee94385ae47400053cecb7` |
 | `lib/shared/presentation/app_status_page.dart` | 2355 | `632e9de1c6f386b0ef04fdc15e0870c0ac633859493fa2acea07e8c7926dabfd` |
-| `lib/ui/app_shell.dart` | 211940 | `be367a1c34ea1f1d764a46b4b6dbc16e7b9a386250ee82ad03c0936642268adb` |
+| `lib/ui/app_shell.dart` | 213514 | `52f0c14e725264453d093d14762eb266eca7876de519973eb92a896db1102643` |
 | `lib/ui/audit_log_page.dart` | 2201 | `eec96b9ad15d43454beadf1f446ac3a421d4e17d8f59fba2244a19e7d2a13d95` |
 | `lib/ui/first_login_setup_dialog.dart` | 10532 | `38d98cd2da5a0f12f6997695783589dd3796a9123fd3f01fbf8d46c815a848d4` |
 | `lib/ui/google_sign_in_button.dart` | 102 | `250dcb07d7da55efdcbe2f2f164ef395050f5b635e044e48f16575dc035ad2b7` |
@@ -718,7 +718,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/roster_name_entry_test.dart` | 1534 | `15dc0da8acc3b28d6d8b81fc11cc4281ad068678c64f0754dcabd87136ee77c6` |
 | `test/roster_reference_comparison_test.dart` | 1607 | `d16ca98671685e19099f51a87e4cc023dae166057b3aa436ba5991a040749cc1` |
 | `test/roster_revision_service_test.dart` | 3656 | `626890606153330b3bca7e548d334c2cbdda278772b1b8ee7dfeb4077d240bbd` |
-| `test/roster_source_identity_test.dart` | 5038 | `b52cb0e8aec04ce2d0b395fdce266422591528bd48bbe5cd6e8615409153f622` |
+| `test/roster_source_identity_test.dart` | 7287 | `85516c4da1234a559d608850433c62b3655f3c4569444c3ff4b877d554a23b02` |
 | `test/roster_sync_period_filter_test.dart` | 2584 | `42879ab0bc3ed8edc7342b8a6663acb9c3a9065b560b0bd4752c23a029062a57` |
 | `test/rule_engine_consolidation_test.dart` | 3180 | `70ebce500581f1f93962d2d453a027d66899d66099ef4a2d637f155dc1f3b1fa` |
 | `test/rule_engine_foundation_test.dart` | 8149 | `31ad1aa480817e4c9ac012e51b332ff10c6a75b5f7aaef5844d239e6fe623884` |
