@@ -44,9 +44,14 @@ extension MonthlyRosterShiftAdapterDiagnostics on MonthlyRosterShiftAdapter {
     }).toList(growable: false);
 
     final shifts = parseForWorkers(report, targetNames: targetNames);
-    final convertedCells = shifts.map((shift) => shift.cell).toSet();
+    final convertedSources = shifts.map((shift) {
+      if (shift.sourceSpreadsheetId != null && shift.sourceSheetId != null) {
+        return '${shift.sourceSpreadsheetId}|${shift.sourceSheetId}|${shift.cell.toUpperCase()}';
+      }
+      return shift.cell.toUpperCase();
+    }).toSet();
     final unconverted = eligible
-        .where((assignment) => !convertedCells.contains(assignment.sourceCell))
+        .where((assignment) => !convertedSources.contains(assignment.sourceIdentityKey))
         .toList(growable: false);
 
     return MonthlyRosterConversionReport(
