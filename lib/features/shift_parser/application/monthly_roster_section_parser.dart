@@ -98,6 +98,9 @@ class MonthlyRosterSectionParser {
                 columnIndex: entry.key,
               ),
               backgroundColor: workerCell?.backgroundColor?.hex,
+              spreadsheetId: input.spreadsheetId,
+              sheetId: input.sheetId,
+              sheetTitle: input.sheetTitle,
             ),
           );
         }
@@ -312,6 +315,8 @@ class MonthlyRosterShiftAdapter {
         cell: assignment.sourceCell,
         category: colorMatch?.category ?? rule.category,
         sourceColorValue: sourceColor,
+        sourceSpreadsheetId: assignment.spreadsheetId,
+        sourceSheetId: assignment.sheetId,
       );
       shiftsByKey.putIfAbsent(shift.sourceKey, () => shift);
     }
