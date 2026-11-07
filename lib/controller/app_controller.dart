@@ -948,10 +948,13 @@ class AppController extends ChangeNotifier implements ControllerState {
               final knownRevisionIds = archivedRevisions
                   .map((revision) => revision.revisionId)
                   .toSet();
-              // Normal roster reads use the durable local Timeline archive.
-              // Drive revision exports are fetched only by the explicit
-              // historical Timeline action, keeping routine app loading fast.
-              final missingRevisions = refreshHistoricalTimeline
+              // Bootstrap an empty local archive once so historical Timeline
+              // remains available on first use. Routine reads with an existing
+              // archive avoid Drive revision exports; explicit refresh still
+              // checks Drive for revisions added since the last archive.
+              final shouldRefreshDriveHistory =
+                  refreshHistoricalTimeline || archivedRevisions.isEmpty;
+              final missingRevisions = shouldRefreshDriveHistory
                   ? await const RosterRevisionService().readHistoryTransient(
                       client,
                       spreadsheetId,
@@ -991,9 +994,9 @@ class AppController extends ChangeNotifier implements ControllerState {
               ]);
               _loadedTimelineScope = timelineScope;
               if (mergedRevisions.isEmpty) {
-                timelineWarning = refreshHistoricalTimeline
+                timelineWarning = shouldRefreshDriveHistory
                     ? 'ไม่พบประวัติ revision ที่อ่านได้ จึงแสดงเฉพาะรายชื่อเวรปัจจุบัน'
-                    : 'ยังไม่ได้โหลดประวัติย้อนหลังจาก Drive; กด “ซิงค์ Timeline ย้อนหลัง” เพื่อโหลดประวัติทั้งหมด';
+                    : 'ใช้คลัง Timeline ในเครื่อง; กด “ซิงค์ Timeline ย้อนหลัง” เพื่อตรวจ revision ใหม่จาก Drive';
               }
               if (skippedRevisionCount > 0) {
                 final skippedWarning =
