@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 784,
+  "file_count": 785,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -1238,8 +1238,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 106790,
-      "sha256": "68710cec4fa6987fee7094601d854b71e2302b10e00086ca9011b863808cf261"
+      "size": 108362,
+      "sha256": "6d0545c17de2235625d5d510f8d753240338f25dec1e7c18b422515d448c600e"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
@@ -3200,6 +3200,11 @@
       "path": "test/ai_support_chat_page_test.dart",
       "size": 2592,
       "sha256": "57eb2df2bcd3b63e0714026946ed07c6ce4a8fa16e64f9cbdaa20fb5c51a4372"
+    },
+    {
+      "path": "test/app_controller_runtime_gate_test.dart",
+      "size": 599,
+      "sha256": "3abc2531cd233e74f21bb5266fb42fec1cee268236fe9447568dbce4d84e420a"
     },
     {
       "path": "test/app_dependencies_test.dart",

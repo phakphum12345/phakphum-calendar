@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `784`
+- Tracked files: `785`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -275,7 +275,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `l10n.yaml` | 151 | `c3ce52cbd012e898f809811d21f21ead3bb3afd08b49a4efe4da74080248664d` |
 | `lib/app.dart` | 7679 | `599df85fd9c6a6abaa17e5646dd59969ef67bbe5a9d722030c1c5d4c83247ce1` |
 | `lib/bootstrap/app_bootstrap.dart` | 380 | `cada71fb830d954d0bd4df8e8892b7e0b62a5844a01d00daf1cd0007c9f23cb0` |
-| `lib/controller/app_controller.dart` | 106790 | `68710cec4fa6987fee7094601d854b71e2302b10e00086ca9011b863808cf261` |
+| `lib/controller/app_controller.dart` | 108362 | `6d0545c17de2235625d5d510f8d753240338f25dec1e7c18b422515d448c600e` |
 | `lib/core/di/app_dependencies.dart` | 21906 | `4075fdbcb457fd20199b251966063c71408d27ce8a8301bbfce9f160dff36b14` |
 | `lib/core/google/authorized_google_client_factory.dart` | 971 | `8a5504571f4d8e93d096d3f3bb3140564e58729510ac66c021a95361b2d362c8` |
 | `lib/core/google/google_scopes.dart` | 629 | `437eaa6b551e7fcfc6993603d2acb6c3a5be6818d0289ed2b20b0fc1af2d29b2` |
@@ -668,6 +668,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/admin_access_config_test.dart` | 1524 | `49f26ea088215c2f7c82d3ebd38099e6d8d5653ca1a4773b2ca9902e5435c0d2` |
 | `test/admin_dashboard_service_test.dart` | 962 | `63bd741c39abc644abaadbffd3f095ef49f8afcb854e1a44585acae6a6f4994b` |
 | `test/ai_support_chat_page_test.dart` | 2592 | `57eb2df2bcd3b63e0714026946ed07c6ce4a8fa16e64f9cbdaa20fb5c51a4372` |
+| `test/app_controller_runtime_gate_test.dart` | 599 | `3abc2531cd233e74f21bb5266fb42fec1cee268236fe9447568dbce4d84e420a` |
 | `test/app_dependencies_test.dart` | 11894 | `f34637e5075ebd631e9f8a314c540f14c42b11629fd8d7f494cc064cf9ec5a82` |
 | `test/app_edition_test.dart` | 722 | `62761aa843e001483ca7466764e0f6ba4efb1ae9ea1eaac7f9a28b72e0140878` |
 | `test/audit_entry_test.dart` | 1779 | `a5b7971be45a0046c27fbd075b1b8404f367294e5328dd546829776e3301de23` |
