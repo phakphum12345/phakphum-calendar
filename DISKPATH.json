@@ -2538,8 +2538,8 @@
     },
     {
       "path": "lib/features/shift_parser/application/monthly_roster_section_parser.dart",
-      "size": 13725,
-      "sha256": "e6754395eba15825a79ba6456788c4537e1b93337ec8cbaecc1e91e4e1614fa5"
+      "size": 14448,
+      "sha256": "eee42617d106b45fa4e51bab81e4473d521e71c7843331cffd5c31b86212d94c"
     },
     {
       "path": "lib/features/shift_parser/application/smart_roster_analyze_generator.dart",
@@ -3413,8 +3413,8 @@
     },
     {
       "path": "test/monthly_roster_cross_month_date_test.dart",
-      "size": 6660,
-      "sha256": "f23c05b37ab721ac9d715f589560cab86abd69f5e17d23c0c9d865c4a3c47bc9"
+      "size": 7570,
+      "sha256": "8e0aca17e3887f99126e29288d348586025ea0b86ea7327fd1c1ee7d30928871"
     },
     {
       "path": "test/monthly_roster_section_parser_test.dart",
