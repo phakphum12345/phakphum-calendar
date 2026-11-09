@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 791,
+  "file_count": 804,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -105,6 +105,11 @@
       "path": ".github/workflows/ios.yml",
       "size": 3293,
       "sha256": "5dc716ed94b3cfd421df674aa831d4b6f21c6e3390a054eb12dd02aea1b52934"
+    },
+    {
+      "path": ".github/workflows/laravel.yml",
+      "size": 1404,
+      "sha256": "044219a8ad1b3f8e5cafdcb8d09710a6edc70a872c5475b385dd7b54295a2ad6"
     },
     {
       "path": ".github/workflows/linux.yml",
@@ -398,8 +403,8 @@
     },
     {
       "path": "backend/.env.example",
-      "size": 1096,
-      "sha256": "7521e5f490dd728d443580a25764558832e836ea196bba92e3967ce03adb85c9"
+      "size": 1333,
+      "sha256": "9834271b8d717ed87efc8edee3771ff627a869fce3ecd24cb184a0a81ce34b28"
     },
     {
       "path": "backend/.gitattributes",
@@ -418,8 +423,13 @@
     },
     {
       "path": "backend/README.md",
-      "size": 1464,
-      "sha256": "3afe303d3d3e4318a4d8e33c46175ce52ae6cc9a16d132f36e8b78ebb92243a1"
+      "size": 3365,
+      "sha256": "dba61edcb50f6f52c3e1748a03de446fddd92223f8a20e448faa6f9eb96a3522"
+    },
+    {
+      "path": "backend/app/Contracts/GoogleIdentityTokenVerifier.php",
+      "size": 177,
+      "sha256": "c759ca57017ef2484d4e715026137ab3396fa635b518ba43dd1ad552a774a25f"
     },
     {
       "path": "backend/app/Http/Controllers/Api/V1/ClientErrorController.php",
@@ -427,9 +437,19 @@
       "sha256": "524d84119f5a185983ada0429edbda0932c837b84964a126084f35e7e8a64d7e"
     },
     {
+      "path": "backend/app/Http/Controllers/Api/V1/GoogleAccountController.php",
+      "size": 458,
+      "sha256": "8e3102a8e8c6f45f93c558ff2919187f128599f80b1aa22869f75138afafa902"
+    },
+    {
       "path": "backend/app/Http/Controllers/Api/V1/HealthController.php",
       "size": 1088,
       "sha256": "6fdb6f7f29232f719a6eb74c0cb88d808d0af6e2cf4d558fc796cdd4df0743e2"
+    },
+    {
+      "path": "backend/app/Http/Controllers/Api/V1/OrganizationController.php",
+      "size": 9746,
+      "sha256": "eb519d72754ca30844e0d5235436d5489741dd987566e0a9562afcd1ab2c5609"
     },
     {
       "path": "backend/app/Http/Controllers/Controller.php",
@@ -442,19 +462,29 @@
       "sha256": "919f769504d7d13db0f7e483f7cf9aae7823bc74371f62aca8461b8316ed6615"
     },
     {
+      "path": "backend/app/Http/Middleware/AuthenticateGoogleAccount.php",
+      "size": 3355,
+      "sha256": "e1bc4edfdd0f905d8240cba06a54379b8c7d87ca6dc39ab28c4e777bf812e8d3"
+    },
+    {
       "path": "backend/app/Http/Requests/StoreClientErrorRequest.php",
       "size": 1000,
       "sha256": "7994e6a98b0ad63248b358e5dbe221c8f7e891190dda8d4f0d512afc1531953f"
     },
     {
       "path": "backend/app/Models/User.php",
-      "size": 840,
-      "sha256": "1dca1344e88308fe405ae050f02bd65081a649de65ec86f2ee2beabbb4706afa"
+      "size": 876,
+      "sha256": "f433ea172290dc133aa41e2db151946001cfed2f40cdf697cbcb1a5b8a927bb7"
     },
     {
       "path": "backend/app/Providers/AppServiceProvider.php",
-      "size": 361,
-      "sha256": "caf306ef6a25a547bbb7edd5508a39b51c365083eb6dd58378cf2242018e94c7"
+      "size": 610,
+      "sha256": "3b4ae4dbb0c6c686690d71ea5417907d8f1b22b26edddae0230b0a9f44fa07bf"
+    },
+    {
+      "path": "backend/app/Services/Google/GoogleCertificateIdentityTokenVerifier.php",
+      "size": 5921,
+      "sha256": "d1fbc95f7adb023a8df762aaf70bfe26e4942b6f032fad86ba665beff460c26a"
     },
     {
       "path": "backend/artisan",
@@ -468,8 +498,8 @@
     },
     {
       "path": "backend/bootstrap/app.php",
-      "size": 814,
-      "sha256": "3437c38fc699b5dbb18f66dad2554490980885425bffe46e808171a29d2af03c"
+      "size": 972,
+      "sha256": "ae28b207d5e9d86a2991fb761bd85eed65d94142d3d3b375de8818aa0a2a69ca"
     },
     {
       "path": "backend/bootstrap/cache/.gitignore",
@@ -533,8 +563,8 @@
     },
     {
       "path": "backend/config/services.php",
-      "size": 1039,
-      "sha256": "8258c4487eb1d73a97e569eb0e411e3f25368044812df4cba807860432be1d92"
+      "size": 1366,
+      "sha256": "3f3eb7693dcff4af490f54122ea924500a30400dab42d41bb9d9ecdbf3c361b0"
     },
     {
       "path": "backend/config/session.php",
@@ -565,6 +595,21 @@
       "path": "backend/database/migrations/0001_01_01_000002_create_jobs_table.php",
       "size": 1883,
       "sha256": "df4910687180313a14a3f96a8bddd808ae145ed1b107cd772caf865c0dc2b746"
+    },
+    {
+      "path": "backend/database/migrations/2026_11_09_000001_add_google_subject_to_users_table.php",
+      "size": 592,
+      "sha256": "067d4f1290e9f74ba0faaac385b0731907969fd9f87b75e3c941a47fcf4f1678"
+    },
+    {
+      "path": "backend/database/migrations/2026_11_09_000002_create_organizations_and_memberships.php",
+      "size": 1387,
+      "sha256": "9d11f08d68d1d02c54fbc6694b3786541853c1f2176e28be6fda5d4c4c92430b"
+    },
+    {
+      "path": "backend/database/migrations/2026_11_09_000003_create_organization_shift_policies.php",
+      "size": 768,
+      "sha256": "bc7b75fe5aa59ddc039c438f306bd6baa99245c7f2f0d4544f0c2b611b0cfb24"
     },
     {
       "path": "backend/database/seeders/DatabaseSeeder.php",
@@ -618,8 +663,8 @@
     },
     {
       "path": "backend/routes/api.php",
-      "size": 566,
-      "sha256": "1fc314be4a7ba58e1ea65f3236c549ada30ee00b4ba7338009bf5f44606fb8eb"
+      "size": 1988,
+      "sha256": "7a07b67456af0a3fbb7d495fd17af92517c884c0eadb4cf6701daf0dafa19a8f"
     },
     {
       "path": "backend/routes/console.php",
@@ -682,14 +727,29 @@
       "sha256": "240a3e0d37d2e86b614063f5347eb02d4f99ca6c254de6b82871ff8d95532a7d"
     },
     {
+      "path": "backend/tests/Fakes/FakeGoogleIdentityTokenVerifier.php",
+      "size": 639,
+      "sha256": "b92a0e0b7adfe2bbcce6a9e2abeac0559e01e402fbd037ac1a54d35f706430a6"
+    },
+    {
       "path": "backend/tests/Feature/ClientErrorApiTest.php",
       "size": 1508,
       "sha256": "59a605498ae1b2309e8ab39ff3e521921a783f765ca3d8dc09b1d520fcd47d6b"
     },
     {
+      "path": "backend/tests/Feature/GoogleAuthenticationTest.php",
+      "size": 3524,
+      "sha256": "99b59be1127be067b72f32241883b67aa26c0073499a26b69719a91939a9c2a2"
+    },
+    {
       "path": "backend/tests/Feature/HealthApiTest.php",
       "size": 782,
       "sha256": "cb0e1d7129c5a4b45a5a1c38821aa3909177a1659fcf0532a3c8f9d4bc19a42b"
+    },
+    {
+      "path": "backend/tests/Feature/OrganizationApiTest.php",
+      "size": 5904,
+      "sha256": "6c154446acbce29d6f5095d48f3509eca101491e4deb917e7107d607e1738b8e"
     },
     {
       "path": "backend/tests/TestCase.php",
@@ -700,6 +760,11 @@
       "path": "backend/tests/Unit/ExampleTest.php",
       "size": 243,
       "sha256": "ffacae5c1a2a44c809420af5b3b404910da1b12167d58764dac6d10b8ba8cfaf"
+    },
+    {
+      "path": "backend/tests/Unit/GoogleCertificateIdentityTokenVerifierTest.php",
+      "size": 4150,
+      "sha256": "aa5beabf05d5b89d0836bb4878c5a6113e043e471c0965070c0e85b3794c26d2"
     },
     {
       "path": "backend/vite.config.js",

@@ -1,0 +1,57 @@
+name: Laravel Backend CI
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/laravel.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/laravel.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: laravel-backend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: PHP 8.4 / Laravel
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ":memory:"
+      CACHE_STORE: array
+      GOOGLE_ALLOWED_CLIENT_IDS: test-server-client-id
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: ctype, curl, dom, fileinfo, filter, hash, mbstring, openssl, pdo, pdo_sqlite, session, tokenizer, xml
+          coverage: none
+
+      - name: Validate Composer manifest
+        run: composer validate --strict
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Check PHP formatting
+        run: vendor/bin/pint --test app bootstrap/app.php config database routes tests
+
+      - name: Run Laravel tests
+        run: php artisan test
