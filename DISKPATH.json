@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 784,
+  "file_count": 791,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -910,6 +910,11 @@
       "path": "docs/adr/ADR-0013-block-on-unknown-shift-time.md",
       "size": 445,
       "sha256": "5c7b32feb0d1b6e418d9dc09144ed5aa6b87e991b1900e548467234c96235cd4"
+    },
+    {
+      "path": "docs/adr/ADR-0013-shift-transactions.md",
+      "size": 2396,
+      "sha256": "4fd1346703d7a2c30c4fc11efad905a0c6ea121bb4223e4fe5fcda7e51ab5080"
     },
     {
       "path": "docs/adr/ADR-0014-multi-source-multi-period-review.md",
@@ -2503,8 +2508,8 @@
     },
     {
       "path": "lib/features/shift_exchange/README.md",
-      "size": 390,
-      "sha256": "28ba7e0ea3d07a4bd897bb509eaadd526e00282ba48ee74096405e72af3e9799"
+      "size": 1220,
+      "sha256": "64cab799ac1671eb3d8b29c9fe8e4ff6eddc1a071ed151f9df852e84d2919ac2"
     },
     {
       "path": "lib/features/shift_exchange/application/shift_exchange_service.dart",
@@ -2512,9 +2517,24 @@
       "sha256": "efbbf7b109bfffd10920a6c90c9b74e0b4a569d9af6468448a76d1c182f208a8"
     },
     {
+      "path": "lib/features/shift_exchange/application/shift_transaction_service.dart",
+      "size": 6223,
+      "sha256": "fe4db104707a3f9aaef6083348e0c07c5d18e0091c9e8a79891a04f42abc14fa"
+    },
+    {
       "path": "lib/features/shift_exchange/domain/shift_exchange_request.dart",
       "size": 2689,
       "sha256": "ae22bf595ce28b1f312005be5435fe576473ede04303f72f3771e06c907a990a"
+    },
+    {
+      "path": "lib/features/shift_exchange/domain/shift_transaction.dart",
+      "size": 15977,
+      "sha256": "2381fa63a599f5ab9e68f2618bd67b61fcd725163000d1c425db4c3becefc75b"
+    },
+    {
+      "path": "lib/features/shift_exchange/domain/shift_transaction_types.dart",
+      "size": 2475,
+      "sha256": "0a3fd95c96aefde45f60d84db87b204b8e7f9bd934053013269e1f2dde417126"
     },
     {
       "path": "lib/features/shift_exchange/presentation/controllers/shift_exchange_controller.dart",
@@ -3680,6 +3700,21 @@
       "path": "test/shift_time_service_test.dart",
       "size": 1160,
       "sha256": "0236957c9779ddd75789c0fae49a18a9cb060a8b41e81728cd1d59728a1f53d7"
+    },
+    {
+      "path": "test/shift_transaction_exchange_test.dart",
+      "size": 3358,
+      "sha256": "42e62a33f33df29650bc729698e5e881ec5f82e3ab5fbb2bdae9e5d4449b8b41"
+    },
+    {
+      "path": "test/shift_transaction_service_test.dart",
+      "size": 5077,
+      "sha256": "c4926dd3a24b34382067fff6310ecaa78fd33cf15fa9e2947a5fd25076018a5f"
+    },
+    {
+      "path": "test/shift_transaction_test.dart",
+      "size": 7837,
+      "sha256": "8f6e9e8d423bdeea0ad3dd0b2a15947a613bbc863d07c558587d22e74c3c460a"
     },
     {
       "path": "test/smart_roster_analyze_generator_test.dart",
