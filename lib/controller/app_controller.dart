@@ -218,6 +218,7 @@ class AppController extends ChangeNotifier implements ControllerState {
   Set<String> existingKeys = {};
   Map<String, RosterAssignmentTimeline> _revisionTimelines = const {};
   int _loadedRevisionCount = 0;
+  String? _loadedTimelineScope;
   String? timelineWarning;
   List<String> sheetTitles = [];
   Set<String> pinnedToolIds = {...defaultPinnedToolIds};
@@ -790,7 +791,10 @@ class AppController extends ChangeNotifier implements ControllerState {
       throw StateError('กรุณาเลือก Google Sheets ที่ต้องการซิงค์ Timeline ก่อน');
     }
 
-    await loadRoster(allowAutomaticCalendarSync: false);
+    await loadRoster(
+      allowAutomaticCalendarSync: false,
+      refreshHistoricalTimeline: true,
+    );
     if (error != null) return;
 
     final warning = timelineWarning;
@@ -804,6 +808,7 @@ class AppController extends ChangeNotifier implements ControllerState {
   Future<void> loadRoster({
     bool background = false,
     bool allowAutomaticCalendarSync = true,
+    bool refreshHistoricalTimeline = false,
   }) async {
     await _run('อ่านตารางเวร', () async {
       final sourceUrl = localSourceLabel == null ? currentSourceUrl : '';
@@ -888,7 +893,11 @@ class AppController extends ChangeNotifier implements ControllerState {
           snapshots: snapshots,
         );
         final timelineGenerator = const RosterTimelineGenerator();
-        if (background && _loadedRevisionCount > 0) {
+        final accountId = auth.account?.id.trim();
+        final timelineScope = '${accountId ?? ''}|$spreadsheetId';
+        if (background &&
+            _loadedRevisionCount > 0 &&
+            _loadedTimelineScope == timelineScope) {
           timelineWarning =
               'ใช้ประวัติ Timeline จากการอ่านล่าสุด; '
               'กดอ่านใหม่เพื่อโหลด revision ล่าสุดจาก Drive';
@@ -896,7 +905,6 @@ class AppController extends ChangeNotifier implements ControllerState {
           timelineWarning = null;
           try {
             var skippedRevisionCount = 0;
-            final accountId = auth.account?.id.trim();
             final legacyAccountId = auth.account?.email.trim();
             const archive = TimelineArchiveService();
             var archivedRevisions = <RosterRevisionDocument>[];
@@ -940,15 +948,22 @@ class AppController extends ChangeNotifier implements ControllerState {
               final knownRevisionIds = archivedRevisions
                   .map((revision) => revision.revisionId)
                   .toSet();
-              final missingRevisions = await const RosterRevisionService()
-                  .readHistoryTransient(
-                    client,
-                    spreadsheetId,
-                    knownRevisionIds: knownRevisionIds,
-                    onRevisionSkipped: (revisionId, error) {
-                      skippedRevisionCount++;
-                    },
-                  );
+              // Bootstrap an empty local archive once so historical Timeline
+              // remains available on first use. Routine reads with an existing
+              // archive avoid Drive revision exports; explicit refresh still
+              // checks Drive for revisions added since the last archive.
+              final shouldRefreshDriveHistory =
+                  refreshHistoricalTimeline || archivedRevisions.isEmpty;
+              final missingRevisions = shouldRefreshDriveHistory
+                  ? await const RosterRevisionService().readHistoryTransient(
+                      client,
+                      spreadsheetId,
+                      knownRevisionIds: knownRevisionIds,
+                      onRevisionSkipped: (revisionId, error) {
+                        skippedRevisionCount++;
+                      },
+                    )
+                  : <RosterRevisionDocument>[];
 
               // Persist each downloaded revision before adding it to the
               // in-memory timeline. If a write fails, the local archive remains
@@ -977,9 +992,11 @@ class AppController extends ChangeNotifier implements ControllerState {
                 ...mergedRevisions,
                 currentRevision,
               ]);
+              _loadedTimelineScope = timelineScope;
               if (mergedRevisions.isEmpty) {
-                timelineWarning =
-                    'ไม่พบประวัติ revision ที่อ่านได้ จึงแสดงเฉพาะรายชื่อเวรปัจจุบัน';
+                timelineWarning = shouldRefreshDriveHistory
+                    ? 'ไม่พบประวัติ revision ที่อ่านได้ จึงแสดงเฉพาะรายชื่อเวรปัจจุบัน'
+                    : 'ใช้คลัง Timeline ในเครื่อง; กด “ซิงค์ Timeline ย้อนหลัง” เพื่อตรวจ revision ใหม่จาก Drive';
               }
               if (skippedRevisionCount > 0) {
                 final skippedWarning =
@@ -995,6 +1012,7 @@ class AppController extends ChangeNotifier implements ControllerState {
                 ...archivedRevisions,
                 currentRevision,
               ]);
+              _loadedTimelineScope = timelineScope;
               final fallbackWarning = archivedRevisions.isEmpty
                   ? 'อ่านประวัติ Timeline จาก Drive ไม่สำเร็จและไม่มีคลังในเครื่อง: $historyError'
                   : 'Drive ยังอ่านประวัติใหม่ไม่ได้ จึงใช้ Timeline ที่บันทึกในเครื่อง '
@@ -1013,6 +1031,7 @@ class AppController extends ChangeNotifier implements ControllerState {
             _revisionTimelines = timelineGenerator.generateFromDocuments([
               currentRevision,
             ]);
+            _loadedTimelineScope = timelineScope;
             timelineWarning =
                 'อ่านประวัติ Timeline จาก Google Drive ไม่สำเร็จ: $caught';
             await _addAudit('sheet.timeline.failed', timelineWarning!, false);
@@ -1607,55 +1626,60 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   /// Builds and returns a prepared calendar diff for preview purposes.
-  Future<CalendarDiff> previewCalendarDiff() async {
-    // Dispose any previous prepared workflow and create a new one.
-    _pendingCalendarWorkflow?.dispose();
-    _pendingCalendarWorkflow = null;
-    final workflow = await _createPreparedCalendarWorkflow();
-    _pendingCalendarWorkflow = workflow;
-    final prep = workflow.schedulePreparation;
-    if (prep == null) {
-      throw StateError('ไม่พบแผนการซิงก์ที่เตรียมไว้');
-    }
-    return prep.diff;
+  Future<CalendarDiff> previewCalendarDiff() {
+    return _run('เตรียมตัวอย่างการซิงก์ปฏิทิน', () async {
+      _pendingCalendarWorkflow?.dispose();
+      _pendingCalendarWorkflow = null;
+      final workflow = await _createPreparedCalendarWorkflow();
+      _pendingCalendarWorkflow = workflow;
+      final prep = workflow.schedulePreparation;
+      if (prep == null) {
+        throw StateError('ไม่พบแผนการซิงก์ที่เตรียมไว้');
+      }
+      return prep.diff;
+    });
   }
 
   /// Prepares a preview for a pre-mapped list of desired calendar event
   /// candidates (used for swap/one-off previews) and returns the computed diff.
   Future<CalendarDiff> previewCandidates(
     List<CalendarEventCandidate> desired,
-  ) async {
-    final workflow = await _calendarWorkflowControllerFactory();
-    try {
-      await workflow.prepareCandidatePreview(desired: desired);
-      final preview = workflow.preview;
-      if (preview == null) throw StateError('ไม่พบ preview หลังจากเตรียม');
-      return preview.diff;
-    } finally {
-      workflow.dispose();
-    }
+  ) {
+    return _run('เตรียมตัวอย่างรายการปฏิทิน', () async {
+      final workflow = await _calendarWorkflowControllerFactory();
+      try {
+        await workflow.prepareCandidatePreview(desired: desired);
+        final preview = workflow.preview;
+        if (preview == null) throw StateError('ไม่พบ preview หลังจากเตรียม');
+        return preview.diff;
+      } finally {
+        workflow.dispose();
+      }
+    });
   }
 
   /// Executes synchronization for a pre-mapped set of desired candidates.
-  Future<void> syncCandidates(List<CalendarEventCandidate> desired) async {
-    final workflow = await _calendarWorkflowControllerFactory();
-    try {
-      await workflow.prepareCandidatePreview(desired: desired);
-      if (workflow.preview == null) {
-        throw StateError('ไม่พบแผนการซิงก์สำหรับรายการนี้');
+  Future<void> syncCandidates(List<CalendarEventCandidate> desired) {
+    return _run('ซิงก์รายการปฏิทิน', () async {
+      final workflow = await _calendarWorkflowControllerFactory();
+      try {
+        await workflow.prepareCandidatePreview(desired: desired);
+        if (workflow.preview == null) {
+          throw StateError('ไม่พบแผนการซิงก์สำหรับรายการนี้');
+        }
+        await workflow.synchronize();
+        final result = workflow.lastResult;
+        if (result != null) {
+          await _addAudit(
+            'calendar.sync.candidates',
+            'ซิงก์ candidates: เพิ่ม ${result.historyEntry.inserted} แก้ไข ${result.historyEntry.updated} ลบ ${result.historyEntry.deleted}',
+            !result.hasFailures,
+          );
+        }
+      } finally {
+        workflow.dispose();
       }
-      await workflow.synchronize();
-      final result = workflow.lastResult;
-      if (result != null) {
-        await _addAudit(
-          'calendar.sync.candidates',
-          'ซิงก์ candidates: เพิ่ม ${result.historyEntry.inserted} แก้ไข ${result.historyEntry.updated} ลบ ${result.historyEntry.deleted}',
-          !result.hasFailures,
-        );
-      }
-    } finally {
-      workflow.dispose();
-    }
+    });
   }
 
   /// Releases an authorized prepared workflow when confirmation is cancelled.
@@ -2032,14 +2056,18 @@ class AppController extends ChangeNotifier implements ControllerState {
     }
   }
 
-  Future<void> _run(String action, Future<void> Function() body) async {
-    if (busy) return;
+  Future<T> _run<T>(String action, Future<T> Function() body) async {
+    if (busy) {
+      throw StateError(
+        'กำลังทำงาน “${status ?? 'รายการก่อนหน้า'}” อยู่ กรุณารอให้เสร็จก่อนเริ่ม “$action”',
+      );
+    }
     busy = true;
     status = action;
     error = null;
     notifyListeners();
     try {
-      await body();
+      return await body();
     } catch (caught) {
       error = caught.toString().replaceFirst('Bad state: ', '');
       await _addAudit('error', '$action: $error', false);
