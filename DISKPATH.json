@@ -108,8 +108,8 @@
     },
     {
       "path": ".github/workflows/laravel.yml",
-      "size": 1412,
-      "sha256": "653a367b230f982064c01fc7a15485e25dd8cb4469539b833579a3b5dfe7bf20"
+      "size": 1478,
+      "sha256": "4402c4b0233cb999b9b22048067953e02dbb74df2e81ffebe802a3404765f28c"
     },
     {
       "path": ".github/workflows/linux.yml",
