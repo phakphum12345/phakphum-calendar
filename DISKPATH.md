@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `805`
+- Tracked files: `806`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -202,9 +202,10 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `docs/PLATFORM_SUPPORT.md` | 2207 | `519f4deb785d0f8d972c541dae211d518d85efd11e0ce155385b6a885b4c43d3` |
 | `docs/PROJECT_AUDIT.md` | 23667 | `c833f9d4e5b55e994bf82a4656240e60bc75257407f917c9673995d62c4fc46f` |
 | `docs/REAL_ROSTER_PROFILE.md` | 1316 | `29c63cc02f2a49550489c35649dd265ec9114a9518c4d600ce4dad5be1913e5d` |
+| `docs/ROSTER_CONFIGURATION_AND_SYNC_ROADMAP.md` | 18030 | `563b8e564dd8a64054d846f3d6a11f3750647e9ed00f4a7fd243d8ca618a6ffe` |
 | `docs/ROSTER_KNOWLEDGE_BASE_ARCHITECTURE_TH.md` | 6665 | `b5bc3b8d2a58fb1ce43ec53d38215742053840d4d47d1518006437a17235219f` |
 | `docs/SCE_3_0_DELIVERY_ROADMAP.md` | 11829 | `685e4807928b8be63f638de871c65e1dbb2627a1cf21f0c9d4ada741ace1c73f` |
-| `docs/SCE_3_0_IMPLEMENTATION_MAP.md` | 3052 | `e969fdc2a6e9507781782db27df28e9c75cb5979479c14d26bdbcfdbc1b67432` |
+| `docs/SCE_3_0_IMPLEMENTATION_MAP.md` | 6579 | `bea8be701c41d9cd65f3c6d955cb5a14c36f10a2e281728e586acef378887a03` |
 | `docs/SCE_3_0_SYSTEM_DESIGN.md` | 13671 | `2aa35351076bde8a31194239619050bfa6b22dc4014e0d52c734638e39263b06` |
 | `docs/SHIFT_PAY_RULES.md` | 5478 | `9b69f502e3d31d504735790f6378c6ea53d5a5936c9e8252d39ef9aecd75cd1e` |
 | `docs/SMART_ROSTER_ANALYZE_GENERATOR.md` | 1719 | `5a1df4cd269e81e07988dbffdb711f0ad7814f7af2c13eb717220ac3b58b06b6` |
