@@ -210,6 +210,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `docs/adr/ADR-0012-text-first-roster-comparison.md` | 845 | `239cbf3677b2831a91c0eecc99ea2fe27bbc5f8685e48d1f24f49c1e09f71656` |
 | `docs/adr/ADR-0012-timeline-persistence-and-drive-backup.md` | 7929 | `9fa9f9c28ee1f16641b4fe874c706cdaae4b75aa550637d8d9c6c9ec4ae02af9` |
 | `docs/adr/ADR-0013-block-on-unknown-shift-time.md` | 445 | `5c7b32feb0d1b6e418d9dc09144ed5aa6b87e991b1900e548467234c96235cd4` |
+| `docs/adr/ADR-0013-shift-transactions.md` | 2396 | `4fd1346703d7a2c30c4fc11efad905a0c6ea121bb4223e4fe5fcda7e51ab5080` |
 | `docs/adr/ADR-0014-multi-source-multi-period-review.md` | 1376 | `ddad342731c19761300348cf7e7590ab7253e9b4836c93baad4bb72a949285db` |
 | `docs/ci/SELF_HOSTED_WINDOWS_RUNNER.md` | 3532 | `2b660bec432720b722ab01e337d5fadca3763d5de531222367f99b278f6a923e` |
 | `docs/google-workspace-setup.html` | 5829 | `69bec594a366e629476a68f6c56726aad265ec227626c90bf4b9445d5bbe6cb9` |
@@ -528,14 +529,17 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/schedule_generation/domain/schedule_conflict.dart` | 578 | `da67f95e832e47628fca23bead42fc3dc2b41e3a08fce43ad6d427179eb27286` |
 | `lib/features/schedule_generation/domain/staff_directory.dart` | 1222 | `e0f756cc95737d49e7af76327132909cca9c248e69d9f83b4034e188a0ff16b8` |
 | `lib/features/schedule_generation/domain/staff_group.dart` | 1290 | `5dad67c49495b04c36c87fb1e24bbae05a3b7ce20668d70ec25a076f028a44e7` |
-| `lib/features/shift_exchange/README.md` | 390 | `28ba7e0ea3d07a4bd897bb509eaadd526e00282ba48ee74096405e72af3e9799` |
+| `lib/features/shift_exchange/README.md` | 1220 | `64cab799ac1671eb3d8b29c9fe8e4ff6eddc1a071ed151f9df852e84d2919ac2` |
 | `lib/features/shift_exchange/application/shift_exchange_service.dart` | 1868 | `efbbf7b109bfffd10920a6c90c9b74e0b4a569d9af6468448a76d1c182f208a8` |
+| `lib/features/shift_exchange/application/shift_transaction_service.dart` | 6223 | `fe4db104707a3f9aaef6083348e0c07c5d18e0091c9e8a79891a04f42abc14fa` |
 | `lib/features/shift_exchange/domain/shift_exchange_request.dart` | 2689 | `ae22bf595ce28b1f312005be5435fe576473ede04303f72f3771e06c907a990a` |
+| `lib/features/shift_exchange/domain/shift_transaction.dart` | 15977 | `2381fa63a599f5ab9e68f2618bd67b61fcd725163000d1c425db4c3becefc75b` |
+| `lib/features/shift_exchange/domain/shift_transaction_types.dart` | 2475 | `0a3fd95c96aefde45f60d84db87b204b8e7f9bd934053013269e1f2dde417126` |
 | `lib/features/shift_exchange/presentation/controllers/shift_exchange_controller.dart` | 1393 | `0c53e696383ba7e668e2b0317f98c49995b5d0003e6feda007f92577116c2b66` |
 | `lib/features/shift_exchange/presentation/pages/shift_exchange_page.dart` | 4094 | `fd5473594d17fec03331e548a3e1123335e888621b226255bab77d486c93f57e` |
 | `lib/features/shift_parser/application/hospital_roster_parser.dart` | 5495 | `8ca60d01705bb52e4faa478ad61c28a0f67d104291fd3165ef3e8dfd30f10168` |
 | `lib/features/shift_parser/application/monthly_roster_conversion_diagnostics.dart` | 2402 | `72edb75ec277cbb5dd5c173b4482faafa7e371fc788d1f46522e18e8dc531306` |
-| `lib/features/shift_parser/application/monthly_roster_section_parser.dart` | 13725 | `e6754395eba15825a79ba6456788c4537e1b93337ec8cbaecc1e91e4e1614fa5` |
+| `lib/features/shift_parser/application/monthly_roster_section_parser.dart` | 14448 | `eee42617d106b45fa4e51bab81e4473d521e71c7843331cffd5c31b86212d94c` |
 | `lib/features/shift_parser/application/smart_roster_analyze_generator.dart` | 2821 | `1b395e6440350e48357a37ec285aa172b0f962fd180822ea67bef63f2116c1c0` |
 | `lib/features/shift_parser/application/snapshot_normalizer.dart` | 1809 | `ad12901e35e5e9f33ed815547ecc051d117e0e3fddcc9f5b0f567e99a16e36f6` |
 | `lib/features/shift_parser/domain/a1_notation.dart` | 631 | `264700bc1ec9e89932ad9f17dca3811b15595dd8c392f3cd44a5efa8b29d4746` |
@@ -711,7 +715,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/monthly_roster_all_dates_test.dart` | 4902 | `a5fdab96f0c2399f12b252acfeea1452e5a1cfb4a443e8064e2caad400b08bb0` |
 | `test/monthly_roster_all_years_leap_test.dart` | 3326 | `fe5e32facccbb1976e00fe56ccad0c2dc6f272878cb97817f5ba4d60cfa2284b` |
 | `test/monthly_roster_conversion_diagnostics_test.dart` | 2397 | `1a5803abfea9a89ddd4f864485480b80937f32f360f7f3cfb8b911d5f7460ef0` |
-| `test/monthly_roster_cross_month_date_test.dart` | 6660 | `f23c05b37ab721ac9d715f589560cab86abd69f5e17d23c0c9d865c4a3c47bc9` |
+| `test/monthly_roster_cross_month_date_test.dart` | 7570 | `8e0aca17e3887f99126e29288d348586025ea0b86ea7327fd1c1ee7d30928871` |
 | `test/monthly_roster_section_parser_test.dart` | 9773 | `710fa33c84a88746247dc58a59b2e12df1153c1f1a5825f660f1e29bc74e40b1` |
 | `test/monthly_roster_template_test.dart` | 2146 | `43491b9121bd0031c97ed10e8772bec1337d74a39e312e788e9138ba59123076` |
 | `test/monthly_schedule_pdf_service_test.dart` | 4367 | `4721c35b87501c726e9c5f3a67694de682c1a945586c45dee14382250513e919` |
@@ -765,6 +769,9 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/shift_pay_calculator_test.dart` | 8172 | `675b703930f851e71b109100335e4fdccf5c2eba2bac03df775da31c7a49606c` |
 | `test/shift_template_test.dart` | 4409 | `9453e8c114094f855d57274a1959d85d32fb0e2195c9823908187f82d4ddb48c` |
 | `test/shift_time_service_test.dart` | 1160 | `0236957c9779ddd75789c0fae49a18a9cb060a8b41e81728cd1d59728a1f53d7` |
+| `test/shift_transaction_exchange_test.dart` | 3358 | `42e62a33f33df29650bc729698e5e881ec5f82e3ab5fbb2bdae9e5d4449b8b41` |
+| `test/shift_transaction_service_test.dart` | 5077 | `c4926dd3a24b34382067fff6310ecaa78fd33cf15fa9e2947a5fd25076018a5f` |
+| `test/shift_transaction_test.dart` | 7837 | `8f6e9e8d423bdeea0ad3dd0b2a15947a613bbc863d07c558587d22e74c3c460a` |
 | `test/smart_roster_analyze_generator_test.dart` | 2393 | `436efd1d6b28f045a267cf843d65d0d919f9ae3965aa6981e04ace4424714ef1` |
 | `test/support/canonical_schedule_fixture.dart` | 3076 | `8c3427f39d66b1aedfea0309ac7a75dfe131a792639884bc3711ff2a83017f52` |
 | `test/support/in_memory_schedule_store.dart` | 645 | `baa26a13ae7712c0679259ac3f14ee72b996ef9a2e3175a03763212a04cf4ba1` |

@@ -60,7 +60,7 @@ class MonthlyRosterSectionParser {
       DateTime start;
       DateTime end;
       try {
-        final period = _parsePeriod('$title ${input.sheetTitle}');
+        final period = _tryParsePeriod(title) ?? _parsePeriod(input.sheetTitle);
         start = period.start;
         end = period.end;
       } on FormatException {
@@ -143,6 +143,14 @@ class MonthlyRosterSectionParser {
         start: DateTime(year, month),
         end: DateTime(year, month + 1, 0),
       );
+    }
+  }
+
+  ThaiRosterPeriod? _tryParsePeriod(String text) {
+    try {
+      return _parsePeriod(text);
+    } on FormatException {
+      return null;
     }
   }
 
@@ -236,14 +244,25 @@ class MonthlyRosterSectionParser {
     required int headerRow,
   }) {
     final candidates = <String>[];
-    for (var row = headerRow - 1; row >= 0 && row >= headerRow - 5; row--) {
-      final texts = (cellsByRow[row] ?? const [])
+    // Search back to the previous date grid, not a fixed number of rows.
+    // Real workbooks often place section labels and merged headings far above
+    // the date row, especially after inserted explanatory rows.
+    for (var row = headerRow - 1; row >= 0; row--) {
+      final rowCells = cellsByRow[row] ?? const [];
+      if (_daysByColumn(rowCells).length >= 7) break;
+      final texts = rowCells
           .map((cell) => cell.text?.toString().trim())
           .whereType<String>()
           .where((text) => text.isNotEmpty)
           .toList();
       candidates.addAll(texts);
     }
+
+    // An explicit month/range heading is authoritative even when the sheet
+    // tab was named for a different month. Prefer the closest valid heading.
+    final dated = candidates.where((text) => _tryParsePeriod(text) != null);
+    if (dated.isNotEmpty) return dated.first;
+
     final periodTitle = candidates.where((text) => text.contains('ประจำเดือน'));
     if (periodTitle.isNotEmpty) return periodTitle.first;
     final descriptive = candidates.where(
