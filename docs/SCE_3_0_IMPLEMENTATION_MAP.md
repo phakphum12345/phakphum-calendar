@@ -36,3 +36,32 @@
 3. Extend the canonical manual editor with bulk selection and repeat actions.
 4. Add configurable Conflict/Policy/Preview boundaries.
 5. Add employee availability and department capacity.
+
+## Roster Configuration & Intelligent Sync
+
+The detailed target behavior, phases, acceptance criteria, test matrix, and safety constraints are maintained in [Roster Configuration & Sync Roadmap](ROSTER_CONFIGURATION_AND_SYNC_ROADMAP.md).
+
+| Capability | Current status | Existing production boundary | Next action |
+|---|---|---|---|
+| Roster source providers | Partial foundation; exact provider coverage requires Phase 0 audit | Existing local import and Google Sheets adapters | Define extensible provider contract; preserve active source until explicit activation |
+| Roster configuration profiles | Partial foundations exist in column mapping and shift templates; reusable profile lifecycle not yet verified | Excel import mapping and shift templates | Add persisted, versioned, reusable profiles and explicit precedence |
+| Configurable layout/date parser | Partial | Excel import and section/date parsing | Audit then extend row/column/section mapping, BE/CE and cross-period date rules |
+| Shift aliases/time rules | Partial | Shift templates and canonical schedule | Add profile/source/location-scoped aliases and time rules, including overnight shifts |
+| Analyze/validation/preview | Partial foundation | Import draft, validation, simulation and calendar preview | Unify provenance, ambiguity resolution, stale-preview invalidation and explicit confirmation |
+| Generator/Calendar sync integration | Production foundation; exact profile-driven flow requires audit | Existing generation and Calendar sync workflows | Consume only validated preview output; verify idempotency and per-item outcomes |
+| Roster source/profile history | Partial | Audit, sync history and workspace/profile foundations | Persist source provenance, profile versions, corrections and append-only history |
+
+## Updated execution order
+
+The roster roadmap adds a prerequisite audit before implementation. It is a focused workstream and must be integrated with the existing SCE 3.0 work rather than creating a competing subsystem.
+
+1. **Phase 0 — READ / ANALYZE:** audit existing source selection, import readers, date parsing, shift templates, profile/persistence, generator, preview, Calendar sync, Timeline and tests. Establish a file-level baseline.
+2. **Phase 1 — Source/Profile contracts:** define extensible providers, persisted profiles, schema versioning and configuration precedence.
+3. **Phase 2 — Reader/Date parser:** extend existing readers and mapping UI; cover BE/CE, explicit section dates and cross-month/year periods.
+4. **Phase 3 — Shift/Time rules:** extend existing shift templates with aliases, context-specific rules, special categories and overnight shifts.
+5. **Phase 4 — Analyze/Preview:** unify provenance, warnings/errors, correction, validation and explicit confirmation.
+6. **Phase 5 — Generator/Sync:** integrate validated output with existing generation and Calendar sync, including idempotency and partial-failure recovery.
+7. **Phase 6 — History/Persistence:** preserve and connect roster history, audit, profile versions and Calendar Timeline.
+8. **Phase 7 — E2E/Release audit:** run regression, platform builds and CI; verify exact PR head checks and main after merge.
+
+The existing SCE 3.0 immediate work remains in scope. Before implementation, Phase 0 must identify dependencies and sequencing conflicts so that navigation/editor work and roster workflow changes share existing routes and repositories. Do not infer that the statuses in this map prove all end-to-end paths are complete.
