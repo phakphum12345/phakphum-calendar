@@ -763,8 +763,8 @@
     },
     {
       "path": "backend/tests/Feature/OrganizationJoinRequestApiTest.php",
-      "size": 8400,
-      "sha256": "1c4017b38ec6de5b8928ce5f4ca949304a7548d147e01652347f2697fe31b6d9"
+      "size": 8407,
+      "sha256": "dc8f00f9fb0a60598dae7a8fabc89e9f7cd752db17ab86c299e2fdbab5665c87"
     },
     {
       "path": "backend/tests/TestCase.php",

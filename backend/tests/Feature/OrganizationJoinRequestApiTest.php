@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Contracts\GoogleIdentityTokenVerifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\Fakes\FakeGoogleIdentityTokenVerifier;
 use Tests\TestCase;
 
@@ -212,7 +213,7 @@ class OrganizationJoinRequestApiTest extends TestCase
 
     private function userId(string $email): int
     {
-        return (int) \Illuminate\Support\Facades\DB::table('users')
+        return (int) DB::table('users')
             ->where('email', $email)
             ->value('id');
     }
