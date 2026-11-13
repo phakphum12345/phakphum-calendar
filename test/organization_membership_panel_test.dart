@@ -24,7 +24,7 @@ void main() {
 
     expect(find.text('New Nurse'), findsOneWidget);
     expect(find.text('new.nurse@example.com'), findsOneWidget);
-    expect(find.text('EMP-001'), findsOneWidget);
+    expect(find.text('รหัสพนักงาน: EMP-001'), findsOneWidget);
 
     await tester.tap(find.byType(DropdownButtonFormField<StaffRole>));
     await tester.pumpAndSettle();

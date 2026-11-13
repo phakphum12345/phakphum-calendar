@@ -748,7 +748,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/multi_sheet_picker_selection_test.dart` | 1904 | `6c460b5ca26b2557e414fdc857c60130628a5c0e21541fff37e04ad0fe9689da` |
 | `test/off_after_cross_month_roster_boundary_test.dart` | 2733 | `10382634904a67541a8a39f4744a95d3cbccd3911f6226b6696d9439dd41747b` |
 | `test/organization_admin_gateway_test.dart` | 2461 | `438f1ee54927316ec93ca5db579f7f132193d0d2889750d2d0c24629a8bf53f0` |
-| `test/organization_membership_panel_test.dart` | 3116 | `86336887b3196777d955d507f3cd24f37ea433fadc2fee86d6bb4395d7c11223` |
+| `test/organization_membership_panel_test.dart` | 3151 | `cb6d5855a3ac19e390858a26cdecc233a56f7658bfc8ac2f01c2f9898459baa1` |
 | `test/plugin_registry_test.dart` | 1487 | `02d16914879b047c97f0d1c0d9929cc4ae4a3551ab3fde79d6361b8ff0853f29` |
 | `test/radiology_roster_structure_test.dart` | 4209 | `e526b10d9c6039756439032c4062739886780b735aeea99beff9e04119e1d843` |
 | `test/research_os_calendar_bridge_contract_test.dart` | 575 | `790db7d445e0ac17557f23088ca437b43eb9fb390363d9ef887aca5a4d8df718` |
