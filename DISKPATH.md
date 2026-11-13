@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `811`
+- Tracked files: `819`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -43,7 +43,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `.codex/project.md` | 4964 | `535b4a50a65823d5c3cbb933d5340f54fd9bd8eb995a8ba47bd8247e92ac0b2d` |
 | `.codex/prompts.md` | 3504 | `1dec39a5591dec97c329c43266add5c9e492436a9826bcc9ca0fa0d6bb18f5bd` |
 | `.codex/roadmap.md` | 3272 | `201819ebdf4e490a2c7e31d0b3b7cae4d9c1f7eef3190f92ca8b698c7430d696` |
-| `.github/workflows/README.md` | 5353 | `a911a1a7b9b2b8a69442ad96f7bf89491a5de2b1779c24b3871a81ba93f9ab35` |
+| `.github/workflows/README.md` | 5497 | `cf79e71d56d0bf65294b20cf02578b599004b084fd1784b705aaafb2ea5291ce` |
 | `.github/workflows/android.yml` | 3264 | `c506bdb4f07b67ac53a9bd088dc0ba4a2258506dddb37ce0e7b311129ea890e7` |
 | `.github/workflows/ci-auto-detect.yml` | 4070 | `3dab5c3760a11aedfa8ffa511e3686f6816934f7b77a4fad06181cbe24485d99` |
 | `.github/workflows/final-gate.yml` | 6405 | `c160ae7913364bc15af46a2dfc281ec909127925d78f9a92f072fb4cbf70f69b` |
@@ -53,7 +53,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `.github/workflows/linux.yml` | 2470 | `850db3a8e9c539389df9eb6e7d801bf40de6b82accd595e90870c200b3e5db9b` |
 | `.github/workflows/roster-knowledge-schema.yml` | 2161 | `06d43b9147d1f0b9eac633759aebc5cff0142931a84e4c0c9ee89bf3518a4065` |
 | `.github/workflows/self-hosted-windows.yml` | 2739 | `d2ce9468a5edbf0a0107fa5969f82c016ab5d8397823337ca51a80a436a13f15` |
-| `.github/workflows/web.yml` | 3193 | `e3e25b3fb2b5dc5369ff7094fd81ef63c1af2960a3971a104750b3f5ed34fa5b` |
+| `.github/workflows/web.yml` | 3351 | `5368a979ac3195d0ae75bb9cf0386111c5cfb86978fd00424f67007edda4e3b2` |
 | `.github/workflows/windows.yml` | 3290 | `c9dc273d17a356f7c551e86d1b534b19ec8db2c09be1b660a4f82d05d6d6ed77` |
 | `.gitignore` | 885 | `ef2df2e38b6ccf9af7295cb26bd630a71101fef2ffed5eae26c51b23eb09440c` |
 | `.metadata` | 1706 | `acfbaea52ff601014457c28ebe80ffc1b52132c4041b5896a82636ef1be6c6c5` |
@@ -65,7 +65,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `CONTRIBUTING.md` | 3267 | `8a62c5ffd0ccca9c39e4b24a0db5e0d463ebb80634a492aa927038f19aa408a0` |
 | `DATA_MODEL.md` | 828 | `ec8b06bab5ccb403559c201117c99d558c40fced412675d682f225aae6bfdd73` |
 | `LICENSE` | 11358 | `cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30` |
-| `MASTER_PLAN.md` | 5376 | `9d287248c6ba070027086b3f998f83886041d5deb14aeea8eac515653fa04a62` |
+| `MASTER_PLAN.md` | 5507 | `ccb137e31b38204f879889750ed60507585bfb78a5e96c8b5ed4d5f381826f1d` |
 | `NOTICE` | 101 | `466fa508291567626fb52fdf58e15ce228338a594f9c368d0324af3b9b9087b5` |
 | `PROJECT_CONSTITUTION.md` | 866 | `eedb48be10263e7911a13132efca01abb75086c5fcc8e1eb713961777c10ccba` |
 | `PROJECT_RULES.md` | 659 | `71fe177e689a61a01ede7fcc30f329beaead72aef84815440a364f7a540d51d6` |
@@ -108,16 +108,16 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `artifacts/ios/phakphum-calendar-unsigned.ipa` | 12475880 | `4c0d1f75669f6d4c94331b694e5e899075d9f9a170c3adec6af231b31026cbc3` |
 | `assets/app_icon_master.png` | 874012 | `b8e81b47ba02626f4fd572560150129718bb5df5496cd49e0ceb4e6be676cd6d` |
 | `backend/.editorconfig` | 275 | `fe39e0ad06edea8e256e44f1fc4f319a8acfa785a7470af5cf6b9ed12dc34406` |
-| `backend/.env.example` | 1333 | `9834271b8d717ed87efc8edee3771ff627a869fce3ecd24cb184a0a81ce34b28` |
+| `backend/.env.example` | 1434 | `62822a2b2581c8ebc0be84a3da3f517bf93127e40d8e535b2d4f73226b1e0952` |
 | `backend/.gitattributes` | 186 | `a40eb27ee0b545ca5b5542daaf99fec51f84f23b3766a6353864ef2a115bc51c` |
 | `backend/.gitignore` | 341 | `3ee1060a695b64e763d8a438ac1fe87494ff00d92680c3f63ca56bc103ed4142` |
 | `backend/.npmrc` | 31 | `e968d1d336604e9986ea31306a4d9e1442f4312fca262f444384baf928d6560e` |
-| `backend/README.md` | 3365 | `dba61edcb50f6f52c3e1748a03de446fddd92223f8a20e448faa6f9eb96a3522` |
+| `backend/README.md` | 4685 | `d00f62769da884eb91e9a72186e58de0b247919e5ad48949fb3a0abebe2ec9b8` |
 | `backend/app/Contracts/GoogleIdentityTokenVerifier.php` | 177 | `c759ca57017ef2484d4e715026137ab3396fa635b518ba43dd1ad552a774a25f` |
 | `backend/app/Http/Controllers/Api/V1/ClientErrorController.php` | 863 | `524d84119f5a185983ada0429edbda0932c837b84964a126084f35e7e8a64d7e` |
 | `backend/app/Http/Controllers/Api/V1/GoogleAccountController.php` | 458 | `8e3102a8e8c6f45f93c558ff2919187f128599f80b1aa22869f75138afafa902` |
 | `backend/app/Http/Controllers/Api/V1/HealthController.php` | 1088 | `6fdb6f7f29232f719a6eb74c0cb88d808d0af6e2cf4d558fc796cdd4df0743e2` |
-| `backend/app/Http/Controllers/Api/V1/OrganizationController.php` | 9746 | `eb519d72754ca30844e0d5235436d5489741dd987566e0a9562afcd1ab2c5609` |
+| `backend/app/Http/Controllers/Api/V1/OrganizationController.php` | 20551 | `2dc5af9821c07f0e640f39d67fb04da9fbeecc4d2f36b379f15598a241392558` |
 | `backend/app/Http/Controllers/Controller.php` | 77 | `25d1c1ef8e6cc8a376553faacfba2b07d9dfaee9bdbb84f14f77517580e9deb1` |
 | `backend/app/Http/Middleware/AttachRequestId.php` | 660 | `919f769504d7d13db0f7e483f7cf9aae7823bc74371f62aca8461b8316ed6615` |
 | `backend/app/Http/Middleware/AuthenticateGoogleAccount.php` | 3355 | `e1bc4edfdd0f905d8240cba06a54379b8c7d87ca6dc39ab28c4e777bf812e8d3` |
@@ -135,6 +135,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `backend/config/app.php` | 4272 | `78dcd36b226fd7b24057cb95f567cb6e96561c2406653892d8aef6dcea8461e4` |
 | `backend/config/auth.php` | 4040 | `c7e204e9785c9f596d66fb884b493f658f2327f157646bdb4088efd6b3a7773f` |
 | `backend/config/cache.php` | 4369 | `ee4ad2bba1edfcff52e9599f37371f2370d0b167cc226ce72d46cdf6edf2dc55` |
+| `backend/config/cors.php` | 634 | `7d9fb1e4f745c2715cfff0c97d67cfad2de47654a9ad613b03ef44b42803f6c4` |
 | `backend/config/database.php` | 6876 | `02cd62f589b43d33f9ceac740705dac1dec9740eb2bb9e6e202d4b66a15244cf` |
 | `backend/config/filesystems.php` | 2532 | `ba7060d7a23e490c3ce830656f6d24ad3ccf5b868e3293f2a12e411959dc5635` |
 | `backend/config/logging.php` | 4340 | `299ec1ba5b5a803c8e20f666ae7628e442e856cc2ff7ac9e2adb17b97e8ad63b` |
@@ -150,6 +151,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `backend/database/migrations/2026_11_09_000001_add_google_subject_to_users_table.php` | 592 | `067d4f1290e9f74ba0faaac385b0731907969fd9f87b75e3c941a47fcf4f1678` |
 | `backend/database/migrations/2026_11_09_000002_create_organizations_and_memberships.php` | 1387 | `9d11f08d68d1d02c54fbc6694b3786541853c1f2176e28be6fda5d4c4c92430b` |
 | `backend/database/migrations/2026_11_09_000003_create_organization_shift_policies.php` | 768 | `bc7b75fe5aa59ddc039c438f306bd6baa99245c7f2f0d4544f0c2b611b0cfb24` |
+| `backend/database/migrations/2026_11_13_000001_create_organization_join_requests.php` | 1130 | `48ea094ea89c129ab6f709775d55f275b0994a492f2f2bf41720c6340e417eb5` |
 | `backend/database/seeders/DatabaseSeeder.php` | 482 | `cf8e4b6e48360218bb5534f66419c955288f78338eb8a3dba9d8ac3394ec3dbc` |
 | `backend/package.json` | 384 | `10a54d6736b26384ac68636e11f958360e6d18fb9c41e91e05707a918ad58622` |
 | `backend/phpunit.xml` | 1322 | `493369cfb7feea104da4bec214c2cc6526ca2f1b9d937c50a2961fc59cb61aaf` |
@@ -160,7 +162,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `backend/resources/css/app.css` | 339 | `02db84e827e06d8349293e9797eb8d81465e109e91976775964c4bf873b6fab5` |
 | `backend/resources/js/app.js` | 3 | `101ead936a2281d53dcc064b7e2a2ab0d53b92ef3ef7b34b668673007895c860` |
 | `backend/resources/views/welcome.blade.php` | 349 | `a616a5feb437bba9ec40d33f9eb2e7179a78ddd021fea1a0fc25bac5c9e1d34f` |
-| `backend/routes/api.php` | 1988 | `7a07b67456af0a3fbb7d495fd17af92517c884c0eadb4cf6701daf0dafa19a8f` |
+| `backend/routes/api.php` | 3122 | `bfcd5171833c74a8b4b0626b953c695cd5481b33bfb71f043704dbdfa7021753` |
 | `backend/routes/console.php` | 210 | `9adccc33e7dd400683e434774077c7fdb2f299c5712cedf16a43fdf56f2850fa` |
 | `backend/routes/web.php` | 108 | `248c7eeeb43bb61ee4fb6603e52b44843c64f72a841d671bcd41871aab23f970` |
 | `backend/storage/app/.gitignore` | 33 | `993b9e3709d7b5189da331725d1169d79e561a509db2490b722b525073d2d976` |
@@ -178,25 +180,26 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `backend/tests/Feature/GoogleAuthenticationTest.php` | 3524 | `99b59be1127be067b72f32241883b67aa26c0073499a26b69719a91939a9c2a2` |
 | `backend/tests/Feature/HealthApiTest.php` | 782 | `cb0e1d7129c5a4b45a5a1c38821aa3909177a1659fcf0532a3c8f9d4bc19a42b` |
 | `backend/tests/Feature/OrganizationApiTest.php` | 5904 | `6c154446acbce29d6f5095d48f3509eca101491e4deb917e7107d607e1738b8e` |
+| `backend/tests/Feature/OrganizationJoinRequestApiTest.php` | 8400 | `1c4017b38ec6de5b8928ce5f4ca949304a7548d147e01652347f2697fe31b6d9` |
 | `backend/tests/TestCase.php` | 142 | `c7c209f5579c42647c1f7b2a79ac828e8b54ac62a98442045a6e94fa2c0d0ebc` |
 | `backend/tests/Unit/ExampleTest.php` | 243 | `ffacae5c1a2a44c809420af5b3b404910da1b12167d58764dac6d10b8ba8cfaf` |
 | `backend/tests/Unit/GoogleCertificateIdentityTokenVerifierTest.php` | 4150 | `aa5beabf05d5b89d0836bb4878c5a6113e043e471c0965070c0e85b3794c26d2` |
 | `backend/vite.config.js` | 632 | `f413e14379e2db8b200c63a6326b925f6d47cc0df458c77bfe188cfc23e8081f` |
-| `docs/AI_PROVIDER_RESEARCH_FOUNDATION.md` | 5750 | `6e764001cdb42eba5e01acfa0209e15e1c3136677d97df92d0034dda87cf1b43` |
+| `docs/AI_PROVIDER_RESEARCH_FOUNDATION.md` | 5872 | `83fde8566d66e86f77b5e46cba199811b4ecbb229ef9b69654208985eb270041` |
 | `docs/AI_ROSTER_ANALYZER_LOGIC_TH.md` | 8389 | `e175d44fe3d3148fe2b007196834843fd7028bbecca7e927770505670c6d01f0` |
 | `docs/AI_SUPPORT_CHAT.md` | 1192 | `93c123a267a3331e4a004dbd34ea9dfa93802da689b0f99bb786808bc15013bd` |
 | `docs/API_FOUNDATION.md` | 851 | `e2fad2e3f128f0c6c3a20479148b0b603c15634ad22a6b877c5e6bb1fc3a6d8d` |
 | `docs/APP_WIDE_UX_REDESIGN.md` | 4654 | `100689ca7e02212a619e39ae4fff1a5006ebf5cd1dbbd5ee7adf639051a77b89` |
 | `docs/CALENDAR_PREVIEW_AND_SYNC.md` | 1252 | `4515247cfce12b61cbb77765f992aa063516b0bbd27827cf303aba8499a13503` |
-| `docs/CI_AUTO_DETECTION.md` | 1336 | `8b7812e0e85690c2ee1caf352890a8eeb9b2fdea541769aa1c15e404e9810495` |
+| `docs/CI_AUTO_DETECTION.md` | 1448 | `9905115406d5c15d3cc83e30e10bd6c8a9e75b39aacf01833950e1de79222113` |
 | `docs/COMPARISON_FOUNDATION.md` | 1087 | `c51936347c65c7f6e8019d18d653d530c01dacd763d702779ad76117847f208f` |
-| `docs/DELIVERY_STATUS.md` | 2160 | `c6557167c8deb355b3cc10195cf89115e96ef341b9aac80b329c818d73cf4960` |
+| `docs/DELIVERY_STATUS.md` | 2295 | `c8aa81ec3b1e2c69252173cfcf07ae7a353ddb1d3e57bc4c3ba0bf15435b17a4` |
 | `docs/DURABLE_HISTORY_AND_RESUME.md` | 693 | `0608bc829ecc5a7c2b8001d75aefc8644817b7377884e7607716c72537418cfc` |
 | `docs/END_TO_END_WORKFLOW.md` | 925 | `2514d7222962cf9fa564f9acfa4181dea02d290ecf57e49ebac153232569a95a` |
 | `docs/GOOGLE_SETUP.md` | 2196 | `79da078521c34792514a536dba282e9845e7f35d26502ad356a78846b7dc3284` |
 | `docs/HYBRID_ROSTER_AI.md` | 2659 | `c60732e0d3b6ead770366fa08c05b61674df5aef54dd492bf737014d20940db7` |
-| `docs/INSTALLATION_AND_USER_GUIDE.md` | 20183 | `3d05d1e411495be2d97f9e8838598c3baf88290ada30d51f154d5a74ba6327b9` |
-| `docs/INTEGRATION_STATUS.md` | 1213 | `3f1f58a1b84f313c7685d82761f6d8dcb2768f3b8a24428894425b54343cbcab` |
+| `docs/INSTALLATION_AND_USER_GUIDE.md` | 22703 | `065cd9c2fbfb4ac5f5851b5884b3d92a745eb07beafcfd513050b88a02432838` |
+| `docs/INTEGRATION_STATUS.md` | 1451 | `5da22b970995d0950475ba2efa1fe1449425946e520e9664a59d04e380518214` |
 | `docs/NEW_APP_STRUCTURE_TH.md` | 9311 | `d5ac9ae4f7ecd84082008da5506af13729ef81450d3c31e1a8bc214e4550f6ff` |
 | `docs/PARSER_FOUNDATION.md` | 1548 | `b8d62f7396066e46f9c2c74a75448c23e78acc3f0ddfe625eac1af9d396295c9` |
 | `docs/PLATFORM_SUPPORT.md` | 2207 | `519f4deb785d0f8d972c541dae211d518d85efd11e0ce155385b6a885b4c43d3` |
@@ -206,12 +209,12 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `docs/ROSTER_CONFIGURATION_AND_SYNC_ROADMAP.md` | 18580 | `f818d6ed511f7c91a2304672196be5982f218459b91ebfb8a4d64c7f41212975` |
 | `docs/ROSTER_KNOWLEDGE_BASE_ARCHITECTURE_TH.md` | 6665 | `b5bc3b8d2a58fb1ce43ec53d38215742053840d4d47d1518006437a17235219f` |
 | `docs/ROSTER_PHASE_0_SOURCE_AUDIT.md` | 24137 | `159a59129c4162998d3fa1984b1886abb03a1d438054f07962e57e31f4e52cde` |
-| `docs/SCE_3_0_DELIVERY_ROADMAP.md` | 11829 | `685e4807928b8be63f638de871c65e1dbb2627a1cf21f0c9d4ada741ace1c73f` |
-| `docs/SCE_3_0_IMPLEMENTATION_MAP.md` | 6579 | `bea8be701c41d9cd65f3c6d955cb5a14c36f10a2e281728e586acef378887a03` |
+| `docs/SCE_3_0_DELIVERY_ROADMAP.md` | 12130 | `dd1bc6ab958a98957306d780daad24bacb4da1dee120da2bc7dc1749bfad43f1` |
+| `docs/SCE_3_0_IMPLEMENTATION_MAP.md` | 6742 | `0f8646cde4713ece8a5380a75ee68adaa66a614b3bbe2bfececf8f1aa5b7a812` |
 | `docs/SCE_3_0_SYSTEM_DESIGN.md` | 13671 | `2aa35351076bde8a31194239619050bfa6b22dc4014e0d52c734638e39263b06` |
 | `docs/SHIFT_PAY_RULES.md` | 5478 | `9b69f502e3d31d504735790f6378c6ea53d5a5936c9e8252d39ef9aecd75cd1e` |
 | `docs/SMART_ROSTER_ANALYZE_GENERATOR.md` | 1719 | `5a1df4cd269e81e07988dbffdb711f0ad7814f7af2c13eb717220ac3b58b06b6` |
-| `docs/SYNC_RELIABILITY.md` | 1388 | `bf1da1c7346ae8dac8a0cee0d56bac6d545b4dd9e3b3d6e6e1ecf48e1b454b1c` |
+| `docs/SYNC_RELIABILITY.md` | 1496 | `77a16b159b3f2a574a767edc43f8cd5a07c339f9a83589b9944521576b15d61a` |
 | `docs/adr/ADR-0001-project-structure.md` | 561 | `c308f72d365dcc18de908148f5ff335dd00cc822a8e3f0f4f298917a9297ce9f` |
 | `docs/adr/ADR-0002-state-management.md` | 408 | `1923c9e6e55047a54a8de57637a869e46e8e38cc9ec55c0a4b26e4c5db2d83fd` |
 | `docs/adr/ADR-0003-local-storage.md` | 425 | `2adfd55c31e03c78a7a85ae731acd0ff0a95aca8241e97710b1d739368093d00` |
@@ -327,7 +330,10 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/admin/application/admin_dashboard_service.dart` | 801 | `c5187bff99d3e3809fc055ddeceed3f35abb169e253176868141363d1c12f40e` |
 | `lib/features/admin/domain/admin_access_config.dart` | 2933 | `7fd23bef1d54301b313661f1ded92ca9a2f5583efef5c39c4b65b4a36614a0de` |
 | `lib/features/admin/domain/admin_metrics.dart` | 638 | `57cea12dbe35e48a751b47b6d7d5ec290eb25c34df1f2bad8c9cc9685b827d11` |
-| `lib/features/admin/presentation/admin_access_page.dart` | 9679 | `29bd84631b96671b5793328f6998251cf3fb2d01a6ef7b2b4c5af5db377bf04e` |
+| `lib/features/admin/domain/organization_admin_gateway.dart` | 2393 | `9b78c372f827e711a778c3375b53eb9a4fdb5c51482c3eaea92f2dd3ecaad557` |
+| `lib/features/admin/infrastructure/http_organization_admin_gateway.dart` | 8539 | `10e9ffce916270199c28f073e91970557dcc131b5288f061809ad6fe9a9715ee` |
+| `lib/features/admin/presentation/admin_access_page.dart` | 11594 | `3352738eb84b7b170c557f7b8c7a359c29db5e4e4b8a75159e4349bc98163837` |
+| `lib/features/admin/presentation/organization_membership_panel.dart` | 18121 | `bdea6a6ce8b767920e26be77ec2bb594d9f45ee57ebd2d700aec5019c36e768e` |
 | `lib/features/ai_roster_analyzer/ai_roster_analyzer.dart` | 91 | `34fa5cd68d732dbb4e4e99ff0d47db77d669cec21589ff6482bd646bddef8c42` |
 | `lib/features/ai_roster_analyzer/application/ai_roster_analyzer.dart` | 13421 | `a4c283425cb6c0c23c2c6318433a009aaf7256da94d009fb65c9797f51becc41` |
 | `lib/features/ai_roster_analyzer/domain/roster_analysis_models.dart` | 4569 | `ae172707a44ecef1c9b98d3d4eb925142ad0cf1f0a2ad8f5691bd55871ba9163` |
@@ -637,7 +643,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/swap_request_service.dart` | 1857 | `84df2fac3ba6319c7fbbd7e16a757aeeac3041b2cedf6d3bbb926dc361b48f45` |
 | `lib/services/timeline_archive_service.dart` | 7002 | `234d2405d82f0497b88aaf04121c98111e6ed7331c4387e016779e5c0b0f7c32` |
 | `lib/shared/presentation/app_status_page.dart` | 2355 | `632e9de1c6f386b0ef04fdc15e0870c0ac633859493fa2acea07e8c7926dabfd` |
-| `lib/ui/app_shell.dart` | 213604 | `8959198f0064a1505cfedfe85b73f445798cdb1345666692d79ede0cede4a282` |
+| `lib/ui/app_shell.dart` | 213867 | `b7417e6975cd372c86104f3b5657cc82c237a14c5e550c78308a656e158400ef` |
 | `lib/ui/audit_log_page.dart` | 2201 | `eec96b9ad15d43454beadf1f446ac3a421d4e17d8f59fba2244a19e7d2a13d95` |
 | `lib/ui/first_login_setup_dialog.dart` | 10532 | `38d98cd2da5a0f12f6997695783589dd3796a9123fd3f01fbf8d46c815a848d4` |
 | `lib/ui/google_sign_in_button.dart` | 102 | `250dcb07d7da55efdcbe2f2f164ef395050f5b635e044e48f16575dc035ad2b7` |
@@ -741,6 +747,8 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/monthly_schedule_report_mapper_test.dart` | 6105 | `04eeaf3f25bda0191ee1062ded48499c6123d89cdf1d1ccf2fbc2748bb852a35` |
 | `test/multi_sheet_picker_selection_test.dart` | 1904 | `6c460b5ca26b2557e414fdc857c60130628a5c0e21541fff37e04ad0fe9689da` |
 | `test/off_after_cross_month_roster_boundary_test.dart` | 2733 | `10382634904a67541a8a39f4744a95d3cbccd3911f6226b6696d9439dd41747b` |
+| `test/organization_admin_gateway_test.dart` | 2461 | `438f1ee54927316ec93ca5db579f7f132193d0d2889750d2d0c24629a8bf53f0` |
+| `test/organization_membership_panel_test.dart` | 3116 | `86336887b3196777d955d507f3cd24f37ea433fadc2fee86d6bb4395d7c11223` |
 | `test/plugin_registry_test.dart` | 1487 | `02d16914879b047c97f0d1c0d9929cc4ae4a3551ab3fde79d6361b8ff0853f29` |
 | `test/radiology_roster_structure_test.dart` | 4209 | `e526b10d9c6039756439032c4062739886780b735aeea99beff9e04119e1d843` |
 | `test/research_os_calendar_bridge_contract_test.dart` | 575 | `790db7d445e0ac17557f23088ca437b43eb9fb390363d9ef887aca5a4d8df718` |

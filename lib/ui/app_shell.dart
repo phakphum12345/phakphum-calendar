@@ -270,7 +270,14 @@ class _AppShellState extends State<AppShell> {
               controllerFactory: widget.reportControllerFactory,
             ),
             if (currentEdition == AppEdition.organization)
-              AdminAccessPage(currentEmail: controller.auth.account?.email),
+              AdminAccessPage(
+                currentEmail: controller.auth.account?.email,
+                apiBaseUrl: const String.fromEnvironment(
+                  'ORGANIZATION_API_BASE_URL',
+                ),
+                idToken: () async =>
+                    controller.auth.account?.authentication.idToken,
+              ),
             _SettingsPage(
               controller: controller,
               createFutureSheet: _createFutureSheet,

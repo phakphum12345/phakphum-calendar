@@ -10,10 +10,10 @@ The active build and delivery surface covers **Windows, Web, Android, iOS, and L
 - `linux.yml` — Linux x64 release bundle archive.
 - `final-gate.yml` — requires Auto Detect CI, Windows, and Web for the same `main` commit; Android, iOS, and Linux are best-effort and may be skipped with a recorded reason.
 
-macOS, Laravel/backend validation, broad repository validation, coverage
-gates, and integration-test gates are not active delivery gates. The Android,
-iOS, and Linux workflows build artifacts; mobile store distribution and signing
-are not configured.
+macOS, broad repository validation, coverage gates, and integration-test gates
+are not active delivery gates. Laravel Backend CI is active for backend changes
+but does not deploy the API. The Android, iOS, and Linux workflows build
+artifacts; mobile store distribution and signing are not configured.
 
 ## Support policy
 
@@ -29,30 +29,31 @@ For the current stabilization phase:
 | iOS | Unsigned build supported | `ios.yml` |
 | macOS | Paused | No active workflow |
 | Linux x64 | Build supported | `linux.yml` |
-| Backend/Laravel | Paused | No active workflow |
+| Backend/Laravel | CI supported | `laravel.yml` (tests only; no deployment) |
 
 Mobile artifacts are CI builds, not store-ready packages: Android currently
 uses the debug signing configuration, and iOS is built without code signing.
 
-## Owner-generated v6^6 capability policy
+## CI capability detection policy
 
 `ci-auto-detect.yml` is the lightweight source-of-truth guard for the current
 delivery surface. It detects whether the repository contains the Flutter/Dart
 project and whether platform source directories exist. It treats
 `integration_test/` as optional.
 
-The capability gate is intentionally independent of Dart formatting, static
-analysis, coverage generation, and platform release builds. It must not mutate
-source files and must not auto-format code.
+The workflow runs analysis and tests when the detected project capabilities
+require them. It does not run formatting, generate coverage, or build platform
+artifacts. It must not mutate source files or auto-format code.
 
 ## Final gate policy
 
-`final-gate.yml` is the final evidence gate for `main`.
+`final-gate.yml` is the final evidence gate for matching `main` pushes and
+manual dispatches.
 
-It is triggered when an active platform build completes on `main`. It verifies
-that Auto Detect CI and Windows, Web, Android, iOS, and Linux all have
-successful completed runs for the **same commit SHA** before reporting
-`FINAL PASS`. A failed platform build fails the final gate.
+It requires successful Auto Detect CI, Windows, and Web runs for the **same
+commit SHA**. Android, iOS, and Linux are optional artifact evidence; a missing
+or unsuccessful optional run is recorded as `SKIPPED` and does not fail the
+gate. A failed required workflow fails the final gate.
 
 This prevents a green result from one platform being mistaken for a complete
 release result and avoids bringing back the old formatter/coverage failure
@@ -95,20 +96,23 @@ core result when unavailable or behind:
 The platform build workflows remain independent:
 
 1. Auto Detect CI, Windows, and Web are required release evidence.
-2. Android, iOS, and Linux are optional artifact evidence. Their workflows do not run on pull requests; they run on relevant pushes to `main` or by manual dispatch. The final gate waits up to 10 minutes for optional targets, then records any still missing or unsuccessful target as `SKIPPED`.
+2. Android, iOS, and Linux are optional artifact evidence. Their workflows run
+   for matching pull requests, relevant pushes to `main`, or manual dispatch.
+   The final gate runs on `main`, waits up to 10 minutes for optional targets,
+   then records any missing or unsuccessful target as `SKIPPED`.
 3. Store-signing credentials must not be required for iOS or Android compile checks.
-2. Missing `integration_test/` must never be treated as a CI failure for the
+4. Missing `integration_test/` must never be treated as a CI failure for the
    supported targets.
-3. Coverage artifacts are not required by any platform build workflow.
-4. Formatting and coverage remain developer-side checks. Auto Detect CI and
+5. Coverage artifacts are not required by any platform build workflow.
+6. Formatting and coverage remain developer-side checks. Auto Detect CI and
    Windows run analysis and unit tests.
-5. A workflow must not auto-commit generated formatting changes during a
+7. A workflow must not auto-commit generated formatting changes during a
    release gate. Formatting changes must be committed explicitly by the
    developer or a dedicated maintenance job.
-7. Capability detection must not mutate the source tree or introduce a new
+8. Capability detection must not mutate the source tree or introduce a new
    platform automatically.
-8. The final gate must compare required evidence using the same commit SHA.
-9. Skipped optional targets must be visible in the job log with a reason; skipping
+9. The final gate must compare required evidence using the same commit SHA.
+10. Skipped optional targets must be visible in the job log with a reason; skipping
    an optional target must never hide a failure in required quality, Windows, or Web checks.
 
 ## Simplification policy

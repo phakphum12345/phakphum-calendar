@@ -29,6 +29,13 @@ the token signature against Google's published certificates and checks issuer,
 audience, authorized party, expiry, issued-at time, Google subject, and verified
 email. The API fails closed when no accepted audience is configured.
 
+For browser clients, set `FRONTEND_ALLOWED_ORIGINS` to a comma-separated list
+of exact frontend origins (scheme and host, without a path). The Flutter web
+build reads `ORGANIZATION_API_BASE_URL` at build time; set it to the HTTPS
+origin of this API. In GitHub Actions, configure it as the repository variable
+of the same name. An empty value deliberately leaves organization membership
+controls unavailable in the web app.
+
 Existing password-based user records are not silently linked to Google accounts
 by matching email. An account collision returns `409 account_link_required`
 and requires an explicit account-linking workflow.
@@ -50,16 +57,26 @@ Google ID token required in `Authorization: Bearer <id-token>`:
 | `GET` | `/api/v1/me` | Resolve the authenticated Google account |
 | `GET` | `/api/v1/organizations` | List the caller's active organizations |
 | `POST` | `/api/v1/organizations` | Create an organization and become its owner |
+| `GET` | `/api/v1/organization-join-requests` | List the caller's join requests |
+| `POST` | `/api/v1/organization-join-requests` | Request to join by organization slug and employee ID |
 | `GET` | `/api/v1/organizations/{id}/members` | List active organization members |
 | `POST` | `/api/v1/organizations/{id}/members` | Add an already-registered Google account |
+| `GET` | `/api/v1/organizations/{id}/join-requests` | List pending requests for an owner or admin |
+| `POST` | `/api/v1/organizations/{id}/join-requests/{request}/approve` | Approve a request and assign its role |
+| `POST` | `/api/v1/organizations/{id}/join-requests/{request}/reject` | Reject a pending request |
 | `GET` | `/api/v1/organizations/{id}/shift-policies` | Read approval policy by workflow |
 | `PUT` | `/api/v1/organizations/{id}/shift-policies/{workflow}` | Configure approval policy |
 
-Organization creation requires the owner's employee ID. Adding a member
-requires that the target account has signed in at least once and has a verified
-Google email. Invitations for accounts that have never signed in are not part
-of this API phase. Only organization owners and admins may add members or
-change policies. New organizations default to requiring approval for give-up,
+Organization creation requires the owner's employee ID. A new user signs in
+with Google, submits the organization slug supplied by its administrator and
+an employee ID, then waits for an owner or admin to review the Google profile
+and approve with a role (`staff`, `incharge`, `manager`, or `admin`) or reject.
+The applicant cannot choose their own role. Rejected requests may be resubmitted.
+The existing direct-add endpoint remains an owner/admin operation and requires
+that the target account has signed in at least once with a verified Google
+email; invitations for accounts that have never signed in are not supported.
+Only organization owners and admins may review requests, add members, or change
+policies. New organizations default to requiring approval for give-up,
 exchange, and exchange-and-return. Personal-mode requests do not use these
 organization policies.
 

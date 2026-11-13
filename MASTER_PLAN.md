@@ -96,42 +96,40 @@ Never delete and rebuild the entire calendar as a normal synchronization strateg
 
 ## 8. Delivery support policy
 
-The current stabilization target is deliberately limited to two active delivery
-surfaces:
+The required application delivery targets are Windows and Web. Android, iOS,
+and Linux also have active optional artifact workflows; macOS is paused:
 
 ```text
 main
-├── Windows        ACTIVE
-├── Website        ACTIVE
-├── Android       PAUSED
-├── iOS            PAUSED
-├── macOS          PAUSED
-└── Linux          PAUSED
+├── Required: Windows + Web
+├── Optional artifacts: Android + iOS + Linux
+└── Paused: macOS
 ```
 
-Windows x64 and Web/GitHub Pages are the only active release targets. Android,
-iOS, macOS, and Linux remain preserved in `main` where their source is useful,
-but they are not merge or release gates. They may be restored later through an
-explicit, isolated verification cycle.
+Android, iOS, and Linux builds are best-effort and do not block the Final Gate.
+Laravel Backend CI validates backend changes but is not a deployment workflow.
 
 The detailed delivery state is maintained in `docs/DELIVERY_STATUS.md` and the
 workflow support contract in `.github/workflows/README.md`.
 
 ## 9. CI/release contract
 
-The active release surface is:
+The required main-branch release evidence is:
 
+- `.github/workflows/ci-auto-detect.yml` — capability-aware analysis and tests.
 - `.github/workflows/windows.yml` — Windows x64 release ZIP and SHA-256 checksum.
 - `.github/workflows/web.yml` — Flutter Web release artifact and GitHub Pages deployment.
+- `.github/workflows/final-gate.yml` — verifies the required workflows for the same commit.
 
-The stabilization state is recorded as Format PASS, Analyze PASS, Test PASS,
-Coverage PASS, Artifact PASS, Windows PASS, Website PASS, and Final Gate PASS.
-These checks describe the accepted verification state; they are not a reason
-to reintroduce a broad platform matrix.
+Optional artifact workflows build Android APK, unsigned iOS IPA, and Linux
+archives. `.github/workflows/laravel.yml` runs backend tests on relevant
+pull requests and `main` pushes; it does not deploy the API. Check Actions for
+the result of a specific commit rather than treating a static PASS list as
+current.
 
 Failure-containment rules:
 
-1. A paused platform must never block Windows or Web.
+1. Optional Android, iOS, and Linux builds must never block required Windows/Web delivery.
 2. Missing `integration_test/` must never fail a supported release workflow.
 3. `coverage/lcov.info` is not a required artifact of Windows/Web release workflows.
 4. Formatting changes are committed explicitly, not auto-committed by release gates.
@@ -209,6 +207,6 @@ A feature is complete only when:
 
 ## 12. Immediate next milestone
 
-Maintain the reduced Windows + Web delivery surface, keep paused platform code
-preserved in `main`, and only restore another platform after an explicit
+Maintain Windows and Web as the required delivery targets, keep Android, iOS,
+and Linux artifact builds optional, and restore macOS only after an explicit
 platform-specific verification cycle.

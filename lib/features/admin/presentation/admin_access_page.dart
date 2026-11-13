@@ -4,17 +4,86 @@ import 'package:flutter/material.dart';
 
 import '../../access_control/domain/access_control.dart';
 import '../domain/admin_access_config.dart';
+import '../domain/organization_admin_gateway.dart';
+import '../infrastructure/http_organization_admin_gateway.dart';
+import 'organization_membership_panel.dart';
 
 class AdminAccessPage extends StatefulWidget {
-  const AdminAccessPage({super.key, required this.currentEmail});
+  const AdminAccessPage({
+    super.key,
+    required this.currentEmail,
+    required this.apiBaseUrl,
+    required this.idToken,
+    this.organizationGateway,
+  });
 
   final String? currentEmail;
+  final String apiBaseUrl;
+  final Future<String?> Function() idToken;
+  final OrganizationAdminGateway? organizationGateway;
 
   @override
   State<AdminAccessPage> createState() => _AdminAccessPageState();
 }
 
 class _AdminAccessPageState extends State<AdminAccessPage> {
+  late final OrganizationAdminGateway _organizationGateway;
+
+  @override
+  void initState() {
+    super.initState();
+    _organizationGateway =
+        widget.organizationGateway ??
+        HttpOrganizationAdminGateway(
+          baseUrl: widget.apiBaseUrl,
+          idToken: widget.idToken,
+        );
+  }
+
+  @override
+  void dispose() {
+    _organizationGateway.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => DefaultTabController(
+    length: 2,
+    child: Column(
+      children: [
+        const TabBar(
+          tabs: [
+            Tab(icon: Icon(Icons.groups_outlined), text: 'องค์กรและผู้ใช้'),
+            Tab(icon: Icon(Icons.devices_outlined), text: 'สิทธิ์ในเครื่อง'),
+          ],
+        ),
+        Expanded(
+          child: TabBarView(
+            children: [
+              OrganizationMembershipPanel(
+                apiBaseUrl: widget.apiBaseUrl,
+                currentEmail: widget.currentEmail,
+                gateway: _organizationGateway,
+              ),
+              _LocalAdminAccessPage(currentEmail: widget.currentEmail),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _LocalAdminAccessPage extends StatefulWidget {
+  const _LocalAdminAccessPage({required this.currentEmail});
+
+  final String? currentEmail;
+
+  @override
+  State<_LocalAdminAccessPage> createState() => _LocalAdminAccessPageState();
+}
+
+class _LocalAdminAccessPageState extends State<_LocalAdminAccessPage> {
   final repository = AdminAccessRepository();
   AdminAccessConfig config = const AdminAccessConfig.empty();
   bool loading = true;

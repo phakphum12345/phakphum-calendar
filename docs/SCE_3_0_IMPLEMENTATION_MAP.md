@@ -27,11 +27,11 @@
 | Workspace/profile | Domain foundation | tenancy/organization modules | Add persisted workspace isolation |
 | Backup/restore | Missing | none | Versioned profile/roster backup |
 | Localization | Partial | generated Thai/English l10n | Remove remaining active hard-coded strings |
-| CI/release | Strong foundation | `.github/workflows/` | Keep all platform builds green |
+| CI/release | Strong foundation | `.github/workflows/` | Keep Auto Detect CI, Windows, and Web required gates green; record Android/iOS/Linux as optional artifact evidence |
 
 ## Immediate order
 
-1. Keep release workflows green, including Android.
+1. Keep required main gates green (Auto Detect CI, Windows, and Web); track Android, iOS, and Linux as optional artifact evidence.
 2. Extract top-level navigation and Dashboard from legacy `AppShell`.
 3. Extend the canonical manual editor with bulk selection and repeat actions.
 4. Add configurable Conflict/Policy/Preview boundaries.

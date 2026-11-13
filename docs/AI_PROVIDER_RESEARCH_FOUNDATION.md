@@ -14,9 +14,14 @@ Proposed implementation plan; no live provider calls are enabled by this change.
 
 ## Current repository constraints
 
-The Flutter app already contains a provider-neutral `RosterAIProvider` contract and a rule-first `HybridRosterAIAnalyzer`. The existing AI Support screen is local-only and analyzes pasted CSV/TSV in memory.
+The Flutter app already contains a provider-neutral `RosterAIProvider` contract and a rule-first `HybridRosterAIAnalyzer`. The existing AI Support screen is local-only and analyzes pasted CSV/TSV in memory; no remote model-provider execution endpoint is enabled.
 
-The Laravel backend currently exposes health, readiness, and client-diagnostics routes only. It does not yet provide an authenticated user identity or tenant authorization boundary for roster-bearing requests. Therefore, adding an endpoint that forwards roster data to a model is unsafe until authentication and tenant authorization are implemented and tested.
+The Laravel backend exposes public health, readiness, and client-diagnostics
+routes, plus Google-account-authenticated identity and organization/member/
+shift-policy routes. It has no roster-bearing AI endpoint. Before adding one,
+verify and test authorization for each requested organization and roster,
+including tenant isolation; existing identity and organization routes alone do
+not authorize model access to roster data.
 
 ## Proposed architecture
 

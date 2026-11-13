@@ -181,6 +181,290 @@ class OrganizationController
         ], 201);
     }
 
+    public function myJoinRequests(Request $request): JsonResponse
+    {
+        $requests = DB::table('organization_join_requests as requests')
+            ->join('organizations', 'organizations.id', '=', 'requests.organization_id')
+            ->where('requests.user_id', $request->user()->id)
+            ->orderByDesc('requests.updated_at')
+            ->get([
+                'requests.id',
+                'organizations.id as organization_id',
+                'organizations.name as organization_name',
+                'organizations.slug as organization_slug',
+                'requests.employee_id',
+                'requests.status',
+                'requests.approved_role',
+                'requests.created_at',
+                'requests.reviewed_at',
+            ]);
+
+        return response()->json(['data' => $requests]);
+    }
+
+    public function requestMembership(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'organization_slug' => ['required', 'string', 'max:80', 'alpha_dash'],
+            'employee_id' => ['required', 'string', 'max:128'],
+        ]);
+        $organization = DB::table('organizations')
+            ->where('slug', strtolower(trim($validated['organization_slug'])))
+            ->first(['id', 'name', 'slug']);
+
+        if ($organization === null) {
+            return response()->json([
+                'error' => [
+                    'code' => 'organization_not_found',
+                    'message' => 'The organization code was not found.',
+                ],
+            ], 404);
+        }
+
+        $userId = $request->user()->id;
+        try {
+            return DB::transaction(function () use (
+                $organization,
+                $userId,
+                $validated,
+            ): JsonResponse {
+                if (DB::table('organization_memberships')
+                    ->where('organization_id', $organization->id)
+                    ->where('user_id', $userId)
+                    ->where('status', 'active')
+                    ->exists()) {
+                    return response()->json([
+                        'error' => [
+                            'code' => 'already_a_member',
+                            'message' => 'This account already has an active organization membership.',
+                        ],
+                    ], 409);
+                }
+
+                $existing = DB::table('organization_join_requests')
+                    ->where('organization_id', $organization->id)
+                    ->where('user_id', $userId)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($existing !== null && $existing->status === 'pending') {
+                    return response()->json([
+                        'error' => [
+                            'code' => 'join_request_pending',
+                            'message' => 'A request for this organization is already pending.',
+                        ],
+                    ], 409);
+                }
+
+                if ($existing !== null && $existing->status === 'approved') {
+                    return response()->json([
+                        'error' => [
+                            'code' => 'already_a_member',
+                            'message' => 'This account already has an approved organization membership.',
+                        ],
+                    ], 409);
+                }
+
+                $timestamp = now();
+                $employeeId = trim($validated['employee_id']);
+                if ($existing === null) {
+                    $requestId = DB::table('organization_join_requests')->insertGetId([
+                        'organization_id' => $organization->id,
+                        'user_id' => $userId,
+                        'employee_id' => $employeeId,
+                        'status' => 'pending',
+                        'created_at' => $timestamp,
+                        'updated_at' => $timestamp,
+                    ]);
+                } else {
+                    DB::table('organization_join_requests')
+                        ->where('id', $existing->id)
+                        ->update([
+                            'employee_id' => $employeeId,
+                            'status' => 'pending',
+                            'approved_role' => null,
+                            'reviewed_by_user_id' => null,
+                            'reviewed_at' => null,
+                            'updated_at' => $timestamp,
+                        ]);
+                    $requestId = $existing->id;
+                }
+
+                return response()->json([
+                    'data' => [
+                        'id' => $requestId,
+                        'organization_id' => (string) $organization->id,
+                        'organization_name' => $organization->name,
+                        'organization_slug' => $organization->slug,
+                        'employee_id' => $employeeId,
+                        'status' => 'pending',
+                    ],
+                ], $existing === null ? 201 : 200);
+            });
+        } catch (QueryException $exception) {
+            if (! $this->isUniqueConstraintViolation($exception)) {
+                throw $exception;
+            }
+
+            return response()->json([
+                'error' => [
+                    'code' => 'join_request_conflict',
+                    'message' => 'A request for this organization already exists.',
+                ],
+            ], 409);
+        }
+    }
+
+    public function joinRequests(Request $request, string $organizationId): JsonResponse
+    {
+        $this->requireManager($request, $organizationId);
+
+        $requests = DB::table('organization_join_requests as requests')
+            ->join('users', 'users.id', '=', 'requests.user_id')
+            ->where('requests.organization_id', $organizationId)
+            ->where('requests.status', 'pending')
+            ->orderBy('requests.created_at')
+            ->get([
+                'requests.id',
+                'users.name',
+                'users.email',
+                'requests.employee_id',
+                'requests.created_at',
+            ]);
+
+        return response()->json(['data' => $requests]);
+    }
+
+    public function approveJoinRequest(
+        Request $request,
+        string $organizationId,
+        int $requestId,
+    ): JsonResponse {
+        $reviewer = $this->requireManager($request, $organizationId);
+        $validated = $request->validate([
+            'role' => ['required', 'in:staff,incharge,manager,admin'],
+        ]);
+
+        try {
+            $member = DB::transaction(function () use (
+                $organizationId,
+                $requestId,
+                $reviewer,
+                $validated,
+            ): array {
+                $application = DB::table('organization_join_requests')
+                    ->where('id', $requestId)
+                    ->where('organization_id', $organizationId)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($application === null) {
+                    abort(404);
+                }
+                if ($application->status !== 'pending') {
+                    abort(409, 'This join request has already been reviewed.');
+                }
+
+                $timestamp = now();
+                DB::table('organization_memberships')->insert([
+                    'organization_id' => $organizationId,
+                    'user_id' => $application->user_id,
+                    'employee_id' => $application->employee_id,
+                    'role' => $validated['role'],
+                    'status' => 'active',
+                    'created_at' => $timestamp,
+                    'updated_at' => $timestamp,
+                ]);
+
+                DB::table('organization_join_requests')
+                    ->where('id', $requestId)
+                    ->update([
+                        'status' => 'approved',
+                        'approved_role' => $validated['role'],
+                        'reviewed_by_user_id' => $reviewer->user_id,
+                        'reviewed_at' => $timestamp,
+                        'updated_at' => $timestamp,
+                    ]);
+
+                return [
+                    'request_id' => $requestId,
+                    'user_id' => (string) $application->user_id,
+                    'employee_id' => $application->employee_id,
+                    'role' => $validated['role'],
+                    'status' => 'active',
+                ];
+            });
+        } catch (QueryException $exception) {
+            if (! $this->isUniqueConstraintViolation($exception)) {
+                throw $exception;
+            }
+
+            return response()->json([
+                'error' => [
+                    'code' => 'membership_conflict',
+                    'message' => 'This account or employee identity is already assigned in the organization.',
+                ],
+            ], 409);
+        }
+
+        return response()->json(['data' => $member]);
+    }
+
+    public function rejectJoinRequest(
+        Request $request,
+        string $organizationId,
+        int $requestId,
+    ): JsonResponse {
+        $reviewer = $this->requireManager($request, $organizationId);
+        $rejectedAt = DB::transaction(function () use (
+            $organizationId,
+            $requestId,
+            $reviewer,
+        ): ?\Illuminate\Support\Carbon {
+            $application = DB::table('organization_join_requests')
+                ->where('id', $requestId)
+                ->where('organization_id', $organizationId)
+                ->lockForUpdate()
+                ->first();
+
+            if ($application === null) {
+                abort(404);
+            }
+            if ($application->status !== 'pending') {
+                return null;
+            }
+
+            $timestamp = now();
+            DB::table('organization_join_requests')
+                ->where('id', $requestId)
+                ->update([
+                    'status' => 'rejected',
+                    'reviewed_by_user_id' => $reviewer->user_id,
+                    'reviewed_at' => $timestamp,
+                    'updated_at' => $timestamp,
+                ]);
+
+            return $timestamp;
+        });
+
+        if ($rejectedAt === null) {
+            return response()->json([
+                'error' => [
+                    'code' => 'join_request_already_reviewed',
+                    'message' => 'This join request has already been reviewed.',
+                ],
+            ], 409);
+        }
+
+        return response()->json([
+            'data' => [
+                'id' => $requestId,
+                'status' => 'rejected',
+                'reviewed_at' => $rejectedAt,
+            ],
+        ]);
+    }
+
     public function policies(Request $request, string $organizationId): JsonResponse
     {
         $this->requireMembership($request, $organizationId);

@@ -22,12 +22,27 @@ Route::prefix('v1')->group(function (): void {
             ->name('api.v1.organizations.index');
         Route::post('/organizations', [OrganizationController::class, 'store'])
             ->name('api.v1.organizations.store');
+        Route::get('/organization-join-requests', [OrganizationController::class, 'myJoinRequests'])
+            ->name('api.v1.organization-join-requests.index');
+        Route::post('/organization-join-requests', [OrganizationController::class, 'requestMembership'])
+            ->name('api.v1.organization-join-requests.store');
         Route::get('/organizations/{organizationId}/members', [OrganizationController::class, 'members'])
             ->whereUuid('organizationId')
             ->name('api.v1.organizations.members');
         Route::post('/organizations/{organizationId}/members', [OrganizationController::class, 'addMember'])
             ->whereUuid('organizationId')
             ->name('api.v1.organizations.members.store');
+        Route::get('/organizations/{organizationId}/join-requests', [OrganizationController::class, 'joinRequests'])
+            ->whereUuid('organizationId')
+            ->name('api.v1.organizations.join-requests.index');
+        Route::post('/organizations/{organizationId}/join-requests/{requestId}/approve', [OrganizationController::class, 'approveJoinRequest'])
+            ->whereUuid('organizationId')
+            ->whereNumber('requestId')
+            ->name('api.v1.organizations.join-requests.approve');
+        Route::post('/organizations/{organizationId}/join-requests/{requestId}/reject', [OrganizationController::class, 'rejectJoinRequest'])
+            ->whereUuid('organizationId')
+            ->whereNumber('requestId')
+            ->name('api.v1.organizations.join-requests.reject');
         Route::get('/organizations/{organizationId}/shift-policies', [OrganizationController::class, 'policies'])
             ->whereUuid('organizationId')
             ->name('api.v1.organizations.policies');

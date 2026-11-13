@@ -15,12 +15,12 @@
 
 ## Phase 0 — Baseline, PR and release health
 
-1. ตรวจ PR ที่เปิดอยู่ (#40 OAuth/Pages, #41 Timeline history, #42 roster parser support) และตรวจ head/base, conflicts, changed files, check runs และ deployment status ก่อนรวมงาน
+1. ตรวจ PR ที่เปิดอยู่ ณ เวลาทำงาน รวม head/base, conflicts, changed files, check runs และ deployment status ก่อนรวมงาน
 2. ระบุความเปลี่ยนแปลงที่ซ้ำกันและเรียงลำดับการรวมตาม dependency; ห้ามเขียนทับการแก้ไขใน branch อื่น
-3. ตรวจ workflows สำหรับ format, analyze, unit/widget tests, web/Android/Windows builds และ Pages deploy
+3. ตรวจ required workflows (Auto Detect CI, Windows, Web, Final Gate), optional Android/iOS/Linux artifact builds และ Laravel Backend CI เมื่อมีการเปลี่ยน backend
 4. เก็บ baseline ของ `main` และบันทึก check/run links ใน PR description
 
-**Exit criteria:** มี baseline ที่ตรวจสอบย้อนกลับได้; รู้ว่า PR ใดพร้อม/ติดขัด; ไม่ merge PR ที่ยังไม่มีหลักฐานผ่าน
+**Exit criteria:** มี baseline ที่ตรวจสอบย้อนกลับได้; รู้ว่า PR ใดพร้อม/ติดขัด; ไม่ merge เมื่อ required checks ยังไม่ผ่านหรือยังไม่มีหลักฐาน
 
 ## Phase 1 — Navigation and Dashboard
 
@@ -106,7 +106,8 @@
 - ย้ายข้อความที่ยัง hard-code ไป localization โดยเริ่มจากหน้าที่แก้ใน phases ก่อนหน้า
 - ตรวจ keyboard/focus/semantics, text scaling, responsive layout, contrast และ empty/error states
 - ตรวจ startup, large rosters, parser throughput, sync retries และ memory/disk failure paths
-- รัน `dart format .`, `flutter analyze`, `flutter test`, web/Android/Windows build และ workflow gates ที่ repo กำหนด
+- รัน `dart format .`, `flutter analyze` และ `flutter test`; ตรวจ required Web/Windows/Auto Detect CI/Final Gate และพิจารณา optional Android/iOS/Linux builds ตามขอบเขตที่เปลี่ยน
+- รัน Laravel Backend CI เมื่อมีการเปลี่ยน `backend/`
 - ตรวจ release artifacts, Pages deployment, auth configuration และ smoke tests หลัง deploy
 
 **Exit criteria:** CI green สำหรับ commit SHA เดียวกัน, artifact/deploy evidence, no unresolved high-severity issues
@@ -115,7 +116,7 @@
 
 | Order | Work item | Depends on | State |
 |---|---|---|---|
-| 1 | Verify current PRs #40/#41/#42 and release baseline | None | In progress |
+| 1 | Verify current open PRs and release baseline before each phase | None | Recurring gate |
 | 2 | Navigation/Dashboard gap analysis and tests | 1 | Planned |
 | 3 | Roster editor + employees/templates | 2 | Planned |
 | 4 | Rules/conflicts/policy/preview contracts | 3 | Planned |

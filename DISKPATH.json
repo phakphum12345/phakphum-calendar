@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 811,
+  "file_count": 819,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -78,8 +78,8 @@
     },
     {
       "path": ".github/workflows/README.md",
-      "size": 5353,
-      "sha256": "a911a1a7b9b2b8a69442ad96f7bf89491a5de2b1779c24b3871a81ba93f9ab35"
+      "size": 5497,
+      "sha256": "cf79e71d56d0bf65294b20cf02578b599004b084fd1784b705aaafb2ea5291ce"
     },
     {
       "path": ".github/workflows/android.yml",
@@ -128,8 +128,8 @@
     },
     {
       "path": ".github/workflows/web.yml",
-      "size": 3193,
-      "sha256": "e3e25b3fb2b5dc5369ff7094fd81ef63c1af2960a3971a104750b3f5ed34fa5b"
+      "size": 3351,
+      "sha256": "5368a979ac3195d0ae75bb9cf0386111c5cfb86978fd00424f67007edda4e3b2"
     },
     {
       "path": ".github/workflows/windows.yml",
@@ -188,8 +188,8 @@
     },
     {
       "path": "MASTER_PLAN.md",
-      "size": 5376,
-      "sha256": "9d287248c6ba070027086b3f998f83886041d5deb14aeea8eac515653fa04a62"
+      "size": 5507,
+      "sha256": "ccb137e31b38204f879889750ed60507585bfb78a5e96c8b5ed4d5f381826f1d"
     },
     {
       "path": "NOTICE",
@@ -403,8 +403,8 @@
     },
     {
       "path": "backend/.env.example",
-      "size": 1333,
-      "sha256": "9834271b8d717ed87efc8edee3771ff627a869fce3ecd24cb184a0a81ce34b28"
+      "size": 1434,
+      "sha256": "62822a2b2581c8ebc0be84a3da3f517bf93127e40d8e535b2d4f73226b1e0952"
     },
     {
       "path": "backend/.gitattributes",
@@ -423,8 +423,8 @@
     },
     {
       "path": "backend/README.md",
-      "size": 3365,
-      "sha256": "dba61edcb50f6f52c3e1748a03de446fddd92223f8a20e448faa6f9eb96a3522"
+      "size": 4685,
+      "sha256": "d00f62769da884eb91e9a72186e58de0b247919e5ad48949fb3a0abebe2ec9b8"
     },
     {
       "path": "backend/app/Contracts/GoogleIdentityTokenVerifier.php",
@@ -448,8 +448,8 @@
     },
     {
       "path": "backend/app/Http/Controllers/Api/V1/OrganizationController.php",
-      "size": 9746,
-      "sha256": "eb519d72754ca30844e0d5235436d5489741dd987566e0a9562afcd1ab2c5609"
+      "size": 20551,
+      "sha256": "2dc5af9821c07f0e640f39d67fb04da9fbeecc4d2f36b379f15598a241392558"
     },
     {
       "path": "backend/app/Http/Controllers/Controller.php",
@@ -537,6 +537,11 @@
       "sha256": "ee4ad2bba1edfcff52e9599f37371f2370d0b167cc226ce72d46cdf6edf2dc55"
     },
     {
+      "path": "backend/config/cors.php",
+      "size": 634,
+      "sha256": "7d9fb1e4f745c2715cfff0c97d67cfad2de47654a9ad613b03ef44b42803f6c4"
+    },
+    {
       "path": "backend/config/database.php",
       "size": 6876,
       "sha256": "02cd62f589b43d33f9ceac740705dac1dec9740eb2bb9e6e202d4b66a15244cf"
@@ -612,6 +617,11 @@
       "sha256": "bc7b75fe5aa59ddc039c438f306bd6baa99245c7f2f0d4544f0c2b611b0cfb24"
     },
     {
+      "path": "backend/database/migrations/2026_11_13_000001_create_organization_join_requests.php",
+      "size": 1130,
+      "sha256": "48ea094ea89c129ab6f709775d55f275b0994a492f2f2bf41720c6340e417eb5"
+    },
+    {
       "path": "backend/database/seeders/DatabaseSeeder.php",
       "size": 482,
       "sha256": "cf8e4b6e48360218bb5534f66419c955288f78338eb8a3dba9d8ac3394ec3dbc"
@@ -663,8 +673,8 @@
     },
     {
       "path": "backend/routes/api.php",
-      "size": 1988,
-      "sha256": "7a07b67456af0a3fbb7d495fd17af92517c884c0eadb4cf6701daf0dafa19a8f"
+      "size": 3122,
+      "sha256": "bfcd5171833c74a8b4b0626b953c695cd5481b33bfb71f043704dbdfa7021753"
     },
     {
       "path": "backend/routes/console.php",
@@ -752,6 +762,11 @@
       "sha256": "6c154446acbce29d6f5095d48f3509eca101491e4deb917e7107d607e1738b8e"
     },
     {
+      "path": "backend/tests/Feature/OrganizationJoinRequestApiTest.php",
+      "size": 8400,
+      "sha256": "1c4017b38ec6de5b8928ce5f4ca949304a7548d147e01652347f2697fe31b6d9"
+    },
+    {
       "path": "backend/tests/TestCase.php",
       "size": 142,
       "sha256": "c7c209f5579c42647c1f7b2a79ac828e8b54ac62a98442045a6e94fa2c0d0ebc"
@@ -773,8 +788,8 @@
     },
     {
       "path": "docs/AI_PROVIDER_RESEARCH_FOUNDATION.md",
-      "size": 5750,
-      "sha256": "6e764001cdb42eba5e01acfa0209e15e1c3136677d97df92d0034dda87cf1b43"
+      "size": 5872,
+      "sha256": "83fde8566d66e86f77b5e46cba199811b4ecbb229ef9b69654208985eb270041"
     },
     {
       "path": "docs/AI_ROSTER_ANALYZER_LOGIC_TH.md",
@@ -803,8 +818,8 @@
     },
     {
       "path": "docs/CI_AUTO_DETECTION.md",
-      "size": 1336,
-      "sha256": "8b7812e0e85690c2ee1caf352890a8eeb9b2fdea541769aa1c15e404e9810495"
+      "size": 1448,
+      "sha256": "9905115406d5c15d3cc83e30e10bd6c8a9e75b39aacf01833950e1de79222113"
     },
     {
       "path": "docs/COMPARISON_FOUNDATION.md",
@@ -813,8 +828,8 @@
     },
     {
       "path": "docs/DELIVERY_STATUS.md",
-      "size": 2160,
-      "sha256": "c6557167c8deb355b3cc10195cf89115e96ef341b9aac80b329c818d73cf4960"
+      "size": 2295,
+      "sha256": "c8aa81ec3b1e2c69252173cfcf07ae7a353ddb1d3e57bc4c3ba0bf15435b17a4"
     },
     {
       "path": "docs/DURABLE_HISTORY_AND_RESUME.md",
@@ -838,13 +853,13 @@
     },
     {
       "path": "docs/INSTALLATION_AND_USER_GUIDE.md",
-      "size": 20183,
-      "sha256": "3d05d1e411495be2d97f9e8838598c3baf88290ada30d51f154d5a74ba6327b9"
+      "size": 22703,
+      "sha256": "065cd9c2fbfb4ac5f5851b5884b3d92a745eb07beafcfd513050b88a02432838"
     },
     {
       "path": "docs/INTEGRATION_STATUS.md",
-      "size": 1213,
-      "sha256": "3f1f58a1b84f313c7685d82761f6d8dcb2768f3b8a24428894425b54343cbcab"
+      "size": 1451,
+      "sha256": "5da22b970995d0950475ba2efa1fe1449425946e520e9664a59d04e380518214"
     },
     {
       "path": "docs/NEW_APP_STRUCTURE_TH.md",
@@ -893,13 +908,13 @@
     },
     {
       "path": "docs/SCE_3_0_DELIVERY_ROADMAP.md",
-      "size": 11829,
-      "sha256": "685e4807928b8be63f638de871c65e1dbb2627a1cf21f0c9d4ada741ace1c73f"
+      "size": 12130,
+      "sha256": "dd1bc6ab958a98957306d780daad24bacb4da1dee120da2bc7dc1749bfad43f1"
     },
     {
       "path": "docs/SCE_3_0_IMPLEMENTATION_MAP.md",
-      "size": 6579,
-      "sha256": "bea8be701c41d9cd65f3c6d955cb5a14c36f10a2e281728e586acef378887a03"
+      "size": 6742,
+      "sha256": "0f8646cde4713ece8a5380a75ee68adaa66a614b3bbe2bfececf8f1aa5b7a812"
     },
     {
       "path": "docs/SCE_3_0_SYSTEM_DESIGN.md",
@@ -918,8 +933,8 @@
     },
     {
       "path": "docs/SYNC_RELIABILITY.md",
-      "size": 1388,
-      "sha256": "bf1da1c7346ae8dac8a0cee0d56bac6d545b4dd9e3b3d6e6e1ecf48e1b454b1c"
+      "size": 1496,
+      "sha256": "77a16b159b3f2a574a767edc43f8cd5a07c339f9a83589b9944521576b15d61a"
     },
     {
       "path": "docs/adr/ADR-0001-project-structure.md",
@@ -1497,9 +1512,24 @@
       "sha256": "57cea12dbe35e48a751b47b6d7d5ec290eb25c34df1f2bad8c9cc9685b827d11"
     },
     {
+      "path": "lib/features/admin/domain/organization_admin_gateway.dart",
+      "size": 2393,
+      "sha256": "9b78c372f827e711a778c3375b53eb9a4fdb5c51482c3eaea92f2dd3ecaad557"
+    },
+    {
+      "path": "lib/features/admin/infrastructure/http_organization_admin_gateway.dart",
+      "size": 8539,
+      "sha256": "10e9ffce916270199c28f073e91970557dcc131b5288f061809ad6fe9a9715ee"
+    },
+    {
       "path": "lib/features/admin/presentation/admin_access_page.dart",
-      "size": 9679,
-      "sha256": "29bd84631b96671b5793328f6998251cf3fb2d01a6ef7b2b4c5af5db377bf04e"
+      "size": 11594,
+      "sha256": "3352738eb84b7b170c557f7b8c7a359c29db5e4e4b8a75159e4349bc98163837"
+    },
+    {
+      "path": "lib/features/admin/presentation/organization_membership_panel.dart",
+      "size": 18121,
+      "sha256": "bdea6a6ce8b767920e26be77ec2bb594d9f45ee57ebd2d700aec5019c36e768e"
     },
     {
       "path": "lib/features/ai_roster_analyzer/ai_roster_analyzer.dart",
@@ -3048,8 +3078,8 @@
     },
     {
       "path": "lib/ui/app_shell.dart",
-      "size": 213604,
-      "sha256": "8959198f0064a1505cfedfe85b73f445798cdb1345666692d79ede0cede4a282"
+      "size": 213867,
+      "sha256": "b7417e6975cd372c86104f3b5657cc82c237a14c5e550c78308a656e158400ef"
     },
     {
       "path": "lib/ui/audit_log_page.dart",
@@ -3565,6 +3595,16 @@
       "path": "test/off_after_cross_month_roster_boundary_test.dart",
       "size": 2733,
       "sha256": "10382634904a67541a8a39f4744a95d3cbccd3911f6226b6696d9439dd41747b"
+    },
+    {
+      "path": "test/organization_admin_gateway_test.dart",
+      "size": 2461,
+      "sha256": "438f1ee54927316ec93ca5db579f7f132193d0d2889750d2d0c24629a8bf53f0"
+    },
+    {
+      "path": "test/organization_membership_panel_test.dart",
+      "size": 3116,
+      "sha256": "86336887b3196777d955d507f3cd24f37ea433fadc2fee86d6bb4395d7c11223"
     },
     {
       "path": "test/plugin_registry_test.dart",
