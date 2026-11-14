@@ -3103,8 +3103,8 @@
     },
     {
       "path": "lib/services/timeline_archive_service.dart",
-      "size": 7002,
-      "sha256": "234d2405d82f0497b88aaf04121c98111e6ed7331c4387e016779e5c0b0f7c32"
+      "size": 7252,
+      "sha256": "92c9f5473f6e4c7bb2edb889083883089cfa3f71f5c162daae659268fc1dcd0b"
     },
     {
       "path": "lib/shared/presentation/app_status_page.dart",
@@ -3923,8 +3923,8 @@
     },
     {
       "path": "test/timeline_archive_service_test.dart",
-      "size": 3703,
-      "sha256": "fdf8af1c9b3a40f796f422a847f16291b9b314cbd4359096f1b3dbef3ec9efb2"
+      "size": 4733,
+      "sha256": "f18bf2b78c2c40a733f1fef5c7d7d303a8539925d5a34f5306cbed3ba1275a8e"
     },
     {
       "path": "test/timeline_history_regression_test.dart",

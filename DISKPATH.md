@@ -648,7 +648,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/shift_parser.dart` | 14188 | `9eea16e52dfbc63cb2dc6bb0732c1f439f586543915ec6ee3022b491900bb411` |
 | `lib/services/shift_time_service.dart` | 2193 | `612c7b2f23bb5c5405ff64455cb9a1172a0ac3e4a5a852b6b43eca9e16d31495` |
 | `lib/services/swap_request_service.dart` | 1857 | `84df2fac3ba6319c7fbbd7e16a757aeeac3041b2cedf6d3bbb926dc361b48f45` |
-| `lib/services/timeline_archive_service.dart` | 7002 | `234d2405d82f0497b88aaf04121c98111e6ed7331c4387e016779e5c0b0f7c32` |
+| `lib/services/timeline_archive_service.dart` | 7252 | `92c9f5473f6e4c7bb2edb889083883089cfa3f71f5c162daae659268fc1dcd0b` |
 | `lib/shared/presentation/app_status_page.dart` | 2355 | `632e9de1c6f386b0ef04fdc15e0870c0ac633859493fa2acea07e8c7926dabfd` |
 | `lib/ui/app_shell.dart` | 213867 | `b7417e6975cd372c86104f3b5657cc82c237a14c5e550c78308a656e158400ef` |
 | `lib/ui/audit_log_page.dart` | 2201 | `eec96b9ad15d43454beadf1f446ac3a421d4e17d8f59fba2244a19e7d2a13d95` |
@@ -812,7 +812,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/swap_request_service_test.dart` | 721 | `13b430ea5a944f506d49c28997d72e0f84994ba47d0d5b23d6cf46b8c8dc2273` |
 | `test/tenant_guard_test.dart` | 1901 | `342ec8e11672a12ee348a3ea16596c77d5a4472899d6465b8ea704dfdc00a4c1` |
 | `test/thai_roster_every_single_date_test.dart` | 2593 | `5d712ef2716dc267d64146d1b6378665141cee79cf6259737a7202d56023e5ca` |
-| `test/timeline_archive_service_test.dart` | 3703 | `fdf8af1c9b3a40f796f422a847f16291b9b314cbd4359096f1b3dbef3ec9efb2` |
+| `test/timeline_archive_service_test.dart` | 4733 | `f18bf2b78c2c40a733f1fef5c7d7d303a8539925d5a34f5306cbed3ba1275a8e` |
 | `test/timeline_history_regression_test.dart` | 7106 | `70edb635d2697459620e1bd100a986a544b756c5ad9f18749143c8ab632e0e1d` |
 | `test/universal_generator_adapter_test.dart` | 5894 | `827d9df009f6c1e27468a4a716c45aa66b24976aa5d9c0017d96ea85d2a317ca` |
 | `test/v2/access_control_test.dart` | 598 | `e34ab8a283d9b35b1e8d7a43725cacea5660eebb0bc5ca7a70889e302d496997` |
