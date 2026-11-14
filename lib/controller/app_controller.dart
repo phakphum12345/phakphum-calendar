@@ -953,6 +953,7 @@ class AppController extends ChangeNotifier implements ControllerState {
         pendingTimelineSpreadsheetId != null &&
         pendingTimelineScope != null) {
       timelineLoading = true;
+      timelineWarning = 'กำลังโหลด Timeline ย้อนหลังเบื้องหลัง';
       notifyListeners();
       unawaited(
         _loadTimelineInBackground(
@@ -1101,7 +1102,7 @@ class AppController extends ChangeNotifier implements ControllerState {
 
           if (generation != _timelineLoadGeneration) return;
           _loadedRevisionCount = mergedRevisions.length + 1;
-          _revisionTimelines = timelineGenerator.generateFromDocuments([
+          _revisionTimelines = await timelineGenerator.generateFromDocumentsAsync([
             ...mergedRevisions,
             currentRevision,
           ]);
@@ -1122,7 +1123,7 @@ class AppController extends ChangeNotifier implements ControllerState {
         } on Object catch (historyError) {
           if (generation != _timelineLoadGeneration) return;
           _loadedRevisionCount = archivedRevisions.length + 1;
-          _revisionTimelines = timelineGenerator.generateFromDocuments([
+          _revisionTimelines = await timelineGenerator.generateFromDocumentsAsync([
             ...archivedRevisions,
             currentRevision,
           ]);
