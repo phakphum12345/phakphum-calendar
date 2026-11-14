@@ -989,8 +989,6 @@ class AppController extends ChangeNotifier implements ControllerState {
       snapshots: snapshots,
     );
     final timelineGenerator = const RosterTimelineGenerator();
-    final accountId = auth.account?.id.trim();
-    final timelineScope = '${accountId ?? ''}|$spreadsheetId';
     if (background &&
         _loadedRevisionCount > 0 &&
         _loadedTimelineScope == timelineScope) {
@@ -998,7 +996,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           'ใช้ประวัติ Timeline จากการอ่านล่าสุด; '
           'กดอ่านใหม่เพื่อโหลด revision ล่าสุดจาก Drive';
     } else {
-      timelineWarning = null;
+      if (generation == _timelineLoadGeneration) timelineWarning = null;
       try {
         var skippedRevisionCount = 0;
         final legacyAccountId = auth.account?.email.trim();
@@ -1017,7 +1015,7 @@ class AppController extends ChangeNotifier implements ControllerState {
                 final message =
                     'ย้ายคลัง Timeline จากอีเมลไปยังรหัสบัญชี Google ไม่สำเร็จ: '
                     '$migrationError';
-                timelineWarning = message;
+                if (generation == _timelineLoadGeneration) timelineWarning = message;
                 unawaited(_addAudit(
                   'sheet.timeline.archive.migration.failed',
                   message,
@@ -1028,7 +1026,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           } on Object catch (archiveReadError) {
             final archiveWarning =
                 'อ่านคลัง Timeline ในเครื่องไม่สำเร็จ: $archiveReadError';
-            timelineWarning = archiveWarning;
+            if (generation == _timelineLoadGeneration) timelineWarning = archiveWarning;
             await _addAudit(
               'sheet.timeline.archive.read.failed',
               archiveWarning,
@@ -1041,6 +1039,7 @@ class AppController extends ChangeNotifier implements ControllerState {
         }
 
         try {
+          if (generation != _timelineLoadGeneration) return;
           final knownRevisionIds = archivedRevisions
               .map((revision) => revision.revisionId)
               .toSet();
@@ -1060,6 +1059,8 @@ class AppController extends ChangeNotifier implements ControllerState {
                   },
                 )
               : <RosterRevisionDocument>[];
+
+          if (generation != _timelineLoadGeneration) return;
 
           // Persist each downloaded revision before adding it to the
           // in-memory timeline. If a write fails, the local archive remains
@@ -1083,6 +1084,7 @@ class AppController extends ChangeNotifier implements ControllerState {
             ..sort((left, right) =>
                 left.modifiedAt.compareTo(right.modifiedAt));
 
+          if (generation != _timelineLoadGeneration) return;
           _loadedRevisionCount = mergedRevisions.length + 1;
           _revisionTimelines = timelineGenerator.generateFromDocuments([
             ...mergedRevisions,
@@ -1103,6 +1105,7 @@ class AppController extends ChangeNotifier implements ControllerState {
                 : '$timelineWarning; $skippedWarning';
           }
         } on Object catch (historyError) {
+          if (generation != _timelineLoadGeneration) return;
           _loadedRevisionCount = archivedRevisions.length + 1;
           _revisionTimelines = timelineGenerator.generateFromDocuments([
             ...archivedRevisions,
@@ -1123,6 +1126,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           );
         }
       } on Object catch (caught, stackTrace) {
+        if (generation != _timelineLoadGeneration) return;
         _loadedRevisionCount = 1;
         _revisionTimelines = timelineGenerator.generateFromDocuments([
           currentRevision,
