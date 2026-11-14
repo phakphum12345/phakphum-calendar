@@ -1144,7 +1144,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       } on Object catch (caught, stackTrace) {
         if (generation != _timelineLoadGeneration) return;
         _loadedRevisionCount = 1;
-        _revisionTimelines = timelineGenerator.generateFromDocuments([
+        _revisionTimelines = await timelineGenerator.generateFromDocumentsAsync([
           currentRevision,
         ]);
         _loadedTimelineScope = timelineScope;
