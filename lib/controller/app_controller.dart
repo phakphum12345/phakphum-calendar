@@ -219,6 +219,7 @@ class AppController extends ChangeNotifier implements ControllerState {
   Map<String, RosterAssignmentTimeline> _revisionTimelines = const {};
   int _loadedRevisionCount = 0;
   int _timelineLoadGeneration = 0;
+  bool timelineLoading = false;
   String? _loadedTimelineScope;
   String? timelineWarning;
   List<String> sheetTitles = [];
@@ -377,6 +378,7 @@ class AppController extends ChangeNotifier implements ControllerState {
 
   Future<void> signOut() async {
     _timelineLoadGeneration++;
+    timelineLoading = false;
     await auth.signOut();
     _autoRefreshTimer?.cancel();
     _replaceLegacyShifts(const []);
@@ -545,6 +547,8 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   Future<void> clearRosterSourceSelection() async {
+    _timelineLoadGeneration++;
+    timelineLoading = false;
     await _run('ยกเลิกการเลือกตารางเวร', () async {
       final accountId = auth.account?.id;
       if (accountId != null) {
@@ -684,6 +688,8 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   Future<void> selectSourceForCurrentAccount(String sourceUrl) async {
+    _timelineLoadGeneration++;
+    timelineLoading = false;
     final account = auth.account;
     if (account == null) throw StateError('กรุณาล็อกอิน Google ก่อน');
     final normalizedUrl = sourceUrl.trim();
@@ -801,9 +807,9 @@ class AppController extends ChangeNotifier implements ControllerState {
 
     final warning = timelineWarning;
     status = warning == null
-        ? 'ซิงค์ Timeline ย้อนหลังสำเร็จ: โหลด $_loadedRevisionCount revision จาก Google Drive (อ่านอย่างเดียว)'
-        : 'อ่านตารางเวรแล้ว แต่ Timeline ย้อนหลังมีข้อจำกัด: $warning';
-    await _addAudit('sheet.timeline.sync', status!, warning == null);
+        ? 'อ่านตารางเวรแล้ว; กำลังซิงค์ Timeline ย้อนหลังเบื้องหลัง'
+        : 'อ่านตารางเวรแล้ว; Timeline ย้อนหลังมีข้อจำกัด: $warning';
+    await _addAudit('sheet.timeline.sync.started', status!, true);
     notifyListeners();
   }
 
@@ -941,6 +947,8 @@ class AppController extends ChangeNotifier implements ControllerState {
     if (pendingTimelineSnapshots != null &&
         pendingTimelineSpreadsheetId != null &&
         pendingTimelineScope != null) {
+      timelineLoading = true;
+      notifyListeners();
       unawaited(
         _loadTimelineInBackground(
           snapshots: pendingTimelineSnapshots,
@@ -1034,8 +1042,10 @@ class AppController extends ChangeNotifier implements ControllerState {
             );
           }
         } else {
-          timelineWarning =
-              'ไม่พบอีเมลบัญชี Google จึงไม่สามารถแยกคลัง Timeline ตามบัญชีได้';
+          if (generation == _timelineLoadGeneration) {
+            timelineWarning =
+                'ไม่พบอีเมลบัญชี Google จึงไม่สามารถแยกคลัง Timeline ตามบัญชีได้';
+          }
         }
 
         try {
@@ -1142,10 +1152,23 @@ class AppController extends ChangeNotifier implements ControllerState {
       }
     }
 
-      if (generation == _timelineLoadGeneration) notifyListeners();
+      if (generation == _timelineLoadGeneration) {
+        if (_loadedRosterShifts.isNotEmpty) {
+          final visibleShifts = _filterToSyncDateRange(_loadedRosterShifts);
+          _replaceLegacyShifts(
+            _alertService.addOffDutyPeriods(
+              _applyReferenceRelationships(visibleShifts),
+            ),
+            persist: false,
+          );
+        }
+        timelineLoading = false;
+        notifyListeners();
+      }
     } catch (caught, stackTrace) {
       if (generation == _timelineLoadGeneration) {
         timelineWarning = 'อ่านประวัติ Timeline เบื้องหลังไม่สำเร็จ: $caught';
+        timelineLoading = false;
         _loadedRevisionCount = 1;
         _revisionTimelines = const {};
         await _addAudit('sheet.timeline.background.failed', timelineWarning!, false);
@@ -2296,6 +2319,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     final accountId = auth.account?.id;
     if (_observedAccountId != accountId) {
       _timelineLoadGeneration++;
+      timelineLoading = false;
       _observedAccountId = accountId;
       settings = settings.clearRosterSelection();
       _autoRefreshTimer?.cancel();
