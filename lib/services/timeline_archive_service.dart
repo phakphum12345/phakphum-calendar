@@ -76,14 +76,15 @@ class TimelineArchiveService {
     final scope = _scope(accountId, fileId);
     final ids = prefs.getStringList('$_indexPrefix$scope') ?? const <String>[];
     final documents = <RosterRevisionDocument>[];
-    for (final id in ids) {
-      final raw = prefs.getString(_recordKey(scope, id));
-      if (raw == null) continue;
-      // Yield periodically so large local archives do not monopolize the UI
-      // isolate while JSON snapshots are decoded.
-      if (documents.isNotEmpty && documents.length % 8 == 0) {
+    for (var index = 0; index < ids.length; index++) {
+      if (index > 0 && index % 8 == 0) {
+        // Yield periodically so large local archives do not monopolize the UI
+        // isolate while JSON snapshots are decoded.
         await Future<void>.delayed(Duration.zero);
       }
+      final id = ids[index];
+      final raw = prefs.getString(_recordKey(scope, id));
+      if (raw == null) continue;
       try {
         final map = jsonDecode(raw) as Map<String, dynamic>;
         final snapshots = (map['snapshots'] as List<dynamic>? ?? const [])
