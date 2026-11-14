@@ -1373,8 +1373,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 112185,
-      "sha256": "41b202279620ead5f3380f39b52112ccc089abf629d9decf1a643aaa51b9f0eb"
+      "size": 112326,
+      "sha256": "11376998a2723a293e662cdf56cad74727f2217d3fcb6c6627cf569ee16600ec"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
@@ -3063,8 +3063,8 @@
     },
     {
       "path": "lib/services/roster_timeline_generator.dart",
-      "size": 1531,
-      "sha256": "7ed54286153b0075d6d979a82ea0cecd72aec47b3cea150fef2fdf152acc683e"
+      "size": 2362,
+      "sha256": "7bc8de473071af3429b46da0022c84f53d3ceba9ca92420000620fc6b0f88e0b"
     },
     {
       "path": "lib/services/settings_service.dart",
