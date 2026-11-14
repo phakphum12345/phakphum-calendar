@@ -755,6 +755,10 @@ class AppController extends ChangeNotifier implements ControllerState {
 
   Future<void> deleteSavedSheet(SavedSheet sheet) async {
     _requireSheetOwner(sheet);
+    if (currentSourceSheet?.key == sheet.key) {
+      _timelineLoadGeneration++;
+      timelineLoading = false;
+    }
     await _run('ลบชีตออกจากรายการบันทึก', () async {
       final wasCurrent = currentSourceSheet?.key == sheet.key;
       savedSheets.removeWhere(
@@ -819,6 +823,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     bool refreshHistoricalTimeline = false,
   }) async {
     final timelineGeneration = ++_timelineLoadGeneration;
+    timelineLoading = false;
     dynamic pendingTimelineSnapshots;
     String? pendingTimelineSpreadsheetId;
     String? pendingTimelineAccountId;
@@ -927,7 +932,7 @@ class AppController extends ChangeNotifier implements ControllerState {
             'จาก ${periods.length} เดือน • '
             '${syncRangeStart == null || syncRangeEnd == null ? '' : 'ช่วง ${_dateLabel(syncRangeStart!)}–${_dateLabel(syncRangeEnd!)} • '}'
             'อ่านสีจากไฟล์หลัก $colorCount รายการ • '
-            'Timeline $_loadedRevisionCount revision'
+            'Timeline จะโหลดเบื้องหลัง'
             '${timelineWarning == null ? '' : ' • $timelineWarning'} • '
             'สร้าง OFF $offCount รายการ • รอตัดสินใจ $pendingAlertCount รายการ';
         await _addAudit(
@@ -935,7 +940,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           'อ่าน ${snapshots.length} แท็บ ${periods.length} เดือน '
               'พบ ${rangedParsed.length} เวรในช่วงที่กำหนด '
               '${usedMonthlyFallback ? 'ใช้ตัวแปลงตารางรายเดือนสำรอง ' : ''}'
-              'อ่าน Timeline $_loadedRevisionCount revision '
+              'เริ่มโหลด Timeline เบื้องหลัง '
               'อ่านสีจากไฟล์หลัก $colorCount รายการ และสร้าง OFF '
               '$offCount รายการ; ไม่มีการแก้ไขชีต',
           true,
