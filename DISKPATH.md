@@ -648,7 +648,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/shift_parser.dart` | 14188 | `9eea16e52dfbc63cb2dc6bb0732c1f439f586543915ec6ee3022b491900bb411` |
 | `lib/services/shift_time_service.dart` | 2193 | `612c7b2f23bb5c5405ff64455cb9a1172a0ac3e4a5a852b6b43eca9e16d31495` |
 | `lib/services/swap_request_service.dart` | 1857 | `84df2fac3ba6319c7fbbd7e16a757aeeac3041b2cedf6d3bbb926dc361b48f45` |
-| `lib/services/timeline_archive_service.dart` | 7252 | `92c9f5473f6e4c7bb2edb889083883089cfa3f71f5c162daae659268fc1dcd0b` |
+| `lib/services/timeline_archive_service.dart` | 7290 | `29893969e8f3e07e788ed2d10c30a2901a907b6e924e5fee289a4d3beb351e6d` |
 | `lib/shared/presentation/app_status_page.dart` | 2355 | `632e9de1c6f386b0ef04fdc15e0870c0ac633859493fa2acea07e8c7926dabfd` |
 | `lib/ui/app_shell.dart` | 213867 | `b7417e6975cd372c86104f3b5657cc82c237a14c5e550c78308a656e158400ef` |
 | `lib/ui/audit_log_page.dart` | 2201 | `eec96b9ad15d43454beadf1f446ac3a421d4e17d8f59fba2244a19e7d2a13d95` |
