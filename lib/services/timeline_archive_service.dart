@@ -79,6 +79,11 @@ class TimelineArchiveService {
     for (final id in ids) {
       final raw = prefs.getString(_recordKey(scope, id));
       if (raw == null) continue;
+      // Yield periodically so large local archives do not monopolize the UI
+      // isolate while JSON snapshots are decoded.
+      if (documents.isNotEmpty && documents.length % 8 == 0) {
+        await Future<void>.delayed(Duration.zero);
+      }
       try {
         final map = jsonDecode(raw) as Map<String, dynamic>;
         final snapshots = (map['snapshots'] as List<dynamic>? ?? const [])
