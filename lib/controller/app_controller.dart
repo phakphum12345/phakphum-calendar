@@ -906,7 +906,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           _currentAllRosterShifts,
         );
         final accountId = auth.account?.id.trim();
-        final timelineScope = '${accountId ?? ''}|${spreadsheetId}';
+        final timelineScope = '${accountId ?? ''}|$spreadsheetId';
         pendingTimelineSnapshots = snapshots;
         pendingTimelineSpreadsheetId = spreadsheetId;
         pendingTimelineAccountId = accountId;
