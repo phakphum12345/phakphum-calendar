@@ -218,6 +218,8 @@ class AppController extends ChangeNotifier implements ControllerState {
   Set<String> existingKeys = {};
   Map<String, RosterAssignmentTimeline> _revisionTimelines = const {};
   int _loadedRevisionCount = 0;
+  int _timelineLoadGeneration = 0;
+  bool timelineLoading = false;
   String? _loadedTimelineScope;
   String? timelineWarning;
   List<String> sheetTitles = [];
@@ -375,6 +377,8 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   Future<void> signOut() async {
+    _timelineLoadGeneration++;
+    timelineLoading = false;
     await auth.signOut();
     _autoRefreshTimer?.cancel();
     _replaceLegacyShifts(const []);
@@ -543,6 +547,8 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   Future<void> clearRosterSourceSelection() async {
+    _timelineLoadGeneration++;
+    timelineLoading = false;
     await _run('ยกเลิกการเลือกตารางเวร', () async {
       final accountId = auth.account?.id;
       if (accountId != null) {
@@ -682,6 +688,8 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   Future<void> selectSourceForCurrentAccount(String sourceUrl) async {
+    _timelineLoadGeneration++;
+    timelineLoading = false;
     final account = auth.account;
     if (account == null) throw StateError('กรุณาล็อกอิน Google ก่อน');
     final normalizedUrl = sourceUrl.trim();
@@ -747,6 +755,10 @@ class AppController extends ChangeNotifier implements ControllerState {
 
   Future<void> deleteSavedSheet(SavedSheet sheet) async {
     _requireSheetOwner(sheet);
+    if (currentSourceSheet?.key == sheet.key) {
+      _timelineLoadGeneration++;
+      timelineLoading = false;
+    }
     await _run('ลบชีตออกจากรายการบันทึก', () async {
       final wasCurrent = currentSourceSheet?.key == sheet.key;
       savedSheets.removeWhere(
@@ -799,9 +811,9 @@ class AppController extends ChangeNotifier implements ControllerState {
 
     final warning = timelineWarning;
     status = warning == null
-        ? 'ซิงค์ Timeline ย้อนหลังสำเร็จ: โหลด $_loadedRevisionCount revision จาก Google Drive (อ่านอย่างเดียว)'
-        : 'อ่านตารางเวรแล้ว แต่ Timeline ย้อนหลังมีข้อจำกัด: $warning';
-    await _addAudit('sheet.timeline.sync', status!, warning == null);
+        ? 'อ่านตารางเวรแล้ว; กำลังซิงค์ Timeline ย้อนหลังเบื้องหลัง'
+        : 'อ่านตารางเวรแล้ว; Timeline ย้อนหลังมีข้อจำกัด: $warning';
+    await _addAudit('sheet.timeline.sync.started', status!, true);
     notifyListeners();
   }
 
@@ -810,6 +822,12 @@ class AppController extends ChangeNotifier implements ControllerState {
     bool allowAutomaticCalendarSync = true,
     bool refreshHistoricalTimeline = false,
   }) async {
+    final timelineGeneration = ++_timelineLoadGeneration;
+    timelineLoading = false;
+    dynamic pendingTimelineSnapshots;
+    String? pendingTimelineSpreadsheetId;
+    String? pendingTimelineAccountId;
+    String? pendingTimelineScope;
     await _run('อ่านตารางเวร', () async {
       final sourceUrl = localSourceLabel == null ? currentSourceUrl : '';
       if (sourceUrl.isEmpty) {
@@ -887,160 +905,12 @@ class AppController extends ChangeNotifier implements ControllerState {
         _currentAllRosterShifts = _filterToSyncDateRange(
           _currentAllRosterShifts,
         );
-        final currentRevision = RosterRevisionDocument(
-          revisionId: 'current',
-          modifiedAt: DateTime.now(),
-          snapshots: snapshots,
-        );
-        final timelineGenerator = const RosterTimelineGenerator();
         final accountId = auth.account?.id.trim();
-        final timelineScope = '${accountId ?? ''}|$spreadsheetId';
-        if (background &&
-            _loadedRevisionCount > 0 &&
-            _loadedTimelineScope == timelineScope) {
-          timelineWarning =
-              'ใช้ประวัติ Timeline จากการอ่านล่าสุด; '
-              'กดอ่านใหม่เพื่อโหลด revision ล่าสุดจาก Drive';
-        } else {
-          timelineWarning = null;
-          try {
-            var skippedRevisionCount = 0;
-            final legacyAccountId = auth.account?.email.trim();
-            const archive = TimelineArchiveService();
-            var archivedRevisions = <RosterRevisionDocument>[];
-
-            // Render the durable local archive first. A temporary Drive or
-            // network failure must not hide history already saved on this device.
-            if (accountId != null && accountId.isNotEmpty) {
-              try {
-                archivedRevisions = await archive.readRevisionsWithLegacyAccountScope(
-                  accountId: accountId,
-                  legacyAccountId: legacyAccountId,
-                  fileId: spreadsheetId,
-                  onMigrationError: (migrationError) {
-                    final message =
-                        'ย้ายคลัง Timeline จากอีเมลไปยังรหัสบัญชี Google ไม่สำเร็จ: '
-                        '$migrationError';
-                    timelineWarning = message;
-                    unawaited(_addAudit(
-                      'sheet.timeline.archive.migration.failed',
-                      message,
-                      false,
-                    ));
-                  },
-                );
-              } on Object catch (archiveReadError) {
-                final archiveWarning =
-                    'อ่านคลัง Timeline ในเครื่องไม่สำเร็จ: $archiveReadError';
-                timelineWarning = archiveWarning;
-                await _addAudit(
-                  'sheet.timeline.archive.read.failed',
-                  archiveWarning,
-                  false,
-                );
-              }
-            } else {
-              timelineWarning =
-                  'ไม่พบอีเมลบัญชี Google จึงไม่สามารถแยกคลัง Timeline ตามบัญชีได้';
-            }
-
-            try {
-              final knownRevisionIds = archivedRevisions
-                  .map((revision) => revision.revisionId)
-                  .toSet();
-              // Bootstrap an empty local archive once so historical Timeline
-              // remains available on first use. Routine reads with an existing
-              // archive avoid Drive revision exports; explicit refresh still
-              // checks Drive for revisions added since the last archive.
-              final shouldRefreshDriveHistory =
-                  refreshHistoricalTimeline || archivedRevisions.isEmpty;
-              final missingRevisions = shouldRefreshDriveHistory
-                  ? await const RosterRevisionService().readHistoryTransient(
-                      client,
-                      spreadsheetId,
-                      knownRevisionIds: knownRevisionIds,
-                      onRevisionSkipped: (revisionId, error) {
-                        skippedRevisionCount++;
-                      },
-                    )
-                  : <RosterRevisionDocument>[];
-
-              // Persist each downloaded revision before adding it to the
-              // in-memory timeline. If a write fails, the local archive remains
-              // valid and the warning makes the incomplete refresh visible.
-              if (accountId != null && accountId.isNotEmpty) {
-                for (final revision in missingRevisions) {
-                  await archive.putRevision(
-                    accountId: accountId,
-                    fileId: spreadsheetId,
-                    document: revision,
-                  );
-                }
-              }
-
-              final mergedRevisions = <String, RosterRevisionDocument>{
-                for (final revision in archivedRevisions)
-                  revision.revisionId: revision,
-                for (final revision in missingRevisions)
-                  revision.revisionId: revision,
-              }.values.toList()
-                ..sort((left, right) =>
-                    left.modifiedAt.compareTo(right.modifiedAt));
-
-              _loadedRevisionCount = mergedRevisions.length + 1;
-              _revisionTimelines = timelineGenerator.generateFromDocuments([
-                ...mergedRevisions,
-                currentRevision,
-              ]);
-              _loadedTimelineScope = timelineScope;
-              if (mergedRevisions.isEmpty) {
-                timelineWarning = shouldRefreshDriveHistory
-                    ? 'ไม่พบประวัติ revision ที่อ่านได้ จึงแสดงเฉพาะรายชื่อเวรปัจจุบัน'
-                    : 'ใช้คลัง Timeline ในเครื่อง; กด “ซิงค์ Timeline ย้อนหลัง” เพื่อตรวจ revision ใหม่จาก Drive';
-              }
-              if (skippedRevisionCount > 0) {
-                final skippedWarning =
-                    'ข้าม revision ที่อ่านไม่ได้ $skippedRevisionCount รายการ; '
-                    'Timeline อาจไม่ครบ';
-                timelineWarning = timelineWarning == null
-                    ? skippedWarning
-                    : '$timelineWarning; $skippedWarning';
-              }
-            } on Object catch (historyError) {
-              _loadedRevisionCount = archivedRevisions.length + 1;
-              _revisionTimelines = timelineGenerator.generateFromDocuments([
-                ...archivedRevisions,
-                currentRevision,
-              ]);
-              _loadedTimelineScope = timelineScope;
-              final fallbackWarning = archivedRevisions.isEmpty
-                  ? 'อ่านประวัติ Timeline จาก Drive ไม่สำเร็จและไม่มีคลังในเครื่อง: $historyError'
-                  : 'Drive ยังอ่านประวัติใหม่ไม่ได้ จึงใช้ Timeline ที่บันทึกในเครื่อง '
-                        '(${archivedRevisions.length} revision): $historyError';
-              timelineWarning = timelineWarning == null
-                  ? fallbackWarning
-                  : '$timelineWarning; $fallbackWarning';
-              await _addAudit(
-                'sheet.timeline.drive.failed',
-                fallbackWarning,
-                false,
-              );
-            }
-          } on Object catch (caught, stackTrace) {
-            _loadedRevisionCount = 1;
-            _revisionTimelines = timelineGenerator.generateFromDocuments([
-              currentRevision,
-            ]);
-            _loadedTimelineScope = timelineScope;
-            timelineWarning =
-                'อ่านประวัติ Timeline จาก Google Drive ไม่สำเร็จ: $caught';
-            await _addAudit('sheet.timeline.failed', timelineWarning!, false);
-            debugPrintStack(
-              label: 'Could not load Google Sheets revision timeline',
-              stackTrace: stackTrace,
-            );
-          }
-        }
+        final timelineScope = '${accountId ?? ''}|${spreadsheetId}';
+        pendingTimelineSnapshots = snapshots;
+        pendingTimelineSpreadsheetId = spreadsheetId;
+        pendingTimelineAccountId = accountId;
+        pendingTimelineScope = timelineScope;
         final periods = _periodsForShifts(rangedParsed);
         _replaceLegacyShifts(
           _alertService.addOffDutyPeriods(
@@ -1062,7 +932,7 @@ class AppController extends ChangeNotifier implements ControllerState {
             'จาก ${periods.length} เดือน • '
             '${syncRangeStart == null || syncRangeEnd == null ? '' : 'ช่วง ${_dateLabel(syncRangeStart!)}–${_dateLabel(syncRangeEnd!)} • '}'
             'อ่านสีจากไฟล์หลัก $colorCount รายการ • '
-            'Timeline $_loadedRevisionCount revision'
+            'Timeline จะโหลดเบื้องหลัง'
             '${timelineWarning == null ? '' : ' • $timelineWarning'} • '
             'สร้าง OFF $offCount รายการ • รอตัดสินใจ $pendingAlertCount รายการ';
         await _addAudit(
@@ -1070,7 +940,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           'อ่าน ${snapshots.length} แท็บ ${periods.length} เดือน '
               'พบ ${rangedParsed.length} เวรในช่วงที่กำหนด '
               '${usedMonthlyFallback ? 'ใช้ตัวแปลงตารางรายเดือนสำรอง ' : ''}'
-              'อ่าน Timeline $_loadedRevisionCount revision '
+              'เริ่มโหลด Timeline เบื้องหลัง '
               'อ่านสีจากไฟล์หลัก $colorCount รายการ และสร้าง OFF '
               '$offCount รายการ; ไม่มีการแก้ไขชีต',
           true,
@@ -1079,6 +949,24 @@ class AppController extends ChangeNotifier implements ControllerState {
         client.close();
       }
     });
+    if (pendingTimelineSnapshots != null &&
+        pendingTimelineSpreadsheetId != null &&
+        pendingTimelineScope != null) {
+      timelineLoading = true;
+      timelineWarning = 'กำลังโหลด Timeline ย้อนหลังเบื้องหลัง';
+      notifyListeners();
+      unawaited(
+        _loadTimelineInBackground(
+          snapshots: pendingTimelineSnapshots,
+          spreadsheetId: pendingTimelineSpreadsheetId!,
+          accountId: pendingTimelineAccountId,
+          timelineScope: pendingTimelineScope!,
+          background: background,
+          refreshHistoricalTimeline: refreshHistoricalTimeline,
+          generation: timelineGeneration,
+        ),
+      );
+    }
     _scheduleAutoRefresh();
     // A roster read must never write to Google Calendar. Keep compatibility
     // with legacy autoSync settings, but require the normal preview and the
@@ -1088,6 +976,213 @@ class AppController extends ChangeNotifier implements ControllerState {
           ? 'ข้ามการซิงก์อัตโนมัติเนื่องจากมีแจ้งเตือนค้าง $pendingAlertCount รายการ'
           : 'ยังไม่เขียน Google Calendar อัตโนมัติ; กรุณาตรวจตัวอย่างและยืนยันการซิงก์ด้วยตนเอง';
       await _addAudit('auto.sync.requires_confirmation', message, true);
+    }
+  }
+
+  Future<void> _loadTimelineInBackground({
+    required dynamic snapshots,
+    required String spreadsheetId,
+    required String? accountId,
+    required String timelineScope,
+    required bool background,
+    required bool refreshHistoricalTimeline,
+    required int generation,
+  }) async {
+    if (generation != _timelineLoadGeneration || !auth.isSignedIn) return;
+    GoogleApiClient? client;
+    try {
+      client = await auth.clientFor([
+        sheets.SheetsApi.spreadsheetsReadonlyScope,
+        drive.DriveApi.driveMetadataReadonlyScope,
+        drive.DriveApi.driveReadonlyScope,
+      ], promptIfNecessary: false);
+      if (generation != _timelineLoadGeneration) return;
+    final currentRevision = RosterRevisionDocument(
+      revisionId: 'current',
+      modifiedAt: DateTime.now(),
+      snapshots: snapshots,
+    );
+    final timelineGenerator = const RosterTimelineGenerator();
+    if (background &&
+        _loadedRevisionCount > 0 &&
+        _loadedTimelineScope == timelineScope) {
+      timelineWarning =
+          'ใช้ประวัติ Timeline จากการอ่านล่าสุด; '
+          'กดอ่านใหม่เพื่อโหลด revision ล่าสุดจาก Drive';
+    } else {
+      if (generation == _timelineLoadGeneration) timelineWarning = null;
+      try {
+        var skippedRevisionCount = 0;
+        final legacyAccountId = auth.account?.email.trim();
+        const archive = TimelineArchiveService();
+        var archivedRevisions = <RosterRevisionDocument>[];
+
+        // Render the durable local archive first. A temporary Drive or
+        // network failure must not hide history already saved on this device.
+        if (accountId != null && accountId.isNotEmpty) {
+          try {
+            archivedRevisions = await archive.readRevisionsWithLegacyAccountScope(
+              accountId: accountId,
+              legacyAccountId: legacyAccountId,
+              fileId: spreadsheetId,
+              onMigrationError: (migrationError) {
+                final message =
+                    'ย้ายคลัง Timeline จากอีเมลไปยังรหัสบัญชี Google ไม่สำเร็จ: '
+                    '$migrationError';
+                if (generation == _timelineLoadGeneration) timelineWarning = message;
+                unawaited(_addAudit(
+                  'sheet.timeline.archive.migration.failed',
+                  message,
+                  false,
+                ));
+              },
+            );
+          } on Object catch (archiveReadError) {
+            final archiveWarning =
+                'อ่านคลัง Timeline ในเครื่องไม่สำเร็จ: $archiveReadError';
+            if (generation == _timelineLoadGeneration) timelineWarning = archiveWarning;
+            await _addAudit(
+              'sheet.timeline.archive.read.failed',
+              archiveWarning,
+              false,
+            );
+          }
+        } else {
+          if (generation == _timelineLoadGeneration) {
+            timelineWarning =
+                'ไม่พบอีเมลบัญชี Google จึงไม่สามารถแยกคลัง Timeline ตามบัญชีได้';
+          }
+        }
+
+        try {
+          if (generation != _timelineLoadGeneration) return;
+          final knownRevisionIds = archivedRevisions
+              .map((revision) => revision.revisionId)
+              .toSet();
+          // Bootstrap an empty local archive once so historical Timeline
+          // remains available on first use. Routine reads with an existing
+          // archive avoid Drive revision exports; explicit refresh still
+          // checks Drive for revisions added since the last archive.
+          final shouldRefreshDriveHistory =
+              refreshHistoricalTimeline || archivedRevisions.isEmpty;
+          final missingRevisions = shouldRefreshDriveHistory
+              ? await const RosterRevisionService().readHistoryTransient(
+                  client,
+                  spreadsheetId,
+                  knownRevisionIds: knownRevisionIds,
+                  onRevisionSkipped: (revisionId, error) {
+                    skippedRevisionCount++;
+                  },
+                )
+              : <RosterRevisionDocument>[];
+
+          if (generation != _timelineLoadGeneration) return;
+
+          // Persist each downloaded revision before adding it to the
+          // in-memory timeline. If a write fails, the local archive remains
+          // valid and the warning makes the incomplete refresh visible.
+          if (accountId != null && accountId.isNotEmpty) {
+            for (final revision in missingRevisions) {
+              await archive.putRevision(
+                accountId: accountId,
+                fileId: spreadsheetId,
+                document: revision,
+              );
+            }
+          }
+
+          final mergedRevisions = <String, RosterRevisionDocument>{
+            for (final revision in archivedRevisions)
+              revision.revisionId: revision,
+            for (final revision in missingRevisions)
+              revision.revisionId: revision,
+          }.values.toList()
+            ..sort((left, right) =>
+                left.modifiedAt.compareTo(right.modifiedAt));
+
+          if (generation != _timelineLoadGeneration) return;
+          _loadedRevisionCount = mergedRevisions.length + 1;
+          _revisionTimelines = await timelineGenerator.generateFromDocumentsAsync([
+            ...mergedRevisions,
+            currentRevision,
+          ]);
+          _loadedTimelineScope = timelineScope;
+          if (mergedRevisions.isEmpty) {
+            timelineWarning = shouldRefreshDriveHistory
+                ? 'ไม่พบประวัติ revision ที่อ่านได้ จึงแสดงเฉพาะรายชื่อเวรปัจจุบัน'
+                : 'ใช้คลัง Timeline ในเครื่อง; กด “ซิงค์ Timeline ย้อนหลัง” เพื่อตรวจ revision ใหม่จาก Drive';
+          }
+          if (skippedRevisionCount > 0) {
+            final skippedWarning =
+                'ข้าม revision ที่อ่านไม่ได้ $skippedRevisionCount รายการ; '
+                'Timeline อาจไม่ครบ';
+            timelineWarning = timelineWarning == null
+                ? skippedWarning
+                : '$timelineWarning; $skippedWarning';
+          }
+        } on Object catch (historyError) {
+          if (generation != _timelineLoadGeneration) return;
+          _loadedRevisionCount = archivedRevisions.length + 1;
+          _revisionTimelines = await timelineGenerator.generateFromDocumentsAsync([
+            ...archivedRevisions,
+            currentRevision,
+          ]);
+          _loadedTimelineScope = timelineScope;
+          final fallbackWarning = archivedRevisions.isEmpty
+              ? 'อ่านประวัติ Timeline จาก Drive ไม่สำเร็จและไม่มีคลังในเครื่อง: $historyError'
+              : 'Drive ยังอ่านประวัติใหม่ไม่ได้ จึงใช้ Timeline ที่บันทึกในเครื่อง '
+                    '(${archivedRevisions.length} revision): $historyError';
+          timelineWarning = timelineWarning == null
+              ? fallbackWarning
+              : '$timelineWarning; $fallbackWarning';
+          await _addAudit(
+            'sheet.timeline.drive.failed',
+            fallbackWarning,
+            false,
+          );
+        }
+      } on Object catch (caught, stackTrace) {
+        if (generation != _timelineLoadGeneration) return;
+        _loadedRevisionCount = 1;
+        _revisionTimelines = await timelineGenerator.generateFromDocumentsAsync([
+          currentRevision,
+        ]);
+        _loadedTimelineScope = timelineScope;
+        timelineWarning =
+            'อ่านประวัติ Timeline จาก Google Drive ไม่สำเร็จ: $caught';
+        await _addAudit('sheet.timeline.failed', timelineWarning!, false);
+        debugPrintStack(
+          label: 'Could not load Google Sheets revision timeline',
+          stackTrace: stackTrace,
+        );
+      }
+    }
+
+      if (generation == _timelineLoadGeneration) {
+        if (_loadedRosterShifts.isNotEmpty) {
+          final visibleShifts = _filterToSyncDateRange(_loadedRosterShifts);
+          _replaceLegacyShifts(
+            _alertService.addOffDutyPeriods(
+              _applyReferenceRelationships(visibleShifts),
+            ),
+            persist: false,
+          );
+        }
+        timelineLoading = false;
+        notifyListeners();
+      }
+    } catch (caught, stackTrace) {
+      if (generation == _timelineLoadGeneration) {
+        timelineWarning = 'อ่านประวัติ Timeline เบื้องหลังไม่สำเร็จ: $caught';
+        timelineLoading = false;
+        _loadedRevisionCount = 1;
+        _revisionTimelines = const {};
+        await _addAudit('sheet.timeline.background.failed', timelineWarning!, false);
+        notifyListeners();
+      }
+      debugPrintStack(label: 'Background roster Timeline load failed', stackTrace: stackTrace);
+    } finally {
+      client?.close();
     }
   }
 
@@ -2229,6 +2324,8 @@ class AppController extends ChangeNotifier implements ControllerState {
   void _onAuthChanged() {
     final accountId = auth.account?.id;
     if (_observedAccountId != accountId) {
+      _timelineLoadGeneration++;
+      timelineLoading = false;
       _observedAccountId = accountId;
       settings = settings.clearRosterSelection();
       _autoRefreshTimer?.cancel();

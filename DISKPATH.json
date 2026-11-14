@@ -1373,8 +1373,8 @@
     },
     {
       "path": "lib/controller/app_controller.dart",
-      "size": 109091,
-      "sha256": "00d517e4cf5c988fe282d39c29a76382c346c81c80efe5d6341e79b94505bbf1"
+      "size": 112337,
+      "sha256": "5bcf329069e3e1967a947dfffe5aa961fe28883f60179ef4c6d6b4ccfe57ca60"
     },
     {
       "path": "lib/core/di/app_dependencies.dart",
@@ -3063,8 +3063,8 @@
     },
     {
       "path": "lib/services/roster_timeline_generator.dart",
-      "size": 1531,
-      "sha256": "7ed54286153b0075d6d979a82ea0cecd72aec47b3cea150fef2fdf152acc683e"
+      "size": 2362,
+      "sha256": "7bc8de473071af3429b46da0022c84f53d3ceba9ca92420000620fc6b0f88e0b"
     },
     {
       "path": "lib/services/settings_service.dart",
@@ -3103,8 +3103,8 @@
     },
     {
       "path": "lib/services/timeline_archive_service.dart",
-      "size": 7002,
-      "sha256": "234d2405d82f0497b88aaf04121c98111e6ed7331c4387e016779e5c0b0f7c32"
+      "size": 7290,
+      "sha256": "29893969e8f3e07e788ed2d10c30a2901a907b6e924e5fee289a4d3beb351e6d"
     },
     {
       "path": "lib/shared/presentation/app_status_page.dart",
@@ -3923,8 +3923,8 @@
     },
     {
       "path": "test/timeline_archive_service_test.dart",
-      "size": 3703,
-      "sha256": "fdf8af1c9b3a40f796f422a847f16291b9b314cbd4359096f1b3dbef3ec9efb2"
+      "size": 4733,
+      "sha256": "f18bf2b78c2c40a733f1fef5c7d7d303a8539925d5a34f5306cbed3ba1275a8e"
     },
     {
       "path": "test/timeline_history_regression_test.dart",
