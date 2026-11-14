@@ -70,6 +70,42 @@ void main() {
     );
   });
 
+  test('yields between batches when decoding a large local archive', () async {
+    const archive = TimelineArchiveService();
+    for (var index = 0; index < 24; index++) {
+      await archive.putRevision(
+        accountId: 'user@example.com',
+        fileId: 'large-sheet',
+        document: RosterRevisionDocument(
+          revisionId: 'revision-$index',
+          modifiedAt: DateTime.utc(2026, 1, 1).add(Duration(days: index)),
+          snapshots: const [
+            SheetSnapshot(
+              title: 'Roster',
+              rows: [
+                ['Name', 'Shift'],
+                ['A', 'ER'],
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    var eventLoopYielded = false;
+    final read = archive.readRevisions(
+      accountId: 'user@example.com',
+      fileId: 'large-sheet',
+    );
+    Future<void>.delayed(Duration.zero).then((_) {
+      eventLoopYielded = true;
+    });
+
+    final records = await read;
+    expect(records, hasLength(24));
+    expect(eventLoopYielded, isTrue);
+  });
+
   test('persists and reloads a resumable sync checkpoint', () async {
     const archive = TimelineArchiveService();
 

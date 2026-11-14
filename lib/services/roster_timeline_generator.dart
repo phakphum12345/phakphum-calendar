@@ -26,6 +26,30 @@ class RosterTimelineGenerator {
     return buildRosterAssignmentTimelines(revisions);
   }
 
+  /// Parse cached revision documents in small batches, yielding between
+  /// revisions so a large history does not monopolize the UI isolate.
+  Future<Map<String, RosterAssignmentTimeline>> generateFromDocumentsAsync(
+    Iterable<RosterRevisionDocument> documents,
+  ) async {
+    final revisions = <RosterRevisionShifts>[];
+    var processed = 0;
+    for (final doc in documents) {
+      if (processed > 0 && processed % 4 == 0) {
+        await Future<void>.delayed(Duration.zero);
+      }
+      final shifts = ShiftParser().parseAllWorkersAllPeriods(
+        snapshots: doc.snapshots,
+      );
+      revisions.add(RosterRevisionShifts(
+        revisionId: doc.revisionId,
+        modifiedAt: doc.modifiedAt,
+        shifts: shifts,
+      ));
+      processed++;
+    }
+    return buildRosterAssignmentTimelines(revisions);
+  }
+
   /// Read revision exports transiently (no long-lived cache) and build
   /// timelines. This contacts Drive and returns timelines without persisting
   /// revision snapshots anywhere long-term.
