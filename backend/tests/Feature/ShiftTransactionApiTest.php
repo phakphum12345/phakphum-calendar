@@ -82,11 +82,12 @@ class ShiftTransactionApiTest extends TestCase
         $this->postJson("/api/v1/shift-transactions/{$created['id']}/confirm", [], $this->auth('alice-token'))->assertOk();
         $this->postJson("/api/v1/shift-transactions/{$created['id']}/confirm", [], $this->auth('bob-token'))->assertOk();
         $this->postJson("/api/v1/shift-transactions/{$created['id']}/calendar-sync/start", ['preview_confirmed' => true], $this->auth('alice-token'))->assertOk();
-        $synced = $this->postJson("/api/v1/shift-transactions/{$created['id']}/calendar-sync/complete", ['calendar_event_ids' => ['google-event-1']], $this->auth('alice-token'))
+        $synced = $this->postJson("/api/v1/shift-transactions/{$created['id']}/calendar-sync/complete", ['calendar_event_ids' => ['google-event-1', 'google-event-2']], $this->auth('alice-token'))
             ->assertOk()->json('data');
         $this->assertSame('approved', $synced['status']);
         $this->assertSame('synced', $synced['sync_status']);
-        $this->postJson("/api/v1/shift-transactions/{$created['id']}/fulfill", ['transfer_id' => 'primary'], $this->auth('alice-token'))->assertOk();
+        $this->postJson("/api/v1/shift-transactions/{$created['id']}/fulfill", ['transfer_id' => 'primary'], $this->auth('alice-token'))->assertForbidden();
+        $this->postJson("/api/v1/shift-transactions/{$created['id']}/fulfill", ['transfer_id' => 'primary'], $this->auth('bob-token'))->assertOk();
         $partial = $this->getJson("/api/v1/shift-transactions/{$created['id']}", $this->auth('bob-token'))->assertOk()->json('data');
         $this->assertSame('approved', $partial['status']);
         $this->assertSame(1, collect($partial['transfers'])->whereNotNull('fulfilled_at')->count());
