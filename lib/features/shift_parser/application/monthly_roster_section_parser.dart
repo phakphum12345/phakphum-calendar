@@ -28,12 +28,18 @@ class MonthlyRosterSectionParser {
     'ธันวาคม': 12,
   };
 
+  /// Runs both phases in order: build date/row structure, then fill workers.
   MonthlyRosterParseReport parse(ShiftParserInput input) {
+    final structure = generateDateStructure(input);
+    return populateAssignments(input, structure);
+  }
+
+  /// Phase 1: identify each section, its own period, date columns, and shift rows.
+  /// No worker names are read in this phase.
+  MonthlyRosterParseReport generateDateStructure(ShiftParserInput input) {
     final cellsByRow = <int, List<dynamic>>{};
-    final cellsByCoordinate = <(int, int), dynamic>{};
     for (final cell in input.cells) {
       cellsByRow.putIfAbsent(cell.rowIndex, () => []).add(cell);
-      cellsByCoordinate[(cell.rowIndex, cell.columnIndex)] = cell;
     }
 
     final headerRows =
@@ -57,16 +63,20 @@ class MonthlyRosterSectionParser {
         headerRow: headerRow,
       );
 
-      DateTime start;
-      DateTime end;
-      try {
-        final period = _tryParsePeriod(title) ?? _parsePeriod(input.sheetTitle);
-        start = period.start;
-        end = period.end;
-      } on FormatException {
-        warnings.add('ไม่พบช่วงเดือนของส่วน "$title"');
+      final explicitPeriod = _tryParsePeriod(title);
+      final sheetFallback = headerRows.length == 1
+          ? _tryParsePeriod(input.sheetTitle)
+          : null;
+      final period = explicitPeriod ?? sheetFallback;
+      if (period == null) {
+        warnings.add(
+          'ไม่พบช่วงวันที่เฉพาะของส่วน "$title"; '
+          'ไม่ใช้เดือนจากชื่อชีตแทนเพื่อป้องกันวันที่ข้ามเดือนไม่ถูกต้อง',
+        );
         continue;
       }
+      final start = period.start;
+      final end = period.end;
 
       final datesByColumn = _resolveDatesByColumn(
         daysByColumn: daysByColumn,
@@ -76,41 +86,33 @@ class MonthlyRosterSectionParser {
         warnings: warnings,
       );
 
-      final assignments = <MonthlyRosterAssignment>[];
+      final dateColumns = <MonthlyRosterDateColumn>[
+        for (final entry in datesByColumn.entries)
+          MonthlyRosterDateColumn(
+            columnIndex: entry.key,
+            displayedDay: daysByColumn[entry.key]!,
+            date: entry.value,
+          ),
+      ];
+      final rosterRows = <MonthlyRosterRow>[];
       for (var rowIndex = headerRow + 1; rowIndex < nextHeader; rowIndex++) {
-        final rowLabel =
-            cellsByCoordinate[(rowIndex, 0)]?.text?.toString().trim() ?? '';
+        final labelCells = (cellsByRow[rowIndex] ?? const [])
+            .where((cell) => cell.columnIndex == 0);
+        final rowLabel = labelCells.isEmpty
+            ? ''
+            : labelCells.first.text?.toString().trim() ?? '';
         if (rowLabel.isEmpty || _looksLikeHeading(rowLabel)) continue;
-
-        for (final entry in datesByColumn.entries) {
-          final workerCell = cellsByCoordinate[(rowIndex, entry.key)];
-          final worker = workerCell?.text?.toString().trim() ?? '';
-          if (worker.isEmpty) continue;
-          assignments.add(
-            MonthlyRosterAssignment(
-              sectionTitle: title,
-              rowLabel: rowLabel,
-              rowIndex: rowIndex,
-              workerName: worker,
-              date: entry.value,
-              sourceCell: A1Notation.fromZeroBased(
-                rowIndex: rowIndex,
-                columnIndex: entry.key,
-              ),
-              backgroundColor: workerCell?.backgroundColor?.hex,
-              spreadsheetId: input.spreadsheetId,
-              sheetId: input.sheetId,
-              sheetTitle: input.sheetTitle,
-            ),
-          );
-        }
+        rosterRows.add(MonthlyRosterRow(rowIndex: rowIndex, label: rowLabel));
       }
 
       sections.add(
         MonthlyRosterSection(
           title: title,
           headerRowIndex: headerRow,
-          assignments: List.unmodifiable(assignments),
+          assignments: const [],
+          rowLabels: List.unmodifiable(rosterRows.map((row) => row.label)),
+          dateColumns: List.unmodifiable(dateColumns),
+          rosterRows: List.unmodifiable(rosterRows),
           startDate: start,
           endDate: end,
         ),
@@ -123,6 +125,65 @@ class MonthlyRosterSectionParser {
     return MonthlyRosterParseReport(
       sections: List.unmodifiable(sections),
       warnings: List.unmodifiable(warnings),
+    );
+  }
+
+  /// Phase 2: populate the resolved date/shift grid with worker names.
+  /// Dates are never recalculated or borrowed from another section here.
+  MonthlyRosterParseReport populateAssignments(
+    ShiftParserInput input,
+    MonthlyRosterParseReport structure,
+  ) {
+    final cellsByCoordinate = <(int, int), dynamic>{
+      for (final cell in input.cells)
+        (cell.rowIndex, cell.columnIndex): cell,
+    };
+    final populatedSections = <MonthlyRosterSection>[];
+
+    for (final section in structure.sections) {
+      final assignments = <MonthlyRosterAssignment>[];
+      for (final row in section.rosterRows) {
+        for (final dateColumn in section.dateColumns) {
+          final workerCell =
+              cellsByCoordinate[(row.rowIndex, dateColumn.columnIndex)];
+          final worker = workerCell?.text?.toString().trim() ?? '';
+          if (worker.isEmpty) continue;
+          assignments.add(
+            MonthlyRosterAssignment(
+              sectionTitle: section.title,
+              rowLabel: row.label,
+              rowIndex: row.rowIndex,
+              workerName: worker,
+              date: dateColumn.date,
+              sourceCell: A1Notation.fromZeroBased(
+                rowIndex: row.rowIndex,
+                columnIndex: dateColumn.columnIndex,
+              ),
+              backgroundColor: workerCell?.backgroundColor?.hex,
+              spreadsheetId: input.spreadsheetId,
+              sheetId: input.sheetId,
+              sheetTitle: input.sheetTitle,
+            ),
+          );
+        }
+      }
+      populatedSections.add(
+        MonthlyRosterSection(
+          title: section.title,
+          headerRowIndex: section.headerRowIndex,
+          assignments: List.unmodifiable(assignments),
+          rowLabels: section.rowLabels,
+          dateColumns: section.dateColumns,
+          rosterRows: section.rosterRows,
+          startDate: section.startDate,
+          endDate: section.endDate,
+        ),
+      );
+    }
+
+    return MonthlyRosterParseReport(
+      sections: List.unmodifiable(populatedSections),
+      warnings: structure.warnings,
     );
   }
 
@@ -303,7 +364,7 @@ class MonthlyRosterSectionParser {
       (text) => text.contains('เวร') || text.contains('คลิน'),
     );
     if (descriptive.isNotEmpty) return descriptive.first;
-    return '${input.sheetTitle} แถว ${headerRow + 1}';
+    return 'ส่วนตารางแถว ${headerRow + 1}';
   }
 
   bool _looksLikeHeading(String value) {
