@@ -211,7 +211,15 @@ class ShiftParser
     // A dated section heading is more authoritative than the worksheet tab
     // name. Tabs are often reused or renamed independently of the roster block.
     final localContext = _periodContextForHeader(snapshot, headerIndex);
-    final inferred = localContext.firstOrNull ?? _firstThaiDate(snapshot.title);
+    final hasMultipleDateHeaders =
+        snapshot.rows.where(_isDateHeader).length > 1;
+    final inferred = localContext.firstOrNull ??
+        (hasMultipleDateHeaders ? null : _firstThaiDate(snapshot.title));
+    if (hasMultipleDateHeaders && inferred == null) {
+      // A section without its own period must not inherit a preceding
+      // section's month or the worksheet tab's month.
+      return const {};
+    }
     final numeric = <MapEntry<int, int>>[];
     for (var column = 1; column < row.length; column++) {
       final day = _dayNumber(row[column]);
@@ -260,9 +268,10 @@ class ShiftParser
       }
     }
 
-    // Preserve the legacy tab-title fallback for sources without a dated
-    // header row, while allowing explicit section headings to override it.
-    if (unique.isEmpty) {
+    // A tab-title fallback is safe only for a single date grid. With
+    // multiple sections, every block must declare its own period.
+    final dateHeaderCount = snapshot.rows.where(_isDateHeader).length;
+    if (unique.isEmpty && dateHeaderCount == 1) {
       final text = <String>[
         snapshot.title,
         for (final row in snapshot.rows.take(12))
@@ -276,19 +285,21 @@ class ShiftParser
     return unique.values.toList()..sort((left, right) => left.compareTo(right));
   }
 
-  /// Returns the nearest explicit month/range heading above a date header.
-  /// Searching backwards also lets adjacent date grids inherit the latest
-  /// section heading, instead of reverting to a possibly stale tab title.
+  /// Returns an explicit period heading within this block only.
+  /// Stop at the preceding date grid so a later block cannot inherit its
+  /// neighbour's month. Worksheet-title fallback is handled separately and
+  /// only when the worksheet contains one date grid.
   List<DateTime> _periodContextForHeader(
     SheetSnapshot snapshot,
     int headerIndex,
   ) {
     for (var rowIndex = headerIndex - 1; rowIndex >= 0; rowIndex--) {
+      if (_isDateHeader(snapshot.rows[rowIndex])) break;
       final text = snapshot.rows[rowIndex].map((cell) => '$cell').join(' ');
       final dates = _thaiDates(text);
       if (dates.isNotEmpty) return dates;
     }
-    return _thaiDates(snapshot.title);
+    return const [];
   }
 
   List<DateTime> _thaiDates(String text) {
