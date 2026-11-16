@@ -1,4 +1,4 @@
-name: Generate DISKPATH
+name: Validate DISKPATH
 
 on:
   workflow_dispatch:
@@ -10,84 +10,41 @@ on:
       - "DISKPATH.json"
       - "DISKPATH.md"
 
-# Auto-repair manifests on main, manual dispatch branches, and same-repository PRs.
-# Fork PRs stay read-only: GitHub does not grant the base repository token write access to forks.
+# Never grant a pull-request workflow write access to repository contents.
+# PR code is untrusted input; manifest updates must be generated and committed
+# by the contributor in their branch, then verified here without mutation.
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: generate-diskpath-${{ github.ref }}
+  group: validate-diskpath-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  generate-and-validate:
-    name: Generate and validate DISKPATH
+  validate:
+    name: Validate committed DISKPATH manifests
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
     steps:
-      - name: Checkout PR head (or current branch)
+      - name: Checkout exact event commit
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.x"
 
-      - name: Generate DISKPATH
+      - name: Verify manifests are current
         run: |
           set -euo pipefail
-          python3 tools/diskpath/generate_diskpath.py
-
-      - name: Validate DISKPATH
-        run: |
-          set -euo pipefail
+          python3 tools/diskpath/generate_diskpath.py --check
           python3 tools/diskpath/validate_diskpath.py
 
-      - name: Check generated files
+      - name: Verify patch formatting
         run: |
           set -euo pipefail
           git diff --check
-
-      - name: Commit generated manifests automatically
-        if: >-
-          (github.event_name == 'pull_request' &&
-           github.event.pull_request.head.repo.full_name == github.repository) ||
-          (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
-          github.event_name == 'workflow_dispatch'
-        env:
-          TARGET_REF: ${{ github.event.pull_request.head.ref || github.ref_name }}
-        run: |
-          set -euo pipefail
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- DISKPATH.json DISKPATH.md
-
-          if git diff --cached --quiet; then
-            echo "DISKPATH AUTO-GENERATION: manifests already current."
-            exit 0
-          fi
-
-          git commit -m "chore: automatically regenerate DISKPATH manifests"
-          git push origin "HEAD:${TARGET_REF}"
-          echo "DISKPATH AUTO-GENERATION: pushed updated manifests to ${TARGET_REF}"
-
-      - name: Enforce DISKPATH synchronization
-        if: github.event_name != 'workflow_dispatch'
-        run: |
-          set -euo pipefail
-
-          if git diff --quiet -- DISKPATH.json DISKPATH.md; then
-            echo "DISKPATH ENFORCEMENT: PASS"
-            echo "Generated manifests are synchronized with the repository."
-            exit 0
-          fi
-
-          echo "DISKPATH ENFORCEMENT: FAIL"
-          echo "DISKPATH.json and/or DISKPATH.md are out of date."
-          echo "Automatic repair is unavailable for fork PRs; regenerate and commit the manifests in the fork."
-          git diff -- DISKPATH.json DISKPATH.md
-          exit 1
+          echo "DISKPATH VALIDATION: PASS"
