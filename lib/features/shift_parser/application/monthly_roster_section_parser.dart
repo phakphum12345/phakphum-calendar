@@ -3,6 +3,7 @@ import '../domain/monthly_roster_section.dart';
 import '../../../models/shift.dart';
 import '../../../services/shift_color_service.dart';
 import '../domain/shift_parser_input.dart';
+import '../domain/roster_layout_profile.dart';
 import '../domain/thai_roster_period_parser.dart';
 
 /// Parses repeated monthly roster blocks without requiring known section or
@@ -10,9 +11,11 @@ import '../domain/thai_roster_period_parser.dart';
 class MonthlyRosterSectionParser {
   const MonthlyRosterSectionParser({
     this.periodParser = const ThaiRosterPeriodParser(),
+    this.layoutProfile,
   });
 
   final ThaiRosterPeriodParser periodParser;
+  final RosterLayoutProfile? layoutProfile;
   static const _thaiMonths = <String, int>{
     'มกราคม': 1,
     'กุมภาพันธ์': 2,
@@ -42,12 +45,20 @@ class MonthlyRosterSectionParser {
       cellsByRow.putIfAbsent(cell.rowIndex, () => []).add(cell);
     }
 
-    final headerRows =
-        cellsByRow.entries
-            .where((entry) => _daysByColumn(entry.value).length >= 7)
-            .map((entry) => entry.key)
-            .toList()
-          ..sort();
+    final configuredHeaderRows = layoutProfile?.dateHeaderRows ?? const <int>[];
+    final headerRows = (configuredHeaderRows.isNotEmpty
+            ? configuredHeaderRows.where((row) =>
+                cellsByRow.containsKey(row) &&
+                _daysByColumn(cellsByRow[row] ?? const []).isNotEmpty)
+            : cellsByRow.entries
+                .where((entry) => _isDateHeaderRow(entry.value))
+                .map((entry) => entry.key))
+        .toSet()
+        .toList()
+      ..sort();
+    if (configuredHeaderRows.isNotEmpty && headerRows.length != configuredHeaderRows.length) {
+      warnings.add('ไม่พบแถววันที่ตาม Layout Profile ครบทุกแถวที่กำหนด');
+    }
     final sections = <MonthlyRosterSection>[];
     final warnings = <String>[];
 
@@ -95,12 +106,17 @@ class MonthlyRosterSectionParser {
           ),
       ];
       final rosterRows = <MonthlyRosterRow>[];
-      for (var rowIndex = headerRow + 1; rowIndex < nextHeader; rowIndex++) {
-        final labelCells = (cellsByRow[rowIndex] ?? const [])
-            .where((cell) => cell.columnIndex == 0);
-        final rowLabel = labelCells.isEmpty
-            ? ''
-            : labelCells.first.text?.toString().trim() ?? '';
+      final configuredStart = layoutProfile?.dataStartRow;
+      final configuredEnd = layoutProfile?.dataEndRow;
+      final firstDataRow = configuredStart == null
+          ? headerRow + 1
+          : (configuredStart > headerRow ? configuredStart : headerRow + 1);
+      final sectionEnd = configuredEnd == null
+          ? nextHeader
+          : (configuredEnd + 1 < nextHeader ? configuredEnd + 1 : nextHeader);
+      for (var rowIndex = firstDataRow; rowIndex < sectionEnd; rowIndex++) {
+        final rowCells = cellsByRow[rowIndex] ?? const [];
+        final rowLabel = _rowLabelFor(rowCells, daysByColumn.keys);
         if (rowLabel.isEmpty || _looksLikeHeading(rowLabel)) continue;
         rosterRows.add(MonthlyRosterRow(rowIndex: rowIndex, label: rowLabel));
       }
@@ -142,8 +158,14 @@ class MonthlyRosterSectionParser {
 
     for (final section in structure.sections) {
       final assignments = <MonthlyRosterAssignment>[];
+      final configuredNameColumns = layoutProfile?.nameColumns.toSet();
       for (final row in section.rosterRows) {
         for (final dateColumn in section.dateColumns) {
+          if (configuredNameColumns != null &&
+              configuredNameColumns.isNotEmpty &&
+              !configuredNameColumns.contains(dateColumn.columnIndex)) {
+            continue;
+          }
           final workerCell =
               cellsByCoordinate[(row.rowIndex, dateColumn.columnIndex)];
           final worker = workerCell?.text?.toString().trim() ?? '';
@@ -234,10 +256,38 @@ class MonthlyRosterSectionParser {
     }
   }
 
+  bool _isDateHeaderRow(List<dynamic> cells) {
+    final days = _daysByColumn(cells);
+    if (days.length >= 7) return true;
+    final hasDateLabel = cells.any((cell) {
+      final value = cell.text?.toString().trim() ?? '';
+      return value == 'วันที่' || value.contains('วันที่');
+    });
+    return hasDateLabel && days.isNotEmpty;
+  }
+
+  String _rowLabelFor(List<dynamic> cells, Iterable<int> dateColumns) {
+    if (cells.isEmpty || dateColumns.isEmpty) return '';
+    final configuredColumns = layoutProfile?.shiftLabelColumns ?? const <int>[];
+    final firstDateColumn = dateColumns.reduce((a, b) => a < b ? a : b);
+    final candidateColumns = configuredColumns.isNotEmpty
+        ? configuredColumns
+        : cells
+            .where((cell) => cell.columnIndex < firstDateColumn)
+            .map((cell) => cell.columnIndex)
+            .toSet()
+            .toList();
+    final candidates = cells
+        .where((cell) => candidateColumns.contains(cell.columnIndex))
+        .where((cell) => cell.text?.toString().trim().isNotEmpty ?? false)
+        .toList()
+      ..sort((a, b) => b.columnIndex.compareTo(a.columnIndex));
+    return candidates.isEmpty ? '' : candidates.first.text.toString().trim();
+  }
+
   Map<int, int> _daysByColumn(List<dynamic> cells) {
     final result = <int, int>{};
     for (final cell in cells) {
-      if (cell.columnIndex == 0) continue;
       final value = cell.rawValue ?? cell.text;
       final day = value is num
           ? value.toInt()
@@ -344,7 +394,7 @@ class MonthlyRosterSectionParser {
     // the date row, especially after inserted explanatory rows.
     for (var row = headerRow - 1; row >= 0; row--) {
       final rowCells = cellsByRow[row] ?? const [];
-      if (_daysByColumn(rowCells).length >= 7) break;
+      if (_isDateHeaderRow(rowCells)) break;
       final texts = rowCells
           .map((cell) => cell.text?.toString().trim())
           .whereType<String>()
