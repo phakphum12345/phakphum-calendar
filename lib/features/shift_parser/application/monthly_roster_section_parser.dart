@@ -112,7 +112,8 @@ class MonthlyRosterSectionParser {
       final firstDataRow = configuredStart == null
           ? headerRow + 1
           : (configuredStart > headerRow ? configuredStart : headerRow + 1);
-      final sectionEnd = configuredEnd == null
+      final sectionEnd = configuredEnd == null ||
+              configuredEnd < headerRow + 1
           ? nextHeader
           : (configuredEnd + 1 < nextHeader ? configuredEnd + 1 : nextHeader);
       for (var rowIndex = firstDataRow; rowIndex < sectionEnd; rowIndex++) {
