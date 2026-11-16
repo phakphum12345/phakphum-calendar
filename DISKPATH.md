@@ -569,7 +569,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/shift_exchange/presentation/pages/shift_exchange_page.dart` | 4094 | `fd5473594d17fec03331e548a3e1123335e888621b226255bab77d486c93f57e` |
 | `lib/features/shift_parser/application/hospital_roster_parser.dart` | 5495 | `8ca60d01705bb52e4faa478ad61c28a0f67d104291fd3165ef3e8dfd30f10168` |
 | `lib/features/shift_parser/application/monthly_roster_conversion_diagnostics.dart` | 2402 | `72edb75ec277cbb5dd5c173b4482faafa7e371fc788d1f46522e18e8dc531306` |
-| `lib/features/shift_parser/application/monthly_roster_section_parser.dart` | 17798 | `9bf828024b11dd2d1cd39adb304d42a219c83545a2cc95d67aeaabd6e97a8cb3` |
+| `lib/features/shift_parser/application/monthly_roster_section_parser.dart` | 17913 | `19784098fff66141269184c832203a7dd87d17f16e768ea66b916291eaf7e412` |
 | `lib/features/shift_parser/application/smart_roster_analyze_generator.dart` | 2821 | `1b395e6440350e48357a37ec285aa172b0f962fd180822ea67bef63f2116c1c0` |
 | `lib/features/shift_parser/application/snapshot_normalizer.dart` | 1809 | `ad12901e35e5e9f33ed815547ecc051d117e0e3fddcc9f5b0f567e99a16e36f6` |
 | `lib/features/shift_parser/domain/a1_notation.dart` | 631 | `264700bc1ec9e89932ad9f17dca3811b15595dd8c392f3cd44a5efa8b29d4746` |

@@ -2708,8 +2708,8 @@
     },
     {
       "path": "lib/features/shift_parser/application/monthly_roster_section_parser.dart",
-      "size": 17798,
-      "sha256": "9bf828024b11dd2d1cd39adb304d42a219c83545a2cc95d67aeaabd6e97a8cb3"
+      "size": 17913,
+      "sha256": "19784098fff66141269184c832203a7dd87d17f16e768ea66b916291eaf7e412"
     },
     {
       "path": "lib/features/shift_parser/application/smart_roster_analyze_generator.dart",
