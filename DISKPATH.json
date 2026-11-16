@@ -2253,8 +2253,8 @@
     },
     {
       "path": "lib/features/relationship_engine/application/user_shift_change_classifier.dart",
-      "size": 3485,
-      "sha256": "e58e3094122037d17a71f64372a70ba4157ea6d9b5971800d588e44e7da9511a"
+      "size": 3548,
+      "sha256": "4a6fb1974a8cca5d360b7dc70c10e0a469145caf772e68c253d00ca95b1ecf5d"
     },
     {
       "path": "lib/features/relationship_engine/domain/relationship_resolution.dart",

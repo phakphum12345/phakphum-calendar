@@ -478,7 +478,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/plugin_system/domain/platform_plugin.dart` | 1308 | `cbac6bf84b80564fb125ef90b4d435a2ed134df1d60a0a68403ce39b68c9f0c0` |
 | `lib/features/relationship_engine/application/default_relationship_resolver.dart` | 3299 | `a020d69c68d01462d406b4be03a3b4c6d003bc2be06ed9fd91128bb7e372e683` |
 | `lib/features/relationship_engine/application/roster_comparison_engine.dart` | 2283 | `1385fa99e29a7a12d300d61dc83217a088a35c49968adda9bebde783fb73aaae` |
-| `lib/features/relationship_engine/application/user_shift_change_classifier.dart` | 3485 | `e58e3094122037d17a71f64372a70ba4157ea6d9b5971800d588e44e7da9511a` |
+| `lib/features/relationship_engine/application/user_shift_change_classifier.dart` | 3548 | `4a6fb1974a8cca5d360b7dc70c10e0a469145caf772e68c253d00ca95b1ecf5d` |
 | `lib/features/relationship_engine/domain/relationship_resolution.dart` | 718 | `4e2afe9514a6b7e793e90646c9577b2d7817ab5d7cd97e0a93b33105f1fcdfd9` |
 | `lib/features/relationship_engine/domain/relationship_resolver.dart` | 159 | `105d012f50b97cc29e323581a6a5af74a955fbb1a19d7aa5d63a77325fbb5592` |
 | `lib/features/relationship_engine/domain/user_shift_change.dart` | 454 | `1eec0b59f20dbb648ea3f8aab0febe831ffd8b70f7ea62aad68d1ad80a8e4f82` |
