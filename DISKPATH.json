@@ -423,8 +423,8 @@
     },
     {
       "path": "backend/README.md",
-      "size": 4033,
-      "sha256": "95bbe4285ad9fbae71764fb43042fb35dd09b26d11eafb59763ce9c29795700e"
+      "size": 7412,
+      "sha256": "b534e5200c2d54fe41e5693696ef1f0282745c89d8554ac547eeebdac3c550b7"
     },
     {
       "path": "backend/app/Contracts/GoogleIdentityTokenVerifier.php",
