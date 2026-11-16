@@ -45,6 +45,7 @@ class MonthlyRosterSectionParser {
       cellsByRow.putIfAbsent(cell.rowIndex, () => []).add(cell);
     }
 
+    final warnings = <String>[];
     final configuredHeaderRows = layoutProfile?.dateHeaderRows ?? const <int>[];
     final headerRows = (configuredHeaderRows.isNotEmpty
             ? configuredHeaderRows.where((row) =>
@@ -56,11 +57,11 @@ class MonthlyRosterSectionParser {
         .toSet()
         .toList()
       ..sort();
-    if (configuredHeaderRows.isNotEmpty && headerRows.length != configuredHeaderRows.length) {
+    if (configuredHeaderRows.isNotEmpty &&
+        headerRows.length != configuredHeaderRows.toSet().length) {
       warnings.add('ไม่พบแถววันที่ตาม Layout Profile ครบทุกแถวที่กำหนด');
     }
     final sections = <MonthlyRosterSection>[];
-    final warnings = <String>[];
 
     for (var index = 0; index < headerRows.length; index++) {
       final headerRow = headerRows[index];
