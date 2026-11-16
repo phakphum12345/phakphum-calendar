@@ -98,3 +98,32 @@ php artisan test
 ```
 
 These checks run in `.github/workflows/laravel.yml`.
+
+## Shift transaction history API
+
+All shift transaction routes require `Authorization: Bearer <Google ID token>`.
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| GET | `/api/v1/shift-transactions` | List transactions visible to the caller |
+| POST | `/api/v1/shift-transactions` | Create a transaction; requires `Idempotency-Key` |
+| GET | `/api/v1/shift-transactions/{id}` | Read transaction and event timeline |
+| POST | `/{id}/confirm` | Confirm as a participant |
+| POST | `/{id}/reject` | Reject as a participant |
+| POST | `/{id}/approve` | Approve under organization owner/admin authorization |
+| POST | `/{id}/reject-by-approver` | Reject under organization owner/admin authorization |
+| POST | `/{id}/cancel` | Cancel as requester before Calendar sync |
+| POST | `/{id}/calendar-sync/start` | Start after explicit preview confirmation |
+| POST | `/{id}/calendar-sync/complete` | Record provider event references after client sync succeeds |
+| POST | `/{id}/calendar-sync/fail` | Record recoverable Calendar write failure |
+| POST | `/{id}/fulfill` | Fulfill one shift obligation after its scheduled end |
+
+List filters: `mode=personal|organization`, `type=give_up|exchange|exchange_and_return`, `month=YYYY-MM`, `staff_id=<employee-id>`, `shift_type=<shift-code>`, and `organization_id=<uuid>`. Personal history is visible only to the two participants. Organization history is visible to active members of that organization.
+
+Creation is idempotent per authenticated requester and key. Reusing a key with a different request payload returns HTTP 409. Each lifecycle update uses a database transaction and row lock, increments the transaction version, and appends an event atomically.
+
+Every create and lifecycle transition appends a row to `shift_transaction_events`. The API exposes no event update/delete route, and restrictive foreign keys prevent deletion of transaction records while event history exists. Events retain the actor, organization scope, event type, transaction version, timestamp, and event-specific data.
+
+Calendar sync start requires `preview_confirmed=true`. Completion records one distinct Google Calendar event reference per transfer supplied by the authenticated client; this API records the client acknowledgement and does not itself call Google Calendar. A successful Calendar write does not complete the shift transaction. Only the employee receiving a transfer may confirm fulfillment, and only after the scheduled shift end. Exchange-and-return remains approved until every transfer leg is fulfilled.
+
+Validation: `composer validate --strict`, `vendor/bin/pint --test app config database routes tests`, and `php artisan test`. These checks run in `.github/workflows/laravel.yml`.
