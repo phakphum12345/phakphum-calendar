@@ -43,6 +43,8 @@ class ShiftTransactionApiTest extends TestCase
             'transaction_id' => $created['id'], 'event_type' => 'confirm', 'transaction_version' => 3,
         ]);
         $this->assertSame(3, DB::table('shift_transaction_events')->where('transaction_id', $created['id'])->count());
+        $this->getJson('/api/v1/shift-transactions?month='.now()->format('Y-m').'&staff_id=A&shift_type=morning&type=give_up', $this->auth('alice-token'))
+            ->assertOk()->assertJsonCount(1, 'data');
     }
 
     public function test_idempotency_replays_same_payload_and_rejects_key_reuse(): void
@@ -79,8 +81,8 @@ class ShiftTransactionApiTest extends TestCase
         ])->assertCreated()->json('data');
         $this->postJson("/api/v1/shift-transactions/{$created['id']}/confirm", [], $this->auth('alice-token'))->assertOk();
         $this->postJson("/api/v1/shift-transactions/{$created['id']}/confirm", [], $this->auth('bob-token'))->assertOk();
-        $this->postJson("/api/v1/shift-transactions/{$created['id']}/calendar-sync/start", [], $this->auth('alice-token'))->assertOk();
-        $synced = $this->postJson("/api/v1/shift-transactions/{$created['id']}/calendar-sync/complete", [], $this->auth('alice-token'))
+        $this->postJson("/api/v1/shift-transactions/{$created['id']}/calendar-sync/start", ['preview_confirmed' => true], $this->auth('alice-token'))->assertOk();
+        $synced = $this->postJson("/api/v1/shift-transactions/{$created['id']}/calendar-sync/complete", ['calendar_event_ids' => ['google-event-1']], $this->auth('alice-token'))
             ->assertOk()->json('data');
         $this->assertSame('approved', $synced['status']);
         $this->assertSame('synced', $synced['sync_status']);
@@ -113,7 +115,7 @@ class ShiftTransactionApiTest extends TestCase
         ])->assertCreated()->json('data');
         $this->postJson("/api/v1/shift-transactions/{$created['id']}/confirm", [], $this->auth('alice-token'))->assertOk();
         $this->postJson("/api/v1/shift-transactions/{$created['id']}/confirm", [], $this->auth('bob-token'))->assertOk();
-        $this->postJson("/api/v1/shift-transactions/{$created['id']}/calendar-sync/start", [], $this->auth('alice-token'))->assertOk();
+        $this->postJson("/api/v1/shift-transactions/{$created['id']}/calendar-sync/start", ['preview_confirmed' => true], $this->auth('alice-token'))->assertOk();
         $failed = $this->postJson("/api/v1/shift-transactions/{$created['id']}/calendar-sync/fail", ['reason' => 'provider timeout'], $this->auth('alice-token'))
             ->assertOk()->json('data');
         $this->assertSame('failed', $failed['sync_status']);
@@ -145,6 +147,7 @@ class ShiftTransactionApiTest extends TestCase
         $this->postJson("/api/v1/shift-transactions/{$created['id']}/confirm", [], $this->auth('alice-token'))->assertOk();
         $this->postJson("/api/v1/shift-transactions/{$created['id']}/confirm", [], $this->auth('bob-token'))->assertOk();
         $this->assertSame('pending_approval', $this->getJson("/api/v1/shift-transactions/{$created['id']}", $this->auth('alice-token'))->json('data.status'));
+        $this->getJson("/api/v1/shift-transactions/{$created['id']}", $this->auth('outsider-token'))->assertForbidden();
         $this->postJson("/api/v1/shift-transactions/{$created['id']}/approve", [], $this->auth('manager-token'))->assertOk();
     }
 

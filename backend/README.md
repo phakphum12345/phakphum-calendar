@@ -50,7 +50,7 @@ Transaction creation is idempotent per authenticated requester and key. Reusing 
 
 Every create and lifecycle transition appends a row to \`shift_transaction_events\`. The API has no event update/delete operation. Events capture actor, organization scope, event type, transaction version, timestamp, and event-specific data. Transaction deletion is not exposed; foreign keys restrict deletion while history exists.
 
-Calendar synchronization and shift fulfillment are deliberately separate. A successful Calendar write leaves the transaction in its approved state. An exchange-and-return transaction becomes completed only after every transfer leg has a separate fulfillment event after its scheduled end.
+Calendar synchronization and shift fulfillment are deliberately separate. Calendar sync start requires `preview_confirmed=true`; completion records the provider event references supplied by the authenticated client (the API records the acknowledgement but does not itself call Google Calendar). A successful Calendar write leaves the transaction in its approved state. An exchange-and-return transaction becomes completed only after every transfer leg has a separate fulfillment event after its scheduled end.
 
 ## Existing organization endpoints
 

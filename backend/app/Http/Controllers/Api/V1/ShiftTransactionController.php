@@ -18,6 +18,8 @@ class ShiftTransactionController
             'type' => ['sometimes', Rule::in(['give_up', 'exchange', 'exchange_and_return'])],
             'month' => ['sometimes', 'date_format:Y-m'],
             'organization_id' => ['sometimes', 'uuid'],
+            'staff_id' => ['sometimes', 'string', 'max:128'],
+            'shift_type' => ['sometimes', 'string', 'max:64'],
         ]);
         return response()->json(['data' => $this->transactions->list($request->user(), $filters)]);
     }
@@ -33,8 +35,8 @@ class ShiftTransactionController
             'participants.*.employee_id' => ['required', 'string', 'max:128'],
             'participants.*.role' => ['required', Rule::in(['requester', 'recipient'])],
             'transfers' => ['required', 'array', 'min:1', 'max:2'],
-            'transfers.*.id' => ['required', 'string', 'max:64'],
-            'transfers.*.shift_id' => ['required', 'string', 'max:128'],
+            'transfers.*.id' => ['required', 'string', 'max:64', 'distinct'],
+            'transfers.*.shift_id' => ['required', 'string', 'max:128', 'distinct'],
             'transfers.*.from_employee_id' => ['required', 'string', 'max:128'],
             'transfers.*.to_employee_id' => ['required', 'string', 'max:128'],
             'transfers.*.shift_code' => ['required', 'string', 'max:64'],
@@ -80,12 +82,21 @@ class ShiftTransactionController
 
     public function startSync(Request $request, string $transactionId): JsonResponse
     {
-        return $this->act($request, $transactionId, 'sync_start');
+        $validated = $request->validate(['preview_confirmed' => ['required', 'accepted']]);
+        return response()->json(['data' => $this->transactions->transition(
+            $transactionId, $request->user(), 'sync_start', $validated,
+        )]);
     }
 
     public function completeSync(Request $request, string $transactionId): JsonResponse
     {
-        return $this->act($request, $transactionId, 'sync_complete');
+        $validated = $request->validate([
+            'calendar_event_ids' => ['required', 'array', 'min:1', 'max:10'],
+            'calendar_event_ids.*' => ['required', 'string', 'max:512'],
+        ]);
+        return response()->json(['data' => $this->transactions->transition(
+            $transactionId, $request->user(), 'sync_complete', $validated,
+        )]);
     }
 
     public function failSync(Request $request, string $transactionId): JsonResponse

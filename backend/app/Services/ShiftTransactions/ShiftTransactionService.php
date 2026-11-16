@@ -89,11 +89,12 @@ class ShiftTransactionService
         }
 
         $this->validateTransferShape($input['type'], $transfers, $participantUsers);
-        $metadata = $input['metadata'] ?? [];
+        $requestMetadata = $input['metadata'] ?? [];
+        $metadata = $requestMetadata;
         $metadata['requires_organization_approval'] = $requiresApproval;
         $canonical = [
             'mode' => $mode, 'type' => $input['type'], 'organization_id' => $organizationId,
-            'participants' => $participants, 'transfers' => $transfers, 'metadata' => $metadata,
+            'participants' => $participants, 'transfers' => $transfers, 'metadata' => $requestMetadata,
         ];
         $requestHash = hash('sha256', json_encode($canonical, JSON_THROW_ON_ERROR));
         $existing = DB::table('shift_transactions')
@@ -267,10 +268,11 @@ class ShiftTransactionService
                     if (! $isParticipant || ! in_array($status, ['pending_response', 'partially_accepted'], true)) {
                         throw new ConflictHttpException('This transaction is not awaiting your confirmation.');
                     }
-                    if ($participant->confirmed_at === null) {
-                        DB::table('shift_transaction_participants')->where('id', $participant->id)
-                            ->update(['confirmed_at' => $now, 'updated_at' => $now]);
+                    if ($participant->confirmed_at !== null) {
+                        return $this->read($id, $actor);
                     }
+                    DB::table('shift_transaction_participants')->where('id', $participant->id)
+                        ->update(['confirmed_at' => $now, 'updated_at' => $now]);
                     $confirmed = DB::table('shift_transaction_participants')->where('transaction_id', $id)->whereNotNull('confirmed_at')->count();
                     $total = DB::table('shift_transaction_participants')->where('transaction_id', $id)->count();
                     $status = $confirmed < $total ? 'partially_accepted' : 'approved';
@@ -317,6 +319,9 @@ class ShiftTransactionService
                         throw new AccessDeniedHttpException('Only transaction participants may update Calendar or fulfillment state.');
                     }
                     if ($action === 'sync_start') {
+                        if (($input['preview_confirmed'] ?? false) !== true) {
+                            throw ValidationException::withMessages(['preview_confirmed' => 'Explicit preview confirmation is required.']);
+                        }
                         if ($status !== 'approved' || in_array($sync, ['pending', 'synced'], true)) {
                             throw new ConflictHttpException('Only approved transactions may start Calendar sync.');
                         }
@@ -325,7 +330,14 @@ class ShiftTransactionService
                         if ($sync !== 'pending') {
                             throw new ConflictHttpException('Calendar sync is not pending.');
                         }
+                        $expectedEvents = DB::table('shift_transaction_transfers')->where('transaction_id', $id)->count();
+                        if (empty($input['calendar_event_ids']) || ! is_array($input['calendar_event_ids']) ||
+                            count($input['calendar_event_ids']) !== $expectedEvents ||
+                            count(array_unique($input['calendar_event_ids'])) !== $expectedEvents) {
+                            throw ValidationException::withMessages(['calendar_event_ids' => 'Provide one distinct provider event reference for every transfer leg.']);
+                        }
                         $sync = 'synced';
+                        $eventData = ['calendar_event_ids' => array_values($input['calendar_event_ids'])];
                     } elseif ($action === 'sync_fail') {
                         if ($sync !== 'pending') {
                             throw new ConflictHttpException('Calendar sync is not pending.');
@@ -343,6 +355,9 @@ class ShiftTransactionService
                         }
                         if ($transfer->fulfilled_at !== null) {
                             return $this->read($id, $actor);
+                        }
+                        if ($transfer->to_employee_id !== $participant->employee_id) {
+                            throw new AccessDeniedHttpException('Only the employee receiving this shift may confirm its fulfillment.');
                         }
                         if ($now->lt(\Illuminate\Support\Carbon::parse($transfer->ends_at))) {
                             throw new ConflictHttpException('A shift cannot be fulfilled before its scheduled end.');
