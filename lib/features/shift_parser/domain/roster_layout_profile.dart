@@ -30,6 +30,8 @@ class RosterLayoutProfile {
 
   /// Zero-based last data row, inclusive. Null means continue to the next
   /// detected date-header row or the end of the sheet.
+  final int? dataEndRow;
+
   final List<String> acceptedDatePatterns;
   final List<String> userAliases;
 
