@@ -128,7 +128,7 @@ void main() {
   test('resolves every column across a declared month boundary', () {
     final days = <Object?>[
       'วันที่',
-      ...List<int>.generate(16, (index) => index + 16),
+      ...List<int>.generate(15, (index) => index + 16),
       ...List<int>.generate(15, (index) => index + 1),
     ];
     final input = ShiftParserInput(
@@ -147,10 +147,10 @@ void main() {
     final structure = const MonthlyRosterSectionParser()
         .generateDateStructure(input);
 
-    expect(structure.sections.single.dateColumns, hasLength(31));
+    expect(structure.sections.single.dateColumns, hasLength(30));
     expect(structure.sections.single.dateColumns.first.date,
         DateTime(2026, 11, 16));
-    expect(structure.sections.single.dateColumns[15].date,
+    expect(structure.sections.single.dateColumns[14].date,
         DateTime(2026, 12, 1));
     expect(structure.sections.single.dateColumns.last.date,
         DateTime(2026, 12, 15));
