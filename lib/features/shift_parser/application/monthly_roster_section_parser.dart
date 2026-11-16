@@ -369,7 +369,10 @@ class MonthlyRosterSectionParser {
 
   bool _looksLikeHeading(String value) {
     final normalized = value.replaceAll(RegExp(r'\s+'), '');
-    return normalized == 'วันที่' || normalized == 'เวร';
+    return normalized == 'วันที่' ||
+        normalized == 'เวร' ||
+        normalized.contains('ประจำเดือน') ||
+        _tryParsePeriod(value) != null;
   }
 }
 
