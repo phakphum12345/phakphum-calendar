@@ -87,6 +87,44 @@ void main() {
     expect(report.dateRanges.single.end, DateTime(2026, 9, 15));
   });
 
+  test('generates independent section dates before populating worker names', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['เวรหลัก 16 พฤศจิกายน 2569 - 15 ธันวาคม 2569']),
+        ..._row(1, ['วันที่', 16, 17, 18, 19, 20, 21, 22]),
+        ..._row(2, ['เวรเช้า', 'นาย ก', null, null, null, null, null, null]),
+        ..._row(4, ['MRI ประจำเดือน พฤศจิกายน พ.ศ. 2569']),
+        ..._row(5, ['วันที่', 1, 2, 3, 4, 5, 6, 7]),
+        ..._row(6, ['MRI', 'นาย ข', null, null, null, null, null, null]),
+      ],
+    );
+    const parser = MonthlyRosterSectionParser();
+
+    final dateStructure = parser.generateDateStructure(input);
+
+    expect(dateStructure.sections, hasLength(2));
+    expect(dateStructure.assignments, isEmpty);
+    expect(dateStructure.sections[0].dateColumns.first.date,
+        DateTime(2026, 11, 16));
+    expect(dateStructure.sections[1].dateColumns.first.date,
+        DateTime(2026, 11, 1));
+    expect(dateStructure.sections[0].rosterRows.single.label, 'เวรเช้า');
+    expect(dateStructure.sections[1].rosterRows.single.label, 'MRI');
+
+    final populated = parser.populateAssignments(input, dateStructure);
+
+    expect(populated.assignments, hasLength(2));
+    expect(populated.assignments[0].workerName, 'นาย ก');
+    expect(populated.assignments[0].date, DateTime(2026, 11, 16));
+    expect(populated.assignments[1].workerName, 'นาย ข');
+    expect(populated.assignments[1].date, DateTime(2026, 11, 1));
+  });
+
   test('filters assignments by query, section, and selected month', () {
     final report = MonthlyRosterParseReport(
       sections: [
