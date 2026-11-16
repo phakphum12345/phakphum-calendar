@@ -163,8 +163,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "size": 4636,
-      "sha256": "1d2fa1f5c45987d34dfe97dfa4a375b7cf3575ab93db9db1428532bde8349627"
+      "size": 4769,
+      "sha256": "a4b55dba93872de99bdc0d5713121e46c74f5ff021d641963c6336661dece2e0"
     },
     {
       "path": "CODE_STYLE.md",
@@ -898,8 +898,8 @@
     },
     {
       "path": "docs/ROSTER_DATE_FIRST_GENERATION.md",
-      "size": 2332,
-      "sha256": "0758bc8879ca9e2ca8f4e9efecf56d7d8c2c5203f47a33c97bc9801ede17811a"
+      "size": 2666,
+      "sha256": "2cd8c946bed23e1be63f2cb7f03abcae18809904fb900a13c68362c1c1a890bc"
     },
     {
       "path": "docs/ROSTER_KNOWLEDGE_BASE_ARCHITECTURE_TH.md",
