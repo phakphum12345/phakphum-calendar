@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `831`
+- Tracked files: `832`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -478,7 +478,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/features/plugin_system/domain/platform_plugin.dart` | 1308 | `cbac6bf84b80564fb125ef90b4d435a2ed134df1d60a0a68403ce39b68c9f0c0` |
 | `lib/features/relationship_engine/application/default_relationship_resolver.dart` | 3299 | `a020d69c68d01462d406b4be03a3b4c6d003bc2be06ed9fd91128bb7e372e683` |
 | `lib/features/relationship_engine/application/roster_comparison_engine.dart` | 2283 | `1385fa99e29a7a12d300d61dc83217a088a35c49968adda9bebde783fb73aaae` |
-| `lib/features/relationship_engine/application/user_shift_change_classifier.dart` | 1381 | `963760bb23f552b165cda0e7aded592eb011498c3f02f130833470099b5f1791` |
+| `lib/features/relationship_engine/application/user_shift_change_classifier.dart` | 3548 | `4a6fb1974a8cca5d360b7dc70c10e0a469145caf772e68c253d00ca95b1ecf5d` |
 | `lib/features/relationship_engine/domain/relationship_resolution.dart` | 718 | `4e2afe9514a6b7e793e90646c9577b2d7817ab5d7cd97e0a93b33105f1fcdfd9` |
 | `lib/features/relationship_engine/domain/relationship_resolver.dart` | 159 | `105d012f50b97cc29e323581a6a5af74a955fbb1a19d7aa5d63a77325fbb5592` |
 | `lib/features/relationship_engine/domain/user_shift_change.dart` | 454 | `1eec0b59f20dbb648ea3f8aab0febe831ffd8b70f7ea62aad68d1ad80a8e4f82` |
@@ -820,6 +820,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/timeline_archive_service_test.dart` | 4733 | `f18bf2b78c2c40a733f1fef5c7d7d303a8539925d5a34f5306cbed3ba1275a8e` |
 | `test/timeline_history_regression_test.dart` | 7106 | `70edb635d2697459620e1bd100a986a544b756c5ad9f18749143c8ab632e0e1d` |
 | `test/universal_generator_adapter_test.dart` | 5894 | `827d9df009f6c1e27468a4a716c45aa66b24976aa5d9c0017d96ea85d2a317ca` |
+| `test/user_shift_change_classifier_test.dart` | 3141 | `b9b25b1af8ab78515b953cdecf796e54c171602337e5105fa6738c07ac5b1552` |
 | `test/v2/access_control_test.dart` | 598 | `e34ab8a283d9b35b1e8d7a43725cacea5660eebb0bc5ca7a70889e302d496997` |
 | `test/v2/calendar_diff_engine_test.dart` | 4909 | `50935bd3117a6a1ca4e6fdf44720bcf3e3a492c27b782f5b4a833da737b3df28` |
 | `test/v2/calendar_sync_actions_test.dart` | 2571 | `c255290463c71d2ad7b24c9cc271b2355c9ac3b432a0ca55dad162c7cd898b58` |
