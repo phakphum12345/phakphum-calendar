@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `826`
+- Tracked files: `830`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -112,12 +112,13 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `backend/.gitattributes` | 186 | `a40eb27ee0b545ca5b5542daaf99fec51f84f23b3766a6353864ef2a115bc51c` |
 | `backend/.gitignore` | 341 | `3ee1060a695b64e763d8a438ac1fe87494ff00d92680c3f63ca56bc103ed4142` |
 | `backend/.npmrc` | 31 | `e968d1d336604e9986ea31306a4d9e1442f4312fca262f444384baf928d6560e` |
-| `backend/README.md` | 4685 | `d00f62769da884eb91e9a72186e58de0b247919e5ad48949fb3a0abebe2ec9b8` |
+| `backend/README.md` | 4038 | `5269a2b03eda08765ac7ebf519f93ee27bbbc9b867ae412f83b4c987a00fad94` |
 | `backend/app/Contracts/GoogleIdentityTokenVerifier.php` | 177 | `c759ca57017ef2484d4e715026137ab3396fa635b518ba43dd1ad552a774a25f` |
 | `backend/app/Http/Controllers/Api/V1/ClientErrorController.php` | 863 | `524d84119f5a185983ada0429edbda0932c837b84964a126084f35e7e8a64d7e` |
 | `backend/app/Http/Controllers/Api/V1/GoogleAccountController.php` | 458 | `8e3102a8e8c6f45f93c558ff2919187f128599f80b1aa22869f75138afafa902` |
 | `backend/app/Http/Controllers/Api/V1/HealthController.php` | 1088 | `6fdb6f7f29232f719a6eb74c0cb88d808d0af6e2cf4d558fc796cdd4df0743e2` |
 | `backend/app/Http/Controllers/Api/V1/OrganizationController.php` | 20551 | `2dc5af9821c07f0e640f39d67fb04da9fbeecc4d2f36b379f15598a241392558` |
+| `backend/app/Http/Controllers/Api/V1/ShiftTransactionController.php` | 5651 | `a7407a39bc26b357421d1a639bfbc0492e82d08618957262d129ba9a1302aec3` |
 | `backend/app/Http/Controllers/Controller.php` | 77 | `25d1c1ef8e6cc8a376553faacfba2b07d9dfaee9bdbb84f14f77517580e9deb1` |
 | `backend/app/Http/Middleware/AttachRequestId.php` | 660 | `919f769504d7d13db0f7e483f7cf9aae7823bc74371f62aca8461b8316ed6615` |
 | `backend/app/Http/Middleware/AuthenticateGoogleAccount.php` | 3355 | `e1bc4edfdd0f905d8240cba06a54379b8c7d87ca6dc39ab28c4e777bf812e8d3` |
@@ -125,6 +126,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `backend/app/Models/User.php` | 876 | `f433ea172290dc133aa41e2db151946001cfed2f40cdf697cbcb1a5b8a927bb7` |
 | `backend/app/Providers/AppServiceProvider.php` | 610 | `3b4ae4dbb0c6c686690d71ea5417907d8f1b22b26edddae0230b0a9f44fa07bf` |
 | `backend/app/Services/Google/GoogleCertificateIdentityTokenVerifier.php` | 5921 | `d1fbc95f7adb023a8df762aaf70bfe26e4942b6f032fad86ba665beff460c26a` |
+| `backend/app/Services/ShiftTransactions/ShiftTransactionService.php` | 27022 | `04114467dee072d1358784403f1e346371c40001784f8f854786c48e584017bb` |
 | `backend/artisan` | 425 | `f91a517c0c5d3a904c3f390933964a5e08ec1fc68146882730daac4aca4ffcec` |
 | `backend/backend/composer-setup.php` | 59524 | `aad0c40a36d9938664f5a34eb2ed39dbc1021792f9706dbcb9cd6d8001227c99` |
 | `backend/bootstrap/app.php` | 972 | `ae28b207d5e9d86a2991fb761bd85eed65d94142d3d3b375de8818aa0a2a69ca` |
@@ -152,6 +154,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `backend/database/migrations/2026_11_09_000002_create_organizations_and_memberships.php` | 1387 | `9d11f08d68d1d02c54fbc6694b3786541853c1f2176e28be6fda5d4c4c92430b` |
 | `backend/database/migrations/2026_11_09_000003_create_organization_shift_policies.php` | 768 | `bc7b75fe5aa59ddc039c438f306bd6baa99245c7f2f0d4544f0c2b611b0cfb24` |
 | `backend/database/migrations/2026_11_13_000001_create_organization_join_requests.php` | 1130 | `48ea094ea89c129ab6f709775d55f275b0994a492f2f2bf41720c6340e417eb5` |
+| `backend/database/migrations/2026_11_16_000001_create_shift_transactions.php` | 3911 | `7d4162ff927becc9f8dee5a0e1d98c38272693ba8280cf61ed49b8046faae275` |
 | `backend/database/seeders/DatabaseSeeder.php` | 482 | `cf8e4b6e48360218bb5534f66419c955288f78338eb8a3dba9d8ac3394ec3dbc` |
 | `backend/package.json` | 384 | `10a54d6736b26384ac68636e11f958360e6d18fb9c41e91e05707a918ad58622` |
 | `backend/phpunit.xml` | 1322 | `493369cfb7feea104da4bec214c2cc6526ca2f1b9d937c50a2961fc59cb61aaf` |
@@ -162,7 +165,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `backend/resources/css/app.css` | 339 | `02db84e827e06d8349293e9797eb8d81465e109e91976775964c4bf873b6fab5` |
 | `backend/resources/js/app.js` | 3 | `101ead936a2281d53dcc064b7e2a2ab0d53b92ef3ef7b34b668673007895c860` |
 | `backend/resources/views/welcome.blade.php` | 349 | `a616a5feb437bba9ec40d33f9eb2e7179a78ddd021fea1a0fc25bac5c9e1d34f` |
-| `backend/routes/api.php` | 3122 | `bfcd5171833c74a8b4b0626b953c695cd5481b33bfb71f043704dbdfa7021753` |
+| `backend/routes/api.php` | 5564 | `5080e531b7d7c1e36b7264f356201600e7eec234f9929a7ee9ccd626fc1424ae` |
 | `backend/routes/console.php` | 210 | `9adccc33e7dd400683e434774077c7fdb2f299c5712cedf16a43fdf56f2850fa` |
 | `backend/routes/web.php` | 108 | `248c7eeeb43bb61ee4fb6603e52b44843c64f72a841d671bcd41871aab23f970` |
 | `backend/storage/app/.gitignore` | 33 | `993b9e3709d7b5189da331725d1169d79e561a509db2490b722b525073d2d976` |
@@ -181,6 +184,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `backend/tests/Feature/HealthApiTest.php` | 782 | `cb0e1d7129c5a4b45a5a1c38821aa3909177a1659fcf0532a3c8f9d4bc19a42b` |
 | `backend/tests/Feature/OrganizationApiTest.php` | 5904 | `6c154446acbce29d6f5095d48f3509eca101491e4deb917e7107d607e1738b8e` |
 | `backend/tests/Feature/OrganizationJoinRequestApiTest.php` | 8407 | `dc8f00f9fb0a60598dae7a8fabc89e9f7cd752db17ab86c299e2fdbab5665c87` |
+| `backend/tests/Feature/ShiftTransactionApiTest.php` | 10790 | `11ee5b063ef5d4a319f792e58ea3537f0aa38b17645c1e9eaf0d4d2346aee4da` |
 | `backend/tests/TestCase.php` | 142 | `c7c209f5579c42647c1f7b2a79ac828e8b54ac62a98442045a6e94fa2c0d0ebc` |
 | `backend/tests/Unit/ExampleTest.php` | 243 | `ffacae5c1a2a44c809420af5b3b404910da1b12167d58764dac6d10b8ba8cfaf` |
 | `backend/tests/Unit/GoogleCertificateIdentityTokenVerifierTest.php` | 4150 | `aa5beabf05d5b89d0836bb4878c5a6113e043e471c0965070c0e85b3794c26d2` |
