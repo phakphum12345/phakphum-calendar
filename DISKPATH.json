@@ -423,8 +423,8 @@
     },
     {
       "path": "backend/README.md",
-      "size": 4685,
-      "sha256": "d00f62769da884eb91e9a72186e58de0b247919e5ad48949fb3a0abebe2ec9b8"
+      "size": 7412,
+      "sha256": "b534e5200c2d54fe41e5693696ef1f0282745c89d8554ac547eeebdac3c550b7"
     },
     {
       "path": "backend/app/Contracts/GoogleIdentityTokenVerifier.php",
@@ -450,6 +450,11 @@
       "path": "backend/app/Http/Controllers/Api/V1/OrganizationController.php",
       "size": 20551,
       "sha256": "2dc5af9821c07f0e640f39d67fb04da9fbeecc4d2f36b379f15598a241392558"
+    },
+    {
+      "path": "backend/app/Http/Controllers/Api/V1/ShiftTransactionController.php",
+      "size": 5658,
+      "sha256": "0bbbdffb8bb88f5a5d8aaf1a8bcb68de4baca387e239e7d897bc819d85c78674"
     },
     {
       "path": "backend/app/Http/Controllers/Controller.php",
@@ -485,6 +490,11 @@
       "path": "backend/app/Services/Google/GoogleCertificateIdentityTokenVerifier.php",
       "size": 5921,
       "sha256": "d1fbc95f7adb023a8df762aaf70bfe26e4942b6f032fad86ba665beff460c26a"
+    },
+    {
+      "path": "backend/app/Services/ShiftTransactions/ShiftTransactionService.php",
+      "size": 27033,
+      "sha256": "3bbf13cfc10361a1874ed136f67c0c3623ef457221711a949c0774831de2c24a"
     },
     {
       "path": "backend/artisan",
@@ -622,6 +632,11 @@
       "sha256": "48ea094ea89c129ab6f709775d55f275b0994a492f2f2bf41720c6340e417eb5"
     },
     {
+      "path": "backend/database/migrations/2026_11_16_000001_create_shift_transactions.php",
+      "size": 3911,
+      "sha256": "7d4162ff927becc9f8dee5a0e1d98c38272693ba8280cf61ed49b8046faae275"
+    },
+    {
       "path": "backend/database/seeders/DatabaseSeeder.php",
       "size": 482,
       "sha256": "cf8e4b6e48360218bb5534f66419c955288f78338eb8a3dba9d8ac3394ec3dbc"
@@ -673,8 +688,8 @@
     },
     {
       "path": "backend/routes/api.php",
-      "size": 3122,
-      "sha256": "bfcd5171833c74a8b4b0626b953c695cd5481b33bfb71f043704dbdfa7021753"
+      "size": 5564,
+      "sha256": "5080e531b7d7c1e36b7264f356201600e7eec234f9929a7ee9ccd626fc1424ae"
     },
     {
       "path": "backend/routes/console.php",
@@ -765,6 +780,11 @@
       "path": "backend/tests/Feature/OrganizationJoinRequestApiTest.php",
       "size": 8407,
       "sha256": "dc8f00f9fb0a60598dae7a8fabc89e9f7cd752db17ab86c299e2fdbab5665c87"
+    },
+    {
+      "path": "backend/tests/Feature/ShiftTransactionApiTest.php",
+      "size": 12560,
+      "sha256": "5f08646d6f8cb258430c28cdb6a3ac54451edf9dd483c677e85ac331cc2a216d"
     },
     {
       "path": "backend/tests/TestCase.php",
