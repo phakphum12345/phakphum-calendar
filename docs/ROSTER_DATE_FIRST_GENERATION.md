@@ -50,3 +50,7 @@ The parser tests cover independent November and 16 November–15 December
 sections in one sheet, explicit Phase 1 output before names are populated,
 Phase 2 worker assignment, and rejection of an undated section that would
 otherwise inherit the worksheet month.
+
+## Production parser boundary
+
+The production `ShiftParser` stops searching for a section period at the preceding date-header grid. An undated block in a multi-block worksheet is skipped instead of inheriting the prior block's period or the worksheet tab month. The worksheet-title fallback remains available for a single date grid.
