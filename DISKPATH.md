@@ -118,7 +118,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `backend/app/Http/Controllers/Api/V1/GoogleAccountController.php` | 458 | `8e3102a8e8c6f45f93c558ff2919187f128599f80b1aa22869f75138afafa902` |
 | `backend/app/Http/Controllers/Api/V1/HealthController.php` | 1088 | `6fdb6f7f29232f719a6eb74c0cb88d808d0af6e2cf4d558fc796cdd4df0743e2` |
 | `backend/app/Http/Controllers/Api/V1/OrganizationController.php` | 20551 | `2dc5af9821c07f0e640f39d67fb04da9fbeecc4d2f36b379f15598a241392558` |
-| `backend/app/Http/Controllers/Api/V1/ShiftTransactionController.php` | 5651 | `a7407a39bc26b357421d1a639bfbc0492e82d08618957262d129ba9a1302aec3` |
+| `backend/app/Http/Controllers/Api/V1/ShiftTransactionController.php` | 5658 | `0bbbdffb8bb88f5a5d8aaf1a8bcb68de4baca387e239e7d897bc819d85c78674` |
 | `backend/app/Http/Controllers/Controller.php` | 77 | `25d1c1ef8e6cc8a376553faacfba2b07d9dfaee9bdbb84f14f77517580e9deb1` |
 | `backend/app/Http/Middleware/AttachRequestId.php` | 660 | `919f769504d7d13db0f7e483f7cf9aae7823bc74371f62aca8461b8316ed6615` |
 | `backend/app/Http/Middleware/AuthenticateGoogleAccount.php` | 3355 | `e1bc4edfdd0f905d8240cba06a54379b8c7d87ca6dc39ab28c4e777bf812e8d3` |
@@ -126,7 +126,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `backend/app/Models/User.php` | 876 | `f433ea172290dc133aa41e2db151946001cfed2f40cdf697cbcb1a5b8a927bb7` |
 | `backend/app/Providers/AppServiceProvider.php` | 610 | `3b4ae4dbb0c6c686690d71ea5417907d8f1b22b26edddae0230b0a9f44fa07bf` |
 | `backend/app/Services/Google/GoogleCertificateIdentityTokenVerifier.php` | 5921 | `d1fbc95f7adb023a8df762aaf70bfe26e4942b6f032fad86ba665beff460c26a` |
-| `backend/app/Services/ShiftTransactions/ShiftTransactionService.php` | 27022 | `04114467dee072d1358784403f1e346371c40001784f8f854786c48e584017bb` |
+| `backend/app/Services/ShiftTransactions/ShiftTransactionService.php` | 27033 | `3bbf13cfc10361a1874ed136f67c0c3623ef457221711a949c0774831de2c24a` |
 | `backend/artisan` | 425 | `f91a517c0c5d3a904c3f390933964a5e08ec1fc68146882730daac4aca4ffcec` |
 | `backend/backend/composer-setup.php` | 59524 | `aad0c40a36d9938664f5a34eb2ed39dbc1021792f9706dbcb9cd6d8001227c99` |
 | `backend/bootstrap/app.php` | 972 | `ae28b207d5e9d86a2991fb761bd85eed65d94142d3d3b375de8818aa0a2a69ca` |
@@ -184,7 +184,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `backend/tests/Feature/HealthApiTest.php` | 782 | `cb0e1d7129c5a4b45a5a1c38821aa3909177a1659fcf0532a3c8f9d4bc19a42b` |
 | `backend/tests/Feature/OrganizationApiTest.php` | 5904 | `6c154446acbce29d6f5095d48f3509eca101491e4deb917e7107d607e1738b8e` |
 | `backend/tests/Feature/OrganizationJoinRequestApiTest.php` | 8407 | `dc8f00f9fb0a60598dae7a8fabc89e9f7cd752db17ab86c299e2fdbab5665c87` |
-| `backend/tests/Feature/ShiftTransactionApiTest.php` | 12561 | `7c3076c5685b98703b6e62fa48caca83d355ba04712d7d39cf3d9fbb1f733575` |
+| `backend/tests/Feature/ShiftTransactionApiTest.php` | 12560 | `5f08646d6f8cb258430c28cdb6a3ac54451edf9dd483c677e85ac331cc2a216d` |
 | `backend/tests/TestCase.php` | 142 | `c7c209f5579c42647c1f7b2a79ac828e8b54ac62a98442045a6e94fa2c0d0ebc` |
 | `backend/tests/Unit/ExampleTest.php` | 243 | `ffacae5c1a2a44c809420af5b3b404910da1b12167d58764dac6d10b8ba8cfaf` |
 | `backend/tests/Unit/GoogleCertificateIdentityTokenVerifierTest.php` | 4150 | `aa5beabf05d5b89d0836bb4878c5a6113e043e471c0965070c0e85b3794c26d2` |

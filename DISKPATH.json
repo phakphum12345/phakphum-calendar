@@ -453,8 +453,8 @@
     },
     {
       "path": "backend/app/Http/Controllers/Api/V1/ShiftTransactionController.php",
-      "size": 5651,
-      "sha256": "a7407a39bc26b357421d1a639bfbc0492e82d08618957262d129ba9a1302aec3"
+      "size": 5658,
+      "sha256": "0bbbdffb8bb88f5a5d8aaf1a8bcb68de4baca387e239e7d897bc819d85c78674"
     },
     {
       "path": "backend/app/Http/Controllers/Controller.php",
@@ -493,8 +493,8 @@
     },
     {
       "path": "backend/app/Services/ShiftTransactions/ShiftTransactionService.php",
-      "size": 27022,
-      "sha256": "04114467dee072d1358784403f1e346371c40001784f8f854786c48e584017bb"
+      "size": 27033,
+      "sha256": "3bbf13cfc10361a1874ed136f67c0c3623ef457221711a949c0774831de2c24a"
     },
     {
       "path": "backend/artisan",
@@ -783,8 +783,8 @@
     },
     {
       "path": "backend/tests/Feature/ShiftTransactionApiTest.php",
-      "size": 12561,
-      "sha256": "7c3076c5685b98703b6e62fa48caca83d355ba04712d7d39cf3d9fbb1f733575"
+      "size": 12560,
+      "sha256": "5f08646d6f8cb258430c28cdb6a3ac54451edf9dd483c677e85ac331cc2a216d"
     },
     {
       "path": "backend/tests/TestCase.php",
