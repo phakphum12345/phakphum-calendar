@@ -78,8 +78,8 @@
     },
     {
       "path": ".github/workflows/README.md",
-      "size":  5983,
-      "sha256": " bab58507d8653731b579e7b68b243279be896ee2543a817d472e7dae41cce578"
+      "size": 5983,
+      "sha256": "bab58507d8653731b579e7b68b243279be896ee2543a817d472e7dae41cce578"
     },
     {
       "path": ".github/workflows/android.yml",
@@ -98,8 +98,8 @@
     },
     {
       "path": ".github/workflows/generate-diskpath-md.yml",
-      "size":  1272,
-      "sha256": " 62cd06e6d2d248935404890278b96721d53aae031fdf22a99f018f222f4bcba5"
+      "size": 1272,
+      "sha256": "62cd06e6d2d248935404890278b96721d53aae031fdf22a99f018f222f4bcba5"
     },
     {
       "path": ".github/workflows/ios.yml",
