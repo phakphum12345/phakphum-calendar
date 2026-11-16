@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `832`
+- Tracked files: `833`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -51,6 +51,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `.github/workflows/ios.yml` | 3293 | `5dc716ed94b3cfd421df674aa831d4b6f21c6e3390a054eb12dd02aea1b52934` |
 | `.github/workflows/laravel.yml` | 1478 | `4402c4b0233cb999b9b22048067953e02dbb74df2e81ffebe802a3404765f28c` |
 | `.github/workflows/linux.yml` | 2470 | `850db3a8e9c539389df9eb6e7d801bf40de6b82accd595e90870c200b3e5db9b` |
+| `.github/workflows/pull-request-gate.yml` | 4348 | `7885bd8b81ec9b0b7ad1b9c9eca6baab34fbb857fe2cfb26b1f365c867724d45` |
 | `.github/workflows/roster-knowledge-schema.yml` | 2161 | `06d43b9147d1f0b9eac633759aebc5cff0142931a84e4c0c9ee89bf3518a4065` |
 | `.github/workflows/self-hosted-windows.yml` | 2739 | `d2ce9468a5edbf0a0107fa5969f82c016ab5d8397823337ca51a80a436a13f15` |
 | `.github/workflows/web.yml` | 3351 | `5368a979ac3195d0ae75bb9cf0386111c5cfb86978fd00424f67007edda4e3b2` |
