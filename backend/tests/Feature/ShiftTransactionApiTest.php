@@ -152,6 +152,33 @@ class ShiftTransactionApiTest extends TestCase
         $this->postJson("/api/v1/shift-transactions/{$created['id']}/approve", [], $this->auth('manager-token'))->assertOk();
     }
 
+
+    public function test_rejection_and_requester_cancellation_are_recorded_in_history(): void
+    {
+        $this->signIn('alice-token');
+        $this->signIn('bob-token');
+
+        $rejected = $this->postJson('/api/v1/shift-transactions', $this->giveUp(), [
+            'Authorization' => 'Bearer alice-token', 'Idempotency-Key' => 'reject-flow',
+        ])->assertCreated()->json('data');
+        $this->postJson("/api/v1/shift-transactions/{$rejected['id']}/reject", ['reason' => 'Cannot cover this shift'], $this->auth('bob-token'))
+            ->assertOk();
+        $rejectedHistory = $this->getJson("/api/v1/shift-transactions/{$rejected['id']}", $this->auth('alice-token'))
+            ->assertOk()->json('data');
+        $this->assertSame('rejected', $rejectedHistory['status']);
+        $this->assertContains('reject', collect($rejectedHistory['timeline'])->pluck('event_type')->all());
+
+        $cancelled = $this->postJson('/api/v1/shift-transactions', $this->giveUp(), [
+            'Authorization' => 'Bearer alice-token', 'Idempotency-Key' => 'cancel-flow',
+        ])->assertCreated()->json('data');
+        $this->postJson("/api/v1/shift-transactions/{$cancelled['id']}/cancel", [], $this->auth('alice-token'))
+            ->assertOk();
+        $cancelledHistory = $this->getJson("/api/v1/shift-transactions/{$cancelled['id']}", $this->auth('bob-token'))
+            ->assertOk()->json('data');
+        $this->assertSame('cancelled', $cancelledHistory['status']);
+        $this->assertContains('cancel', collect($cancelledHistory['timeline'])->pluck('event_type')->all());
+    }
+
     private function signIn(string $token): void
     {
         $this->getJson('/api/v1/me', $this->auth($token))->assertOk();
