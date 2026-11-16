@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 833,
+  "file_count": 832,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -78,8 +78,8 @@
     },
     {
       "path": ".github/workflows/README.md",
-      "size": 6765,
-      "sha256": "409e779ae7e5394279a6732499939727159349117ec3164290aab2cc8348bc74"
+      "size": 5983,
+      "sha256": "bab58507d8653731b579e7b68b243279be896ee2543a817d472e7dae41cce578"
     },
     {
       "path": ".github/workflows/android.yml",
@@ -115,11 +115,6 @@
       "path": ".github/workflows/linux.yml",
       "size": 2470,
       "sha256": "850db3a8e9c539389df9eb6e7d801bf40de6b82accd595e90870c200b3e5db9b"
-    },
-    {
-      "path": ".github/workflows/pull-request-gate.yml",
-      "size": 4348,
-      "sha256": "7885bd8b81ec9b0b7ad1b9c9eca6baab34fbb857fe2cfb26b1f365c867724d45"
     },
     {
       "path": ".github/workflows/roster-knowledge-schema.yml",
