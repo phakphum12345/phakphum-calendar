@@ -8,7 +8,8 @@ The active build and delivery surface covers **Windows, Web, Android, iOS, and L
 - `android.yml` — Android release APK build artifact.
 - `ios.yml` — unsigned iOS release app build artifact.
 - `linux.yml` — Linux x64 release bundle archive.
-- `final-gate.yml` — requires Auto Detect CI, Windows, and Web for the same `main` commit; Android, iOS, and Linux are best-effort and may be skipped with a recorded reason.
+- `pull-request-gate.yml` — requires all seven PR evidence workflows to succeed for the exact PR head SHA.
+- `final-gate.yml` — post-merge gate for the same `main` commit; Auto Detect CI, Windows, and Web are required, while Android, iOS, and Linux remain best-effort on `main`.
 
 macOS, broad repository validation, coverage gates, and integration-test gates
 are not active delivery gates. Laravel Backend CI is active for backend changes
@@ -24,7 +25,8 @@ For the current stabilization phase:
 | Windows x64 | Supported | `windows.yml` |
 | Web / GitHub Pages | Supported | `web.yml` |
 | Capability detection | Supported | `ci-auto-detect.yml` |
-| Final evidence gate | Supported | `final-gate.yml` |
+| Pull request evidence gate | Required evidence workflow | `pull-request-gate.yml` |
+| Post-merge final evidence gate | Supported | `final-gate.yml` |
 | Android | Build supported | `android.yml` |
 | iOS | Unsigned build supported | `ios.yml` |
 | macOS | Paused | No active workflow |
@@ -45,19 +47,43 @@ The workflow runs analysis and tests when the detected project capabilities
 require them. It does not run formatting, generate coverage, or build platform
 artifacts. It must not mutate source files or auto-format code.
 
+## Pull request gate policy
+
+`pull-request-gate.yml` is the pre-merge evidence collector. For the exact
+head SHA of a code/platform PR, it waits for and requires all of these workflows
+to finish successfully:
+
+1. Auto Detect CI
+2. Windows
+3. Web
+4. Android
+5. iOS
+6. Linux
+7. DISKPATH generation/validation
+
+A failed workflow fails the gate. Missing or still-running evidence remains
+pending and fails if it does not complete within 30 minutes. If the PR head
+changes while the gate is waiting, the old run reports itself as superseded;
+the new head must be evaluated by its own gate run.
+
+The gate uses read-only repository, Actions, and pull-request permissions. It
+does not build artifacts itself, write to the PR, or deploy anything. Each
+platform workflow remains independent so failures can be attributed to the
+correct runner and platform.
+
 ## Final gate policy
 
-`final-gate.yml` is the final evidence gate for matching `main` pushes and
-manual dispatches.
+`final-gate.yml` is the post-merge evidence gate for matching `main` pushes
+and manual dispatches.
 
 It requires successful Auto Detect CI, Windows, and Web runs for the **same
-commit SHA**. Android, iOS, and Linux are optional artifact evidence; a missing
-or unsuccessful optional run is recorded as `SKIPPED` and does not fail the
-gate. A failed required workflow fails the final gate.
+commit SHA**. Android, iOS, and Linux are optional artifact evidence on
+`main`; a missing or unsuccessful optional run is recorded as `SKIPPED` and
+does not fail this post-merge gate. A failed required workflow fails the gate.
 
-This prevents a green result from one platform being mistaken for a complete
-release result and avoids bringing back the old formatter/coverage failure
-chain.
+This post-merge policy does not replace the stricter pre-merge PR gate. The PR
+gate requires all seven workflows; the main gate confirms the core delivery
+path after merge.
 
 ## DISKPATH security policy
 
@@ -94,35 +120,24 @@ from `main`.
 
 ### Final
 
-The final gate combines required quality and core delivery evidence for one exact
-commit. Optional platform artifacts are reported separately and do not block the
-core result when unavailable or behind:
+The delivery path is separated into pre-merge and post-merge evidence:
 
-**Clean → Capability-aware CI → Windows PASS + Web PASS → optional Android/iOS/Linux PASS or SKIPPED → Final PASS**
+**PR: Quality + Windows + Web + Android + iOS + Linux + DISKPATH PASS → Merge → main: core Final Gate PASS**
 
 ## Failure-containment policy
 
 The platform build workflows remain independent:
 
-1. Auto Detect CI, Windows, and Web are required release evidence.
-2. Android, iOS, and Linux are optional artifact evidence. Their workflows run
-   for matching pull requests, relevant pushes to `main`, or manual dispatch.
-   The final gate runs on `main`, waits up to 10 minutes for optional targets,
-   then records any missing or unsuccessful target as `SKIPPED`.
+1. The PR gate requires Auto Detect CI, Windows, Web, Android, iOS, Linux, and DISKPATH evidence for the same PR head SHA.
+2. The post-merge main gate requires Auto Detect CI, Windows, and Web. Android, iOS, and Linux are best-effort on `main`; their status is explicitly reported as PASS or SKIPPED.
 3. Store-signing credentials must not be required for iOS or Android compile checks.
-4. Missing `integration_test/` must never be treated as a CI failure for the
-   supported targets.
+4. Missing `integration_test/` must never be treated as a CI failure for the supported targets.
 5. Coverage artifacts are not required by any platform build workflow.
-6. Formatting and coverage remain developer-side checks. Auto Detect CI and
-   Windows run analysis and unit tests.
-7. A workflow must not auto-commit generated formatting changes during a
-   release gate. Formatting changes must be committed explicitly by the
-   developer or a dedicated maintenance job.
-8. Capability detection must not mutate the source tree or introduce a new
-   platform automatically.
-9. The final gate must compare required evidence using the same commit SHA.
-10. Skipped optional targets must be visible in the job log with a reason; skipping
-   an optional target must never hide a failure in required quality, Windows, or Web checks.
+6. Formatting and coverage remain developer-side checks. Auto Detect CI and Windows run analysis and unit tests.
+7. A workflow must not auto-commit generated formatting changes during a release gate. Formatting changes must be committed explicitly by the developer or a dedicated maintenance job.
+8. Capability detection must not mutate the source tree or introduce a new platform automatically.
+9. Every evidence collector must compare workflow runs using the same exact commit SHA.
+10. Missing, pending, skipped, and failed results must never be represented as PASS.
 
 ## Simplification policy
 
