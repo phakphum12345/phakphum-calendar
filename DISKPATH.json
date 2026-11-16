@@ -3093,8 +3093,8 @@
     },
     {
       "path": "lib/services/shift_parser.dart",
-      "size": 14188,
-      "sha256": "9eea16e52dfbc63cb2dc6bb0732c1f439f586543915ec6ee3022b491900bb411"
+      "size": 14693,
+      "sha256": "c574c423d75c3f0c0f712e4f445420f4c229a9f53abdf5fd39c52eaa486db248"
     },
     {
       "path": "lib/services/shift_time_service.dart",

@@ -646,7 +646,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `lib/services/sheets_service.dart` | 9460 | `c9f24d050fa2427ba4304250dbc0110fd26bf0401732f0b61396118068ac83f5` |
 | `lib/services/shift_alert_service.dart` | 9323 | `681366fa6eaf18b1d1d940b1a68058ea4138855e473bd769111e158d11c958b1` |
 | `lib/services/shift_color_service.dart` | 3429 | `8385c92e56d2438944daaa9286de441944896467fd3f2f010b5dd98a31cbcc70` |
-| `lib/services/shift_parser.dart` | 14188 | `9eea16e52dfbc63cb2dc6bb0732c1f439f586543915ec6ee3022b491900bb411` |
+| `lib/services/shift_parser.dart` | 14693 | `c574c423d75c3f0c0f712e4f445420f4c229a9f53abdf5fd39c52eaa486db248` |
 | `lib/services/shift_time_service.dart` | 2193 | `612c7b2f23bb5c5405ff64455cb9a1172a0ac3e4a5a852b6b43eca9e16d31495` |
 | `lib/services/swap_request_service.dart` | 1857 | `84df2fac3ba6319c7fbbd7e16a757aeeac3041b2cedf6d3bbb926dc361b48f45` |
 | `lib/services/timeline_archive_service.dart` | 7290 | `29893969e8f3e07e788ed2d10c30a2901a907b6e924e5fee289a4d3beb351e6d` |
