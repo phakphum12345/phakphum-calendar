@@ -1,11 +1,34 @@
 import '../../../models/shift.dart';
 
+/// A resolved calendar date attached to its original spreadsheet column.
+class MonthlyRosterDateColumn {
+  const MonthlyRosterDateColumn({
+    required this.columnIndex,
+    required this.displayedDay,
+    required this.date,
+  });
+
+  final int columnIndex;
+  final int displayedDay;
+  final DateTime date;
+}
+
+/// A shift row discovered independently of the worker names in its cells.
+class MonthlyRosterRow {
+  const MonthlyRosterRow({required this.rowIndex, required this.label});
+
+  final int rowIndex;
+  final String label;
+}
+
 class MonthlyRosterSection {
   const MonthlyRosterSection({
     required this.title,
     required this.headerRowIndex,
     required this.assignments,
     this.rowLabels = const [],
+    this.dateColumns = const [],
+    this.rosterRows = const [],
     this.startDate,
     this.endDate,
   });
@@ -14,6 +37,8 @@ class MonthlyRosterSection {
   final int headerRowIndex;
   final List<MonthlyRosterAssignment> assignments;
   final List<String> rowLabels;
+  final List<MonthlyRosterDateColumn> dateColumns;
+  final List<MonthlyRosterRow> rosterRows;
   final DateTime? startDate;
   final DateTime? endDate;
 }
@@ -119,6 +144,8 @@ class MonthlyRosterParseReport {
           title: entry.key.isEmpty ? 'ข้อมูลที่นำเข้า' : entry.key,
           headerRowIndex: 0,
           assignments: List.unmodifiable(assignments),
+          dateColumns: const [],
+          rosterRows: const [],
           startDate: assignments.first.date,
           endDate: assignments.last.date,
         ),
@@ -199,6 +226,8 @@ class MonthlyRosterParseReport {
           headerRowIndex: section.headerRowIndex,
           assignments: List.unmodifiable(filteredAssignments),
           rowLabels: section.rowLabels,
+          dateColumns: section.dateColumns,
+          rosterRows: section.rosterRows,
           startDate: section.startDate,
           endDate: section.endDate,
         ),

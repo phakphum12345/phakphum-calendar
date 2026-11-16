@@ -20,6 +20,8 @@ Released versions follow semantic versioning where practical.
 - Typed result/failure hierarchy and standardized controller state.
 - Explicit dependency composition without a global service locator.
 - `.codex` project context and root project-governance documentation.
+- Date-first two-phase roster generation: resolve each section's dates and shift rows before reading worker names; reject cross-section month fallback.
+- Isolate production ShiftParser date context at each section boundary so undated blocks cannot inherit the preceding block's month.
 
 ### Changed
 

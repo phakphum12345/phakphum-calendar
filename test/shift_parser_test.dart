@@ -318,6 +318,33 @@ void main() {
   });
 
 
+  test('does not reuse a previous section month for an undated roster block', () {
+    final days = <Object?>['วันที่', ...List.generate(31, (i) => i + 1)];
+    final datedShift = _row('P1 เช้า')..[1] = 'ภาคภูมิ';
+    final undatedShift = _row('P1 เช้า')..[2] = 'ภาคภูมิ';
+
+    final shifts = parser.parseAllPeriods(
+      snapshots: [
+        SheetSnapshot(
+          title: 'พฤศจิกายน 2569',
+          rows: [
+            ['เวรประจำเดือน ธันวาคม พ.ศ. 2569'],
+            days,
+            datedShift,
+            ['MRI ตารางเวรเฉพาะกิจ'],
+            days,
+            undatedShift,
+          ],
+        ),
+      ],
+      targetName: 'ภาคภูมิ',
+    );
+
+    expect(shifts, hasLength(1));
+    expect(shifts.single.start, DateTime(2026, 12, 1, 8));
+    expect(shifts.single.cell, 'B3');
+  });
+
   test('reads all twelve Thai full month names without a fixed month setting', () {
     const monthNames = [
       'มกราคม',

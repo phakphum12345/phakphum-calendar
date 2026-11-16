@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 830,
+  "file_count": 831,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -163,8 +163,8 @@
     },
     {
       "path": "CHANGELOG.md",
-      "size": 4484,
-      "sha256": "1b44bd25821bbaa4ad2bb4f0dea69a3f7c1d4433761cfd7b9c1fe1232e1ed490"
+      "size": 4769,
+      "sha256": "a4b55dba93872de99bdc0d5713121e46c74f5ff021d641963c6336661dece2e0"
     },
     {
       "path": "CODE_STYLE.md",
@@ -915,6 +915,11 @@
       "path": "docs/ROSTER_CONFIGURATION_AND_SYNC_ROADMAP.md",
       "size": 18580,
       "sha256": "f818d6ed511f7c91a2304672196be5982f218459b91ebfb8a4d64c7f41212975"
+    },
+    {
+      "path": "docs/ROSTER_DATE_FIRST_GENERATION.md",
+      "size": 2666,
+      "sha256": "2cd8c946bed23e1be63f2cb7f03abcae18809904fb900a13c68362c1c1a890bc"
     },
     {
       "path": "docs/ROSTER_KNOWLEDGE_BASE_ARCHITECTURE_TH.md",
@@ -2723,8 +2728,8 @@
     },
     {
       "path": "lib/features/shift_parser/application/monthly_roster_section_parser.dart",
-      "size": 15283,
-      "sha256": "92872f317f80eb74d2e6a9279f9807e2577e7c3e1d5228778ab4952fb876a3d7"
+      "size": 17913,
+      "sha256": "19784098fff66141269184c832203a7dd87d17f16e768ea66b916291eaf7e412"
     },
     {
       "path": "lib/features/shift_parser/application/smart_roster_analyze_generator.dart",
@@ -2748,8 +2753,8 @@
     },
     {
       "path": "lib/features/shift_parser/domain/monthly_roster_section.dart",
-      "size": 7064,
-      "sha256": "9bacaa9626f349b73760469a2721d66bddc2096544c75e8cc325467c8decd9e7"
+      "size": 7906,
+      "sha256": "d729ce202fd3ec0cc9c088d803a9a3eb093b1ebd0126b9d2d12443df82318989"
     },
     {
       "path": "lib/features/shift_parser/domain/monthly_roster_template.dart",
@@ -3108,8 +3113,8 @@
     },
     {
       "path": "lib/services/shift_parser.dart",
-      "size": 14188,
-      "sha256": "9eea16e52dfbc63cb2dc6bb0732c1f439f586543915ec6ee3022b491900bb411"
+      "size": 14693,
+      "sha256": "c574c423d75c3f0c0f712e4f445420f4c229a9f53abdf5fd39c52eaa486db248"
     },
     {
       "path": "lib/services/shift_time_service.dart",
@@ -3618,8 +3623,8 @@
     },
     {
       "path": "test/monthly_roster_section_parser_test.dart",
-      "size": 9773,
-      "sha256": "710fa33c84a88746247dc58a59b2e12df1153c1f1a5825f660f1e29bc74e40b1"
+      "size": 14021,
+      "sha256": "014ce0cb9d54c0c1d8a2a14cd27b5de041d16589f4a2b789b915277785028e37"
     },
     {
       "path": "test/monthly_roster_template_test.dart",
@@ -3878,8 +3883,8 @@
     },
     {
       "path": "test/shift_parser_test.dart",
-      "size": 13872,
-      "sha256": "5bc4a6f9f5c9c78051e06a0171e0695a4623111e0fd0da01ecff28fd55689a4d"
+      "size": 14829,
+      "sha256": "e7c78308f79252949c899164411f9825587b4baaa891a6f1da467672a4f51fff"
     },
     {
       "path": "test/shift_pay_calculator_test.dart",
