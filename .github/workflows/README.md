@@ -8,7 +8,7 @@ The active build and delivery surface covers **Windows, Web, Android, iOS, and L
 - `android.yml` — Android release APK build artifact.
 - `ios.yml` — unsigned iOS release app build artifact.
 - `linux.yml` — Linux x64 release bundle archive.
-- `pull-request-gate.yml` — requires all seven PR evidence workflows to succeed for the exact PR head SHA.
+- `pull-request-gate.yml` — requires all six platform evidence workflows to succeed for the exact PR head SHA.
 - `final-gate.yml` — post-merge gate for the same `main` commit; Auto Detect CI, Windows, and Web are required, while Android, iOS, and Linux remain best-effort on `main`.
 
 macOS, broad repository validation, coverage gates, and integration-test gates
@@ -59,7 +59,6 @@ to finish successfully:
 4. Android
 5. iOS
 6. Linux
-7. DISKPATH generation/validation
 
 A failed workflow fails the gate. Missing or still-running evidence remains
 pending and fails if it does not complete within 30 minutes. If the PR head
@@ -82,17 +81,8 @@ commit SHA**. Android, iOS, and Linux are optional artifact evidence on
 does not fail this post-merge gate. A failed required workflow fails the gate.
 
 This post-merge policy does not replace the stricter pre-merge PR gate. The PR
-gate requires all seven workflows; the main gate confirms the core delivery
+gate requires all six platform workflows; the main gate confirms the core delivery
 path after merge.
-
-## DISKPATH security policy
-
-`generate-diskpath-md.yml` is read-only on pull requests. It checks the committed
-manifests against the exact checked-out commit and never pushes changes. Pull
-request code is untrusted input and must not receive a write-capable token while
-its scripts are executed. Contributors regenerate `DISKPATH.json` and
-`DISKPATH.md` locally and commit them with their changes. The workflow disables
-persisted checkout credentials and grants only `contents: read`.
 
 ## Repository secrets
 
@@ -122,13 +112,13 @@ from `main`.
 
 The delivery path is separated into pre-merge and post-merge evidence:
 
-**PR: Quality + Windows + Web + Android + iOS + Linux + DISKPATH PASS → Merge → main: core Final Gate PASS**
+**PR: Quality + Windows + Web + Android + iOS + Linux PASS → Merge → main: core Final Gate PASS**
 
 ## Failure-containment policy
 
 The platform build workflows remain independent:
 
-1. The PR gate requires Auto Detect CI, Windows, Web, Android, iOS, Linux, and DISKPATH evidence for the same PR head SHA.
+1. The PR gate requires Auto Detect CI, Windows, Web, Android, iOS, and Linux evidence for the same PR head SHA.
 2. The post-merge main gate requires Auto Detect CI, Windows, and Web. Android, iOS, and Linux are best-effort on `main`; their status is explicitly reported as PASS or SKIPPED.
 3. Store-signing credentials must not be required for iOS or Android compile checks.
 4. Missing `integration_test/` must never be treated as a CI failure for the supported targets.
