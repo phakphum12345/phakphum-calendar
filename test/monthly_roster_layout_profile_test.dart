@@ -57,6 +57,46 @@ void main() {
     ]);
   });
 
+  test('reuses one layout profile across multiple dated sections', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'Roster',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['เวรหลัก ประจำเดือน สิงหาคม พ.ศ. 2569']),
+        ..._row(3, [null, null, null, 'วันที่', 1, 2, 3]),
+        ..._row(4, ['รังสี', 'เจ้าหน้าที่', 'เวรเช้า', null, 'นาย ก']),
+        ..._row(6, ['MRI ประจำเดือน กันยายน พ.ศ. 2569']),
+        ..._row(7, [null, null, null, 'วันที่', 1, 2, 3]),
+        ..._row(8, ['MRI', 'เจ้าหน้าที่', 'เวรบ่าย', null, 'นาย ข']),
+      ],
+    );
+    const profile = RosterLayoutProfile(
+      profileId: 'hospital-wide-grid',
+      profileName: 'Hospital wide grid',
+      dateHeaderRows: [3, 7],
+      nameColumns: [4, 5, 6],
+      shiftLabelColumns: [2],
+      dataStartRow: 4,
+      dataEndRow: 5,
+    );
+
+    final report = const MonthlyRosterSectionParser(
+      layoutProfile: profile,
+    ).parse(input);
+
+    expect(report.warnings, isEmpty);
+    expect(report.sections, hasLength(2));
+    expect(report.assignments, hasLength(2));
+    expect(report.assignments.map((item) => item.workerName), ['นาย ก', 'นาย ข']);
+    expect(report.assignments.map((item) => item.date), [
+      DateTime(2026, 8, 1),
+      DateTime(2026, 9, 1),
+    ]);
+  });
+
   test('auto-detects a short date header when the row explicitly says วันที่', () {
     final input = ShiftParserInput(
       spreadsheetId: 'spreadsheet',
