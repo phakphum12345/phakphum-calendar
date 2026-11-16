@@ -125,6 +125,37 @@ void main() {
     expect(populated.assignments[1].date, DateTime(2026, 11, 1));
   });
 
+  test('resolves every column across a declared month boundary', () {
+    final days = <Object?>[
+      'วันที่',
+      ...List<int>.generate(16, (index) => index + 16),
+      ...List<int>.generate(15, (index) => index + 1),
+    ];
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['เวรหลัก 16 พฤศจิกายน 2569 - 15 ธันวาคม 2569']),
+        ..._row(1, days),
+        ..._row(2, ['เวรเช้า', 'นาย ก']),
+      ],
+    );
+
+    final structure = const MonthlyRosterSectionParser()
+        .generateDateStructure(input);
+
+    expect(structure.sections.single.dateColumns, hasLength(31));
+    expect(structure.sections.single.dateColumns.first.date,
+        DateTime(2026, 11, 16));
+    expect(structure.sections.single.dateColumns[15].date,
+        DateTime(2026, 12, 1));
+    expect(structure.sections.single.dateColumns.last.date,
+        DateTime(2026, 12, 15));
+  });
+
   test('does not borrow the tab month for an undated section in a multi-section sheet', () {
     final input = ShiftParserInput(
       spreadsheetId: 'spreadsheet',
