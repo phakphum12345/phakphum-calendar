@@ -1,3 +1,4 @@
+import '../../shift_parser/domain/roster_cell_assignment.dart';
 import '../domain/user_shift_change.dart';
 import 'roster_comparison_engine.dart';
 
@@ -20,10 +21,10 @@ class UserShiftChangeClassifier {
       final isUser = after != null && aliases.contains(_normalize(after.workerName));
 
       if (change.type == RosterAssignmentChangeType.removed && wasUser && after == null) {
-        final key = _slotIndependentKey(before!);
+        final key = _slotIndependentKey(before);
         candidates.putIfAbsent(key, () => (removed: <int>[], added: <int>[])).removed.add(index);
       } else if (change.type == RosterAssignmentChangeType.added && isUser && before == null) {
-        final key = _slotIndependentKey(after!);
+        final key = _slotIndependentKey(after);
         candidates.putIfAbsent(key, () => (removed: <int>[], added: <int>[])).added.add(index);
       }
     }
@@ -89,5 +90,5 @@ class UserShiftChangeClassifier {
   ].join('|');
 
   String _normalize(String value) =>
-      value.trim().replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
+      value.trim().replaceAll(RegExp(r'\\s+'), ' ').toLowerCase();
 }
