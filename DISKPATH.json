@@ -423,8 +423,8 @@
     },
     {
       "path": "backend/README.md",
-      "size": 4038,
-      "sha256": "5269a2b03eda08765ac7ebf519f93ee27bbbc9b867ae412f83b4c987a00fad94"
+      "size": 4033,
+      "sha256": "95bbe4285ad9fbae71764fb43042fb35dd09b26d11eafb59763ce9c29795700e"
     },
     {
       "path": "backend/app/Contracts/GoogleIdentityTokenVerifier.php",
@@ -783,8 +783,8 @@
     },
     {
       "path": "backend/tests/Feature/ShiftTransactionApiTest.php",
-      "size": 10790,
-      "sha256": "11ee5b063ef5d4a319f792e58ea3537f0aa38b17645c1e9eaf0d4d2346aee4da"
+      "size": 10963,
+      "sha256": "6c87298673d0efd1a6ea1b0fd7fc7be10b2eb11512c2479469d5f8739560a5c3"
     },
     {
       "path": "backend/tests/TestCase.php",
