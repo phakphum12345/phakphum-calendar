@@ -3603,8 +3603,8 @@
     },
     {
       "path": "test/monthly_roster_section_parser_test.dart",
-      "size": 13929,
-      "sha256": "a240874f9844dbf466294b16529f91c654053de6aabd2e164e220253d2070d82"
+      "size": 14021,
+      "sha256": "014ce0cb9d54c0c1d8a2a14cd27b5de041d16589f4a2b789b915277785028e37"
     },
     {
       "path": "test/monthly_roster_template_test.dart",

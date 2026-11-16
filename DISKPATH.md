@@ -748,7 +748,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `test/monthly_roster_all_years_leap_test.dart` | 3326 | `fe5e32facccbb1976e00fe56ccad0c2dc6f272878cb97817f5ba4d60cfa2284b` |
 | `test/monthly_roster_conversion_diagnostics_test.dart` | 2397 | `1a5803abfea9a89ddd4f864485480b80937f32f360f7f3cfb8b911d5f7460ef0` |
 | `test/monthly_roster_cross_month_date_test.dart` | 7570 | `8e0aca17e3887f99126e29288d348586025ea0b86ea7327fd1c1ee7d30928871` |
-| `test/monthly_roster_section_parser_test.dart` | 13929 | `a240874f9844dbf466294b16529f91c654053de6aabd2e164e220253d2070d82` |
+| `test/monthly_roster_section_parser_test.dart` | 14021 | `014ce0cb9d54c0c1d8a2a14cd27b5de041d16589f4a2b789b915277785028e37` |
 | `test/monthly_roster_template_test.dart` | 2146 | `43491b9121bd0031c97ed10e8772bec1337d74a39e312e788e9138ba59123076` |
 | `test/monthly_schedule_pdf_service_test.dart` | 4367 | `4721c35b87501c726e9c5f3a67694de682c1a945586c45dee14382250513e919` |
 | `test/monthly_schedule_report_controller_test.dart` | 6944 | `c5a61b554ab61f8047b50d13ab19dc75c2e618f9f9b352ac1a1062393f751cc8` |
