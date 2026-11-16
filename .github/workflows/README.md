@@ -59,6 +59,15 @@ This prevents a green result from one platform being mistaken for a complete
 release result and avoids bringing back the old formatter/coverage failure
 chain.
 
+## DISKPATH security policy
+
+`generate-diskpath-md.yml` is read-only on pull requests. It checks the committed
+manifests against the exact checked-out commit and never pushes changes. Pull
+request code is untrusted input and must not receive a write-capable token while
+its scripts are executed. Contributors regenerate `DISKPATH.json` and
+`DISKPATH.md` locally and commit them with their changes. The workflow disables
+persisted checkout credentials and grants only `contents: read`.
+
 ## Repository secrets
 
 - `GOOGLE_WEB_CLIENT_ID` — used by the Web deployment when Google Sign-In is enabled.
