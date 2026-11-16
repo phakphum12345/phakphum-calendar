@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\ClientErrorController;
 use App\Http\Controllers\Api\V1\GoogleAccountController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\OrganizationController;
+use App\Http\Controllers\Api\V1\ShiftTransactionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -49,5 +50,30 @@ Route::prefix('v1')->group(function (): void {
         Route::put('/organizations/{organizationId}/shift-policies/{workflowType}', [OrganizationController::class, 'updatePolicy'])
             ->whereUuid('organizationId')
             ->name('api.v1.organizations.policies.update');
+
+        Route::get('/shift-transactions', [ShiftTransactionController::class, 'index'])
+            ->name('api.v1.shift-transactions.index');
+        Route::post('/shift-transactions', [ShiftTransactionController::class, 'store'])
+            ->name('api.v1.shift-transactions.store');
+        Route::get('/shift-transactions/{transactionId}', [ShiftTransactionController::class, 'show'])
+            ->whereUuid('transactionId')->name('api.v1.shift-transactions.show');
+        Route::post('/shift-transactions/{transactionId}/confirm', [ShiftTransactionController::class, 'confirm'])
+            ->whereUuid('transactionId')->name('api.v1.shift-transactions.confirm');
+        Route::post('/shift-transactions/{transactionId}/reject', [ShiftTransactionController::class, 'reject'])
+            ->whereUuid('transactionId')->name('api.v1.shift-transactions.reject');
+        Route::post('/shift-transactions/{transactionId}/approve', [ShiftTransactionController::class, 'approve'])
+            ->whereUuid('transactionId')->name('api.v1.shift-transactions.approve');
+        Route::post('/shift-transactions/{transactionId}/reject-by-approver', [ShiftTransactionController::class, 'rejectByApprover'])
+            ->whereUuid('transactionId')->name('api.v1.shift-transactions.reject-by-approver');
+        Route::post('/shift-transactions/{transactionId}/cancel', [ShiftTransactionController::class, 'cancel'])
+            ->whereUuid('transactionId')->name('api.v1.shift-transactions.cancel');
+        Route::post('/shift-transactions/{transactionId}/calendar-sync/start', [ShiftTransactionController::class, 'startSync'])
+            ->whereUuid('transactionId')->name('api.v1.shift-transactions.calendar-sync.start');
+        Route::post('/shift-transactions/{transactionId}/calendar-sync/complete', [ShiftTransactionController::class, 'completeSync'])
+            ->whereUuid('transactionId')->name('api.v1.shift-transactions.calendar-sync.complete');
+        Route::post('/shift-transactions/{transactionId}/calendar-sync/fail', [ShiftTransactionController::class, 'failSync'])
+            ->whereUuid('transactionId')->name('api.v1.shift-transactions.calendar-sync.fail');
+        Route::post('/shift-transactions/{transactionId}/fulfill', [ShiftTransactionController::class, 'fulfill'])
+            ->whereUuid('transactionId')->name('api.v1.shift-transactions.fulfill');
     });
 });
