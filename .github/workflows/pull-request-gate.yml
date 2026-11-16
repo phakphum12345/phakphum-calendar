@@ -15,8 +15,6 @@ on:
       - "integration_test/**"
       - "pubspec.yaml"
       - "pubspec.lock"
-      - "DISKPATH.json"
-      - "DISKPATH.md"
       - ".github/workflows/**"
 
 permissions:
@@ -52,7 +50,6 @@ jobs:
             "Android:android.yml"
             "iOS:ios.yml"
             "Linux:linux.yml"
-            "DISKPATH:generate-diskpath-md.yml"
           )
 
           get_run_state() {
@@ -122,7 +119,7 @@ jobs:
             if [[ "$pending" -eq 0 ]]; then
               echo ""
               echo "PULL REQUEST GATE: PASS"
-              echo "All seven required workflows succeeded for the exact PR head SHA."
+              echo "All six required platform workflows succeeded for the exact PR head SHA."
               exit 0
             fi
 
