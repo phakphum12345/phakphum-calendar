@@ -151,6 +151,8 @@ void main() {
     expect(structure.sections.single.dateColumns.first.date,
         DateTime(2026, 11, 16));
     expect(structure.sections.single.dateColumns[14].date,
+        DateTime(2026, 11, 30));
+    expect(structure.sections.single.dateColumns[15].date,
         DateTime(2026, 12, 1));
     expect(structure.sections.single.dateColumns.last.date,
         DateTime(2026, 12, 15));
