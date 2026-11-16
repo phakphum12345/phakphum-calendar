@@ -3,6 +3,7 @@
 namespace App\Services\ShiftTransactions;
 
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -103,6 +104,7 @@ class ShiftTransactionService
             if (! hash_equals($existing->request_hash, $requestHash)) {
                 throw new ConflictHttpException('Idempotency key was already used for a different request.');
             }
+
             return $this->read($existing->id, $actor);
         }
 
@@ -150,6 +152,7 @@ class ShiftTransactionService
             }
             throw $exception;
         }
+
         return $this->read($id, $actor);
     }
 
@@ -187,7 +190,7 @@ class ShiftTransactionService
             });
         }
         if (isset($filters['staff_id'])) {
-            $query->whereExists(function ($participant) use ($actor, $filters): void {
+            $query->whereExists(function ($participant) use ($filters): void {
                 $participant->selectRaw('1')->from('shift_transaction_participants')
                     ->whereColumn('shift_transaction_participants.transaction_id', 'transactions.id')
                     ->where('shift_transaction_participants.employee_id', $filters['staff_id']);
@@ -211,6 +214,7 @@ class ShiftTransactionService
             });
         }
         $ids = $query->orderByDesc('transactions.created_at')->limit(100)->pluck('transactions.id');
+
         return $ids->map(fn (string $id): array => $this->read($id, $actor))->all();
     }
 
@@ -230,6 +234,7 @@ class ShiftTransactionService
             ->leftJoin('users', 'users.id', '=', 'events.actor_user_id')
             ->where('events.transaction_id', $id)->orderBy('events.id')
             ->get(['events.id', 'events.event_type', 'events.transaction_version', 'events.event_data', 'events.occurred_at', 'users.name as actor_name']);
+
         return [
             'id' => $transaction->id, 'mode' => $transaction->mode, 'type' => $transaction->type,
             'organization_id' => $transaction->organization_id, 'status' => $transaction->status,
@@ -359,7 +364,7 @@ class ShiftTransactionService
                         if ($transfer->to_employee_id !== $participant->employee_id) {
                             throw new AccessDeniedHttpException('Only the employee receiving this shift may confirm its fulfillment.');
                         }
-                        if ($now->lt(\Illuminate\Support\Carbon::parse($transfer->ends_at))) {
+                        if ($now->lt(Carbon::parse($transfer->ends_at))) {
                             throw new ConflictHttpException('A shift cannot be fulfilled before its scheduled end.');
                         }
                         DB::table('shift_transaction_transfers')->where('id', $transfer->id)
@@ -385,6 +390,7 @@ class ShiftTransactionService
                 throw new ConflictHttpException('Transaction version changed; reload and retry.');
             }
             $this->appendEvent($id, $transaction->organization_id, $actor->id, $action, $nextVersion, $eventData, $now);
+
             return $this->read($id, $actor);
         });
     }
@@ -427,6 +433,7 @@ class ShiftTransactionService
     {
         if ($transaction->organization_id !== null) {
             $this->requireOrganizationMember($actor, $transaction->organization_id);
+
             return;
         }
         $participant = DB::table('shift_transaction_participants')
@@ -442,6 +449,7 @@ class ShiftTransactionService
         if ($membership === null) {
             throw new AccessDeniedHttpException('Active organization membership is required.');
         }
+
         return $membership;
     }
 
@@ -454,6 +462,7 @@ class ShiftTransactionService
         if (! in_array($membership->role, ['owner', 'admin'], true)) {
             throw new AccessDeniedHttpException('Organization owner or admin role is required.');
         }
+
         return $membership;
     }
 

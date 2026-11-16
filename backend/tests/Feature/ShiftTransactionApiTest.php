@@ -152,7 +152,6 @@ class ShiftTransactionApiTest extends TestCase
         $this->postJson("/api/v1/shift-transactions/{$created['id']}/approve", [], $this->auth('manager-token'))->assertOk();
     }
 
-
     public function test_rejection_and_requester_cancellation_are_recorded_in_history(): void
     {
         $this->signIn('alice-token');

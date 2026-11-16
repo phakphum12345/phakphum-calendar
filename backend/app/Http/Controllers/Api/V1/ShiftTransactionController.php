@@ -21,6 +21,7 @@ class ShiftTransactionController
             'staff_id' => ['sometimes', 'string', 'max:128'],
             'shift_type' => ['sometimes', 'string', 'max:64'],
         ]);
+
         return response()->json(['data' => $this->transactions->list($request->user(), $filters)]);
     }
 
@@ -47,6 +48,7 @@ class ShiftTransactionController
         ]);
         $key = (string) $request->header('Idempotency-Key', '');
         $result = $this->transactions->create($request->user(), $validated, $key);
+
         return response()->json(['data' => $result], 201);
     }
 
@@ -83,6 +85,7 @@ class ShiftTransactionController
     public function startSync(Request $request, string $transactionId): JsonResponse
     {
         $validated = $request->validate(['preview_confirmed' => ['required', 'accepted']]);
+
         return response()->json(['data' => $this->transactions->transition(
             $transactionId, $request->user(), 'sync_start', $validated,
         )]);
@@ -94,6 +97,7 @@ class ShiftTransactionController
             'calendar_event_ids' => ['required', 'array', 'min:1', 'max:10'],
             'calendar_event_ids.*' => ['required', 'string', 'max:512'],
         ]);
+
         return response()->json(['data' => $this->transactions->transition(
             $transactionId, $request->user(), 'sync_complete', $validated,
         )]);
@@ -102,6 +106,7 @@ class ShiftTransactionController
     public function failSync(Request $request, string $transactionId): JsonResponse
     {
         $validated = $request->validate(['reason' => ['nullable', 'string', 'max:1000']]);
+
         return response()->json(['data' => $this->transactions->transition(
             $transactionId, $request->user(), 'sync_fail', $validated,
         )]);
@@ -110,6 +115,7 @@ class ShiftTransactionController
     public function fulfill(Request $request, string $transactionId): JsonResponse
     {
         $validated = $request->validate(['transfer_id' => ['required', 'string', 'max:64']]);
+
         return response()->json(['data' => $this->transactions->transition(
             $transactionId, $request->user(), 'fulfill', $validated,
         )]);
@@ -121,6 +127,7 @@ class ShiftTransactionController
             'reason' => ['sometimes', 'nullable', 'string', 'max:1000'],
             'note' => ['sometimes', 'nullable', 'string', 'max:1000'],
         ]);
+
         return response()->json(['data' => $this->transactions->transition(
             $id, $request->user(), $action, $validated,
         )]);
