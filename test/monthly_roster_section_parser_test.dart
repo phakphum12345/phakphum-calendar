@@ -125,6 +125,32 @@ void main() {
     expect(populated.assignments[1].date, DateTime(2026, 11, 1));
   });
 
+  test('does not borrow the tab month for an undated section in a multi-section sheet', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['เวรหลัก']),
+        ..._row(1, ['วันที่', 1, 2, 3, 4, 5, 6, 7]),
+        ..._row(2, ['เวรเช้า', 'นาย ก', null, null, null, null, null, null]),
+        ..._row(4, ['MRI ประจำเดือน พฤศจิกายน พ.ศ. 2569']),
+        ..._row(5, ['วันที่', 1, 2, 3, 4, 5, 6, 7]),
+        ..._row(6, ['MRI', 'นาย ข', null, null, null, null, null, null]),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, hasLength(1));
+    expect(report.sections.single.title, contains('MRI'));
+    expect(report.assignments.single.workerName, 'นาย ข');
+    expect(report.warnings, hasLength(1));
+    expect(report.warnings.single, contains('ไม่ใช้เดือนจากชื่อชีตแทน'));
+  });
+
   test('filters assignments by query, section, and selected month', () {
     final report = MonthlyRosterParseReport(
       sections: [
