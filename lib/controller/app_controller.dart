@@ -130,10 +130,10 @@ class AppController extends ChangeNotifier implements ControllerState {
     required this._ownershipService,
     required this._localFileService,
     required this._scheduleRepository,
-    ShiftTemplateRepository? shiftTemplateRepository,
+    this._shiftTemplateRepository,
     required this._legacyScheduleAdapter,
     required this._calendarWorkflowControllerFactory,
-  }) : _shiftTemplateRepository = shiftTemplateRepository;
+  });
 
   void _initializeDemo() {
     initialized = true;
