@@ -1240,6 +1240,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           .parseForWorkersWithDiagnostics(
             parsedMonthlyAll,
             targetNames: searchNames,
+            shiftTemplates: _shiftTemplates,
           );
       monthlyRosterConversion = MonthlyRosterConversionReport(
         shifts: List.unmodifiable(
