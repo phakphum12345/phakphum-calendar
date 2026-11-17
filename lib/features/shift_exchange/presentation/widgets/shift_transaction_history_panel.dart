@@ -22,13 +22,20 @@ class _ShiftTransactionHistoryPanelState
   @override
   void initState() {
     super.initState();
-    _history = _load();
+    // A missing organization API URL is a supported configuration state.
+    // Do not start a request until the API has been configured.
+    _history = widget.apiClient.isConfigured
+        ? _load()
+        : Future<List<ShiftTransactionSnapshot>>.value(const []);
   }
 
   Future<List<ShiftTransactionSnapshot>> _load() =>
       widget.apiClient.listTransactions();
 
-  void _reload() => setState(() => _history = _load());
+  void _reload() {
+    if (!widget.apiClient.isConfigured) return;
+    setState(() => _history = _load());
+  }
 
   @override
   Widget build(BuildContext context) {
