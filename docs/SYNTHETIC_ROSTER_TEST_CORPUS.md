@@ -18,6 +18,9 @@ hospital templates.
 - Multiple configured shift-label columns, with rightmost non-empty label selection and restricted worker columns.
 - Sections without their own date range are skipped rather than borrowing another section or the sheet month.
 - Seven-day numeric headers without an explicit `วันที่` label.
+- Full 31-day month grids with a weekday banner, two-tier shift labels, and multiple service rows.
+- Year rollover from December to January with Buddhist-year normalization.
+- Non-contiguous date columns with spacer/metadata columns constrained by a layout profile.
 
 ## Running
 
