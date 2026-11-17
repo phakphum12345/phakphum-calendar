@@ -471,6 +471,11 @@ class ShiftParser
   String _compact(String value) =>
       value.trim().replaceAll(RegExp(r'\s+'), '').toLowerCase();
 
+  String _compactLabel(String value) => value
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp(r'[\s.\-_()/]+'), '');
+
   String _columnName(int column) {
     var current = column;
     var result = '';
