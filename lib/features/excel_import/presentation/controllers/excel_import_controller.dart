@@ -1,9 +1,11 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../../core/state/controller_state.dart';
+import '../../../../core/utils/excel_column_name.dart';
 import '../../application/import_engine.dart';
 import '../../data/excel_reader_service.dart';
 import '../../domain/column_mapping.dart';
+import '../../domain/excel_cell.dart';
 import '../../domain/excel_row.dart';
 import '../../domain/import_error.dart';
 import '../../domain/import_file.dart';
@@ -34,6 +36,8 @@ class ExcelImportController extends ChangeNotifier implements ControllerState {
   List<ShiftRecord> shiftRecords = const [];
   ImportSummary? importSummary;
   List<ExcelRow>? _externalImportRows;
+  List<ExcelRow>? _workingRows;
+  ColumnMapping? _lastMapping;
   @override
   bool loading = false;
   bool completed = false;
@@ -87,6 +91,7 @@ class ExcelImportController extends ChangeNotifier implements ControllerState {
       selectedWorksheet = worksheet;
       rows = List.unmodifiable(worksheetRows);
       _externalImportRows = null;
+      _workingRows = null;
       _clearImportResult();
       error = null;
       state = ExcelImportState.worksheetLoaded;
@@ -97,7 +102,7 @@ class ExcelImportController extends ChangeNotifier implements ControllerState {
       _setError(
         ImportError(
           code: ImportErrorCode.worksheetReadFailed,
-          message: 'ไม่สามารถอ่าน Worksheet "${worksheet.name}" ได้',
+          message: 'ไม่สามารถอ่าน Worksheet ${worksheet.name} ได้',
         ),
       );
     }
@@ -118,6 +123,7 @@ class ExcelImportController extends ChangeNotifier implements ControllerState {
     selectedWorksheet = worksheet;
     rows = List.unmodifiable(previewRows);
     _externalImportRows = List.unmodifiable(importRows);
+    _workingRows = List.unmodifiable(importRows);
     _clearImportResult();
     error = null;
     state = ExcelImportState.worksheetLoaded;
@@ -138,11 +144,11 @@ class ExcelImportController extends ChangeNotifier implements ControllerState {
     notifyListeners();
 
     await Future<void>.delayed(Duration.zero);
-    final importRows =
-        _externalImportRows ??
+    _workingRows ??= _externalImportRows ??
         _reader.readWorksheetForImport(selectedWorksheet!);
+    _lastMapping = mapping;
     final result = _importEngine.convertRows(
-      rows: importRows,
+      rows: _workingRows!,
       mapping: mapping,
     );
     shiftRecords = result.records;
@@ -150,6 +156,93 @@ class ExcelImportController extends ChangeNotifier implements ControllerState {
     loading = false;
     completed = true;
     notifyListeners();
+  }
+
+  /// Returns the source value for a displayed worksheet row and Excel column.
+  Object? valueAt({required int rowNumber, required String column}) {
+    if (!_isExcelColumn(column)) return null;
+    final columnIndex = ExcelColumnName.toIndex(column);
+    final sourceRows = _workingRows ?? rows;
+    for (final row in sourceRows) {
+      if (row.index != rowNumber - 1) continue;
+      for (final cell in row.cells) {
+        if (cell.columnIndex == columnIndex) return cell.value;
+      }
+      return null;
+    }
+    return null;
+  }
+
+  /// Updates one source cell without mutating the original ExcelRow objects.
+  /// Row numbers use the worksheet's one-based numbering shown in the UI.
+  bool updateCellValue({
+    required int rowNumber,
+    required String column,
+    required Object? value,
+  }) {
+    if (rowNumber <= 1 || !_isExcelColumn(column)) return false;
+    final columnIndex = ExcelColumnName.toIndex(column);
+    final sourceRows = _workingRows ?? _externalImportRows ?? rows;
+    var found = false;
+    final updatedRows = sourceRows.map((row) {
+      if (row.index != rowNumber - 1) return row;
+      found = true;
+      final cells = <ExcelCell>[];
+      var replaced = false;
+      for (final cell in row.cells) {
+        if (cell.columnIndex == columnIndex) {
+          cells.add(ExcelCell(
+            rowIndex: cell.rowIndex,
+            columnIndex: cell.columnIndex,
+            value: value,
+          ));
+          replaced = true;
+        } else {
+          cells.add(cell);
+        }
+      }
+      if (!replaced) {
+        cells.add(ExcelCell(
+          rowIndex: row.index,
+          columnIndex: columnIndex,
+          value: value,
+        ));
+      }
+      return ExcelRow(index: row.index, cells: cells);
+    }).toList(growable: false);
+    if (!found) return false;
+
+    _workingRows = List.unmodifiable(updatedRows);
+    if (_externalImportRows != null) {
+      _externalImportRows = List.unmodifiable(updatedRows);
+    }
+    rows = List.unmodifiable(rows.map((previewRow) {
+      if (previewRow.index != rowNumber - 1) return previewRow;
+      return updatedRows.firstWhere(
+        (candidate) => candidate.index == previewRow.index,
+      );
+    }));
+    notifyListeners();
+    return true;
+  }
+
+  /// Re-runs the last mapping against the corrected source rows.
+  bool reprocessImport() {
+    final mapping = _lastMapping;
+    final sourceRows = _workingRows;
+    if (mapping == null || sourceRows == null) return false;
+    final result = _importEngine.convertRows(rows: sourceRows, mapping: mapping);
+    shiftRecords = result.records;
+    importSummary = result.summary;
+    loading = false;
+    completed = true;
+    notifyListeners();
+    return true;
+  }
+
+  bool _isExcelColumn(String column) {
+    return column.isNotEmpty &&
+        column.codeUnits.every((code) => code >= 65 && code <= 90);
   }
 
   void _setLoading() {
@@ -170,10 +263,12 @@ class ExcelImportController extends ChangeNotifier implements ControllerState {
     selectedWorksheet = null;
     rows = const [];
     _externalImportRows = null;
+    _workingRows = null;
     _clearImportResult();
   }
 
   void _clearImportResult() {
+    _lastMapping = null;
     shiftRecords = const [];
     importSummary = null;
     loading = false;

@@ -334,6 +334,8 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
           schedule: schedule,
           scheduleControllerFactory: widget.scheduleControllerFactory,
           scheduleSaver: widget.scheduleSaver,
+          scheduleFactory: widget.importedScheduleFactory,
+          controller: controller,
         ),
       ),
     );
