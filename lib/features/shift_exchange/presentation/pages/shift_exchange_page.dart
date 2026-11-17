@@ -4,6 +4,8 @@ import '../../../../domain/entities/schedule.dart';
 import '../../../../l10n/l10n.dart';
 import '../../domain/shift_exchange_request.dart';
 import '../controllers/shift_exchange_controller.dart';
+import '../../infrastructure/shift_transaction_api_client.dart';
+import '../widgets/shift_transaction_history_panel.dart';
 
 /// Top-level exchange workspace for SCE navigation.
 ///
@@ -14,12 +16,14 @@ class ShiftExchangePage extends StatefulWidget {
     required this.schedule,
     this.controller,
     this.controllerFactory,
+    this.historyApiClient,
     super.key,
   });
 
   final Schedule schedule;
   final ShiftExchangeController? controller;
   final ShiftExchangeController Function()? controllerFactory;
+  final ShiftTransactionApiClient? historyApiClient;
 
   @override
   State<ShiftExchangePage> createState() => _ShiftExchangePageState();
@@ -51,6 +55,10 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
         const SizedBox(height: 6),
         Text(context.l10n.shiftExchangeDescription),
         const SizedBox(height: 16),
+        if (widget.historyApiClient != null) ...[
+          ShiftTransactionHistoryPanel(apiClient: widget.historyApiClient!),
+          const SizedBox(height: 16),
+        ],
         Wrap(
           spacing: 8,
           runSpacing: 8,
