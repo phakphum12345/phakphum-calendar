@@ -86,7 +86,7 @@ class ShiftTransactionApiException implements Exception {
 class ShiftTransactionApiClient {
   ShiftTransactionApiClient({
     required String baseUrl,
-    required Future<String?> Function() this.idTokenProvider,
+    required this.idTokenProvider,
     http.Client? httpClient,
   }) : _baseUri = _normalizeBaseUri(baseUrl),
        _http = httpClient ?? http.Client(),
