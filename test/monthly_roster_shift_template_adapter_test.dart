@@ -3,6 +3,8 @@ import 'package:phakphum_calendar/domain/entities/shift_template.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/monthly_roster_conversion_diagnostics.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/monthly_roster_section_parser.dart';
 import 'package:phakphum_calendar/features/shift_parser/domain/monthly_roster_section.dart';
+import 'package:phakphum_calendar/features/shift_parser/domain/normalized_cell.dart';
+import 'package:phakphum_calendar/features/shift_parser/domain/shift_parser_input.dart';
 
 void main() {
   const template = ShiftTemplate(
