@@ -46,12 +46,19 @@ concurrency:
 jobs:
   build-ios:
     name: iOS unsigned release build
-    runs-on: macos-latest
+    runs-on: macos-15-intel
     timeout-minutes: 50
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Verify macOS runner allocation
+        run: |
+          set -euo pipefail
+          echo "Runner architecture: $(uname -m)"
+          sw_vers
+          xcodebuild -version
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
