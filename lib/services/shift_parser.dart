@@ -1,3 +1,4 @@
+import '../domain/entities/shift_template.dart';
 import '../models/shift.dart';
 import 'shift_color_service.dart';
 
@@ -32,7 +33,10 @@ class ShiftParser
         RosterShiftParser,
         AllPeriodRosterShiftParser,
         FullRosterShiftParser {
-  const ShiftParser();
+  const ShiftParser({this.shiftTemplates = const []});
+
+  /// Optional user-configured catalog. Legacy callers remain source-compatible.
+  final Iterable<ShiftTemplate> shiftTemplates;
 
   static const _allWorkersSentinel = '__all_roster_workers__';
   static const _thaiMonths = <String, int>{
@@ -330,6 +334,24 @@ class ShiftParser
   }
 
   _ShiftRule? _ruleForLabel(String label) {
+    final normalized = _compactLabel(label);
+    final matching = shiftTemplates.where((template) {
+      if (!template.active) return false;
+      return [template.code, template.name, template.shortName].any(
+        (alias) => alias.trim().isNotEmpty && _compactLabel(alias) == normalized,
+      );
+    }).toList(growable: false);
+    if (matching.isNotEmpty) {
+      if (matching.length != 1) return null;
+      final template = matching.single;
+      return _ShiftRule(
+        code: template.code,
+        startHour: template.startTime.inHours.remainder(24),
+        startMinute: template.startTime.inMinutes.remainder(60),
+        endHour: template.endTime.inHours.remainder(24),
+        endMinute: template.endTime.inMinutes.remainder(60),
+      );
+    }
     final value = _normalizeLabel(label);
     if (value == 'ER' || value == 'CT') {
       return _ShiftRule(
