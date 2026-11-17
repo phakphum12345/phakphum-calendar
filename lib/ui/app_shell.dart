@@ -21,6 +21,7 @@ import '../features/dashboard/application/dashboard_summary_service.dart';
 import '../features/dashboard/presentation/widgets/dashboard_summary_grid.dart';
 import '../features/shift_exchange/presentation/pages/shift_exchange_page.dart';
 import '../features/shift_exchange/presentation/controllers/shift_exchange_controller.dart';
+import '../features/shift_exchange/infrastructure/shift_transaction_api_client.dart';
 import '../features/shift_parser/domain/monthly_roster_section.dart';
 import '../features/shift_parser/domain/monthly_roster_template.dart';
 import '../features/shift_templates/application/shift_template_controller.dart';
@@ -90,6 +91,12 @@ class _AppShellState extends State<AppShell> {
   bool editionLoading = true;
   bool _permissionDialogOpen = false;
   String? _permissionDialogShownForEmail;
+  late final ShiftTransactionApiClient _shiftTransactionApiClient =
+      ShiftTransactionApiClient(
+        baseUrl: const String.fromEnvironment('ORGANIZATION_API_BASE_URL'),
+        idTokenProvider: () async =>
+            widget.controller.auth.account?.authentication.idToken,
+      );
   bool _setupDialogOpen = false;
   String? _setupDialogShownForEmail;
 
@@ -148,6 +155,7 @@ class _AppShellState extends State<AppShell> {
 
   @override
   void dispose() {
+    _shiftTransactionApiClient.close();
     widget.controller.removeListener(_handleControllerChanged);
     super.dispose();
   }
@@ -263,6 +271,7 @@ class _AppShellState extends State<AppShell> {
               ShiftExchangePage(
                 schedule: controller.canonicalSchedule,
                 controllerFactory: widget.shiftExchangeControllerFactory,
+                historyApiClient: _shiftTransactionApiClient,
               ),
             ],
             MonthlyScheduleReportPage(
