@@ -144,13 +144,15 @@ class _PreviewChangesPageState extends State<PreviewChangesPage> {
                       children: [
                         Checkbox(
                           value: selected.contains(index),
-                          onChanged: (v) => setState(() {
-                            if (v == true) {
-                              selected.add(index);
-                            } else {
-                              selected.remove(index);
-                            }
-                          }),
+                          onChanged: item.type == ChangeType.conflict
+                              ? null
+                              : (v) => setState(() {
+                                  if (v == true) {
+                                    selected.add(index);
+                                  } else {
+                                    selected.remove(index);
+                                  }
+                                }),
                         ),
                         IconButton(
                           icon: const Icon(Icons.visibility),
@@ -171,12 +173,16 @@ class _PreviewChangesPageState extends State<PreviewChangesPage> {
                   child: Text('${selected.length} selected'),
                 ),
                 TextButton(
-                  onPressed: () {},
+                  onPressed: selected.isEmpty ? null : _showSelectedPreview,
                   child: const Text('Preview only'),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
-                  onPressed: selected.isEmpty
+                  onPressed: selected.isEmpty ||
+                          selected.any((index) =>
+                              index < 0 ||
+                              index >= items.length ||
+                              items[index].type == ChangeType.conflict)
                       ? null
                       : () async {
                           await _confirmAndPerformSync(selected.toList());
@@ -185,11 +191,15 @@ class _PreviewChangesPageState extends State<PreviewChangesPage> {
                 ),
                 const SizedBox(width: 8),
                 OutlinedButton(
-                  onPressed: () async {
-                    // apply all items; if this is a full-plan preview, call syncCalendar
-                    final all = List.generate(items.length, (i) => i);
-                    await _confirmAndPerformSync(all, forceAll: true);
-                  },
+                  onPressed: loading ||
+                          items.isEmpty ||
+                          items.any((item) => item.type == ChangeType.conflict)
+                      ? null
+                      : () async {
+                          // Full-plan sync still requires the explicit confirmation dialog.
+                          final all = List.generate(items.length, (i) => i);
+                          await _confirmAndPerformSync(all, forceAll: true);
+                        },
                   child: const Text('Apply All (force)'),
                 ),
               ],
@@ -320,7 +330,68 @@ class _PreviewChangesPageState extends State<PreviewChangesPage> {
     };
   }
 
-  void _selectAll() => setState(() => selected.addAll(List.generate(items.length, (i) => i)));
+  void _selectAll() => setState(() {
+    selected.addAll([
+      for (var index = 0; index < items.length; index++)
+        if (items[index].type != ChangeType.conflict) index,
+    ]);
+  });
+
+  /// Opens a read-only summary of the selected diff; this path never syncs.
+  Future<void> _showSelectedPreview() async {
+    final indices = selected
+        .where((index) =>
+            index >= 0 &&
+            index < items.length &&
+            items[index].type != ChangeType.conflict)
+        .toList()
+      ..sort();
+    if (indices.isEmpty) return;
+
+    final adds = indices.where((index) => items[index].type == ChangeType.add).length;
+    final updates = indices.where((index) => items[index].type == ChangeType.update).length;
+    final deletes = indices.where((index) => items[index].type == ChangeType.delete).length;
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Preview only • ตัวอย่างเท่านั้น'),
+        content: SizedBox(
+          width: 560,
+          height: 420,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('เลือก ${indices.length} รายการ: เพิ่ม $adds • แก้ไข $updates • ลบ $deletes'),
+              const SizedBox(height: 8),
+              const Text('โหมดอ่านอย่างเดียว: ยังไม่มีการเขียนหรือซิงก์ไป Google Calendar'),
+              const Divider(),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: indices.length,
+                  itemBuilder: (context, position) {
+                    final item = items[indices[position]];
+                    return ListTile(
+                      dense: true,
+                      leading: _iconForType(item.type),
+                      title: Text(item.title),
+                      subtitle: item.subtitle == null ? null : Text(item.subtitle!),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('ปิด'),
+          ),
+        ],
+      ),
+    );
+  }
 
   Future<bool> _confirmCounts(int adds, int updates, int deletes, {bool force = false}) async {
     final title = force ? 'Apply All (force) — ยืนยัน?' : 'ยืนยันการซิงก์';
@@ -340,6 +411,16 @@ class _PreviewChangesPageState extends State<PreviewChangesPage> {
   }
 
   Future<void> _confirmAndPerformSync(List<int> indices, {bool forceAll = false}) async {
+    final fullScheduleSync = forceAll && widget.desiredCandidates == null;
+    if (indices.isEmpty ||
+        (!fullScheduleSync &&
+            indices.any((index) =>
+                index < 0 ||
+                index >= items.length ||
+                index >= _candidateSource.length ||
+                items[index].type == ChangeType.conflict))) {
+      return;
+    }
     final adds = indices.where((i) => items[i].type == ChangeType.add).length;
     final updates = indices.where((i) => items[i].type == ChangeType.update).length;
     final deletes = indices.where((i) => items[i].type == ChangeType.delete).length;
