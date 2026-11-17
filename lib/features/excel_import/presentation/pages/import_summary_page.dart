@@ -8,6 +8,8 @@ import '../../../schedule/presentation/controllers/schedule_controller.dart';
 import '../../../schedule/presentation/pages/imported_month_calendar_page.dart';
 import '../../domain/import_summary.dart';
 import '../../domain/shift_record.dart';
+import '../../domain/import_issue.dart';
+import '../controllers/excel_import_controller.dart';
 import '../widgets/import_statistics.dart';
 import '../widgets/issue_list.dart';
 
@@ -19,6 +21,7 @@ class ImportSummaryPage extends StatefulWidget {
     this.scheduleControllerFactory,
     this.persistenceResult,
     this.scheduleSaver,
+    this.controller,
     super.key,
   });
 
@@ -28,6 +31,10 @@ class ImportSummaryPage extends StatefulWidget {
   final ScheduleController Function(Schedule)? scheduleControllerFactory;
   final Result<Schedule>? persistenceResult;
   final Future<Result<Schedule>> Function(Schedule)? scheduleSaver;
+  final ExcelImportController? controller;
+
+  ImportSummary get _currentSummary => controller?.importSummary ?? summary;
+  List<ShiftRecord> get _currentRecords => controller?.shiftRecords ?? records;
 
   @override
   State<ImportSummaryPage> createState() => _ImportSummaryPageState();
@@ -60,8 +67,8 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
                   const SizedBox(height: 8),
                   Text(
                     context.l10n.importCreatedRecords(
-                      widget.records.length,
-                      widget.summary.totalRows,
+                      _currentRecords.length,
+                      _currentSummary.totalRows,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -123,6 +130,86 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _editIssue(ImportIssue issue) async {
+    final activeController = controller;
+    if (activeController == null ||
+        !RegExp(r'^[A-Z]+
+    final save = widget.scheduleSaver;
+    if (save == null || _saving) return;
+    setState(() => _saving = true);
+    final schedule = widget.schedule ??
+        const ImportedScheduleAdapter().createSchedule(widget.records);
+    final result = await save(schedule);
+    if (!mounted) return;
+    setState(() {
+      _saveResult = result;
+      _saving = false;
+    });
+  }
+
+  void _openCalendar(BuildContext context) {
+    final canonicalSchedule =
+        widget.schedule ??
+        const ImportedScheduleAdapter().createSchedule(widget.records);
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ImportedMonthCalendarPage(
+          schedule: canonicalSchedule,
+          controllerFactory: widget.scheduleControllerFactory,
+        ),
+      ),
+    );
+  }
+}
+).hasMatch(issue.column)) {
+      return;
+    }
+    final editor = TextEditingController(
+      text: activeController.valueAt(
+        rowNumber: issue.rowNumber,
+        column: issue.column,
+      )?.toString() ?? '',
+    );
+    try {
+      final corrected = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text('แก้ไขแถว ${issue.rowNumber} • คอลัมน์ ${issue.column}'),
+          content: TextField(
+            controller: editor,
+            autofocus: true,
+            decoration: const InputDecoration(labelText: 'ค่าใหม่'),
+            onSubmitted: (value) => Navigator.of(dialogContext).pop(value),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('ยกเลิก'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(editor.text),
+              child: const Text('บันทึกและตรวจใหม่'),
+            ),
+          ],
+        ),
+      );
+      if (corrected == null || !mounted) return;
+      final updated = activeController.updateCellValue(
+        rowNumber: issue.rowNumber,
+        column: issue.column,
+        value: corrected,
+      );
+      if (!updated || !activeController.reprocessImport()) return;
+      if (!mounted) return;
+      setState(() {});
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ปรับข้อมูลและประมวลผลใหม่แล้ว')),
+      );
+    } finally {
+      editor.dispose();
+    }
   }
 
   Future<void> _saveSchedule() async {

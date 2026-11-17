@@ -4,9 +4,10 @@ import '../../domain/import_issue.dart';
 import 'issue_tile.dart';
 
 class IssueList extends StatelessWidget {
-  const IssueList({required this.issues, super.key});
+  const IssueList({required this.issues, this.onEditIssue, super.key});
 
   final List<ImportIssue> issues;
+  final ValueChanged<ImportIssue>? onEditIssue;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +30,7 @@ class IssueList extends StatelessWidget {
       child: Column(
         children: [
           for (var index = 0; index < issues.length; index++) ...[
-            IssueTile(issue: issues[index]),
+            IssueTile(issue: issues[index], onEdit: onEditIssue),
             if (index < issues.length - 1) const Divider(height: 1),
           ],
         ],
