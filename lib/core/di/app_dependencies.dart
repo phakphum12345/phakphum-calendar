@@ -242,6 +242,7 @@ class AppDependencies {
       ownershipService: driveOwnershipService,
       localFileService: localRosterFileService,
       scheduleRepository: scheduleRepository,
+      shiftTemplateRepository: shiftTemplateRepository,
       legacyScheduleAdapter: legacyScheduleAdapter,
       calendarWorkflowControllerFactory:
           createAuthorizedCalendarWorkflowController,
@@ -261,6 +262,7 @@ class AppDependencies {
       ownershipService: driveOwnershipService,
       localFileService: localRosterFileService,
       scheduleRepository: scheduleRepository,
+      shiftTemplateRepository: shiftTemplateRepository,
       legacyScheduleAdapter: legacyScheduleAdapter,
       calendarWorkflowControllerFactory:
           createAuthorizedCalendarWorkflowController,
