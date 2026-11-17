@@ -18,7 +18,10 @@ import '../models/shift_alert.dart';
 import '../models/tool_definition.dart';
 import '../domain/entities/schedule.dart';
 import '../domain/entities/schedule_month.dart';
+import '../domain/entities/shift_template.dart';
 import '../domain/repositories/schedule_repository.dart';
+import '../domain/repositories/shift_template_repository.dart';
+import '../core/result/result.dart';
 import '../features/schedule/data/legacy_schedule_adapter.dart';
 import '../features/google_sheets/domain/sheet_color.dart';
 import '../features/shift_parser/application/monthly_roster_section_parser.dart';
@@ -59,6 +62,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     required DriveOwnershipGateway ownershipService,
     required LocalRosterSource localFileService,
     required ScheduleRepository scheduleRepository,
+    ShiftTemplateRepository? shiftTemplateRepository,
     required LegacyScheduleAdapter legacyScheduleAdapter,
     required Future<ShiftCalendarWorkflowController> Function()
     calendarWorkflowControllerFactory,
@@ -74,6 +78,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       ownershipService: ownershipService,
       localFileService: localFileService,
       scheduleRepository: scheduleRepository,
+      shiftTemplateRepository: shiftTemplateRepository,
       legacyScheduleAdapter: legacyScheduleAdapter,
       calendarWorkflowControllerFactory: calendarWorkflowControllerFactory,
     );
@@ -90,6 +95,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     required DriveOwnershipGateway ownershipService,
     required LocalRosterSource localFileService,
     required ScheduleRepository scheduleRepository,
+    ShiftTemplateRepository? shiftTemplateRepository,
     required LegacyScheduleAdapter legacyScheduleAdapter,
     required Future<ShiftCalendarWorkflowController> Function()
     calendarWorkflowControllerFactory,
@@ -105,6 +111,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       ownershipService: ownershipService,
       localFileService: localFileService,
       scheduleRepository: scheduleRepository,
+      shiftTemplateRepository: shiftTemplateRepository,
       legacyScheduleAdapter: legacyScheduleAdapter,
       calendarWorkflowControllerFactory: calendarWorkflowControllerFactory,
     );
@@ -123,6 +130,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     required this._ownershipService,
     required this._localFileService,
     required this._scheduleRepository,
+    this._shiftTemplateRepository,
     required this._legacyScheduleAdapter,
     required this._calendarWorkflowControllerFactory,
   });
@@ -183,7 +191,9 @@ class AppController extends ChangeNotifier implements ControllerState {
   final GoogleAuthGateway auth;
   final AppSettingsStore _settingsService;
   final RosterSheetsGateway _sheetsService;
-  final RosterShiftParser _parser;
+  RosterShiftParser _parser;
+  final ShiftTemplateRepository? _shiftTemplateRepository;
+  List<ShiftTemplate> _shiftTemplates = const [];
   final ShiftAlertPolicy _alertService;
   final LegacyCalendarGateway _calendarService;
   final DriveArchiveGateway _archiveService;
@@ -355,6 +365,23 @@ class AppController extends ChangeNotifier implements ControllerState {
         }
       }(),
     ]);
+    final templateRepository = _shiftTemplateRepository;
+    if (templateRepository != null) {
+      try {
+        final result = await templateRepository.findAll(activeOnly: false);
+        switch (result) {
+          case Success<List<ShiftTemplate>>(value: final templates):
+            _shiftTemplates = List.unmodifiable(templates);
+            if (_shiftTemplates.isNotEmpty && _parser is ShiftParser) {
+              _parser = ShiftParser(shiftTemplates: _shiftTemplates);
+            }
+          case Failure<List<ShiftTemplate>>():
+            error ??= 'โหลดรูปแบบเวรไม่สำเร็จ: ${result.message}';
+        }
+      } catch (caught) {
+        error ??= 'โหลดรูปแบบเวรไม่สำเร็จ: $caught';
+      }
+    }
     try {
       await _ensureActiveSavedSheetPerAccount();
     } catch (caught) {
@@ -866,6 +893,7 @@ class AppController extends ChangeNotifier implements ControllerState {
             .parseForWorkersWithDiagnostics(
               parsedMonthlyAll,
               targetNames: searchNames,
+              shiftTemplates: _shiftTemplates,
             );
         monthlyRosterConversion = MonthlyRosterConversionReport(
           shifts: List.unmodifiable(
@@ -1212,6 +1240,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           .parseForWorkersWithDiagnostics(
             parsedMonthlyAll,
             targetNames: searchNames,
+            shiftTemplates: _shiftTemplates,
           );
       monthlyRosterConversion = MonthlyRosterConversionReport(
         shifts: List.unmodifiable(
