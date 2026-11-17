@@ -86,15 +86,14 @@ class ShiftTransactionApiException implements Exception {
 class ShiftTransactionApiClient {
   ShiftTransactionApiClient({
     required String baseUrl,
-    required Future<String?> Function() idTokenProvider,
+    required Future<String?> Function() this.idTokenProvider,
     http.Client? httpClient,
   }) : _baseUri = _normalizeBaseUri(baseUrl),
-       _idTokenProvider = idTokenProvider,
        _http = httpClient ?? http.Client(),
        _ownsHttpClient = httpClient == null;
 
   final Uri? _baseUri;
-  final Future<String?> Function() _idTokenProvider;
+  final Future<String?> Function() idTokenProvider;
   final http.Client _http;
   final bool _ownsHttpClient;
 
@@ -120,12 +119,12 @@ class ShiftTransactionApiClient {
     String? shiftType,
   }) async {
     final query = <String, String>{
-      if (mode != null) 'mode': mode,
-      if (type != null) 'type': type,
-      if (month != null) 'month': month,
-      if (organizationId != null) 'organization_id': organizationId,
-      if (staffId != null) 'staff_id': staffId,
-      if (shiftType != null) 'shift_type': shiftType,
+      'mode': ?mode,
+      'type': ?type,
+      'month': ?month,
+      'organization_id': ?organizationId,
+      'staff_id': ?staffId,
+      'shift_type': ?shiftType,
     };
     final json = await _get('api/v1/shift-transactions', query: query);
     final data = json['data'];
@@ -155,7 +154,7 @@ class ShiftTransactionApiClient {
     if (base == null) {
       throw const ShiftTransactionApiException(0, 'Transaction API URL is not configured.');
     }
-    final token = await _idTokenProvider();
+    final token = await idTokenProvider();
     if (token == null || token.trim().isEmpty) {
       throw const ShiftTransactionApiException(401, 'Please sign in with Google again.');
     }
