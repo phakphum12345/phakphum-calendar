@@ -1,0 +1,224 @@
+{
+  "description": "Synthetic, non-production roster scenarios. All names and assignments are fictional.",
+  "scenarios": [
+    {
+      "id": "weekly-seven-day",
+      "name": "weekly seven-day header with a standard label column",
+      "sheetTitle": "สิงหาคม 2569",
+      "rows": [
+        [
+          "ตารางเวร 1 สิงหาคม 2569 - 3 สิงหาคม 2569"
+        ],
+        [
+          "วันที่",
+          1,
+          2,
+          3
+        ],
+        [
+          "เวรเช้า",
+          "นที",
+          null,
+          "มะลิ"
+        ]
+      ],
+      "expected": [
+        {
+          "rowLabel": "เวรเช้า",
+          "workerName": "นที",
+          "date": "2026-08-01",
+          "sourceCell": "B3"
+        },
+        {
+          "rowLabel": "เวรเช้า",
+          "workerName": "มะลิ",
+          "date": "2026-08-03",
+          "sourceCell": "D3"
+        }
+      ],
+      "warningContains": []
+    },
+    {
+      "id": "shifted-columns-profile",
+      "name": "shifted date and name columns are constrained by a layout profile",
+      "sheetTitle": "ตารางเวร 1 กันยายน 2569 - 3 กันยายน 2569",
+      "profile": {
+        "dateHeaderRows": [
+          2
+        ],
+        "nameColumns": [
+          4,
+          5,
+          6
+        ],
+        "shiftLabelColumns": [
+          2
+        ],
+        "dataStartRow": 3,
+        "dataEndRow": 3
+      },
+      "rows": [
+        [
+          "คำอธิบาย"
+        ],
+        [
+          "หัวข้อเพิ่มเติม"
+        ],
+        [
+          null,
+          null,
+          "วันที่",
+          null,
+          1,
+          2,
+          3
+        ],
+        [
+          null,
+          null,
+          "เวรพิเศษ",
+          null,
+          "กานต์",
+          "",
+          "ริน"
+        ]
+      ],
+      "expected": [
+        {
+          "rowLabel": "เวรพิเศษ",
+          "workerName": "กานต์",
+          "date": "2026-09-01",
+          "sourceCell": "E4"
+        },
+        {
+          "rowLabel": "เวรพิเศษ",
+          "workerName": "ริน",
+          "date": "2026-09-03",
+          "sourceCell": "G4"
+        }
+      ],
+      "warningContains": []
+    },
+    {
+      "id": "independent-month-sections",
+      "name": "two independently dated sections do not borrow each other's month",
+      "sheetTitle": "พฤศจิกายน 2569",
+      "rows": [
+        [
+          "เวรหลัก 16 พฤศจิกายน 2569 - 17 พฤศจิกายน 2569"
+        ],
+        [
+          "วันที่",
+          16,
+          17
+        ],
+        [
+          "เช้า",
+          "พิม",
+          null
+        ],
+        [
+          null
+        ],
+        [
+          "MRI ประจำเดือน ธันวาคม พ.ศ. 2569"
+        ],
+        [
+          "วันที่",
+          1,
+          2
+        ],
+        [
+          "MRI",
+          "ธนา",
+          null
+        ]
+      ],
+      "expected": [
+        {
+          "rowLabel": "เช้า",
+          "workerName": "พิม",
+          "date": "2026-11-16",
+          "sourceCell": "B3"
+        },
+        {
+          "rowLabel": "MRI",
+          "workerName": "ธนา",
+          "date": "2026-12-01",
+          "sourceCell": "B7"
+        }
+      ],
+      "warningContains": []
+    },
+    {
+      "id": "out-of-range-day",
+      "name": "out-of-range displayed day is warned and never guessed",
+      "sheetTitle": "ตุลาคม 2569",
+      "rows": [
+        [
+          "ตารางเวร 1 ตุลาคม 2569 - 3 ตุลาคม 2569"
+        ],
+        [
+          "วันที่",
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          "ดึก",
+          "อรุณ",
+          null,
+          null,
+          "ไม่ควรนำเข้า"
+        ]
+      ],
+      "expected": [
+        {
+          "rowLabel": "ดึก",
+          "workerName": "อรุณ",
+          "date": "2026-10-01",
+          "sourceCell": "B3"
+        }
+      ],
+      "warningContains": [
+        "วันที่ 4"
+      ]
+    },
+    {
+      "id": "short-header-and-empty-cells",
+      "name": "short explicit date header is detected and empty worker cells are ignored",
+      "sheetTitle": "สิงหาคม 2569",
+      "rows": [
+        [
+          "ตารางเวร 1 สิงหาคม 2569 - 3 สิงหาคม 2569"
+        ],
+        [
+          null,
+          null,
+          "วันที่",
+          1,
+          2,
+          3
+        ],
+        [
+          "แผนก A",
+          "เวรเช้า",
+          null,
+          "นภา",
+          null,
+          ""
+        ]
+      ],
+      "expected": [
+        {
+          "rowLabel": "เวรเช้า",
+          "workerName": "นภา",
+          "date": "2026-08-01",
+          "sourceCell": "D3"
+        }
+      ],
+      "warningContains": []
+    }
+  ]
+}
