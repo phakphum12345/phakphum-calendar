@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:phakphum_calendar/domain/entities/shift_template.dart';
 import 'package:phakphum_calendar/models/shift.dart';
 import 'package:phakphum_calendar/services/shift_parser.dart';
 
@@ -435,6 +436,75 @@ void main() {
         reason: 'Expected parser to detect abbreviation for month $month',
       );
     }
+  });
+
+  test('uses active configured shift templates for custom legacy-parser rows', () {
+    const template = ShiftTemplate(
+      id: 'custom-support-night',
+      code: 'XN',
+      name: 'เวรสนับสนุนกลางคืน',
+      shortName: 'สนับสนุนดึก',
+      startTime: Duration(hours: 19, minutes: 30),
+      endTime: Duration(hours: 7, minutes: 30),
+      workingHours: 12,
+      color: 0xFF4527A0,
+    );
+    final row = _row('สนับสนุนดึก')..[1] = 'ผู้ใช้งานทดสอบ';
+    final shifts = ShiftParser(shiftTemplates: const [template]).parse(
+      snapshots: [
+        SheetSnapshot(
+          title: 'พฤศจิกายน 2569',
+          rows: [
+            ['วันที่', ...List.generate(30, (index) => index + 1)],
+            row,
+          ],
+        ),
+      ],
+      targetName: 'ผู้ใช้งานทดสอบ',
+      year: 2026,
+      month: 11,
+    );
+    expect(shifts, hasLength(1));
+    expect(shifts.single.code, 'XN');
+    expect(shifts.single.start, DateTime(2026, 11, 1, 19, 30));
+    expect(shifts.single.end, DateTime(2026, 11, 2, 7, 30));
+  });
+
+  test('does not convert inactive or ambiguous configured aliases', () {
+    const template = ShiftTemplate(
+      id: 'custom-night',
+      code: 'XN',
+      name: 'เวรสนับสนุนกลางคืน',
+      shortName: 'สนับสนุนดึก',
+      startTime: Duration(hours: 19),
+      endTime: Duration(hours: 7),
+      workingHours: 12,
+      color: 0xFF4527A0,
+    );
+    final row = _row('สนับสนุนดึก')..[1] = 'ผู้ใช้งานทดสอบ';
+    List<Shift> parse(List<ShiftTemplate> templates) =>
+        ShiftParser(shiftTemplates: templates).parse(
+          snapshots: [
+            SheetSnapshot(
+              title: 'พฤศจิกายน 2569',
+              rows: [
+                ['วันที่', ...List.generate(30, (index) => index + 1)],
+                row,
+              ],
+            ),
+          ],
+          targetName: 'ผู้ใช้งานทดสอบ',
+          year: 2026,
+          month: 11,
+        );
+    expect(parse([template.copyWith(active: false)]), isEmpty);
+    expect(
+      parse([
+        template,
+        template.copyWith(id: 'duplicate', startTime: const Duration(hours: 20)),
+      ]),
+      isEmpty,
+    );
   });
 
 }
