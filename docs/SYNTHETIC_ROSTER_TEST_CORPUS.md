@@ -14,6 +14,10 @@ hospital templates.
 - Multiple independently dated sections in one worksheet.
 - Out-of-range displayed dates produce diagnostics and are not guessed.
 - Short date headers explicitly labelled `วันที่`, with empty worker cells.
+- Leap-day and cross-month date resolution.
+- Multiple configured shift-label columns, with rightmost non-empty label selection and restricted worker columns.
+- Sections without their own date range are skipped rather than borrowing another section or the sheet month.
+- Seven-day numeric headers without an explicit `วันที่` label.
 
 ## Running
 

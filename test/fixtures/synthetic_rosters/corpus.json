@@ -219,6 +219,207 @@
         }
       ],
       "warningContains": []
+    },
+    {
+      "id": "cross-month-leap-year",
+      "name": "leap-day and cross-month dates are resolved within the declared range",
+      "sheetTitle": "ตารางเวร 28 กุมภาพันธ์ 2563 - 1 มีนาคม 2563",
+      "rows": [
+        [
+          "ตารางเวร 28 กุมภาพันธ์ 2563 - 1 มีนาคม 2563"
+        ],
+        [
+          "วันที่",
+          28,
+          29,
+          1
+        ],
+        [
+          "เช้า",
+          "เมฆ",
+          "ดาว",
+          "นที"
+        ]
+      ],
+      "expected": [
+        {
+          "rowLabel": "เช้า",
+          "workerName": "เมฆ",
+          "date": "2020-02-28",
+          "sourceCell": "B3"
+        },
+        {
+          "rowLabel": "เช้า",
+          "workerName": "ดาว",
+          "date": "2020-02-29",
+          "sourceCell": "C3"
+        },
+        {
+          "rowLabel": "เช้า",
+          "workerName": "นที",
+          "date": "2020-03-01",
+          "sourceCell": "D3"
+        }
+      ],
+      "warningContains": []
+    },
+    {
+      "id": "multi-column-label-profile",
+      "name": "rightmost configured shift-label column wins while staff columns remain restricted",
+      "sheetTitle": "ตารางเวร 5 มกราคม 2569 - 6 มกราคม 2569",
+      "profile": {
+        "dateHeaderRows": [
+          1
+        ],
+        "nameColumns": [
+          3,
+          4
+        ],
+        "shiftLabelColumns": [
+          0,
+          1
+        ],
+        "dataStartRow": 2,
+        "dataEndRow": 2
+      },
+      "rows": [
+        [
+          "ตารางเวร 5 มกราคม 2569 - 6 มกราคม 2569"
+        ],
+        [
+          null,
+          null,
+          "วันที่",
+          5,
+          6
+        ],
+        [
+          "แผนก CT",
+          "CT-ER บ่าย",
+          null,
+          "ฟ้า",
+          "ฝน"
+        ]
+      ],
+      "expected": [
+        {
+          "rowLabel": "CT-ER บ่าย",
+          "workerName": "ฟ้า",
+          "date": "2026-01-05",
+          "sourceCell": "D3"
+        },
+        {
+          "rowLabel": "CT-ER บ่าย",
+          "workerName": "ฝน",
+          "date": "2026-01-06",
+          "sourceCell": "E3"
+        }
+      ],
+      "warningContains": []
+    },
+    {
+      "id": "missing-section-period-is-not-borrowed",
+      "name": "a section without its own date range is skipped instead of borrowing another section or sheet month",
+      "sheetTitle": "มกราคม 2569",
+      "rows": [
+        [
+          "กลุ่มที่ไม่มีช่วงวันที่"
+        ],
+        [
+          "วันที่",
+          5,
+          6
+        ],
+        [
+          "เวรเช้า",
+          "ห้ามเดาวัน",
+          "ห้ามเดาวัน"
+        ],
+        [
+          null
+        ],
+        [
+          "กลุ่ม B 10 มกราคม 2569 - 11 มกราคม 2569"
+        ],
+        [
+          "วันที่",
+          10,
+          11
+        ],
+        [
+          "เวรดึก",
+          "ผู้ทดสอบ",
+          "ผู้ทดสอบ"
+        ]
+      ],
+      "expected": [
+        {
+          "rowLabel": "เวรดึก",
+          "workerName": "ผู้ทดสอบ",
+          "date": "2026-01-10",
+          "sourceCell": "B7"
+        },
+        {
+          "rowLabel": "เวรดึก",
+          "workerName": "ผู้ทดสอบ",
+          "date": "2026-01-11",
+          "sourceCell": "C7"
+        }
+      ],
+      "warningContains": [
+        "ไม่พบช่วงวันที่เฉพาะของส่วน"
+      ]
+    },
+    {
+      "id": "seven-day-header-without-label",
+      "name": "a seven-day numeric header is recognized without an explicit date label",
+      "sheetTitle": "ตารางเวร 1 พฤษภาคม 2569 - 7 พฤษภาคม 2569",
+      "rows": [
+        [
+          "ตารางเวร 1 พฤษภาคม 2569 - 7 พฤษภาคม 2569"
+        ],
+        [
+          null,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          "เวรเช้า",
+          "หนึ่ง",
+          null,
+          "สาม",
+          null,
+          null,
+          null,
+          "เจ็ด"
+        ]
+      ],
+      "expected": [
+        {
+          "rowLabel": "เวรเช้า",
+          "workerName": "หนึ่ง",
+          "date": "2026-05-01",
+          "sourceCell": "B3"
+        },
+        {
+          "rowLabel": "เวรเช้า",
+          "workerName": "สาม",
+          "date": "2026-05-03",
+          "sourceCell": "D3"
+        },
+        {
+          "rowLabel": "เวรเช้า",
+          "workerName": "เจ็ด",
+          "date": "2026-05-07",
+          "sourceCell": "H3"
+        }
+      ],
+      "warningContains": []
     }
   ]
 }
