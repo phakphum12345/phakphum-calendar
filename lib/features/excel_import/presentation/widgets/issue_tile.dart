@@ -21,7 +21,7 @@ class IssueTile extends StatelessWidget {
         color: color,
       ),
       title: Text(issue.message),
-      subtitle: Text('Row ' + issue.rowNumber.toString() + ' • Column ' + issue.column),
+      subtitle: Text('Row ${issue.rowNumber} • Column ${issue.column}'),
       trailing: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

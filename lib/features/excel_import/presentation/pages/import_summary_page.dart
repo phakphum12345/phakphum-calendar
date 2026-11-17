@@ -158,8 +158,7 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: Text(
-            'แก้ไขแถว ' + issue.rowNumber.toString() +
-                ' • คอลัมน์ ' + issue.column,
+            'แก้ไขแถว ${issue.rowNumber} • คอลัมน์ ${issue.column}',
           ),
           content: TextField(
             controller: editor,

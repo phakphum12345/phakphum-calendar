@@ -102,7 +102,7 @@ class ExcelImportController extends ChangeNotifier implements ControllerState {
       _setError(
         ImportError(
           code: ImportErrorCode.worksheetReadFailed,
-          message: 'ไม่สามารถอ่าน Worksheet ' + worksheet.name + ' ได้',
+          message: 'ไม่สามารถอ่าน Worksheet ${worksheet.name} ได้',
         ),
       );
     }
