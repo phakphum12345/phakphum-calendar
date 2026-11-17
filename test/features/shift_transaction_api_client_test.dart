@@ -1,10 +1,12 @@
 import 'dart:convert';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 
 import 'package:phakphum_calendar/features/shift_exchange/infrastructure/shift_transaction_api_client.dart';
+import 'package:phakphum_calendar/features/shift_exchange/presentation/widgets/shift_transaction_history_panel.dart';
 
 void main() {
   final transaction = <String, dynamic>{
@@ -159,4 +161,31 @@ void main() {
     expect(requestCount, 0);
     client.close();
   });
+
+  testWidgets('does not request transaction history when API URL is unconfigured', (tester) async {
+    var tokenRequests = 0;
+    final client = ShiftTransactionApiClient(
+      baseUrl: '',
+      idTokenProvider: () async {
+        tokenRequests++;
+        return 'token';
+      },
+      httpClient: MockClient((request) async {
+        fail('No HTTP request should be made without an API URL.');
+      }),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ShiftTransactionHistoryPanel(apiClient: client),
+        ),
+      ),
+    );
+
+    expect(find.text('Transaction history is not configured'), findsOneWidget);
+    expect(tokenRequests, 0);
+    client.close();
+  });
+
 }
