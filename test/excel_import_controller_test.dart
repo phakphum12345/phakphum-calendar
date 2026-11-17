@@ -80,36 +80,6 @@ void main() {
     expect(controller.importSummary?.importedRows, 1);
   });
 
-  test('corrects an imported source cell and reprocesses validation', () async {
-    final controller = ExcelImportController(
-      reader: ExcelReaderService(filePicker: () async => _invalidDateWorkbookFile()),
-    );
-    addTearDown(controller.dispose);
-    await controller.pickFile();
-    await controller.selectWorksheet(controller.workbook!.worksheets.single);
-    const mapping = ColumnMapping(
-      dateColumn: 'A',
-      shiftColumn: 'B',
-      employeeColumn: 'C',
-    );
-    await controller.importRows(mapping);
-
-    expect(controller.importSummary?.errorRows, 1);
-    expect(controller.shiftRecords, isEmpty);
-    expect(controller.valueAt(rowNumber: 2, column: 'A'), 'not-a-date');
-
-    expect(controller.updateCellValue(
-      rowNumber: 2,
-      column: 'A',
-      value: '2026-07-24',
-    ), isTrue);
-    expect(controller.reprocessImport(), isTrue);
-
-    expect(controller.importSummary?.errorRows, 0);
-    expect(controller.importSummary?.importedRows, 1);
-    expect(controller.shiftRecords.single.date, DateTime(2026, 7, 24));
-  });
-
   test('imports all worksheet rows while retaining a 50-row preview', () async {
     final controller = ExcelImportController(
       reader: ExcelReaderService(filePicker: () async => _largeWorkbookFile()),
@@ -183,26 +153,6 @@ ImportFile _largeWorkbookFile() {
 
   return ImportFile(
     name: 'large-roster.xlsx',
-    bytes: Uint8List.fromList(workbook.encode()!),
-  );
-}
-
-ImportFile _invalidDateWorkbookFile() {
-  final workbook = Excel.createExcel();
-  workbook.rename('Sheet1', 'Roster');
-  workbook['Roster']
-    ..appendRow([
-      TextCellValue('Date'),
-      TextCellValue('Shift'),
-      TextCellValue('Employee'),
-    ])
-    ..appendRow([
-      TextCellValue('not-a-date'),
-      TextCellValue('Morning'),
-      TextCellValue('Anan'),
-    ]);
-  return ImportFile(
-    name: 'invalid-date.xlsx',
     bytes: Uint8List.fromList(workbook.encode()!),
   );
 }

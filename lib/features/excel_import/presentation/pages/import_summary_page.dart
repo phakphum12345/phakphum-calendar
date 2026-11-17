@@ -6,9 +6,9 @@ import '../../../../l10n/l10n.dart';
 import '../../../schedule/data/imported_schedule_adapter.dart';
 import '../../../schedule/presentation/controllers/schedule_controller.dart';
 import '../../../schedule/presentation/pages/imported_month_calendar_page.dart';
+import '../../domain/import_issue.dart';
 import '../../domain/import_summary.dart';
 import '../../domain/shift_record.dart';
-import '../../domain/import_issue.dart';
 import '../controllers/excel_import_controller.dart';
 import '../widgets/import_statistics.dart';
 import '../widgets/issue_list.dart';
@@ -21,6 +21,7 @@ class ImportSummaryPage extends StatefulWidget {
     this.scheduleControllerFactory,
     this.persistenceResult,
     this.scheduleSaver,
+    this.scheduleFactory,
     this.controller,
     super.key,
   });
@@ -31,10 +32,17 @@ class ImportSummaryPage extends StatefulWidget {
   final ScheduleController Function(Schedule)? scheduleControllerFactory;
   final Result<Schedule>? persistenceResult;
   final Future<Result<Schedule>> Function(Schedule)? scheduleSaver;
+  final Schedule Function(Iterable<ShiftRecord>)? scheduleFactory;
   final ExcelImportController? controller;
 
   ImportSummary get _currentSummary => controller?.importSummary ?? summary;
   List<ShiftRecord> get _currentRecords => controller?.shiftRecords ?? records;
+
+  Schedule get _currentSchedule {
+    if (controller == null && schedule != null) return schedule!;
+    return scheduleFactory?.call(_currentRecords) ??
+        const ImportedScheduleAdapter().createSchedule(_currentRecords);
+  }
 
   @override
   State<ImportSummaryPage> createState() => _ImportSummaryPageState();
@@ -67,12 +75,12 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
                   const SizedBox(height: 8),
                   Text(
                     context.l10n.importCreatedRecords(
-                      _currentRecords.length,
-                      _currentSummary.totalRows,
+                      widget._currentRecords.length,
+                      widget._currentSummary.totalRows,
                     ),
                   ),
                   const SizedBox(height: 24),
-                  ImportStatistics(summary: widget.summary),
+                  ImportStatistics(summary: widget._currentSummary),
                   if (persistenceResult case Failure<Schedule>(
                     message: final message,
                   )) ...[
@@ -108,7 +116,7 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
                   ],
                   const SizedBox(height: 16),
                   FilledButton.icon(
-                    onPressed: widget.records.any((record) => record.date != null)
+                    onPressed: widget._currentRecords.any((record) => record.date != null)
                         ? () => _openCalendar(context)
                         : null,
                     icon: const Icon(Icons.calendar_month),
@@ -122,7 +130,10 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  IssueList(issues: widget.summary.issues),
+                  IssueList(
+                    issues: widget._currentSummary.issues,
+                    onEditIssue: widget.controller == null ? null : _editIssue,
+                  ),
                 ],
               ),
             ),
@@ -133,39 +144,9 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
   }
 
   Future<void> _editIssue(ImportIssue issue) async {
-    final activeController = controller;
-    if (activeController == null ||
-        !RegExp(r'^[A-Z]+
-    final save = widget.scheduleSaver;
-    if (save == null || _saving) return;
-    setState(() => _saving = true);
-    final schedule = widget.schedule ??
-        const ImportedScheduleAdapter().createSchedule(widget.records);
-    final result = await save(schedule);
-    if (!mounted) return;
-    setState(() {
-      _saveResult = result;
-      _saving = false;
-    });
-  }
+    final activeController = widget.controller;
+    if (activeController == null || !_isExcelColumn(issue.column)) return;
 
-  void _openCalendar(BuildContext context) {
-    final canonicalSchedule =
-        widget.schedule ??
-        const ImportedScheduleAdapter().createSchedule(widget.records);
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => ImportedMonthCalendarPage(
-          schedule: canonicalSchedule,
-          controllerFactory: widget.scheduleControllerFactory,
-        ),
-      ),
-    );
-  }
-}
-).hasMatch(issue.column)) {
-      return;
-    }
     final editor = TextEditingController(
       text: activeController.valueAt(
         rowNumber: issue.rowNumber,
@@ -176,7 +157,10 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
       final corrected = await showDialog<String>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: Text('แก้ไขแถว ${issue.rowNumber} • คอลัมน์ ${issue.column}'),
+          title: Text(
+            'แก้ไขแถว ' + issue.rowNumber.toString() +
+                ' • คอลัมน์ ' + issue.column,
+          ),
           content: TextField(
             controller: editor,
             autofocus: true,
@@ -212,13 +196,16 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
     }
   }
 
+  bool _isExcelColumn(String column) {
+    return column.isNotEmpty &&
+        column.codeUnits.every((code) => code >= 65 && code <= 90);
+  }
+
   Future<void> _saveSchedule() async {
     final save = widget.scheduleSaver;
     if (save == null || _saving) return;
     setState(() => _saving = true);
-    final schedule = widget.schedule ??
-        const ImportedScheduleAdapter().createSchedule(widget.records);
-    final result = await save(schedule);
+    final result = await save(widget._currentSchedule);
     if (!mounted) return;
     setState(() {
       _saveResult = result;
@@ -227,13 +214,10 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
   }
 
   void _openCalendar(BuildContext context) {
-    final canonicalSchedule =
-        widget.schedule ??
-        const ImportedScheduleAdapter().createSchedule(widget.records);
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ImportedMonthCalendarPage(
-          schedule: canonicalSchedule,
+          schedule: widget._currentSchedule,
           controllerFactory: widget.scheduleControllerFactory,
         ),
       ),

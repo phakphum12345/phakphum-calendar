@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../../core/state/controller_state.dart';
+import '../../../../core/utils/excel_column_name.dart';
 import '../../application/import_engine.dart';
 import '../../data/excel_reader_service.dart';
 import '../../domain/column_mapping.dart';
@@ -101,7 +102,7 @@ class ExcelImportController extends ChangeNotifier implements ControllerState {
       _setError(
         ImportError(
           code: ImportErrorCode.worksheetReadFailed,
-          message: 'ไม่สามารถอ่าน Worksheet "${worksheet.name}" ได้',
+          message: 'ไม่สามารถอ่าน Worksheet ' + worksheet.name + ' ได้',
         ),
       );
     }
@@ -159,44 +160,7 @@ class ExcelImportController extends ChangeNotifier implements ControllerState {
 
   /// Returns the source value for a displayed worksheet row and Excel column.
   Object? valueAt({required int rowNumber, required String column}) {
-    if (!RegExp(r'^[A-Z]+
-    error = null;
-    state = ExcelImportState.loading;
-    notifyListeners();
-  }
-
-  void _setError(ImportError nextError) {
-    error = nextError;
-    state = ExcelImportState.error;
-    notifyListeners();
-  }
-
-  void _clearWorkbook() {
-    selectedFile = null;
-    workbook = null;
-    selectedWorksheet = null;
-    rows = const [];
-    _externalImportRows = null;
-    _workingRows = null;
-    _clearImportResult();
-  }
-
-  void _clearImportResult() {
-    _lastMapping = null;
-    shiftRecords = const [];
-    importSummary = null;
-    loading = false;
-    completed = false;
-  }
-
-  void _reset() {
-    _clearWorkbook();
-    error = null;
-    state = ExcelImportState.idle;
-    notifyListeners();
-  }
-}
-).hasMatch(column)) return null;
+    if (!_isExcelColumn(column)) return null;
     final columnIndex = ExcelColumnName.toIndex(column);
     final sourceRows = _workingRows ?? rows;
     for (final row in sourceRows) {
@@ -216,44 +180,7 @@ class ExcelImportController extends ChangeNotifier implements ControllerState {
     required String column,
     required Object? value,
   }) {
-    if (rowNumber <= 1 || !RegExp(r'^[A-Z]+
-    error = null;
-    state = ExcelImportState.loading;
-    notifyListeners();
-  }
-
-  void _setError(ImportError nextError) {
-    error = nextError;
-    state = ExcelImportState.error;
-    notifyListeners();
-  }
-
-  void _clearWorkbook() {
-    selectedFile = null;
-    workbook = null;
-    selectedWorksheet = null;
-    rows = const [];
-    _externalImportRows = null;
-    _clearImportResult();
-  }
-
-  void _clearImportResult() {
-    shiftRecords = const [];
-    importSummary = null;
-    loading = false;
-    completed = false;
-  }
-
-  void _reset() {
-    _clearWorkbook();
-    error = null;
-    state = ExcelImportState.idle;
-    notifyListeners();
-  }
-}
-).hasMatch(column)) {
-      return false;
-    }
+    if (rowNumber <= 1 || !_isExcelColumn(column)) return false;
     final columnIndex = ExcelColumnName.toIndex(column);
     final sourceRows = _workingRows ?? _externalImportRows ?? rows;
     var found = false;
@@ -284,13 +211,16 @@ class ExcelImportController extends ChangeNotifier implements ControllerState {
       return ExcelRow(index: row.index, cells: cells);
     }).toList(growable: false);
     if (!found) return false;
+
     _workingRows = List.unmodifiable(updatedRows);
     if (_externalImportRows != null) {
       _externalImportRows = List.unmodifiable(updatedRows);
     }
-    rows = List.unmodifiable(rows.map((row) {
-      if (row.index != rowNumber - 1) return row;
-      return updatedRows.firstWhere((candidate) => candidate.index == row.index);
+    rows = List.unmodifiable(rows.map((previewRow) {
+      if (previewRow.index != rowNumber - 1) return previewRow;
+      return updatedRows.firstWhere(
+        (candidate) => candidate.index == previewRow.index,
+      );
     }));
     notifyListeners();
     return true;
@@ -308,6 +238,11 @@ class ExcelImportController extends ChangeNotifier implements ControllerState {
     completed = true;
     notifyListeners();
     return true;
+  }
+
+  bool _isExcelColumn(String column) {
+    return column.isNotEmpty &&
+        column.codeUnits.every((code) => code >= 65 && code <= 90);
   }
 
   void _setLoading() {
@@ -328,10 +263,12 @@ class ExcelImportController extends ChangeNotifier implements ControllerState {
     selectedWorksheet = null;
     rows = const [];
     _externalImportRows = null;
+    _workingRows = null;
     _clearImportResult();
   }
 
   void _clearImportResult() {
+    _lastMapping = null;
     shiftRecords = const [];
     importSummary = null;
     loading = false;
