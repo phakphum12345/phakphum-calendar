@@ -1,4 +1,3 @@
-
 name: Build Android
 
 on:
@@ -61,6 +60,16 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Cache Gradle dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android/**/*.gradle*', 'android/gradle/wrapper/gradle-wrapper.properties', 'android/gradle.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: Install Android NDK with retry
         shell: bash
         run: |
@@ -112,13 +121,43 @@ jobs:
         run: flutter pub get
 
       - name: Build Android release APK
+        shell: bash
         env:
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
           ORGANIZATION_API_BASE_URL: ${{ vars.ORGANIZATION_API_BASE_URL }}
-        run: >-
-          flutter build apk --release
-          --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID"
-          --dart-define=ORGANIZATION_API_BASE_URL="$ORGANIZATION_API_BASE_URL"
+        run: |
+          set -uo pipefail
+          log_file="$(mktemp)"
+
+          for attempt in 1 2 3; do
+            echo "Android release build attempt ${attempt}/3"
+            flutter build apk --release \
+              --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID" \
+              --dart-define=ORGANIZATION_API_BASE_URL="$ORGANIZATION_API_BASE_URL" \
+              2>&1 | tee "$log_file"
+            build_status=${PIPESTATUS[0]}
+
+            if [ "$build_status" -eq 0 ]; then
+              rm -f "$log_file"
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 3 ] && grep -Eqi \
+              'HTTP 429|status code 429|Too Many Requests|Could not GET|Connection reset|timed out' \
+              "$log_file"; then
+              delay=$((attempt * 30))
+              echo "Transient dependency/network failure detected; retrying in ${delay}s."
+              sleep "$delay"
+              continue
+            fi
+
+            echo "Android build failed with exit code ${build_status}; not retrying a non-transient failure."
+            rm -f "$log_file"
+            exit "$build_status"
+          done
+
+          rm -f "$log_file"
+          exit 1
 
       - name: Verify Android APK
         run: test -s build/app/outputs/flutter-apk/app-release.apk
