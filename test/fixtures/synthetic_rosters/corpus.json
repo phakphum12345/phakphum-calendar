@@ -420,6 +420,337 @@
         }
       ],
       "warningContains": []
+    },
+    {
+      "id": "full-31-day-two-tier-header",
+      "name": "31-day month with weekday banner, two-tier shift labels, and multiple service rows",
+      "sheetTitle": "มกราคม 2570",
+      "profile": {
+        "dateHeaderRows": [
+          2
+        ],
+        "nameColumns": [
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32
+        ],
+        "shiftLabelColumns": [
+          0,
+          1
+        ],
+        "dataStartRow": 3,
+        "dataEndRow": 4
+      },
+      "rows": [
+        [
+          "ตารางเวร 1 มกราคม 2570 - 31 มกราคม 2570"
+        ],
+        [
+          "วันในสัปดาห์",
+          "จ",
+          "อ",
+          "พ",
+          "พฤ",
+          "ศ",
+          "ส",
+          "อา"
+        ],
+        [
+          null,
+          "วันที่",
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31
+        ],
+        [
+          "หน่วย A",
+          "เวรเช้า",
+          "นที",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "มะลิ",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "ภาคิน"
+        ],
+        [
+          "หน่วย B",
+          "เวรดึก",
+          null,
+          "ริน",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          "ฟ้า",
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null,
+          null
+        ]
+      ],
+      "expected": [
+        {
+          "rowLabel": "เวรเช้า",
+          "workerName": "นที",
+          "date": "2027-01-01",
+          "sourceCell": "C4"
+        },
+        {
+          "rowLabel": "เวรเช้า",
+          "workerName": "มะลิ",
+          "date": "2027-01-15",
+          "sourceCell": "Q4"
+        },
+        {
+          "rowLabel": "เวรเช้า",
+          "workerName": "ภาคิน",
+          "date": "2027-01-31",
+          "sourceCell": "AG4"
+        },
+        {
+          "rowLabel": "เวรดึก",
+          "workerName": "ริน",
+          "date": "2027-01-02",
+          "sourceCell": "D5"
+        },
+        {
+          "rowLabel": "เวรดึก",
+          "workerName": "ฟ้า",
+          "date": "2027-01-16",
+          "sourceCell": "R5"
+        }
+      ],
+      "warningContains": []
+    },
+    {
+      "id": "year-rollover-cross-month",
+      "name": "date sequence crosses December to January and Buddhist years roll over",
+      "sheetTitle": "ธันวาคม 2569",
+      "rows": [
+        [
+          "เวร 29 ธันวาคม 2569 - 4 มกราคม 2570"
+        ],
+        [
+          "วันที่",
+          29,
+          30,
+          31,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          "เวรเช้า",
+          "เมฆ",
+          null,
+          "ดาว",
+          "นที",
+          null,
+          null,
+          "มะลิ"
+        ]
+      ],
+      "expected": [
+        {
+          "rowLabel": "เวรเช้า",
+          "workerName": "เมฆ",
+          "date": "2026-12-29",
+          "sourceCell": "B3"
+        },
+        {
+          "rowLabel": "เวรเช้า",
+          "workerName": "ดาว",
+          "date": "2026-12-31",
+          "sourceCell": "D3"
+        },
+        {
+          "rowLabel": "เวรเช้า",
+          "workerName": "นที",
+          "date": "2027-01-01",
+          "sourceCell": "E3"
+        },
+        {
+          "rowLabel": "เวรเช้า",
+          "workerName": "มะลิ",
+          "date": "2027-01-04",
+          "sourceCell": "H3"
+        }
+      ],
+      "warningContains": []
+    },
+    {
+      "id": "noncontiguous-date-columns",
+      "name": "non-contiguous date columns ignore spacer and metadata columns under a layout profile",
+      "sheetTitle": "ตารางเวร 5 มีนาคม 2570 - 7 มีนาคม 2570",
+      "profile": {
+        "dateHeaderRows": [
+          2
+        ],
+        "nameColumns": [
+          3,
+          5,
+          7
+        ],
+        "shiftLabelColumns": [
+          1,
+          2
+        ],
+        "dataStartRow": 3,
+        "dataEndRow": 3
+      },
+      "rows": [
+        [
+          "รายละเอียดตารางเวร 5 มีนาคม 2570 - 7 มีนาคม 2570"
+        ],
+        [
+          "หมายเหตุ",
+          "วันทำการ",
+          "ข้อมูลประกอบ"
+        ],
+        [
+          null,
+          null,
+          "วันที่",
+          5,
+          null,
+          6,
+          null,
+          7
+        ],
+        [
+          null,
+          "หน่วย A",
+          "เวรเช้า",
+          "อร",
+          "ห้ามอ่าน",
+          "นิด",
+          "ห้ามอ่าน",
+          "แก้ว"
+        ]
+      ],
+      "expected": [
+        {
+          "rowLabel": "เวรเช้า",
+          "workerName": "อร",
+          "date": "2027-03-05",
+          "sourceCell": "D4"
+        },
+        {
+          "rowLabel": "เวรเช้า",
+          "workerName": "นิด",
+          "date": "2027-03-06",
+          "sourceCell": "F4"
+        },
+        {
+          "rowLabel": "เวรเช้า",
+          "workerName": "แก้ว",
+          "date": "2027-03-07",
+          "sourceCell": "H4"
+        }
+      ],
+      "warningContains": []
     }
   ]
 }
