@@ -1,6 +1,7 @@
 import '../domain/a1_notation.dart';
 import '../domain/monthly_roster_section.dart';
 import '../../../models/shift.dart';
+import '../../../domain/entities/shift_template.dart';
 import '../../../services/shift_color_service.dart';
 import '../domain/shift_parser_input.dart';
 import '../domain/roster_layout_profile.dart';
@@ -437,6 +438,7 @@ class MonthlyRosterShiftAdapter {
   List<Shift> parseForWorkers(
     MonthlyRosterParseReport report, {
     required Iterable<String> targetNames,
+    Iterable<ShiftTemplate> shiftTemplates = const [],
   }) {
     final targets = targetNames
         .map(_compact)
@@ -452,7 +454,10 @@ class MonthlyRosterShiftAdapter {
         continue;
       }
 
-      final rule = _ruleForLabel(assignment.rowLabel);
+      final rule = _ruleForLabel(
+        assignment.rowLabel,
+        shiftTemplates: shiftTemplates,
+      );
       if (rule == null) continue;
 
       final date = assignment.date;
@@ -494,7 +499,35 @@ class MonthlyRosterShiftAdapter {
       ..sort((left, right) => left.start.compareTo(right.start));
   }
 
-  _MonthlyShiftRule? _ruleForLabel(String label) {
+  _MonthlyShiftRule? _ruleForLabel(
+    String label, {
+    required Iterable<ShiftTemplate> shiftTemplates,
+  }) {
+    final normalizedLabel = _compact(label);
+    final matchingTemplates = shiftTemplates.where((template) {
+      if (!template.active) return false;
+      return [
+        template.code,
+        template.name,
+        template.shortName,
+      ].any((alias) => alias.trim().isNotEmpty && _compact(alias) == normalizedLabel);
+    }).toList(growable: false);
+
+    // A configured template is authoritative. Never choose arbitrarily when
+    // two active templates share an alias (for example, across departments).
+    if (matchingTemplates.isNotEmpty) {
+      if (matchingTemplates.length != 1) return null;
+      final template = matchingTemplates.single;
+      return _MonthlyShiftRule(
+        code: template.code,
+        startHour: template.startTime.inHours.remainder(24),
+        startMinute: template.startTime.inMinutes.remainder(60),
+        endHour: template.endTime.inHours.remainder(24),
+        endMinute: template.endTime.inMinutes.remainder(60),
+        category: ShiftCategory.own,
+      );
+    }
+
     final value = label
         .toUpperCase()
         .replaceAll(RegExp(r'[\s.\-_]+'), '');

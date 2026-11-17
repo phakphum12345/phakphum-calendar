@@ -1,4 +1,5 @@
 import '../../../models/shift.dart';
+import '../../../domain/entities/shift_template.dart';
 import '../domain/monthly_roster_section.dart';
 import 'monthly_roster_section_parser.dart';
 
@@ -26,6 +27,7 @@ extension MonthlyRosterShiftAdapterDiagnostics on MonthlyRosterShiftAdapter {
   MonthlyRosterConversionReport parseForWorkersWithDiagnostics(
     MonthlyRosterParseReport report, {
     required Iterable<String> targetNames,
+    Iterable<ShiftTemplate> shiftTemplates = const [],
   }) {
     final targets = targetNames
         .map(_compact)
@@ -43,7 +45,11 @@ extension MonthlyRosterShiftAdapterDiagnostics on MonthlyRosterShiftAdapter {
       return worker.isNotEmpty && targets.any(worker.contains);
     }).toList(growable: false);
 
-    final shifts = parseForWorkers(report, targetNames: targetNames);
+    final shifts = parseForWorkers(
+      report,
+      targetNames: targetNames,
+      shiftTemplates: shiftTemplates,
+    );
     final convertedSources = shifts.map((shift) {
       if (shift.sourceSpreadsheetId != null && shift.sourceSheetId != null) {
         return '${shift.sourceSpreadsheetId}|${shift.sourceSheetId}|${shift.cell.toUpperCase()}';
