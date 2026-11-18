@@ -235,6 +235,7 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
             key: ValueKey(_historyRevision),
             apiClient: widget.historyApiClient!,
             approvableOrganizationIds: _approvableOrganizationIds,
+            mode: widget.organizationMode ? 'organization' : 'personal',
             onChanged: () => setState(() => _historyRevision++),
           ),
         const SizedBox(height: 16),
