@@ -199,6 +199,7 @@ class HospitalRosterParser {
   }
 
   int? _asDay(Object? value) {
+    if (value is num && value % 1 != 0) return null;
     final day = value is num
         ? value.toInt()
         : int.tryParse(value?.toString().trim() ?? '');
