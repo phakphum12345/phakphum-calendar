@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/result/result.dart';
 import '../../../../domain/entities/employee.dart';
-import '../../../../domain/entities/shift_template.dart';
 import '../../../../domain/entities/schedule.dart';
+import '../../../../domain/entities/shift_template.dart';
 import '../../../../domain/repositories/employee_repository.dart';
 import '../../../../l10n/l10n.dart';
 import '../../../employees/application/employee_match_resolver.dart';
