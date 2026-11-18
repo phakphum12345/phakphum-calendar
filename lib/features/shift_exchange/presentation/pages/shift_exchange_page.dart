@@ -391,17 +391,20 @@ class _ShiftTransactionComposerDialogState
     return code.isEmpty ? employee.id : code;
   }
 
-  String? get _effectiveRequesterId => _serverEmployeeId(_requesterRosterEmployee);
-  String? get _effectiveRecipientId => _serverEmployeeId(_recipientRosterEmployee);
+  String? get _effectiveRequesterId => widget.organizationMode
+      ? widget.organization?.employeeId
+      : _serverEmployeeId(_requesterRosterEmployee);
+  String? get _effectiveRecipientId => widget.organizationMode
+      ? _recipientEmployeeId
+      : _serverEmployeeId(_recipientRosterEmployee);
 
   Employee? _findRosterEmployee(String? membershipEmployeeId) {
     if (membershipEmployeeId == null || membershipEmployeeId.trim().isEmpty) {
       return null;
     }
-    final matches = _employees.where((employee) =>
-        employee.id == membershipEmployeeId ||
-        employee.employeeCode == membershipEmployeeId ||
-        employee.displayName == membershipEmployeeId).toList();
+    final matches = _employees
+        .where((employee) => _matchesRosterId(employee, membershipEmployeeId))
+        .toList();
     return matches.length == 1 ? matches.single : null;
   }
 
@@ -438,10 +441,10 @@ class _ShiftTransactionComposerDialogState
     final recipientShift = _firstOrNull(_recipientShifts.where((item) => item.key == _recipientShiftKey));
     final requesterCodeMatches = requesterId == null
         ? 0
-        : _employees.where((employee) => _serverEmployeeId(employee) == requesterId).length;
+        : _employees.where((employee) => _matchesRosterId(employee, requesterId)).length;
     final recipientCodeMatches = recipientId == null
         ? 0
-        : _employees.where((employee) => _serverEmployeeId(employee) == recipientId).length;
+        : _employees.where((employee) => _matchesRosterId(employee, recipientId)).length;
     if (requesterEmployee == null || recipientEmployee == null ||
         requesterId == null || recipientId == null ||
         requesterEmployee.id == recipientEmployee.id ||
@@ -774,6 +777,11 @@ class _RosterShiftChoice {
     shiftId: assignment.shift.id,
   );
 }
+
+bool _matchesRosterId(Employee employee, String employeeId) =>
+    employee.id == employeeId ||
+    employee.employeeCode == employeeId ||
+    employee.displayName == employeeId;
 
 T? _firstOrNull<T>(Iterable<T> values) {
   for (final value in values) {
