@@ -512,10 +512,10 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
                       }
                     : null,
                 title: Text('แถว ${entry.rowNumber} • ${actionLabel(entry.action)}'),
-                subtitle: Text(entry.record.employee + ' • ' + entry.record.shift +
-                    (entry.record.date == null
-                        ? ''
-                        : ' • ${entry.record.date!.day}/${entry.record.date!.month}/${entry.record.date!.year}')),
+                subtitle: Text(
+                  '${entry.record.employee} • ${entry.record.shift}'
+                  '${entry.record.date == null ? '' : ' • ${entry.record.date!.day}/${entry.record.date!.month}/${entry.record.date!.year}'}',
+                ),
               ),
               const Divider(height: 1),
             ],
