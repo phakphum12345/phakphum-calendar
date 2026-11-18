@@ -28,11 +28,11 @@ concurrency:
 
 jobs:
   required-evidence:
-    name: Require all platform evidence for exact PR head
+    name: Require core platform evidence for exact PR head
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - name: Collect required workflow evidence
+      - name: Collect core workflow evidence
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
@@ -48,7 +48,6 @@ jobs:
             "Windows:windows.yml"
             "Web:web.yml"
             "Android:android.yml"
-            "iOS:ios.yml"
             "Linux:linux.yml"
           )
 
@@ -80,7 +79,7 @@ jobs:
             pending=0
             failed=0
             echo ""
-            echo "===== PR GATE CHECK ${attempt}/60 | PR #${PR_NUMBER} | ${EXPECTED_SHA} ====="
+            echo "===== CORE PR GATE CHECK ${attempt}/60 | PR #${PR_NUMBER} | ${EXPECTED_SHA} ====="
 
             for entry in "${required_workflows[@]}"; do
               label="${entry%%:*}"
@@ -112,14 +111,15 @@ jobs:
 
             if [[ "$failed" -eq 1 ]]; then
               echo ""
-              echo "PULL REQUEST GATE: FAIL"
+              echo "CORE PULL REQUEST GATE: FAIL"
               exit 1
             fi
 
             if [[ "$pending" -eq 0 ]]; then
               echo ""
-              echo "PULL REQUEST GATE: PASS"
-              echo "All six required platform workflows succeeded for the exact PR head SHA."
+              echo "CORE PULL REQUEST GATE: PASS"
+              echo "All five core workflows succeeded for the exact PR head SHA."
+              echo "iOS is evaluated independently by the iOS Evidence Gate."
               exit 0
             fi
 
@@ -128,6 +128,6 @@ jobs:
             fi
           done
 
-          echo "PULL REQUEST GATE: FAIL"
-          echo "Required evidence was missing or incomplete after 30 minutes."
+          echo "CORE PULL REQUEST GATE: FAIL"
+          echo "Core evidence was missing or incomplete after 30 minutes."
           exit 1

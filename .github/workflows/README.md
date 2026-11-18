@@ -6,9 +6,10 @@ The active build and delivery surface covers **Windows, Web, Android, iOS, and L
 - `windows.yml` — Windows x64 release ZIP + SHA-256 checksum.
 - `web.yml` — Flutter Web release + GitHub Pages deployment.
 - `android.yml` — Android release APK build artifact.
-- `ios.yml` — unsigned iOS release app build artifact.
+- `ios.yml` — independent unsigned iOS release app build artifact.
 - `linux.yml` — Linux x64 release bundle archive.
-- `pull-request-gate.yml` — requires all six platform evidence workflows to succeed for the exact PR head SHA.
+- `pull-request-gate.yml` — core PR evidence gate for Auto Detect CI, Windows, Web, Android, and Linux.
+- `ios-evidence-gate.yml` — separate PR evidence collector that waits for the independent iOS workflow.
 - `final-gate.yml` — post-merge gate for the same `main` commit; Auto Detect CI, Windows, and Web are required, while Android, iOS, and Linux remain best-effort on `main`.
 
 macOS, broad repository validation, coverage gates, and integration-test gates
@@ -25,7 +26,8 @@ For the current stabilization phase:
 | Windows x64 | Supported | `windows.yml` |
 | Web / GitHub Pages | Supported | `web.yml` |
 | Capability detection | Supported | `ci-auto-detect.yml` |
-| Pull request evidence gate | Required evidence workflow | `pull-request-gate.yml` |
+| Core pull request evidence gate | Required evidence workflow | `pull-request-gate.yml` |
+| iOS pull request evidence gate | Separate required evidence workflow | `ios-evidence-gate.yml` |
 | Post-merge final evidence gate | Supported | `final-gate.yml` |
 | Android | Build supported | `android.yml` |
 | iOS | Unsigned build supported | `ios.yml` |
@@ -49,26 +51,39 @@ artifacts. It must not mutate source files or auto-format code.
 
 ## Pull request gate policy
 
-`pull-request-gate.yml` is the pre-merge evidence collector. For the exact
-head SHA of a code/platform PR, it waits for and requires all of these workflows
-to finish successfully:
+`pull-request-gate.yml` is the core pre-merge evidence collector. For the exact
+head SHA of a code/platform PR, it waits for and requires these five workflows:
 
 1. Auto Detect CI
 2. Windows
 3. Web
 4. Android
-5. iOS
-6. Linux
+5. Linux
 
-A failed workflow fails the gate. Missing or still-running evidence remains
-pending and fails if it does not complete within 30 minutes. If the PR head
-changes while the gate is waiting, the old run reports itself as superseded;
-the new head must be evaluated by its own gate run.
+This gate does not wait for a macOS runner. A failed core workflow fails the
+gate. Missing or still-running core evidence remains pending and fails if it
+does not complete within 30 minutes. If the PR head changes while the gate is
+waiting, the old run reports itself as superseded; the new head is evaluated by
+its own gate run.
 
-The gate uses read-only repository, Actions, and pull-request permissions. It
-does not build artifacts itself, write to the PR, or deploy anything. Each
-platform workflow remains independent so failures can be attributed to the
-correct runner and platform.
+## Separate iOS evidence gate
+
+`ios-evidence-gate.yml` independently waits for `ios.yml` to complete for the
+same PR number and exact head SHA. It can wait up to 120 minutes without holding
+the core Pull Request Gate open. A successful iOS build is PASS; a failed,
+cancelled, missing, or timed-out iOS run is not PASS.
+
+**Merge policy remains strict:** require both the core Pull Request Gate and
+iOS Evidence Gate to pass for the current exact PR head. A green core gate
+alone does not authorize merge. The repository branch-protection/ruleset
+configuration must require both check names for GitHub to enforce this
+automatically; otherwise the merge operator must verify both checks manually.
+The workflow split itself does not change repository branch protection.
+
+Both evidence collectors use read-only repository, Actions, and pull-request
+permissions. They do not build artifacts themselves, write to the PR, or
+deploy anything. Platform build workflows remain independent so failures can
+be attributed to the correct runner and platform.
 
 ## Final gate policy
 
@@ -80,9 +95,8 @@ commit SHA**. Android, iOS, and Linux are optional artifact evidence on
 `main`; a missing or unsuccessful optional run is recorded as `SKIPPED` and
 does not fail this post-merge gate. A failed required workflow fails the gate.
 
-This post-merge policy does not replace the stricter pre-merge PR gate. The PR
-gate requires all six platform workflows; the main gate confirms the core delivery
-path after merge.
+This post-merge policy does not replace the stricter pre-merge policy: the core
+PR gate and the separate iOS Evidence Gate must both pass before merge.
 
 ## Repository secrets
 
@@ -112,22 +126,23 @@ from `main`.
 
 The delivery path is separated into pre-merge and post-merge evidence:
 
-**PR: Quality + Windows + Web + Android + iOS + Linux PASS → Merge → main: core Final Gate PASS**
+**PR: Core Quality + Windows + Web + Android + Linux PASS AND iOS Evidence PASS → Merge → main: core Final Gate PASS**
 
 ## Failure-containment policy
 
 The platform build workflows remain independent:
 
-1. The PR gate requires Auto Detect CI, Windows, Web, Android, iOS, and Linux evidence for the same PR head SHA.
-2. The post-merge main gate requires Auto Detect CI, Windows, and Web. Android, iOS, and Linux are best-effort on `main`; their status is explicitly reported as PASS or SKIPPED.
-3. Store-signing credentials must not be required for iOS or Android compile checks.
-4. Missing `integration_test/` must never be treated as a CI failure for the supported targets.
-5. Coverage artifacts are not required by any platform build workflow.
-6. Formatting and coverage remain developer-side checks. Auto Detect CI and Windows run analysis and unit tests.
-7. A workflow must not auto-commit generated formatting changes during a release gate. Formatting changes must be committed explicitly by the developer or a dedicated maintenance job.
-8. Capability detection must not mutate the source tree or introduce a new platform automatically.
-9. Every evidence collector must compare workflow runs using the same exact commit SHA.
-10. Missing, pending, skipped, and failed results must never be represented as PASS.
+1. The core PR gate requires Auto Detect CI, Windows, Web, Android, and Linux evidence for the same PR head SHA.
+2. The separate iOS Evidence Gate requires a successful iOS build for that same PR head SHA.
+3. The post-merge main gate requires Auto Detect CI, Windows, and Web. Android, iOS, and Linux are best-effort on `main`; their status is explicitly reported as PASS or SKIPPED.
+4. Store-signing credentials must not be required for iOS or Android compile checks.
+5. Missing `integration_test/` must never be treated as a CI failure for the supported targets.
+6. Coverage artifacts are not required by any platform build workflow.
+7. Formatting and coverage remain developer-side checks. Auto Detect CI and Windows run analysis and unit tests.
+8. A workflow must not auto-commit generated formatting changes during a release gate. Formatting changes must be committed explicitly by the developer or a dedicated maintenance job.
+9. Capability detection must not mutate the source tree or introduce a new platform automatically.
+10. Every evidence collector must compare workflow runs using the same exact commit SHA.
+11. Missing, pending, skipped, and failed results must never be represented as PASS.
 
 ## Simplification policy
 

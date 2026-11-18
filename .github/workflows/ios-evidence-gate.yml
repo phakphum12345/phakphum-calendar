@@ -1,0 +1,102 @@
+name: iOS Evidence Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "lib/**"
+      - "assets/**"
+      - "android/**"
+      - "ios/**"
+      - "linux/**"
+      - "windows/**"
+      - "web/**"
+      - "test/**"
+      - "integration_test/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - ".github/workflows/**"
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+concurrency:
+  group: ios-evidence-gate-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+  cancel-in-progress: true
+
+jobs:
+  ios-evidence:
+    name: Require iOS build evidence for exact PR head
+    runs-on: ubuntu-latest
+    timeout-minutes: 125
+    steps:
+      - name: Wait for independent iOS workflow evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          export EXPECTED_SHA PR_NUMBER
+
+          for attempt in $(seq 1 240); do
+            current_sha="$(gh api "/repos/${REPOSITORY}/pulls/${PR_NUMBER}" --jq '.head.sha')"
+            if [[ "$current_sha" != "$EXPECTED_SHA" ]]; then
+              echo "SUPERSEDED: PR head moved from $EXPECTED_SHA to $current_sha."
+              echo "The new head receives its own iOS Evidence Gate."
+              exit 0
+            fi
+
+            state="$(gh api \
+              -H 'Accept: application/vnd.github+json' \
+              "/repos/${REPOSITORY}/actions/workflows/ios.yml/runs?head_sha=${EXPECTED_SHA}&per_page=100" \
+              --jq '
+                [.workflow_runs[]
+                 | select(.event == "pull_request")
+                 | select(.head_sha == env.EXPECTED_SHA)
+                 | select(any(.pull_requests[]?; .number == (env.PR_NUMBER | tonumber)))]
+                | sort_by(.run_number, .run_attempt)
+                | last // {}
+                | [(.status // "missing"), (.conclusion // ""), (.html_url // "")]
+                | @tsv
+              ' 2>/dev/null || true)"
+
+            if [[ -z "$state" ]]; then
+              status="missing"
+              conclusion=""
+              url=""
+            else
+              IFS=$'\t' read -r status conclusion url <<< "$state"
+              status="${status:-missing}"
+              conclusion="${conclusion:-}"
+              url="${url:-}"
+            fi
+
+            echo "===== iOS EVIDENCE CHECK ${attempt}/240 | PR #${PR_NUMBER} | ${EXPECTED_SHA} ====="
+            echo "iOS: status=${status} conclusion=${conclusion:-PENDING}"
+            [[ -z "$url" ]] || echo "$url"
+
+            if [[ "$status" == "completed" ]]; then
+              if [[ "$conclusion" == "success" ]]; then
+                echo "iOS EVIDENCE GATE: PASS"
+                echo "Unsigned iOS build succeeded for the exact PR head SHA."
+                exit 0
+              fi
+              echo "iOS EVIDENCE GATE: FAIL"
+              echo "iOS workflow concluded ${conclusion:-unknown} for the exact PR head SHA."
+              exit 1
+            fi
+
+            if [[ "$attempt" -lt 240 ]]; then
+              sleep 30
+            fi
+          done
+
+          echo "iOS EVIDENCE GATE: FAIL"
+          echo "No successful iOS build evidence was available within 120 minutes."
+          echo "A queued runner or missing run is not treated as PASS."
+          exit 1
