@@ -4,6 +4,9 @@ import '../domain/roster_parse_report.dart';
 import '../domain/shift_parser_input.dart';
 import '../domain/thai_roster_period_parser.dart';
 
+/// Parses the hospital roster grid in two explicit stages:
+/// 1. Resolve the date period and every date-header column.
+/// 2. Read worker names only from cells whose dates were validated.
 class HospitalRosterParser {
   const HospitalRosterParser({
     this._periodParser = const ThaiRosterPeriodParser(),
@@ -15,46 +18,43 @@ class HospitalRosterParser {
     final byCoordinate = <(int, int), dynamic>{
       for (final cell in input.cells) (cell.rowIndex, cell.columnIndex): cell,
     };
-
-    final periodText = input.cells
-        .map((cell) => cell.text)
-        .whereType<String>()
-        .firstWhere(
-          (text) =>
-              text.contains('ประจำเดือน') ||
-              (text.contains('16') && text.contains('15')),
-          orElse: () => input.sheetTitle,
-        );
-    final period = _periodParser.parse(periodText);
-
-    final dateHeaderRow = _findDateHeaderRow(input);
-    final dayByColumn = <int, int>{};
-    for (final cell in input.cells.where((c) => c.rowIndex == dateHeaderRow)) {
-      final day = _asDay(cell.rawValue ?? cell.text);
-      if (day != null && cell.columnIndex > 0) {
-        dayByColumn[cell.columnIndex] = day;
-      }
-    }
-
-    final assignments = <RosterCellAssignment>[];
     final warnings = <String>[];
 
-    for (final rowLabelCell in input.cells.where(
-      (cell) => cell.columnIndex == 0 && cell.text != null,
-    )) {
-      final definition = _parseRowLabel(rowLabelCell.text!);
-      if (definition == null) continue;
+    // Date structure is resolved before any worker cell is read.
+    final dateHeaderRow = _findDateHeaderRow(input);
+    final period = _findPeriod(input, dateHeaderRow);
+    final dayByColumn = _readDateColumns(input, dateHeaderRow, warnings);
+    final dateByColumn = <int, DateTime>{};
 
-      for (final entry in dayByColumn.entries) {
-        final workerCell = byCoordinate[(rowLabelCell.rowIndex, entry.key)];
-        final worker = workerCell?.text?.trim();
-        if (worker == null || worker.isEmpty) continue;
-
-        final date = _resolveDate(
+    for (final entry in dayByColumn.entries) {
+      try {
+        dateByColumn[entry.key] = _resolveDate(
           day: entry.value,
           start: period.start,
           end: period.end,
         );
+      } on FormatException catch (error) {
+        warnings.add(
+          'คอลัมน์ ${entry.key + 1}: ${error.message}',
+        );
+      }
+    }
+
+    final assignments = <RosterCellAssignment>[];
+    final rowLabelCells = input.cells
+        .where((cell) => cell.columnIndex == 0 && cell.text != null)
+        .toList()
+      ..sort((left, right) => left.rowIndex.compareTo(right.rowIndex));
+
+    for (final rowLabelCell in rowLabelCells) {
+      if (rowLabelCell.rowIndex == dateHeaderRow) continue;
+      final definition = _parseRowLabel(rowLabelCell.text!);
+      if (definition == null) continue;
+
+      for (final entry in dateByColumn.entries) {
+        final workerCell = byCoordinate[(rowLabelCell.rowIndex, entry.key)];
+        final worker = workerCell?.text?.trim();
+        if (worker == null || worker.isEmpty) continue;
 
         assignments.add(
           RosterCellAssignment(
@@ -65,7 +65,7 @@ class HospitalRosterParser {
               rowIndex: rowLabelCell.rowIndex,
               columnIndex: entry.key,
             ),
-            date: date,
+            date: entry.value,
             category: definition.category,
             period: definition.period,
             slot: definition.slot,
@@ -81,31 +81,128 @@ class HospitalRosterParser {
     }
 
     return RosterParseReport(
-      assignments: assignments,
-      warnings: warnings,
+      assignments: List.unmodifiable(assignments),
+      warnings: List.unmodifiable(warnings),
       periodStart: period.start,
       periodEnd: period.end,
     );
   }
 
   int _findDateHeaderRow(ShiftParserInput input) {
-    for (final row in <int>[0, 1]) {
-      final first = input.cells
-          .where((cell) => cell.rowIndex == row && cell.columnIndex == 0)
-          .map((cell) => cell.text?.trim())
-          .whereType<String>()
-          .firstOrNull;
-      if (first == 'วันที่') return row;
+    final cellsByRow = <int, List<dynamic>>{};
+    for (final cell in input.cells) {
+      cellsByRow.putIfAbsent(cell.rowIndex, () => []).add(cell);
     }
-    throw const FormatException('ไม่พบแถวหัวข้อวันที่');
+
+    final candidates = <({int row, int dateCount})>[];
+    for (final entry in cellsByRow.entries) {
+      final hasDateLabel = entry.value.any(
+        (cell) =>
+            cell.columnIndex == 0 &&
+            cell.text?.trim() == 'วันที่',
+      );
+      if (!hasDateLabel) continue;
+      final dateCount = entry.value
+          .where((cell) => cell.columnIndex > 0)
+          .map((cell) => _asDay(cell.rawValue ?? cell.text))
+          .whereType<int>()
+          .length;
+      if (dateCount > 0) {
+        candidates.add((row: entry.key, dateCount: dateCount));
+      }
+    }
+
+    if (candidates.isEmpty) {
+      throw const FormatException('ไม่พบแถวหัวข้อวันที่ในทุกแถวของตาราง');
+    }
+    candidates.sort((left, right) {
+      final byCoverage = right.dateCount.compareTo(left.dateCount);
+      return byCoverage != 0 ? byCoverage : left.row.compareTo(right.row);
+    });
+    return candidates.first.row;
+  }
+
+  ThaiRosterPeriod _findPeriod(ShiftParserInput input, int dateHeaderRow) {
+    final candidates = <({int row, int column, ThaiRosterPeriod period})>[];
+    for (final cell in input.cells) {
+      final text = cell.text?.trim();
+      if (text == null || text.isEmpty) continue;
+      // Require a roster-period heading or an explicit date range with a
+      // Thai month. This avoids treating unrelated dates in notes as a period.
+      final looksLikePeriod =
+          text.contains('ประจำเดือน') ||
+          (RegExp(r'(?:-|ถึง|–|—)').hasMatch(text) &&
+              RegExp(r'[ก-๙]').hasMatch(text));
+      if (!looksLikePeriod) continue;
+      try {
+        candidates.add((
+          row: cell.rowIndex,
+          column: cell.columnIndex,
+          period: _periodParser.parse(text),
+        ));
+      } on FormatException {
+        // Continue scanning all cells; a malformed heading is not a period.
+      }
+    }
+
+    if (candidates.isEmpty) {
+      try {
+        return _periodParser.parse(input.sheetTitle);
+      } on FormatException {
+        throw FormatException(
+          'ไม่พบช่วงวันที่ที่อ่านได้ในตารางหรือชื่อชีต "${input.sheetTitle}"',
+        );
+      }
+    }
+
+    // Prefer the closest explicit roster-period heading to the date grid.
+    // On equal distance, prefer a heading above the date row.
+    candidates.sort((left, right) {
+      final leftDistance = (left.row - dateHeaderRow).abs();
+      final rightDistance = (right.row - dateHeaderRow).abs();
+      final byDistance = leftDistance.compareTo(rightDistance);
+      if (byDistance != 0) return byDistance;
+      final leftBelow = left.row > dateHeaderRow ? 1 : 0;
+      final rightBelow = right.row > dateHeaderRow ? 1 : 0;
+      final byPosition = leftBelow.compareTo(rightBelow);
+      if (byPosition != 0) return byPosition;
+      return left.column.compareTo(right.column);
+    });
+    return candidates.first.period;
+  }
+
+  Map<int, int> _readDateColumns(
+    ShiftParserInput input,
+    int dateHeaderRow,
+    List<String> warnings,
+  ) {
+    final result = <int, int>{};
+    final headerCells = input.cells
+        .where((cell) => cell.rowIndex == dateHeaderRow && cell.columnIndex > 0)
+        .toList()
+      ..sort((left, right) => left.columnIndex.compareTo(right.columnIndex));
+
+    for (final cell in headerCells) {
+      final value = cell.rawValue ?? cell.text;
+      final day = _asDay(value);
+      if (day == null) {
+        if (value != null && value.toString().trim().isNotEmpty) {
+          warnings.add(
+            'ข้ามหัวคอลัมน์ ${cell.columnIndex + 1}: ไม่ใช่วันที่ 1-31',
+          );
+        }
+        continue;
+      }
+      result[cell.columnIndex] = day;
+    }
+    return result;
   }
 
   int? _asDay(Object? value) {
-    if (value is num) {
-      final day = value.toInt();
-      return day >= 1 && day <= 31 ? day : null;
-    }
-    return int.tryParse(value?.toString().trim() ?? '');
+    final day = value is num
+        ? value.toInt()
+        : int.tryParse(value?.toString().trim() ?? '');
+    return day != null && day >= 1 && day <= 31 ? day : null;
   }
 
   DateTime _resolveDate({
@@ -114,12 +211,18 @@ class HospitalRosterParser {
     required DateTime end,
   }) {
     final startMonthCandidate = DateTime(start.year, start.month, day);
-    if (!startMonthCandidate.isBefore(start) &&
+    if (startMonthCandidate.year == start.year &&
+        startMonthCandidate.month == start.month &&
+        !startMonthCandidate.isBefore(start) &&
         !startMonthCandidate.isAfter(end)) {
       return startMonthCandidate;
     }
+
     final endMonthCandidate = DateTime(end.year, end.month, day);
-    if (!endMonthCandidate.isBefore(start) && !endMonthCandidate.isAfter(end)) {
+    if (endMonthCandidate.year == end.year &&
+        endMonthCandidate.month == end.month &&
+        !endMonthCandidate.isBefore(start) &&
+        !endMonthCandidate.isAfter(end)) {
       return endMonthCandidate;
     }
     throw FormatException('วันที่ $day อยู่นอกช่วงตารางเวร');
@@ -167,11 +270,4 @@ class _RowDefinition {
   final String category;
   final String period;
   final String slot;
-}
-
-extension<T> on Iterable<T> {
-  T? get firstOrNull {
-    final iterator = this.iterator;
-    return iterator.moveNext() ? iterator.current : null;
-  }
 }
