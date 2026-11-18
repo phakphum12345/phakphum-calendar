@@ -48,7 +48,7 @@ void main() {
     final names = <Object?>[
       'ER เช้า',
       'วัน 16',
-      ...List<Object?>.filled(15, null),
+      ...List<Object?>.filled(14, null),
       'วัน 31',
       'วัน 1',
       ...List<Object?>.filled(13, null),
