@@ -46,7 +46,7 @@ void main() {
 
       expect(navigation.destinationIndexForPrimaryTab(-1), isNull);
       expect(navigation.destinationIndexForPrimaryTab(3), isNull);
-      expect(navigation.primaryTabIndexFor(4), isNegative);
+      expect(navigation.primaryTabIndexFor(5), isNegative);
     });
   });
 }
