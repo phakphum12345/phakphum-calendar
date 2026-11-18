@@ -39,10 +39,11 @@ on:
 permissions:
   contents: read
 
-# A newer commit supersedes an older queued/running iOS build on the same ref.
+# Keep each iOS run independent. A newer PR update must not cancel a build
+# that is still waiting for a GitHub-hosted macOS runner.
 concurrency:
-  group: ios-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ios-${{ github.workflow }}-${{ github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   build-ios:
