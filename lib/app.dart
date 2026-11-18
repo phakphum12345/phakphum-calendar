@@ -197,6 +197,7 @@ class _ShiftToolsAppState extends State<ShiftToolsApp> {
           scheduleControllerFactory:
               dependencies.createImportedScheduleController,
           scheduleSaver: dependencies.saveImportedSchedule,
+          employeeRepository: dependencies.employeeRepository,
         ),
       },
       home: AppShell(

@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../../../core/result/result.dart';
+import '../../../../domain/entities/employee.dart';
 import '../../../../domain/entities/schedule.dart';
+import '../../../../domain/repositories/employee_repository.dart';
 import '../../../../l10n/l10n.dart';
+import '../../../employees/application/employee_match_resolver.dart';
 import '../../../schedule/data/imported_schedule_adapter.dart';
 import '../../../schedule/presentation/controllers/schedule_controller.dart';
 import '../../../schedule/presentation/pages/imported_month_calendar_page.dart';
@@ -23,6 +28,7 @@ class ImportSummaryPage extends StatefulWidget {
     this.scheduleSaver,
     this.scheduleFactory,
     this.controller,
+    this.employeeRepository,
     super.key,
   });
 
@@ -34,6 +40,7 @@ class ImportSummaryPage extends StatefulWidget {
   final Future<Result<Schedule>> Function(Schedule)? scheduleSaver;
   final Schedule Function(Iterable<ShiftRecord>)? scheduleFactory;
   final ExcelImportController? controller;
+  final EmployeeRepository? employeeRepository;
 
   ImportSummary get _currentSummary => controller?.importSummary ?? summary;
   List<ShiftRecord> get _currentRecords => controller?.shiftRecords ?? records;
@@ -51,10 +58,84 @@ class ImportSummaryPage extends StatefulWidget {
 class _ImportSummaryPageState extends State<ImportSummaryPage> {
   bool _saving = false;
   Result<Schedule>? _saveResult;
+  bool _employeeReviewLoading = false;
+  String? _employeeReviewError;
+  List<Employee> _employees = const [];
+  final Map<int, EmployeeMatchResult> _matchResults = {};
+  final Map<int, Employee?> _selectedEmployees = {};
+
+  bool get _employeeReviewEnabled => widget.employeeRepository != null;
+
+  bool get _employeeReviewReady {
+    if (!_employeeReviewEnabled) return true;
+    if (_employeeReviewLoading || _employeeReviewError != null) return false;
+    return widget._currentRecords.every(
+      (record) => _selectedEmployees[record.rowNumber] != null,
+    );
+  }
+
+  List<ShiftRecord> get _resolvedRecords {
+    return widget._currentRecords.map((record) {
+      final employee = _selectedEmployees[record.rowNumber];
+      if (employee == null) return record;
+      return record.copyWith(
+        employee: employee.fullName,
+        department: employee.department.name,
+        resolvedEmployee: employee,
+      );
+    }).toList(growable: false);
+  }
+
+  Schedule get _currentSchedule {
+    if (!_employeeReviewEnabled) return widget._currentSchedule;
+    return widget.scheduleFactory?.call(_resolvedRecords) ??
+        const ImportedScheduleAdapter().createSchedule(_resolvedRecords);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    if (_employeeReviewEnabled) unawaited(_loadEmployeeDirectory());
+  }
+
+  Future<void> _loadEmployeeDirectory() async {
+    final repository = widget.employeeRepository;
+    if (repository == null) return;
+    setState(() {
+      _employeeReviewLoading = true;
+      _employeeReviewError = null;
+    });
+    final result = await repository.findAll(activeOnly: false);
+    if (!mounted) return;
+    switch (result) {
+      case Success<List<Employee>>(value: final employees):
+        _employees = employees;
+        _matchResults.clear();
+        _selectedEmployees.clear();
+        const resolver = EmployeeMatchResolver();
+        for (final record in widget._currentRecords) {
+          final match = resolver.resolve(
+            importedName: record.employee,
+            department: record.department,
+            employees: employees,
+          );
+          _matchResults[record.rowNumber] = match;
+          if (match.status == EmployeeMatchStatus.matched) {
+            _selectedEmployees[record.rowNumber] = match.employee;
+          }
+        }
+      case Failure<List<Employee>>():
+        _employeeReviewError = result.message;
+    }
+    setState(() => _employeeReviewLoading = false);
+  }
 
   @override
   Widget build(BuildContext context) {
     final persistenceResult = _saveResult ?? widget.persistenceResult;
+    final canSave = _employeeReviewReady &&
+        !_saving &&
+        persistenceResult is! Success<Schedule>;
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.importSummary)),
       body: SafeArea(
@@ -81,6 +162,10 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
                   ),
                   const SizedBox(height: 24),
                   ImportStatistics(summary: widget._currentSummary),
+                  if (_employeeReviewEnabled) ...[
+                    const SizedBox(height: 24),
+                    _buildEmployeeReview(context),
+                  ],
                   if (persistenceResult case Failure<Schedule>(
                     message: final message,
                   )) ...[
@@ -95,10 +180,7 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
                   if (widget.scheduleSaver != null) ...[
                     const SizedBox(height: 16),
                     FilledButton.icon(
-                      onPressed: _saving ||
-                              persistenceResult is Success<Schedule>
-                          ? null
-                          : _saveSchedule,
+                      onPressed: canSave ? _saveSchedule : null,
                       icon: _saving
                           ? const SizedBox.square(
                               dimension: 18,
@@ -113,10 +195,22 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
                             : 'ยืนยันและบันทึกตารางเวร',
                       ),
                     ),
+                    if (!_employeeReviewReady) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'กรุณาจับคู่พนักงานทุกรายการให้เรียบร้อยก่อนบันทึก',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ],
                   ],
                   const SizedBox(height: 16),
                   FilledButton.icon(
-                    onPressed: widget._currentRecords.any((record) => record.date != null)
+                    onPressed: widget._currentRecords.any(
+                              (record) => record.date != null,
+                            ) &&
+                            _employeeReviewReady
                         ? () => _openCalendar(context)
                         : null,
                     icon: const Icon(Icons.calendar_month),
@@ -140,6 +234,129 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildEmployeeReview(BuildContext context) {
+    if (_employeeReviewLoading) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+    if (_employeeReviewError != null) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('ไม่สามารถโหลดรายชื่อพนักงานได้'),
+              const SizedBox(height: 8),
+              Text(_employeeReviewError!),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: _loadEmployeeDirectory,
+                  child: const Text('ลองอีกครั้ง'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    final unresolved = widget._currentRecords
+        .where((record) => _selectedEmployees[record.rowNumber] == null)
+        .length;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'ตรวจสอบการจับคู่พนักงาน',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              unresolved == 0
+                  ? 'จับคู่ครบแล้ว สามารถตรวจสอบและบันทึกตารางได้'
+                  : 'เหลือ $unresolved รายการที่ต้องเลือกพนักงานให้ถูกต้อง',
+            ),
+            const SizedBox(height: 12),
+            for (final record in widget._currentRecords) ...[
+              _buildEmployeeMatchTile(context, record),
+              const Divider(height: 20),
+            ],
+            if (_employees.isEmpty)
+              const Text(
+                'ยังไม่มีรายชื่อในสมุดพนักงาน กรุณาเพิ่มรายชื่อก่อนนำเข้าตาราง',
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmployeeMatchTile(BuildContext context, ShiftRecord record) {
+    final match = _matchResults[record.rowNumber];
+    final selected = _selectedEmployees[record.rowNumber];
+    final candidates = match?.status == EmployeeMatchStatus.unmatched
+        ? _employees
+        : match?.candidates ?? const <Employee>[];
+    final statusText = switch (match?.status) {
+      EmployeeMatchStatus.matched => 'จับคู่อัตโนมัติจากข้อมูลตรงกัน',
+      EmployeeMatchStatus.ambiguous => 'พบชื่อที่เป็นไปได้หลายรายการ กรุณาเลือก',
+      EmployeeMatchStatus.unmatched => 'ไม่พบชื่อที่ตรงกัน กรุณาเลือกจากรายชื่อ',
+      null => 'กำลังตรวจสอบ...',
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'แถว ${record.rowNumber}: ${record.employee}',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 4),
+        Text(statusText),
+        if (candidates.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          DropdownButtonFormField<Employee>(
+            initialValue: selected,
+            isExpanded: true,
+            decoration: const InputDecoration(
+              labelText: 'พนักงานในระบบ',
+            ),
+            hint: const Text('เลือกพนักงาน'),
+            items: [
+              for (final employee in candidates)
+                DropdownMenuItem(
+                  value: employee,
+                  child: Text(
+                    '${employee.displayName} • ${employee.department.name}',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+            ],
+            onChanged: _saveResult is Success<Schedule> ||
+                    widget.persistenceResult is Success<Schedule>
+                ? null
+                : (employee) {
+                    setState(
+                      () => _selectedEmployees[record.rowNumber] = employee,
+                    );
+                  },
+          ),
+        ] else
+          Text(
+            'ไม่มีรายชื่อให้เลือก',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+      ],
     );
   }
 
@@ -187,6 +404,8 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
       if (!updated || !activeController.reprocessImport()) return;
       if (!mounted) return;
       setState(() {});
+      await _loadEmployeeDirectory();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('ปรับข้อมูลและประมวลผลใหม่แล้ว')),
       );
@@ -202,9 +421,9 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
 
   Future<void> _saveSchedule() async {
     final save = widget.scheduleSaver;
-    if (save == null || _saving) return;
+    if (save == null || _saving || !_employeeReviewReady) return;
     setState(() => _saving = true);
-    final result = await save(widget._currentSchedule);
+    final result = await save(_currentSchedule);
     if (!mounted) return;
     setState(() {
       _saveResult = result;
@@ -216,7 +435,7 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ImportedMonthCalendarPage(
-          schedule: widget._currentSchedule,
+          schedule: _currentSchedule,
           controllerFactory: widget.scheduleControllerFactory,
         ),
       ),

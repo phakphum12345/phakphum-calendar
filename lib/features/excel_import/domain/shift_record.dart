@@ -1,3 +1,5 @@
+import '../../../domain/entities/employee.dart';
+
 class ShiftRecord {
   const ShiftRecord({
     required this.date,
@@ -7,6 +9,7 @@ class ShiftRecord {
     this.department,
     this.location,
     this.notes,
+    this.resolvedEmployee,
   });
 
   final DateTime? date;
@@ -16,4 +19,31 @@ class ShiftRecord {
   final String? location;
   final String? notes;
   final int rowNumber;
+
+  /// Canonical directory identity selected during import review.
+  final Employee? resolvedEmployee;
+
+  ShiftRecord copyWith({
+    DateTime? date,
+    String? shift,
+    String? employee,
+    String? department,
+    String? location,
+    String? notes,
+    Employee? resolvedEmployee,
+    bool clearResolvedEmployee = false,
+  }) {
+    return ShiftRecord(
+      date: date ?? this.date,
+      shift: shift ?? this.shift,
+      employee: employee ?? this.employee,
+      department: department ?? this.department,
+      location: location ?? this.location,
+      notes: notes ?? this.notes,
+      resolvedEmployee: clearResolvedEmployee
+          ? null
+          : resolvedEmployee ?? this.resolvedEmployee,
+      rowNumber: rowNumber,
+    );
+  }
 }
