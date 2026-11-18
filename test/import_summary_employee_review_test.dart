@@ -21,6 +21,13 @@ import 'package:phakphum_calendar/features/shift_templates/application/shift_tem
 import 'package:phakphum_calendar/features/workflow/application/canonical_schedule_event_mapper.dart';
 import 'package:phakphum_calendar/features/workflow/application/workflow_preview_builder.dart';
 
+void _useTallTestViewport(WidgetTester tester) {
+  tester.view.physicalSize = const Size(800, 1600);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+}
+
 void main() {
   testWidgets('ambiguous employee must be explicitly selected before save', (
     tester,
@@ -126,6 +133,7 @@ void main() {
   testWidgets(
     'uses an exact shift template and locks review edits after saving',
     (tester) async {
+      _useTallTestViewport(tester);
       const employee = Employee(
         id: 'employee-er-1',
         employeeCode: 'ER-001',
@@ -267,6 +275,7 @@ void main() {
   testWidgets('unknown shift requires an explicit template selection', (
     tester,
   ) async {
+    _useTallTestViewport(tester);
     const employee = Employee(
       id: 'employee-er-1',
       employeeCode: 'ER-001',
