@@ -377,16 +377,40 @@ class _ShiftTransactionComposerDialogState
       ..sort((a, b) => a.employeeCode.compareTo(b.employeeCode));
   }
 
-  String? get _effectiveRequesterId => widget.organizationMode
-      ? widget.organization?.employeeId
-      : _requesterEmployeeId;
+  Employee? get _requesterRosterEmployee => widget.organizationMode
+      ? _findRosterEmployee(widget.organization?.employeeId)
+      : _firstOrNull(_employees.where((employee) => employee.id == _requesterEmployeeId));
+
+  Employee? get _recipientRosterEmployee => widget.organizationMode
+      ? _findRosterEmployee(_recipientEmployeeId)
+      : _firstOrNull(_employees.where((employee) => employee.id == _recipientEmployeeId));
+
+  String? _serverEmployeeId(Employee? employee) {
+    if (employee == null) return null;
+    final code = employee.employeeCode.trim();
+    return code.isEmpty ? employee.id : code;
+  }
+
+  String? get _effectiveRequesterId => _serverEmployeeId(_requesterRosterEmployee);
+  String? get _effectiveRecipientId => _serverEmployeeId(_recipientRosterEmployee);
+
+  Employee? _findRosterEmployee(String? membershipEmployeeId) {
+    if (membershipEmployeeId == null || membershipEmployeeId.trim().isEmpty) {
+      return null;
+    }
+    final matches = _employees.where((employee) =>
+        employee.id == membershipEmployeeId ||
+        employee.employeeCode == membershipEmployeeId ||
+        employee.displayName == membershipEmployeeId).toList();
+    return matches.length == 1 ? matches.single : null;
+  }
 
   List<_RosterShiftChoice> get _requesterShifts => _allShifts
-      .where((choice) => choice.employee.id == _effectiveRequesterId)
+      .where((choice) => choice.employee.id == _requesterRosterEmployee?.id)
       .toList();
 
   List<_RosterShiftChoice> get _recipientShifts => _allShifts
-      .where((choice) => choice.employee.id == _recipientEmployeeId)
+      .where((choice) => choice.employee.id == _recipientRosterEmployee?.id)
       .toList();
 
   @override
@@ -406,15 +430,18 @@ class _ShiftTransactionComposerDialogState
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final requesterEmployee = _requesterRosterEmployee;
+    final recipientEmployee = _recipientRosterEmployee;
     final requesterId = _effectiveRequesterId;
-    final recipientId = _recipientEmployeeId;
+    final recipientId = _effectiveRecipientId;
     final requesterShift = _firstOrNull(_requesterShifts.where((item) => item.key == _requesterShiftKey));
     final recipientShift = _firstOrNull(_recipientShifts.where((item) => item.key == _recipientShiftKey));
-    if (requesterId == null || recipientId == null ||
-        requesterShift == null || requesterId == recipientId ||
-        !_employees.any((employee) => employee.id == recipientId) ||
+    if (requesterEmployee == null || recipientEmployee == null ||
+        requesterId == null || recipientId == null ||
+        requesterEmployee.id == recipientEmployee.id ||
+        requesterShift == null ||
         (_type == 'exchange' && recipientShift == null)) {
-      setState(() => _error = 'Choose two different employees and valid roster shifts.');
+      setState(() => _error = 'Roster employee IDs must match the active account or organization membership, and both shifts must be valid.');
       return;
     }
 
@@ -623,7 +650,7 @@ class _ShiftTransactionComposerDialogState
                     initialValue: _recipientEmployeeId,
                     decoration: const InputDecoration(labelText: 'Recipient roster name'),
                     items: [
-                      for (final employee in _employees.where((item) => item.id != _effectiveRequesterId))
+                      for (final employee in _employees.where((item) => item.id != _requesterRosterEmployee?.id))
                         DropdownMenuItem(
                           value: employee.id,
                           child: Text('${employee.employeeCode} · ${employee.displayName}'),
@@ -729,7 +756,7 @@ class _RosterShiftChoice {
   String get key => ShiftAssignmentIdentity.create(
     scheduleId: scheduleId,
     date: date,
-    employeeId: employee.id,
+    employeeId: employee.employeeCode.trim().isEmpty ? employee.id : employee.employeeCode,
     shiftId: assignment.shift.id,
   );
 }
