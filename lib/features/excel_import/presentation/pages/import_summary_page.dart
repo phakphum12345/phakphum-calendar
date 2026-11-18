@@ -866,6 +866,7 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
           schedule: _currentSchedule,
           controllerFactory: widget.scheduleControllerFactory,
           workflowControllerFactory: widget.workflowControllerFactory,
+          enableCalendarSync: _isSaved,
         ),
       ),
     );
