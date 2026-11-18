@@ -187,7 +187,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byTooltip('แก้ไขข้อมูลแถวนี้'), findsNWidgets(2));
-      await tester.tap(find.byTooltip('แก้ไขข้อมูลแถวนี้').first);
+      final firstEdit = find.byTooltip('แก้ไขข้อมูลแถวนี้').first;
+      await tester.ensureVisible(firstEdit);
+      await tester.pumpAndSettle();
+      await tester.tap(firstEdit);
       await tester.pumpAndSettle();
       await tester.enterText(find.byType(TextField), '2026-07-25');
       await tester.tap(find.text('บันทึกและตรวจใหม่'));
