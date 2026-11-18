@@ -9,7 +9,7 @@ The active build and delivery surface covers **Windows, Web, Android, iOS, and L
 - `ios.yml` — independent unsigned iOS release app build artifact.
 - `linux.yml` — Linux x64 release bundle archive.
 - `pull-request-gate.yml` — core PR evidence gate for Auto Detect CI, Windows, Web, Android, and Linux.
-- `ios-evidence-gate.yml` — separate PR evidence collector that waits for the independent iOS workflow.
+- `ios-evidence-gate.yml` — non-blocking PR advisory report for independent iOS evidence.
 - `final-gate.yml` — post-merge gate for the same `main` commit; Auto Detect CI, Windows, and Web are required, while Android, iOS, and Linux remain best-effort on `main`.
 
 macOS, broad repository validation, coverage gates, and integration-test gates
@@ -106,8 +106,9 @@ commit SHA**. Android, iOS, and Linux are optional artifact evidence on
 `main`; a missing or unsuccessful optional run is recorded as `SKIPPED` and
 does not fail this post-merge gate. A failed required workflow fails the gate.
 
-This post-merge policy does not replace the stricter pre-merge policy: the core
-PR gate and the separate iOS Evidence Gate must both pass before merge.
+This post-merge policy does not replace the pre-merge policy: the core PR gate
+and all repository-required checks must pass; iOS is separately reported and
+is non-blocking.
 
 ## Repository secrets
 
