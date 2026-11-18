@@ -151,7 +151,8 @@ void main() {
     final first = projector.project(source: source, transactions: [giveUp]);
     final second = projector.project(source: first.schedule, transactions: [giveUp]);
 
-    expect(second.warnings, isEmpty);
+    expect(second.warnings, hasLength(1));
+    expect(second.warnings.single, contains('source assignment'));
     expect(
       second.schedule.month(date)!.day(date)!.assignments.map((item) => item.employee.id),
       ['B', 'B'],
