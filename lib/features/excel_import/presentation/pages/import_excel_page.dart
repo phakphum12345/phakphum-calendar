@@ -14,6 +14,7 @@ import '../../../../services/sheets_service.dart';
 import '../../../google_sheets/infrastructure/google_sheets_gateway.dart';
 import '../../../schedule/data/imported_schedule_adapter.dart';
 import '../../../schedule/presentation/controllers/schedule_controller.dart';
+import '../../../shift_templates/application/shift_template_controller.dart';
 import '../../data/excel_reader_service.dart';
 import '../../data/google_sheets_import_data_source.dart';
 import '../../data/spreadsheet_ownership_verifier.dart';
@@ -47,6 +48,7 @@ class ImportExcelPage extends StatefulWidget {
     this.scheduleControllerFactory,
     this.scheduleSaver,
     this.employeeRepository,
+    this.shiftTemplateControllerFactory,
     super.key,
   });
 
@@ -65,6 +67,7 @@ class ImportExcelPage extends StatefulWidget {
   final ScheduleController Function(Schedule)? scheduleControllerFactory;
   final Future<Result<Schedule>> Function(Schedule)? scheduleSaver;
   final EmployeeRepository? employeeRepository;
+  final ShiftTemplateController Function()? shiftTemplateControllerFactory;
 
   @override
   State<ImportExcelPage> createState() => _ImportExcelPageState();
@@ -340,6 +343,7 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
           scheduleFactory: widget.importedScheduleFactory,
           controller: controller,
           employeeRepository: widget.employeeRepository,
+          shiftTemplateControllerFactory: widget.shiftTemplateControllerFactory,
         ),
       ),
     );
