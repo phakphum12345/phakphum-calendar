@@ -140,7 +140,6 @@ class ShiftTransactionScheduleProjector {
     }
 
     final sourceMatches = <int>[];
-    final targetMatches = <int>[];
     for (var index = 0; index < day.assignments.length; index++) {
       final assignment = day.assignments[index];
       if (assignment.shift.code != shiftCode ||
@@ -157,9 +156,6 @@ class ShiftTransactionScheduleProjector {
               shiftId) {
         sourceMatches.add(index);
       }
-      if (assignment.employee.id == toEmployeeId) {
-        targetMatches.add(index);
-      }
     }
 
     if (sourceMatches.length == 1) {
@@ -171,14 +167,10 @@ class ShiftTransactionScheduleProjector {
         ),
       );
     }
-    if (sourceMatches.length > 1 || targetMatches.length > 1) {
+    if (sourceMatches.length > 1) {
       return const _TransferResolution.warning(
         'more than one roster assignment matches the transfer; no guess was made.',
       );
-    }
-    if (sourceMatches.isEmpty && targetMatches.length == 1) {
-      // The same approved ledger may be projected more than once in memory.
-      return const _TransferResolution.alreadyApplied();
     }
     return _TransferResolution.warning(
       'the source assignment for $fromEmployeeId → $toEmployeeId ($shiftCode) was not found.',
@@ -265,8 +257,6 @@ class _TransferResolution {
 
   const _TransferResolution.resolved(_ResolvedTransfer value)
     : this._(transfer: value);
-
-  const _TransferResolution.alreadyApplied() : this._();
 
   const _TransferResolution.warning(String value)
     : this._(warning: value);
