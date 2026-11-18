@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:excel/excel.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phakphum_calendar/core/di/app_dependencies.dart';
-import 'package:phakphum_calendar/core/result/result.dart';
 import 'package:phakphum_calendar/domain/entities/schedule.dart';
 import 'package:phakphum_calendar/features/diff_engine/domain/calendar_event_candidate.dart';
 import 'package:phakphum_calendar/features/excel_import/data/excel_reader_service.dart';
@@ -102,7 +101,7 @@ void main() {
       final saved = await dependencies.saveImportedSchedule(schedule);
       expect(saved.isSuccess, isTrue);
 
-      final restored = await dependencies.createImportedScheduleController(
+      final restored = dependencies.createImportedScheduleController(
         const Schedule(id: 'temporary', name: 'Temporary'),
       );
       addTearDown(restored.dispose);
