@@ -71,7 +71,10 @@ void main() {
         requests.add(request);
         if (request.method == 'GET') {
           getCount++;
-          return http.Response(jsonEncode({'data': [pending]}), 200);
+          return http.Response(
+            jsonEncode({'data': [getCount == 1 ? pending : approved]}),
+            200,
+          );
         }
         return http.Response(jsonEncode({'data': approved}), 200);
       }),
