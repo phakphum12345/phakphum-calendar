@@ -42,6 +42,46 @@ const _changedTemplate = ShiftTemplate(
   workingHours: 8,
 );
 
+const _employeeWithDelimiter = Employee(
+  id: 'A',
+  employeeCode: 'EA',
+  firstName: 'First',
+  lastName: 'Employee',
+  department: Department(id: 'er', code: 'ER', name: 'Emergency'),
+  position: 'Nurse',
+);
+
+const _employeeWithDelimiterInId = Employee(
+  id: 'A|B',
+  employeeCode: 'EB',
+  firstName: 'Second',
+  lastName: 'Employee',
+  department: Department(id: 'er', code: 'ER', name: 'Emergency'),
+  position: 'Nurse',
+);
+
+const _shiftWithDelimiter = ShiftTemplate(
+  id: 'B|C',
+  code: 'BC',
+  name: 'Shift BC',
+  shortName: 'BC',
+  startTime: Duration(hours: 8),
+  endTime: Duration(hours: 16),
+  color: 0xFF1565C0,
+  workingHours: 8,
+);
+
+const _shiftC = ShiftTemplate(
+  id: 'C',
+  code: 'C',
+  name: 'Shift C',
+  shortName: 'C',
+  startTime: Duration(hours: 8),
+  endTime: Duration(hours: 16),
+  color: 0xFF1565C0,
+  workingHours: 8,
+);
+
 ShiftRecord _record({
   int row = 2,
   DateTime? date,
@@ -177,6 +217,23 @@ void main() {
       plan.entries.last.reason,
       ImportRowDecisionReason.identicalDuplicateSourceRow,
     );
+  });
+
+  test('keeps distinct identities separate when IDs contain delimiters', () {
+    final plan = planner.plan(
+      existingSchedule: _schedule(),
+      records: [
+        _record(row: 2, employee: _employeeWithDelimiter, template: _shiftWithDelimiter),
+        _record(row: 3, employee: _employeeWithDelimiterInId, template: _shiftC),
+      ],
+    );
+
+    expect(
+      plan.entries.map((entry) => entry.action),
+      [ImportRowAction.create, ImportRowAction.create],
+    );
+    expect(plan.createCount, 2);
+    expect(plan.hasBlockingRows, isFalse);
   });
 
   test('conflicting duplicate source rows are both blocked', () {
