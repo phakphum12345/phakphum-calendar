@@ -81,7 +81,7 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
         final organizations = await api.listOrganizations();
         final selected = _selectedOrganization == null
             ? (organizations.isEmpty ? null : organizations.first)
-            : organizations.where((item) => item.id == _selectedOrganization!.id).toList().firstOrNull;
+            : _firstOrNull(organizations.where((item) => item.id == _selectedOrganization!.id));
         final members = selected == null
             ? <ShiftTransactionOrganizationMemberSnapshot>[]
             : await api.listOrganizationMembers(selected.id);
@@ -155,7 +155,6 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
         apiClient: api,
         organizationMode: widget.organizationMode,
         organization: _selectedOrganization,
-        organizations: _organizations,
         members: _members,
       ),
     );
@@ -315,7 +314,6 @@ class _ShiftTransactionComposerDialog extends StatefulWidget {
     required this.schedule,
     required this.apiClient,
     required this.organizationMode,
-    required this.organizations,
     required this.members,
     this.organization,
   });
@@ -324,7 +322,6 @@ class _ShiftTransactionComposerDialog extends StatefulWidget {
   final ShiftTransactionApiClient apiClient;
   final bool organizationMode;
   final ShiftTransactionOrganizationSnapshot? organization;
-  final List<ShiftTransactionOrganizationSnapshot> organizations;
   final List<ShiftTransactionOrganizationMemberSnapshot> members;
 
   @override
@@ -345,6 +342,7 @@ class _ShiftTransactionComposerDialogState
   String? _recipientShiftKey;
   bool _saving = false;
   String? _error;
+  final String _requestNonce = DateTime.now().microsecondsSinceEpoch.toString();
 
   List<_RosterShiftChoice> get _allShifts {
     final result = <_RosterShiftChoice>[];
@@ -451,7 +449,7 @@ class _ShiftTransactionComposerDialogState
     ];
     final idempotencySeed = [
       widget.schedule.id,
-      DateTime.now().microsecondsSinceEpoch,
+      _requestNonce,
       ...transfers.map((item) => item['shift_id']),
     ].join('|');
     final idempotencyKey = sha256.convert(utf8.encode(idempotencySeed)).toString();
