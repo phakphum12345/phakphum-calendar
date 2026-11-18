@@ -39,14 +39,18 @@ on:
 permissions:
   contents: read
 
+# A newer commit supersedes an older queued/running iOS build on the same ref.
 concurrency:
   group: ios-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build-ios:
     name: iOS unsigned release build
-    runs-on: macos-15-intel
+    # Override with repository variable IOS_RUNNER_LABEL when needed.
+    # The default macos-15 label selects GitHub's supported ARM64 hosted image
+    # instead of pinning the workflow to the Intel-only runner pool.
+    runs-on: ${{ vars.IOS_RUNNER_LABEL || 'macos-15' }}
     timeout-minutes: 50
 
     steps:
