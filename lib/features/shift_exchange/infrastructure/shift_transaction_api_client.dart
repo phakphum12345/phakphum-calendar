@@ -149,6 +149,118 @@ class ShiftTransactionApiClient {
     );
   }
 
+  /// Creates a server-backed transaction using a stable idempotency key.
+  Future<ShiftTransactionSnapshot> createTransaction({
+    required String mode,
+    required String type,
+    required List<Map<String, dynamic>> participants,
+    required List<Map<String, dynamic>> transfers,
+    required String idempotencyKey,
+    String? organizationId,
+    Map<String, dynamic> metadata = const {},
+  }) {
+    if (idempotencyKey.trim().isEmpty || idempotencyKey.length > 128) {
+      throw ArgumentError.value(idempotencyKey, 'idempotencyKey', 'Must contain 1–128 characters.');
+    }
+    final body = <String, dynamic>{
+      'mode': mode,
+      'type': type,
+      'participants': participants,
+      'transfers': transfers,
+      if (organizationId != null) 'organization_id': organizationId,
+      if (metadata.isNotEmpty) 'metadata': metadata,
+    };
+    return _postTransaction(
+      'api/v1/shift-transactions',
+      body: body,
+      headers: {'Idempotency-Key': idempotencyKey},
+    );
+  }
+
+  Future<ShiftTransactionSnapshot> confirmTransaction(String id) =>
+      _postTransaction('${_transactionPath(id)}/confirm');
+
+  Future<ShiftTransactionSnapshot> rejectTransaction(
+    String id, {
+    String? reason,
+  }) => _postTransaction(
+    '${_transactionPath(id)}/reject',
+    body: {if (reason != null) 'reason': reason},
+  );
+
+  Future<ShiftTransactionSnapshot> approveTransaction(
+    String id, {
+    String? note,
+  }) => _postTransaction(
+    '${_transactionPath(id)}/approve',
+    body: {if (note != null) 'note': note},
+  );
+
+  Future<ShiftTransactionSnapshot> rejectByApprover(
+    String id, {
+    String? reason,
+  }) => _postTransaction(
+    '${_transactionPath(id)}/reject-by-approver',
+    body: {if (reason != null) 'reason': reason},
+  );
+
+  Future<ShiftTransactionSnapshot> cancelTransaction(String id) =>
+      _postTransaction('${_transactionPath(id)}/cancel');
+
+  Future<ShiftTransactionSnapshot> startCalendarSync(
+    String id, {
+    required bool previewConfirmed,
+  }) => _postTransaction(
+    '${_transactionPath(id)}/calendar-sync/start',
+    body: {'preview_confirmed': previewConfirmed},
+  );
+
+  Future<ShiftTransactionSnapshot> completeCalendarSync(
+    String id, {
+    required List<String> calendarEventIds,
+  }) => _postTransaction(
+    '${_transactionPath(id)}/calendar-sync/complete',
+    body: {'calendar_event_ids': calendarEventIds},
+  );
+
+  Future<ShiftTransactionSnapshot> failCalendarSync(
+    String id, {
+    String? reason,
+  }) => _postTransaction(
+    '${_transactionPath(id)}/calendar-sync/fail',
+    body: {if (reason != null) 'reason': reason},
+  );
+
+  Future<ShiftTransactionSnapshot> fulfillTransfer(
+    String id, {
+    required String transferId,
+  }) => _postTransaction(
+    '${_transactionPath(id)}/fulfill',
+    body: {'transfer_id': transferId},
+  );
+
+  String _transactionPath(String id) {
+    if (id.trim().isEmpty || id.contains('/')) {
+      throw ArgumentError.value(id, 'id', 'A transaction ID is required.');
+    }
+    return 'api/v1/shift-transactions/${Uri.encodeComponent(id)}';
+  }
+
+  Future<ShiftTransactionSnapshot> _postTransaction(
+    String path, {
+    Map<String, dynamic> body = const {},
+    Map<String, String>? headers,
+  }) async {
+    final json = await _post(path, body: body, headers: headers);
+    final data = json['data'];
+    if (data is! Map) {
+      throw const FormatException('Invalid transaction response.');
+    }
+    return ShiftTransactionSnapshot.fromJson(
+      data.map((key, value) => MapEntry(key.toString(), value)),
+    );
+  }
+
   Future<Map<String, dynamic>> _get(String path, {Map<String, String>? query}) async {
     final base = _baseUri;
     if (base == null) {
@@ -182,6 +294,50 @@ class ShiftTransactionApiClient {
       );
     }
     return body;
+  }
+
+  Future<Map<String, dynamic>> _post(
+    String path, {
+    required Map<String, dynamic> body,
+    Map<String, String>? headers,
+  }) async {
+    final base = _baseUri;
+    if (base == null) {
+      throw const ShiftTransactionApiException(0, 'Transaction API URL is not configured.');
+    }
+    final token = await idTokenProvider();
+    if (token == null || token.trim().isEmpty) {
+      throw const ShiftTransactionApiException(401, 'Please sign in with Google again.');
+    }
+    final response = await _http.post(
+      base.resolve(path),
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+        ...?headers,
+      },
+      body: jsonEncode(body),
+    );
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(response.body);
+    } on FormatException {
+      throw ShiftTransactionApiException(response.statusCode, 'The server returned an invalid response.');
+    }
+    if (decoded is! Map) {
+      throw ShiftTransactionApiException(response.statusCode, 'The server returned an invalid response.');
+    }
+    final result = decoded.map((key, value) => MapEntry(key.toString(), value));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final error = result['error'];
+      final message = error is Map ? error['message']?.toString() : null;
+      throw ShiftTransactionApiException(
+        response.statusCode,
+        message ?? 'Unable to update shift transaction.',
+      );
+    }
+    return result;
   }
 
   void close() {
