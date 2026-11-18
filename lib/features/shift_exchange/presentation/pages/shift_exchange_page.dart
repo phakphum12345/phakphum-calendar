@@ -479,6 +479,13 @@ class _ShiftTransactionComposerDialogState
     final idempotencySeed = [
       widget.schedule.id,
       _requestNonce,
+      widget.organizationMode ? 'organization' : 'personal',
+      widget.organization?.id ?? '',
+      _type,
+      requesterId,
+      recipientId,
+      _recipientEmail.text.trim().toLowerCase(),
+      _note.text.trim(),
       ...transfers.map((item) => item['shift_id']),
     ].join('|');
     final idempotencyKey = sha256.convert(utf8.encode(idempotencySeed)).toString();
