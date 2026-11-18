@@ -5,10 +5,14 @@ import '../../infrastructure/shift_transaction_api_client.dart';
 class ShiftTransactionHistoryPanel extends StatefulWidget {
   const ShiftTransactionHistoryPanel({
     required this.apiClient,
+    this.approvableOrganizationIds = const {},
+    this.onChanged,
     super.key,
   });
 
   final ShiftTransactionApiClient apiClient;
+  final Set<String> approvableOrganizationIds;
+  final VoidCallback? onChanged;
 
   @override
   State<ShiftTransactionHistoryPanel> createState() =>
@@ -18,12 +22,12 @@ class ShiftTransactionHistoryPanel extends StatefulWidget {
 class _ShiftTransactionHistoryPanelState
     extends State<ShiftTransactionHistoryPanel> {
   late Future<List<ShiftTransactionSnapshot>> _history;
+  String? _actingOn;
+  String? _actionError;
 
   @override
   void initState() {
     super.initState();
-    // A missing organization API URL is a supported configuration state.
-    // Do not start a request until the API has been configured.
     _history = widget.apiClient.isConfigured
         ? _load()
         : Future<List<ShiftTransactionSnapshot>>.value(const []);
@@ -34,7 +38,46 @@ class _ShiftTransactionHistoryPanelState
 
   void _reload() {
     if (!widget.apiClient.isConfigured) return;
-    setState(() => _history = _load());
+    setState(() {
+      _actionError = null;
+      _history = _load();
+    });
+  }
+
+  Future<void> _act(
+    ShiftTransactionSnapshot transaction,
+    String action,
+  ) async {
+    setState(() {
+      _actingOn = transaction.id;
+      _actionError = null;
+    });
+    try {
+      switch (action) {
+        case 'confirm':
+          await widget.apiClient.confirmTransaction(transaction.id);
+        case 'reject':
+          await widget.apiClient.rejectTransaction(transaction.id);
+        case 'approve':
+          await widget.apiClient.approveTransaction(transaction.id);
+        case 'reject_by_approver':
+          await widget.apiClient.rejectByApprover(transaction.id);
+      }
+      if (!mounted) return;
+      setState(() {
+        _actingOn = null;
+        _history = _load();
+      });
+      widget.onChanged?.call();
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _actingOn = null;
+        _actionError = error is ShiftTransactionApiException
+            ? error.message
+            : 'Unable to update this transaction. Refresh and try again.';
+      });
+    }
   }
 
   @override
@@ -70,6 +113,15 @@ class _ShiftTransactionHistoryPanelState
                 ),
               ],
             ),
+            if (_actionError != null) ...[
+              const SizedBox(height: 8),
+              MaterialBanner(
+                content: Text(_actionError!),
+                actions: [
+                  TextButton(onPressed: _reload, child: const Text('Retry')),
+                ],
+              ),
+            ],
             const SizedBox(height: 8),
             FutureBuilder<List<ShiftTransactionSnapshot>>(
               future: _history,
@@ -114,6 +166,24 @@ class _ShiftTransactionHistoryPanelState
                           '${item.createdAt.toLocal()} · ${item.mode} · v${item.version}',
                         ),
                         children: [
+                          for (final participant in item.participants)
+                            ListTile(
+                              dense: true,
+                              leading: Icon(
+                                participant['confirmed_at'] == null
+                                    ? Icons.pending_outlined
+                                    : Icons.check_circle_outline,
+                              ),
+                              title: Text(
+                                '${participant['name'] ?? participant['employee_id'] ?? 'Participant'}'
+                                ' · ${participant['role'] ?? ''}',
+                              ),
+                              subtitle: Text(
+                                participant['confirmed_at'] == null
+                                    ? 'Waiting for confirmation'
+                                    : 'Confirmed ${participant['confirmed_at']}',
+                              ),
+                            ),
                           for (final transfer in item.transfers)
                             ListTile(
                               dense: true,
@@ -125,6 +195,15 @@ class _ShiftTransactionHistoryPanelState
                               subtitle: Text(
                                 '${transfer['starts_at'] ?? ''} – '
                                 '${transfer['ends_at'] ?? ''}',
+                              ),
+                            ),
+                          if (_canAct(item))
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: _actionButtons(item),
                               ),
                             ),
                           const Divider(),
@@ -148,6 +227,49 @@ class _ShiftTransactionHistoryPanelState
         ),
       ),
     );
+  }
+
+  bool _canAct(ShiftTransactionSnapshot item) {
+    if (_actingOn == item.id) return false;
+    if (['pending_response', 'partially_accepted'].contains(item.status)) {
+      return item.participants.any(
+        (participant) =>
+            participant['is_current_user'] == true &&
+            participant['confirmed_at'] == null,
+      );
+    }
+    return item.status == 'pending_approval' &&
+        item.organizationId != null &&
+        widget.approvableOrganizationIds.contains(item.organizationId);
+  }
+
+  List<Widget> _actionButtons(ShiftTransactionSnapshot item) {
+    if (['pending_response', 'partially_accepted'].contains(item.status)) {
+      return [
+        FilledButton.icon(
+          onPressed: () => _act(item, 'confirm'),
+          icon: const Icon(Icons.check),
+          label: const Text('Confirm'),
+        ),
+        OutlinedButton.icon(
+          onPressed: () => _act(item, 'reject'),
+          icon: const Icon(Icons.close),
+          label: const Text('Reject'),
+        ),
+      ];
+    }
+    return [
+      FilledButton.icon(
+        onPressed: () => _act(item, 'approve'),
+        icon: const Icon(Icons.verified_outlined),
+        label: const Text('Approve'),
+      ),
+      OutlinedButton.icon(
+        onPressed: () => _act(item, 'reject_by_approver'),
+        icon: const Icon(Icons.block_outlined),
+        label: const Text('Reject'),
+      ),
+    ];
   }
 
   String _typeLabel(String type) => switch (type) {
