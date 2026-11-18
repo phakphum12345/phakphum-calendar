@@ -1,5 +1,7 @@
 # Roster Configuration & Sync — Phase 0 Source Audit
 
+> **Historical snapshot notice (2026-11-18):** This audit records source observations from 2026-11-10 and is intentionally retained as a historical snapshot. Do not treat its old PR/CI state or open-work list as the current repository status. Use [the current traceability matrix](flexible-workforce/TRACEABILITY_MATRIX.md) and [the roster implementation roadmap](ROSTER_CONFIGURATION_AND_SYNC_ROADMAP.md) for evidence through main commit `19a28843fa379c16417acff5fcdd691fc4f9818f`. Findings below are not silently rewritten; later verified changes are tracked in those current-state documents.
+
 - Repository: `phakphum12345/phakphum-calendar`
 - Audited base: `main@df41b34b4b1afbc8ff883341a87f81489b24cb65`
 - Audit date: 2026-11-10
