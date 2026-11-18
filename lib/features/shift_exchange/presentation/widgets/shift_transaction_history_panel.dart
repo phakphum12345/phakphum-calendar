@@ -251,10 +251,13 @@ class _ShiftTransactionHistoryPanelState
   List<Widget> _actionButtons(ShiftTransactionSnapshot item) {
     if (_actingOn == item.id) return const [];
     final actions = <Widget>[];
-    final currentParticipant = item.participants.cast<Map<String, dynamic>?>().firstWhere(
-      (participant) => participant?['is_current_user'] == true,
-      orElse: () => null,
-    );
+    Map<String, dynamic>? currentParticipant;
+    for (final participant in item.participants) {
+      if (participant['is_current_user'] == true) {
+        currentParticipant = participant;
+        break;
+      }
+    }
 
     if (['pending_response', 'partially_accepted'].contains(item.status) &&
         currentParticipant != null &&
