@@ -436,12 +436,19 @@ class _ShiftTransactionComposerDialogState
     final recipientId = _effectiveRecipientId;
     final requesterShift = _firstOrNull(_requesterShifts.where((item) => item.key == _requesterShiftKey));
     final recipientShift = _firstOrNull(_recipientShifts.where((item) => item.key == _recipientShiftKey));
+    final requesterCodeMatches = requesterId == null
+        ? 0
+        : _employees.where((employee) => _serverEmployeeId(employee) == requesterId).length;
+    final recipientCodeMatches = recipientId == null
+        ? 0
+        : _employees.where((employee) => _serverEmployeeId(employee) == recipientId).length;
     if (requesterEmployee == null || recipientEmployee == null ||
         requesterId == null || recipientId == null ||
         requesterEmployee.id == recipientEmployee.id ||
+        requesterCodeMatches != 1 || recipientCodeMatches != 1 ||
         requesterShift == null ||
         (_type == 'exchange' && recipientShift == null)) {
-      setState(() => _error = 'Roster employee IDs must match the active account or organization membership, and both shifts must be valid.');
+      setState(() => _error = 'Roster employee codes must match exactly one active account or organization member, and both shifts must be valid.');
       return;
     }
 
@@ -763,7 +770,7 @@ class _RosterShiftChoice {
   String get key => ShiftAssignmentIdentity.create(
     scheduleId: scheduleId,
     date: date,
-    employeeId: employee.employeeCode.trim().isEmpty ? employee.id : employee.employeeCode,
+    employeeId: employee.id,
     shiftId: assignment.shift.id,
   );
 }
