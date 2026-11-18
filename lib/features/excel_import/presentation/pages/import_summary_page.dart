@@ -12,10 +12,15 @@ import '../../../employees/application/employee_match_resolver.dart';
 import '../../../schedule/data/imported_schedule_adapter.dart';
 import '../../../schedule/presentation/controllers/schedule_controller.dart';
 import '../../../schedule/presentation/pages/imported_month_calendar_page.dart';
+import '../../../schedule/data/imported_schedule_adapter.dart';
+import '../../../../domain/entities/schedule_month.dart';
 import '../../../shift_templates/application/shift_template_controller.dart';
 import '../../domain/import_issue.dart';
 import '../../domain/import_summary.dart';
 import '../../domain/shift_record.dart';
+import '../../application/import_staging_planner.dart';
+import '../../application/import_staging_applier.dart';
+import '../../domain/import_staging_plan.dart';
 import '../controllers/excel_import_controller.dart';
 import '../widgets/import_statistics.dart';
 import '../widgets/issue_list.dart';
@@ -28,6 +33,7 @@ class ImportSummaryPage extends StatefulWidget {
     this.scheduleControllerFactory,
     this.persistenceResult,
     this.scheduleSaver,
+    this.existingScheduleLoader,
     this.scheduleFactory,
     this.controller,
     this.employeeRepository,
@@ -41,6 +47,7 @@ class ImportSummaryPage extends StatefulWidget {
   final ScheduleController Function(Schedule)? scheduleControllerFactory;
   final Result<Schedule>? persistenceResult;
   final Future<Result<Schedule>> Function(Schedule)? scheduleSaver;
+  final Future<Result<Schedule?>> Function()? existingScheduleLoader;
   final Schedule Function(Iterable<ShiftRecord>)? scheduleFactory;
   final ExcelImportController? controller;
   final EmployeeRepository? employeeRepository;
@@ -74,6 +81,18 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
   final Map<int, ShiftTemplate?> _selectedShiftTemplates = {};
   final Map<int, EmployeeMatchResult> _matchResults = {};
   final Map<int, Employee?> _selectedEmployees = {};
+  Schedule? _stagingSchedule;
+  ImportStagingPlan? _stagingPlan;
+  final Set<int> _includedRowNumbers = {};
+  bool _stagingLoading = false;
+  bool _rowSelectionTouched = false;
+  String? _stagingError;
+
+  bool get _stagingEnabled => widget.existingScheduleLoader != null;
+
+  bool get _stagingReady => !_stagingEnabled ||
+      (!_stagingLoading && _stagingError == null && _stagingPlan != null &&
+          !_stagingPlan!.hasBlockingRows);
 
   bool get _employeeReviewEnabled => widget.employeeRepository != null;
 
@@ -113,6 +132,15 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
   }
 
   Schedule get _currentSchedule {
+    final plan = _stagingPlan;
+    final existing = _stagingSchedule;
+    if (_stagingEnabled && plan != null && existing != null) {
+      return const ImportStagingApplier().apply(
+        existingSchedule: existing,
+        plan: plan,
+        includedRowNumbers: _includedRowNumbers,
+      );
+    }
     if (!_employeeReviewEnabled && !_shiftReviewEnabled) {
       return widget._currentSchedule;
     }
@@ -125,6 +153,7 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
     super.initState();
     if (_employeeReviewEnabled) unawaited(_loadEmployeeDirectory());
     if (_shiftReviewEnabled) unawaited(_loadShiftTemplates());
+    if (_stagingEnabled) unawaited(_loadExistingSchedule());
   }
 
   @override
@@ -163,6 +192,7 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
         _employeeReviewError = result.message;
     }
     setState(() => _employeeReviewLoading = false);
+    _rebuildStagingPlan();
   }
 
   Future<void> _loadShiftTemplates() async {
@@ -189,6 +219,7 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
       _resolveShiftTemplates();
       _shiftReviewLoading = false;
     });
+    _rebuildStagingPlan();
   }
 
   void _resolveShiftTemplates() {
@@ -225,6 +256,7 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
     final persistenceResult = _saveResult ?? widget.persistenceResult;
     final canSave = _employeeReviewReady &&
         _shiftReviewReady &&
+        _stagingReady &&
         !_saving &&
         persistenceResult is! Success<Schedule>;
     return Scaffold(
@@ -260,6 +292,10 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
                   if (_shiftReviewEnabled) ...[
                     const SizedBox(height: 24),
                     _buildShiftReview(context),
+                  ],
+                  if (_stagingEnabled) ...[
+                    const SizedBox(height: 24),
+                    _buildStagingReview(context),
                   ],
                   if (persistenceResult case Failure<Schedule>(
                     message: final message,
@@ -330,6 +366,163 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _loadExistingSchedule() async {
+    final loader = widget.existingScheduleLoader;
+    if (loader == null) return;
+    setState(() {
+      _stagingLoading = true;
+      _stagingError = null;
+    });
+    final result = await loader();
+    if (!mounted) return;
+    switch (result) {
+      case Success<Schedule?>(value: final saved):
+        _stagingSchedule = saved ?? _emptyScheduleForImportedRows();
+      case Failure<Schedule?>():
+        _stagingError = result.message;
+    }
+    setState(() => _stagingLoading = false);
+    _rebuildStagingPlan();
+  }
+
+  Schedule _emptyScheduleForImportedRows() {
+    final generated = widget.scheduleFactory?.call(_resolvedRecords) ??
+        const ImportedScheduleAdapter().createSchedule(_resolvedRecords);
+    final months = <String, DateTime>{};
+    for (final record in _resolvedRecords) {
+      final date = record.date;
+      if (date != null) {
+        months['${date.year}-${date.month}'] = DateTime(date.year, date.month);
+      }
+    }
+    final orderedMonths = months.values.toList()
+      ..sort((left, right) => left.compareTo(right));
+    return Schedule(
+      id: generated.id,
+      name: generated.name,
+      months: [for (final month in orderedMonths) ScheduleMonth.empty(month)],
+    );
+  }
+
+  void _rebuildStagingPlan() {
+    if (!_stagingEnabled || _stagingLoading || _stagingSchedule == null ||
+        !_employeeReviewReady || !_shiftReviewReady) {
+      return;
+    }
+    final plan = const ImportStagingPlanner().plan(
+      existingSchedule: _stagingSchedule!,
+      records: _resolvedRecords,
+    );
+    final previousSelection = Set<int>.of(_includedRowNumbers);
+    _includedRowNumbers
+      ..clear()
+      ..addAll([
+        for (final entry in plan.entries)
+          if (_rowSelectionTouched
+              ? previousSelection.contains(entry.rowNumber)
+              : entry.action == ImportRowAction.create ||
+                    entry.action == ImportRowAction.update)
+            entry.rowNumber,
+      ]);
+    setState(() {
+      _stagingPlan = plan;
+      _stagingError = null;
+    });
+  }
+
+  Widget _buildStagingReview(BuildContext context) {
+    if (_stagingLoading) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+    if (_stagingError != null) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('ไม่สามารถโหลดตารางเดิมเพื่อตรวจสอบรายการนำเข้าได้'),
+              const SizedBox(height: 8),
+              Text(_stagingError!),
+              TextButton(
+                onPressed: _loadExistingSchedule,
+                child: const Text('ลองอีกครั้ง'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    final plan = _stagingPlan;
+    if (plan == null) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Text('กำลังรอการจับคู่พนักงานและรูปแบบเวรให้ครบก่อนวิเคราะห์'),
+        ),
+      );
+    }
+    String actionLabel(ImportRowAction action) => switch (action) {
+      ImportRowAction.create => 'CREATE • เพิ่มใหม่',
+      ImportRowAction.update => 'UPDATE • ปรับปรุงรายการเดิม',
+      ImportRowAction.skip => 'SKIP • ไม่เปลี่ยนแปลง',
+      ImportRowAction.blocked => 'REVIEW • ต้องแก้ไขก่อน',
+    };
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('ตรวจสอบรายการก่อนบันทึก',
+                style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            Text('เพิ่มใหม่ ${plan.createCount} • ปรับปรุง ${plan.updateCount} • '
+                'ไม่เปลี่ยน ${plan.skipCount} • ต้องตรวจ ${plan.blockedCount}'),
+            const SizedBox(height: 8),
+            if (plan.hasBlockingRows)
+              Text(
+                'มีรายการที่ยังไม่ปลอดภัยต่อการบันทึก กรุณากลับไปแก้การจับคู่หรือข้อมูลต้นทาง',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            for (final entry in plan.entries) ...[
+              CheckboxListTile(
+                contentPadding: EdgeInsets.zero,
+                value: _includedRowNumbers.contains(entry.rowNumber),
+                onChanged: entry.action == ImportRowAction.create ||
+                        entry.action == ImportRowAction.update
+                    ? (included) {
+                        setState(() {
+                          _rowSelectionTouched = true;
+                          if (included == true) {
+                            _includedRowNumbers.add(entry.rowNumber);
+                          } else {
+                            _includedRowNumbers.remove(entry.rowNumber);
+                          }
+                        });
+                      }
+                    : null,
+                title: Text('แถว ${entry.rowNumber} • ${actionLabel(entry.action)}'),
+                subtitle: Text(entry.record.employee + ' • ' + entry.record.shift +
+                    (entry.record.date == null
+                        ? ''
+                        : ' • ${entry.record.date!.day}/${entry.record.date!.month}/${entry.record.date!.year}')),
+              ),
+              const Divider(height: 1),
+            ],
+            Text('ยกเลิกเครื่องหมายรายการ CREATE/UPDATE เพื่อข้ามแถวนั้นได้ '
+                'รายการ SKIP และ REVIEW จะไม่ถูกนำไปเขียนทับข้อมูลเดิม'),
+          ],
         ),
       ),
     );
@@ -506,6 +699,7 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
                     setState(() {
                       _selectedShiftTemplates[record.rowNumber] = template;
                     });
+                    _rebuildStagingPlan();
                   },
           ),
         ] else
@@ -569,6 +763,7 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
                     setState(
                       () => _selectedEmployees[record.rowNumber] = employee,
                     );
+                    _rebuildStagingPlan();
                   },
           ),
         ] else
@@ -648,6 +843,7 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
         _saving ||
         !_employeeReviewReady ||
         !_shiftReviewReady ||
+        !_stagingReady ||
         _isSaved) {
       return;
     }
