@@ -352,6 +352,11 @@ class AppDependencies {
     );
   }
 
+  /// Loads the current canonical imported schedule without mutating it.
+  Future<Result<Schedule?>> loadImportedSchedule() {
+    return scheduleRepository.findById('imported');
+  }
+
   /// Persists a successfully converted canonical import aggregate.
   Future<Result<Schedule>> saveImportedSchedule(Schedule schedule) {
     return scheduleRepository.save(schedule);

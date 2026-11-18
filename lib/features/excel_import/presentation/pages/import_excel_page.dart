@@ -47,6 +47,7 @@ class ImportExcelPage extends StatefulWidget {
     this.importedScheduleFactory,
     this.scheduleControllerFactory,
     this.scheduleSaver,
+    this.existingScheduleLoader,
     this.employeeRepository,
     this.shiftTemplateControllerFactory,
     super.key,
@@ -66,6 +67,7 @@ class ImportExcelPage extends StatefulWidget {
   final Schedule Function(Iterable<ShiftRecord>)? importedScheduleFactory;
   final ScheduleController Function(Schedule)? scheduleControllerFactory;
   final Future<Result<Schedule>> Function(Schedule)? scheduleSaver;
+  final Future<Result<Schedule?>> Function()? existingScheduleLoader;
   final EmployeeRepository? employeeRepository;
   final ShiftTemplateController Function()? shiftTemplateControllerFactory;
 
@@ -340,6 +342,7 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
           schedule: schedule,
           scheduleControllerFactory: widget.scheduleControllerFactory,
           scheduleSaver: widget.scheduleSaver,
+          existingScheduleLoader: widget.existingScheduleLoader,
           scheduleFactory: widget.importedScheduleFactory,
           controller: controller,
           employeeRepository: widget.employeeRepository,
