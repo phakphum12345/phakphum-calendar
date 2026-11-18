@@ -218,7 +218,7 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
   }
 
   String _normalizeShiftLabel(String value) =>
-      value.trim().replaceAll(RegExp(r'\\s+'), '').toLowerCase();
+      value.trim().replaceAll(RegExp(r'\s+'), '').toLowerCase();
 
   @override
   Widget build(BuildContext context) {
