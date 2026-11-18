@@ -65,8 +65,7 @@ class EmployeeMatchResolver {
     }
 
     final exactNameMatches = directory.where((employee) {
-      final aliases = _aliases(employee);
-      return aliases.contains(query);
+      return _aliases(employee).contains(query);
     }).toList(growable: false);
 
     if (exactNameMatches.isNotEmpty) {
@@ -132,5 +131,5 @@ class EmployeeMatchResolver {
   }
 
   String _normalize(String value) =>
-      value.trim().replaceAll(RegExp(r'\\s+'), ' ').toLowerCase();
+      value.trim().replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
 }
