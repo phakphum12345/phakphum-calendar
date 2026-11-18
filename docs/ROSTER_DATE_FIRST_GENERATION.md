@@ -54,3 +54,20 @@ otherwise inherit the worksheet month.
 ## Production parser boundary
 
 The production `ShiftParser` stops searching for a section period at the preceding date-header grid. An undated block in a multi-block worksheet is skipped instead of inheriting the prior block's period or the worksheet tab month. The worksheet-title fallback remains available for a single date grid.
+
+## Hospital roster date-first boundary
+
+`HospitalRosterParser` follows the same safety rule. It scans the complete
+sheet for a valid date-header row and an explicit roster period before reading
+any worker-name cell. It resolves every date column first, validates days
+against the declared period (including month boundaries and leap days), and
+only then maps shift rows to worker cells. Header rows are not restricted to
+the first two rows.
+
+Invalid or out-of-period date columns are skipped with warnings; the parser
+does not invent a date. A missing date header or an unreadable period fails
+closed with a `FormatException`.
+
+The hospital parser regression suite covers late-position headers, a period
+heading elsewhere in the sheet, cross-month columns, invalid date columns, and
+the guarantee that names are read only after date columns have been resolved.
