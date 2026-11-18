@@ -412,6 +412,7 @@ class _ShiftTransactionComposerDialogState
     final recipientShift = _firstOrNull(_recipientShifts.where((item) => item.key == _recipientShiftKey));
     if (requesterId == null || recipientId == null ||
         requesterShift == null || requesterId == recipientId ||
+        !_employees.any((employee) => employee.id == recipientId) ||
         (_type == 'exchange' && recipientShift == null)) {
       setState(() => _error = 'Choose two different employees and valid roster shifts.');
       return;
