@@ -4,8 +4,6 @@ import 'package:crypto/crypto.dart';
 
 import '../../../domain/entities/employee.dart';
 import '../../../domain/entities/schedule.dart';
-import '../../../domain/entities/schedule_day.dart';
-import '../../../domain/entities/schedule_month.dart';
 import '../../../domain/entities/shift_assignment.dart';
 import '../../shift_exchange/infrastructure/shift_transaction_api_client.dart';
 
