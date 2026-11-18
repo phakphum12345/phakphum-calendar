@@ -88,8 +88,8 @@ void main() {
     final result = projector.project(source: source, transactions: [giveUp]);
 
     expect(result.warnings, isEmpty);
-    expect(result.schedule.month(date)!.day(date)!.assignments[0].employee.id, 'B');
-    expect(source.month(date)!.day(date)!.assignments[0].employee.id, 'A');
+    expect(result.schedule.month(date)!.day(date)!.assignments[0].employee.id, 'legacy:B');
+    expect(source.month(date)!.day(date)!.assignments[0].employee.id, 'legacy:A');
   });
 
   test('does not project pending, rejected, or cancelled transactions', () {
@@ -131,7 +131,7 @@ void main() {
     final assignments = result.schedule.month(date)!.day(date)!.assignments;
 
     expect(result.warnings, isEmpty);
-    expect(assignments.map((item) => item.employee.id), ['B', 'A']);
+    expect(assignments.map((item) => item.employee.id), ['legacy:B', 'legacy:A']);
     expect(assignments.map((item) => item.shift.code), ['M', 'E']);
   });
 
@@ -155,7 +155,7 @@ void main() {
     expect(second.warnings.single, contains('source assignment'));
     expect(
       second.schedule.month(date)!.day(date)!.assignments.map((item) => item.employee.id),
-      ['B', 'B'],
+      ['legacy:B', 'legacy:B'],
     );
   });
 
@@ -185,7 +185,7 @@ void main() {
     final result = projector.project(source: source, transactions: [second, first]);
 
     expect(result.warnings, isEmpty);
-    expect(result.schedule.month(date)!.day(date)!.assignments.first.employee.id, 'C');
+    expect(result.schedule.month(date)!.day(date)!.assignments.first.employee.id, 'legacy:C');
   });
 
   test('warns and leaves the transaction unapplied when the source shift is missing', () {
