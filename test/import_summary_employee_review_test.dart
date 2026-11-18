@@ -251,7 +251,8 @@ void main() {
             .every((dropdown) => dropdown.onChanged == null),
         isTrue,
       );
-      final candidates = const CanonicalScheduleEventMapper().map(savedSchedule!);
+      final candidates = const CanonicalScheduleEventMapper()
+          .map(savedSchedule!);
       final preview = const WorkflowPreviewBuilder().buildCandidates(
         desired: candidates,
         existing: const [],
