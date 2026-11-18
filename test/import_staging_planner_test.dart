@@ -47,6 +47,7 @@ const _employeeWithDelimiter = Employee(
   employeeCode: 'EA',
   firstName: 'First',
   lastName: 'Employee',
+  nickname: 'First',
   department: Department(id: 'er', code: 'ER', name: 'Emergency'),
   position: 'Nurse',
 );
@@ -56,6 +57,7 @@ const _employeeWithDelimiterInId = Employee(
   employeeCode: 'EB',
   firstName: 'Second',
   lastName: 'Employee',
+  nickname: 'Second',
   department: Department(id: 'er', code: 'ER', name: 'Emergency'),
   position: 'Nurse',
 );
