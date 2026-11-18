@@ -48,7 +48,8 @@ class ImportedScheduleAdapter {
       final employee = record.resolvedEmployee ??
           _employee(record.employee, department);
       employees[employee.id] = employee;
-      final shift = _shift(record.shift);
+      final shift = record.resolvedShiftTemplate?.toShiftType() ??
+          _shift(record.shift);
       shifts[shift.id] = shift;
     }
 
@@ -67,7 +68,9 @@ class ImportedScheduleAdapter {
       final employee = employees[
         record.resolvedEmployee?.id ?? _employeeId(record.employee, department)
       ]!;
-      final shift = shifts[_identifier(record.shift)]!;
+      final shift = shifts[
+        record.resolvedShiftTemplate?.id ?? _identifier(record.shift)
+      ]!;
       service.updateAssignment(
         date: record.date!,
         assignment: ShiftAssignment(
