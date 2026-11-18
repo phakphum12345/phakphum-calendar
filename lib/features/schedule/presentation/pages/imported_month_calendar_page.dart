@@ -71,10 +71,7 @@ class _ImportedMonthCalendarPageState extends State<ImportedMonthCalendarPage> {
     try {
       workflow = await factory();
       await workflow.prepareSchedule(canonicalSchedule);
-      if (!mounted) {
-        workflow.dispose();
-        return;
-      }
+      if (!mounted) return;
       await Navigator.of(context).push<void>(
         MaterialPageRoute<void>(
           builder: (_) => WorkflowDashboardScreen(controller: workflow!),
