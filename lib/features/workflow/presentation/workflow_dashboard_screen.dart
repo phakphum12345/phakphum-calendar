@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n.dart';
+import '../../diff_engine/domain/calendar_event_candidate.dart';
 import '../application/shift_calendar_workflow_controller.dart';
 
 class WorkflowDashboardScreen extends StatelessWidget {
@@ -132,7 +133,8 @@ class WorkflowDashboardScreen extends StatelessWidget {
             ],
           ),
           bottomNavigationBar: (preparation == null && preview == null) ||
-                  !hasChanges
+                  !hasChanges ||
+                  controller.lastResult != null
               ? null
               : SafeArea(
                   child: Padding(
@@ -162,7 +164,7 @@ class WorkflowDashboardScreen extends StatelessWidget {
 
   Widget _diffSection(
     String title,
-    List<dynamic> events,
+    List<CalendarEventCandidate> events,
   ) {
     if (events.isEmpty) return const SizedBox.shrink();
     return Card(
