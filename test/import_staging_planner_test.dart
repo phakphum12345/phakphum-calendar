@@ -44,14 +44,15 @@ const _changedTemplate = ShiftTemplate(
 
 ShiftRecord _record({
   int row = 2,
-  DateTime? date = const DateTime(2026, 7, 24),
+  DateTime? date,
+  bool missingDate = false,
   Employee? employee = _employee,
   ShiftTemplate? template = _template,
   String? notes,
   String? location,
 }) {
   return ShiftRecord(
-    date: date,
+    date: missingDate ? null : date ?? DateTime(2026, 7, 24),
     shift: 'M',
     employee: employee?.fullName ?? 'Unknown',
     rowNumber: row,
@@ -143,7 +144,7 @@ void main() {
     final plan = planner.plan(
       existingSchedule: _schedule(),
       records: [
-        _record(row: 2, date: null),
+        _record(row: 2, missingDate: true),
         _record(row: 3, employee: null),
         _record(row: 4, template: null),
       ],
