@@ -54,6 +54,7 @@ void main() {
     ]);
 
     final assignment = schedule
+        .month(DateTime(2026, 7, 24))!
         .day(DateTime(2026, 7, 24))!
         .assignments
         .single;
