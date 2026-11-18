@@ -145,7 +145,7 @@ class ImportedScheduleAdapter {
   }
 
   String _identifier(String value) {
-    return value.trim().toLowerCase().replaceAll(RegExp(r'\\s+'), '-');
+    return value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), '-');
   }
 
   int _colorFor(String value) {
