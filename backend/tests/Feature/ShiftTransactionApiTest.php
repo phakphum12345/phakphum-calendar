@@ -68,6 +68,44 @@ class ShiftTransactionApiTest extends TestCase
             ->assertOk()->assertJsonCount(1, 'data');
     }
 
+    public function test_personal_transaction_resolves_recipient_by_verified_email(): void
+    {
+        $this->signIn('alice-token');
+        $this->signIn('bob-token');
+        $payload = $this->giveUp();
+        $payload['participants'] = [
+            ['employee_id' => 'A', 'role' => 'requester'],
+            ['email' => 'bob@example.com', 'employee_id' => 'B', 'role' => 'recipient'],
+        ];
+
+        $created = $this->postJson('/api/v1/shift-transactions', $payload, [
+            'Authorization' => 'Bearer alice-token', 'Idempotency-Key' => 'personal-email-recipient',
+        ])->assertCreated()->json('data');
+
+        $this->assertDatabaseHas('shift_transaction_participants', [
+            'transaction_id' => $created['id'],
+            'user_id' => DB::table('users')->where('google_subject', 'google-bob')->value('id'),
+            'employee_id' => 'B',
+            'role' => 'recipient',
+        ]);
+    }
+
+    public function test_personal_transaction_rejects_unverified_recipient_email(): void
+    {
+        $this->signIn('alice-token');
+        $this->signIn('bob-token');
+        DB::table('users')->where('google_subject', 'google-bob')->update(['email_verified_at' => null]);
+        $payload = $this->giveUp();
+        $payload['participants'] = [
+            ['employee_id' => 'A', 'role' => 'requester'],
+            ['email' => 'bob@example.com', 'employee_id' => 'B', 'role' => 'recipient'],
+        ];
+
+        $this->postJson('/api/v1/shift-transactions', $payload, [
+            'Authorization' => 'Bearer alice-token', 'Idempotency-Key' => 'unverified-recipient',
+        ])->assertUnprocessable();
+    }
+
     public function test_idempotency_replays_same_payload_and_rejects_key_reuse(): void
     {
         $this->signIn('alice-token');
@@ -161,6 +199,14 @@ class ShiftTransactionApiTest extends TestCase
             'employee_id' => 'M', 'role' => 'admin', 'status' => 'active', 'created_at' => now(), 'updated_at' => now(),
         ]);
         $payload = $this->giveUp();
+        $payload['participants'] = [
+            ['employee_id' => 'A', 'role' => 'requester'],
+            [
+                'user_id' => DB::table('users')->where('google_subject', 'google-bob')->value('id'),
+                'employee_id' => 'B',
+                'role' => 'recipient',
+            ],
+        ];
         $payload['mode'] = 'organization';
         $payload['organization_id'] = $organization['id'];
         $created = $this->postJson('/api/v1/shift-transactions', $payload, [
