@@ -136,7 +136,7 @@ void main() {
 }
 
 Employee _employee(String id) => Employee(
-  id: id,
+  id: 'legacy:$id',
   employeeCode: id,
   firstName: id == 'A' ? 'Alice' : 'Bob',
   lastName: '',
