@@ -1,4 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter/material.dart';
+import 'package:phakphum_calendar/l10n/app_localizations.dart';
+import 'package:phakphum_calendar/features/workflow/presentation/workflow_dashboard_screen.dart';
 import 'package:phakphum_calendar/core/di/app_dependencies.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_command.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_gateway.dart';
@@ -138,6 +141,50 @@ void main() {
     expect(resumed.historyEntry.status, SyncHistoryStatus.success);
     expect(await failed.listForHistory(partial.id), isEmpty);
   });
+
+  testWidgets(
+    'calendar writes wait for explicit confirmation in the workflow screen',
+    (tester) async {
+      final gateway = _CalendarGateway();
+      final dependencies = AppDependencies(
+        scheduleRules: const [],
+        syncHistoryRepository: _RecordingHistoryRepository(),
+        failedSyncRepository: _InMemoryFailedSyncRepository(),
+      );
+      final controller = dependencies.createShiftCalendarWorkflowController(
+        gateway,
+      );
+      await controller.prepareSchedule(canonicalScheduleFixture());
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: WorkflowDashboardScreen(controller: controller),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(gateway.executionCount, 0);
+      await tester.tap(
+        find.text('ตรวจแล้ว ยืนยัน Sync Google Calendar'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('ยืนยันการซิงก์ Google Calendar'),
+        findsOneWidget,
+      );
+      expect(gateway.executionCount, 0);
+
+      await tester.tap(find.text('ยืนยัน Sync'));
+      await tester.pumpAndSettle();
+
+      expect(gateway.executionCount, greaterThan(0));
+      await tester.pumpWidget(const SizedBox.shrink());
+      controller.dispose();
+    },
+  );
 
   test('equivalent canonical schedules retain stable sync identifiers', () {
     const mapper = CanonicalScheduleEventMapper();
