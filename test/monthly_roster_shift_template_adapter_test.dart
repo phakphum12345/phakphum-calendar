@@ -3,6 +3,8 @@ import 'package:phakphum_calendar/domain/entities/shift_template.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/monthly_roster_conversion_diagnostics.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/monthly_roster_section_parser.dart';
 import 'package:phakphum_calendar/features/shift_parser/domain/monthly_roster_section.dart';
+import 'package:phakphum_calendar/features/shift_parser/domain/normalized_cell.dart';
+import 'package:phakphum_calendar/features/shift_parser/domain/shift_parser_input.dart';
 
 void main() {
   const template = ShiftTemplate(
@@ -77,4 +79,103 @@ void main() {
     expect(result.unconvertedCount, 1);
     expect(result.unconvertedAssignments.single.rowLabel, 'สนับสนุนดึก');
   });
+
+  test('matches a configured shift code from a real monthly roster grid', () {
+    final report = const MonthlyRosterSectionParser().parse(_inputForRow('XN'));
+    final result = const MonthlyRosterShiftAdapter()
+        .parseForWorkersWithDiagnostics(
+          report,
+          targetNames: const ['ผู้ทดสอบ'],
+          shiftTemplates: const [template],
+        );
+    expect(report.assignments, hasLength(1));
+    expect(report.assignments.single.rowLabel, 'XN');
+    expect(result.convertedCount, 1);
+    expect(result.unconvertedCount, 0);
+    expect(result.shifts.single.code, 'XN');
+    expect(result.shifts.single.start, DateTime(2026, 11, 17, 19, 30));
+    expect(result.shifts.single.end, DateTime(2026, 11, 18, 7, 30));
+  });
+
+  test('matches a configured template name from a real monthly roster grid', () {
+    final report = const MonthlyRosterSectionParser()
+        .parse(_inputForRow('เวรสนับสนุนกลางคืน'));
+    final result = const MonthlyRosterShiftAdapter()
+        .parseForWorkersWithDiagnostics(
+          report,
+          targetNames: const ['ผู้ทดสอบ'],
+          shiftTemplates: const [template],
+        );
+    expect(result.convertedCount, 1);
+    expect(result.unconvertedCount, 0);
+    expect(result.shifts.single.code, 'XN');
+    expect(result.shifts.single.start, DateTime(2026, 11, 17, 19, 30));
+    expect(result.shifts.single.end, DateTime(2026, 11, 18, 7, 30));
+  });
+
+  test('matches a normalized short name from a real monthly roster grid', () {
+    final report = const MonthlyRosterSectionParser()
+        .parse(_inputForRow('  สนับสนุนดึก  '));
+    final result = const MonthlyRosterShiftAdapter()
+        .parseForWorkersWithDiagnostics(
+          report,
+          targetNames: const ['ผู้ทดสอบ'],
+          shiftTemplates: const [template],
+        );
+    expect(result.convertedCount, 1);
+    expect(result.unconvertedCount, 0);
+    expect(result.shifts.single.code, 'XN');
+    expect(result.shifts.single.start, DateTime(2026, 11, 17, 19, 30));
+    expect(result.shifts.single.end, DateTime(2026, 11, 18, 7, 30));
+  });
+
+  test('keeps an unknown new row label visible for review after real parsing', () {
+    final report = const MonthlyRosterSectionParser()
+        .parse(_inputForRow('เวรใหม่ที่ยังไม่ตั้งค่า'));
+    final result = const MonthlyRosterShiftAdapter()
+        .parseForWorkersWithDiagnostics(
+          report,
+          targetNames: const ['ผู้ทดสอบ'],
+          shiftTemplates: const [template],
+        );
+    expect(report.assignments, hasLength(1));
+    expect(result.convertedCount, 0);
+    expect(result.unconvertedCount, 1);
+    expect(
+      result.unconvertedAssignments.single.rowLabel,
+      'เวรใหม่ที่ยังไม่ตั้งค่า',
+    );
+  });
+}
+
+ShiftParserInput _inputForRow(String rowLabel) {
+  final cells = <NormalizedCell>[];
+  void addRow(int row, List<Object?> values) {
+    for (var column = 0; column < values.length; column++) {
+      final value = values[column];
+      cells.add(
+        NormalizedCell(
+          sheetId: 1,
+          sheetTitle: 'Roster',
+          a1: '${String.fromCharCode(65 + column)}${row + 1}',
+          rowIndex: row,
+          columnIndex: column,
+          text: value is String ? value : null,
+          rawValue: value,
+        ),
+      );
+    }
+  }
+
+  addRow(0, ['เวรประจำเดือน พฤศจิกายน พ.ศ. 2569']);
+  addRow(1, ['วันที่', 17]);
+  addRow(2, [rowLabel, 'ผู้ทดสอบ']);
+  return ShiftParserInput(
+    spreadsheetId: 'synthetic-spreadsheet',
+    spreadsheetTitle: 'Synthetic roster',
+    sheetId: 1,
+    sheetTitle: 'พฤศจิกายน 2569',
+    timeZone: 'Asia/Bangkok',
+    cells: cells,
+  );
 }
