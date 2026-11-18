@@ -193,7 +193,7 @@ class ShiftTransactionApiClient {
     String? note,
   }) => _postTransaction(
     '${_transactionPath(id)}/approve',
-    body: {if (note != null) 'note': note},
+    body: {'note': ?note},
   );
 
   Future<ShiftTransactionSnapshot> rejectByApprover(
@@ -201,7 +201,7 @@ class ShiftTransactionApiClient {
     String? reason,
   }) => _postTransaction(
     '${_transactionPath(id)}/reject-by-approver',
-    body: {if (reason != null) 'reason': reason},
+    body: {'reason': ?reason},
   );
 
   Future<ShiftTransactionSnapshot> cancelTransaction(String id) =>
@@ -228,7 +228,7 @@ class ShiftTransactionApiClient {
     String? reason,
   }) => _postTransaction(
     '${_transactionPath(id)}/calendar-sync/fail',
-    body: {if (reason != null) 'reason': reason},
+    body: {'reason': ?reason},
   );
 
   Future<ShiftTransactionSnapshot> fulfillTransfer(
