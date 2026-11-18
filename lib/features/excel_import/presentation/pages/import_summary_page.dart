@@ -399,6 +399,8 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
       if (!updated || !activeController.reprocessImport()) return;
       if (!mounted) return;
       setState(() {});
+      await _loadEmployeeDirectory();
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('ปรับข้อมูลและประมวลผลใหม่แล้ว')),
       );
