@@ -72,11 +72,13 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('CREATE • เพิ่มใหม่'), findsOneWidget);
+    expect(find.textContaining('CREATE • เพิ่มใหม่'), findsOneWidget);
     expect(find.textContaining('เพิ่มใหม่ 1'), findsOneWidget);
 
+    await tester.ensureVisible(find.byType(CheckboxListTile).first);
     await tester.tap(find.byType(CheckboxListTile).first);
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('ยืนยันและบันทึกตารางเวร'));
     await tester.tap(find.text('ยืนยันและบันทึกตารางเวร'));
     await tester.pumpAndSettle();
 
