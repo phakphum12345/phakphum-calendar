@@ -17,6 +17,7 @@ class ImportedMonthCalendarPage extends StatefulWidget {
     this.schedule,
     this.controllerFactory,
     this.workflowControllerFactory,
+    this.enableCalendarSync = false,
     super.key,
     this.adapter = const ImportedScheduleAdapter(),
   });
@@ -27,6 +28,7 @@ class ImportedMonthCalendarPage extends StatefulWidget {
   final ScheduleController Function(Schedule)? controllerFactory;
   final Future<ShiftCalendarWorkflowController> Function()?
   workflowControllerFactory;
+  final bool enableCalendarSync;
 
   /// Boundary adapter used to populate the schedule domain.
   final ImportedScheduleAdapter adapter;
@@ -96,7 +98,8 @@ class _ImportedMonthCalendarPageState extends State<ImportedMonthCalendarPage> {
       controller: controller,
       title: context.l10n.monthCalendar,
       appBarActions: [
-        if (widget.workflowControllerFactory != null)
+        if (widget.enableCalendarSync &&
+            widget.workflowControllerFactory != null)
           IconButton(
             key: const Key('open-calendar-sync-workflow'),
             tooltip: 'ตรวจสอบก่อน Sync Google Calendar',
