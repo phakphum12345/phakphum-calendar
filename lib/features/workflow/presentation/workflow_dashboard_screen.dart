@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../l10n/l10n.dart';
 import '../application/shift_calendar_workflow_controller.dart';
-import '../domain/workflow_preview.dart';
 
 class WorkflowDashboardScreen extends StatelessWidget {
   const WorkflowDashboardScreen({required this.controller, super.key});
