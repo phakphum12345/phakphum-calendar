@@ -1,8 +1,10 @@
 import '../../../domain/entities/employee.dart';
 import '../../../domain/entities/schedule.dart';
 import '../../../domain/entities/shift_assignment.dart';
+import '../../../domain/entities/shift_template.dart';
 import '../../../domain/entities/shift_type.dart';
 import '../domain/import_staging_plan.dart';
+import '../domain/import_staging_row.dart';
 import '../domain/shift_record.dart';
 
 /// Produces deterministic, read-only row decisions against a canonical
@@ -94,6 +96,91 @@ class ImportStagingPlanner {
         for (var index = 0; index < entries.length; index++)
           entries[index]!,
       ],
+    );
+  }
+
+  /// Compatibility adapter for callers that still provide resolved
+  /// ShiftAssignment rows. All decisions are delegated to [plan], so the
+  /// canonical structured-key implementation remains the single source
+  /// of truth.
+  LegacyImportStagingPlan build({
+    required Iterable<ImportStagingRow> rows,
+    required Schedule existingSchedule,
+  }) {
+    final sourceRows = rows.toList(growable: false);
+    final records = sourceRows.map((row) {
+      final assignment = row.assignment;
+      final shift = assignment?.shift;
+      final template = shift == null
+          ? null
+          : ShiftTemplate(
+              id: shift.id,
+              code: shift.code,
+              name: shift.name,
+              shortName: shift.code,
+              startTime: shift.startTime,
+              endTime: shift.endTime,
+              color: shift.color,
+              workingHours: shift.workingHours,
+            );
+      return ShiftRecord(
+        date: row.date,
+        shift: shift?.code ?? '',
+        employee: assignment?.employee.fullName ?? '',
+        rowNumber: row.sourceRowNumber,
+        location: assignment?.location,
+        notes: assignment?.remark,
+        resolvedEmployee: assignment?.employee,
+        resolvedShiftTemplate: template,
+      );
+    }).toList(growable: false);
+
+    final canonical = plan(
+      existingSchedule: existingSchedule,
+      records: records,
+    );
+    return LegacyImportStagingPlan([
+      for (var index = 0; index < canonical.entries.length; index++)
+        _toLegacyEntry(sourceRows[index], canonical.entries[index]),
+    ]);
+  }
+
+  LegacyImportStagingEntry _toLegacyEntry(
+    ImportStagingRow source,
+    ImportStagingEntry entry,
+  ) {
+    final decision = switch (entry.action) {
+      ImportRowAction.create => LegacyImportRowDecision.create,
+      ImportRowAction.update => LegacyImportRowDecision.update,
+      ImportRowAction.skip => LegacyImportRowDecision.skip,
+      ImportRowAction.blocked => LegacyImportRowDecision.review,
+    };
+    final reason = switch (entry.reason) {
+      ImportRowDecisionReason.noMatchingAssignment =>
+        LegacyImportRowDecisionReason.newAssignment,
+      ImportRowDecisionReason.existingAssignmentUnchanged =>
+        LegacyImportRowDecisionReason.alreadyPresent,
+      ImportRowDecisionReason.existingAssignmentChanged =>
+        LegacyImportRowDecisionReason.existingAssignmentChanged,
+      ImportRowDecisionReason.identicalDuplicateSourceRow =>
+        LegacyImportRowDecisionReason.repeatedIdenticalSourceRow,
+      ImportRowDecisionReason.missingDate ||
+      ImportRowDecisionReason.unresolvedEmployee ||
+      ImportRowDecisionReason.unresolvedShiftTemplate =>
+        LegacyImportRowDecisionReason.unresolvedDateOrIdentity,
+      ImportRowDecisionReason.conflictingDuplicateSourceRows =>
+        LegacyImportRowDecisionReason.conflictingSourceRows,
+      ImportRowDecisionReason.duplicateExistingAssignments =>
+        LegacyImportRowDecisionReason.ambiguousExistingAssignment,
+    };
+    return LegacyImportStagingEntry(
+      sourceRowNumber: source.sourceRowNumber,
+      date: source.date == null
+          ? null
+          : DateTime(source.date!.year, source.date!.month, source.date!.day),
+      assignment: source.assignment,
+      decision: decision,
+      reason: reason,
     );
   }
 
