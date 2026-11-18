@@ -104,7 +104,7 @@ jobs:
 
   deploy-pages:
     name: Deploy GitHub Pages
-    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
     needs: build-web
     runs-on: ubuntu-latest
     timeout-minutes: 10
