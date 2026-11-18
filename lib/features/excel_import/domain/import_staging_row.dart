@@ -1,6 +1,6 @@
 import '../../../domain/entities/shift_assignment.dart';
 
-/// One reviewed source row prepared for comparison with a canonical schedule.
+/// Compatibility input row. New import flows should use ShiftRecord directly.
 class ImportStagingRow {
   const ImportStagingRow({
     required this.sourceRowNumber,
@@ -8,20 +8,15 @@ class ImportStagingRow {
     required this.assignment,
   });
 
-  /// One-based row number in the source worksheet.
   final int sourceRowNumber;
-
-  /// Null means the source row has not passed date validation.
   final DateTime? date;
-
-  /// Null means employee or shift identity has not been resolved.
   final ShiftAssignment? assignment;
 }
 
-/// Suggested action only. Applying a plan remains a separate explicit step.
-enum ImportRowDecision { create, update, skip, review }
+/// Legacy output decision retained for callers of the compatibility adapter.
+enum LegacyImportRowDecision { create, update, skip, review }
 
-enum ImportRowDecisionReason {
+enum LegacyImportRowDecisionReason {
   newAssignment,
   alreadyPresent,
   existingAssignmentChanged,
@@ -31,9 +26,8 @@ enum ImportRowDecisionReason {
   ambiguousExistingAssignment,
 }
 
-/// A deterministic, read-only classification for one source row.
-class ImportStagingEntry {
-  const ImportStagingEntry({
+class LegacyImportStagingEntry {
+  const LegacyImportStagingEntry({
     required this.sourceRowNumber,
     required this.decision,
     required this.reason,
@@ -44,27 +38,26 @@ class ImportStagingEntry {
   final int sourceRowNumber;
   final DateTime? date;
   final ShiftAssignment? assignment;
-  final ImportRowDecision decision;
-  final ImportRowDecisionReason reason;
+  final LegacyImportRowDecision decision;
+  final LegacyImportRowDecisionReason reason;
 
-  bool get requiresHumanReview => decision == ImportRowDecision.review;
+  bool get requiresHumanReview => decision == LegacyImportRowDecision.review;
 }
 
-/// Immutable result of comparing imported rows with an existing schedule.
-class ImportStagingPlan {
-  ImportStagingPlan(Iterable<ImportStagingEntry> entries)
-    : entries = List.unmodifiable(entries);
+class LegacyImportStagingPlan {
+  LegacyImportStagingPlan(Iterable<LegacyImportStagingEntry> entries)
+      : entries = List.unmodifiable(entries);
 
-  final List<ImportStagingEntry> entries;
+  final List<LegacyImportStagingEntry> entries;
 
   int get createCount =>
-      entries.where((entry) => entry.decision == ImportRowDecision.create).length;
+      entries.where((entry) => entry.decision == LegacyImportRowDecision.create).length;
   int get updateCount =>
-      entries.where((entry) => entry.decision == ImportRowDecision.update).length;
+      entries.where((entry) => entry.decision == LegacyImportRowDecision.update).length;
   int get skipCount =>
-      entries.where((entry) => entry.decision == ImportRowDecision.skip).length;
+      entries.where((entry) => entry.decision == LegacyImportRowDecision.skip).length;
   int get reviewCount =>
-      entries.where((entry) => entry.decision == ImportRowDecision.review).length;
+      entries.where((entry) => entry.decision == LegacyImportRowDecision.review).length;
 
   bool get isReadyForExplicitConfirmation => reviewCount == 0;
 }
