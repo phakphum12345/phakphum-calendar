@@ -39,6 +39,7 @@ import '../services/calendar_color_service.dart';
 import '../services/drive_ownership_service.dart';
 import '../services/google_auth_service.dart';
 import '../services/shift_color_service.dart';
+import 'app_shell_navigation.dart';
 import 'first_login_setup_dialog.dart';
 import 'google_sign_in_button.dart';
 
@@ -100,51 +101,47 @@ class _AppShellState extends State<AppShell> {
   bool _setupDialogOpen = false;
   String? _setupDialogShownForEmail;
 
-  List<NavigationDestination> _destinations(
+  NavigationDestination _destination(
     BuildContext context,
-    AppController controller,
-    AppEdition currentEdition,
-  ) => [
-    NavigationDestination(
+    AppShellDestination destination,
+  ) => switch (destination) {
+    AppShellDestination.dashboard => NavigationDestination(
       icon: const Icon(Icons.dashboard_outlined),
       label: context.l10n.dashboard,
     ),
-    NavigationDestination(
+    AppShellDestination.schedule => NavigationDestination(
       icon: const Icon(Icons.event_note_outlined),
       label: context.l10n.schedule,
     ),
-    const NavigationDestination(
+    AppShellDestination.monthlyRoster => const NavigationDestination(
       icon: Icon(Icons.calendar_view_month_outlined),
       label: 'รายเดือน',
     ),
-    if (currentEdition == AppEdition.organization) ...[
-      const NavigationDestination(
-        icon: Icon(Icons.badge_outlined),
-        label: 'รายชื่อ',
-      ),
-      NavigationDestination(
-        icon: const Icon(Icons.groups_outlined),
-        label: context.l10n.employees,
-      ),
-      NavigationDestination(
-        icon: const Icon(Icons.swap_horiz_outlined),
-        label: context.l10n.shiftExchange,
-      ),
-    ],
-    NavigationDestination(
+    AppShellDestination.rosterNames => const NavigationDestination(
+      icon: Icon(Icons.badge_outlined),
+      label: 'รายชื่อ',
+    ),
+    AppShellDestination.employees => NavigationDestination(
+      icon: const Icon(Icons.groups_outlined),
+      label: context.l10n.employees,
+    ),
+    AppShellDestination.shiftExchange => NavigationDestination(
+      icon: const Icon(Icons.swap_horiz_outlined),
+      label: context.l10n.shiftExchange,
+    ),
+    AppShellDestination.reports => NavigationDestination(
       icon: const Icon(Icons.print_outlined),
       label: context.l10n.reports,
     ),
-    if (currentEdition == AppEdition.organization)
-      const NavigationDestination(
-        icon: Icon(Icons.admin_panel_settings_outlined),
-        label: 'Admin',
-      ),
-    NavigationDestination(
+    AppShellDestination.admin => const NavigationDestination(
+      icon: Icon(Icons.admin_panel_settings_outlined),
+      label: 'Admin',
+    ),
+    AppShellDestination.settings => NavigationDestination(
       icon: const Icon(Icons.settings_outlined),
       label: context.l10n.settings,
     ),
-  ];
+  };
 
   @override
   void initState() {
@@ -238,11 +235,13 @@ class _AppShellState extends State<AppShell> {
         builder: (context, constraints) {
           final wide = constraints.maxWidth >= 900;
           final currentEdition = edition!;
-          final destinations = _destinations(
-            context,
-            controller,
+          final navigation = AppShellNavigation.forEdition(
             currentEdition,
           );
+          final destinations = [
+            for (final destination in navigation.destinations)
+              _destination(context, destination),
+          ];
           final pages = <Widget>[
             _DashboardPage(
               controller: controller,
@@ -297,6 +296,10 @@ class _AppShellState extends State<AppShell> {
               openSetup: _openSetupFromSettings,
             ),
           ];
+          assert(
+            pages.length == navigation.destinations.length,
+            'Navigation destinations and page routes must stay aligned.',
+          );
           final content = IndexedStack(index: selectedIndex, children: pages);
           final mainContent = wide
               ? Row(
@@ -431,15 +434,7 @@ class _AppShellState extends State<AppShell> {
                 ? null
                 : Builder(
                     builder: (navigationContext) {
-                      final reportIndex = destinations.indexWhere(
-                        (destination) =>
-                            destination.label == context.l10n.reports,
-                      );
-                      final primaryIndexes = <int>[
-                        0,
-                        1,
-                        if (reportIndex >= 0) reportIndex,
-                      ];
+                      final primaryIndexes = navigation.primaryIndexes;
                       final selectedPrimaryIndex =
                           primaryIndexes.indexOf(selectedIndex);
                       return NavigationBar(
@@ -458,7 +453,7 @@ class _AppShellState extends State<AppShell> {
                               _openMobileWorkspaceMenu(
                                 navigationContext,
                                 destinations,
-                                primaryIndexes,
+                                navigation.secondaryIndexes,
                               ),
                             );
                           }
@@ -484,12 +479,8 @@ class _AppShellState extends State<AppShell> {
   Future<void> _openMobileWorkspaceMenu(
     BuildContext context,
     List<NavigationDestination> destinations,
-    List<int> primaryIndexes,
+    List<int> secondaryIndexes,
   ) async {
-    final secondaryIndexes = <int>[
-      for (var index = 0; index < destinations.length; index++)
-        if (!primaryIndexes.contains(index)) index,
-    ];
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
