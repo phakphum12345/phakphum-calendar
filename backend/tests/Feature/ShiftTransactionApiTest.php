@@ -49,7 +49,7 @@ class ShiftTransactionApiTest extends TestCase
 
     public function test_month_filter_uses_effective_shift_date_instead_of_request_creation_date(): void
     {
-        $this->travelTo(\\Illuminate\\Support\\Carbon::parse('2026-11-15 12:00:00'));
+        $this->travelTo(\Illuminate\Support\Carbon::parse('2026-11-15 12:00:00'));
         $this->signIn('alice-token');
         $this->signIn('bob-token');
 
