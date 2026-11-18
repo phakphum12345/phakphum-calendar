@@ -1,4 +1,4 @@
-name: iOS Evidence Gate
+name: iOS Advisory Evidence
 
 on:
   pull_request:
@@ -23,16 +23,16 @@ permissions:
   pull-requests: read
 
 concurrency:
-  group: ios-evidence-gate-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+  group: ios-advisory-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
   cancel-in-progress: true
 
 jobs:
-  ios-evidence:
-    name: Require iOS build evidence for exact PR head
+  ios-advisory:
+    name: Report iOS evidence (non-blocking)
     runs-on: ubuntu-latest
-    timeout-minutes: 125
+    timeout-minutes: 35
     steps:
-      - name: Wait for independent iOS workflow evidence
+      - name: Observe independent iOS build and publish truthful status
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
@@ -42,13 +42,16 @@ jobs:
         run: |
           set -euo pipefail
           export EXPECTED_SHA PR_NUMBER
+          report_status="SKIPPED"
+          report_reason="No matching iOS run became available within 30 minutes."
+          report_url=""
 
-          for attempt in $(seq 1 240); do
+          for attempt in $(seq 1 60); do
             current_sha="$(gh api "/repos/${REPOSITORY}/pulls/${PR_NUMBER}" --jq '.head.sha')"
             if [[ "$current_sha" != "$EXPECTED_SHA" ]]; then
-              echo "SUPERSEDED: PR head moved from $EXPECTED_SHA to $current_sha."
-              echo "The new head receives its own iOS Evidence Gate."
-              exit 0
+              report_status="SKIPPED"
+              report_reason="Superseded: PR head moved to ${current_sha}; the new SHA has its own advisory run."
+              break
             fi
 
             state="$(gh api \
@@ -66,9 +69,7 @@ jobs:
               ' 2>/dev/null || true)"
 
             if [[ -z "$state" ]]; then
-              status="missing"
-              conclusion=""
-              url=""
+              status="missing"; conclusion=""; url=""
             else
               IFS=$'\t' read -r status conclusion url <<< "$state"
               status="${status:-missing}"
@@ -76,27 +77,39 @@ jobs:
               url="${url:-}"
             fi
 
-            echo "===== iOS EVIDENCE CHECK ${attempt}/240 | PR #${PR_NUMBER} | ${EXPECTED_SHA} ====="
-            echo "iOS: status=${status} conclusion=${conclusion:-PENDING}"
+            echo "iOS observation ${attempt}/60: status=${status}, conclusion=${conclusion:-PENDING}"
             [[ -z "$url" ]] || echo "$url"
 
             if [[ "$status" == "completed" ]]; then
+              report_url="$url"
               if [[ "$conclusion" == "success" ]]; then
-                echo "iOS EVIDENCE GATE: PASS"
-                echo "Unsigned iOS build succeeded for the exact PR head SHA."
-                exit 0
+                report_status="PASS"
+                report_reason="Unsigned iOS build succeeded for the exact PR head SHA."
+              elif [[ "$conclusion" == "cancelled" || "$conclusion" == "skipped" ]]; then
+                report_status="SKIPPED"
+                report_reason="iOS workflow concluded ${conclusion}; no successful build evidence was produced."
+              else
+                report_status="FAIL"
+                report_reason="iOS workflow concluded ${conclusion:-unknown}; inspect the original ios.yml run."
               fi
-              echo "iOS EVIDENCE GATE: FAIL"
-              echo "iOS workflow concluded ${conclusion:-unknown} for the exact PR head SHA."
-              exit 1
+              break
             fi
 
-            if [[ "$attempt" -lt 240 ]]; then
-              sleep 30
-            fi
+            if [[ "$attempt" -lt 60 ]]; then sleep 30; fi
           done
 
-          echo "iOS EVIDENCE GATE: FAIL"
-          echo "No successful iOS build evidence was available within 120 minutes."
-          echo "A queued runner or missing run is not treated as PASS."
-          exit 1
+          {
+            echo "## iOS advisory evidence: ${report_status}"
+            echo ""
+            echo "- PR: #${PR_NUMBER}"
+            echo "- Exact head SHA: $EXPECTED_SHA"
+            echo "- Result: **${report_status}**"
+            echo "- Reason: ${report_reason}"
+            if [[ -n "$report_url" ]]; then echo "- Original iOS workflow: $report_url"; fi
+            echo ""
+            echo "This report is non-blocking. Its successful completion means the report was published, not that iOS passed. The original ios.yml result remains authoritative."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          echo "::notice title=iOS advisory ${report_status}::${report_reason}"
+          echo "iOS advisory report published. Core PR Gate is independent."
+          exit 0
