@@ -14,6 +14,7 @@ import '../../../schedule/data/imported_schedule_adapter.dart';
 import '../../../schedule/presentation/controllers/schedule_controller.dart';
 import '../../../schedule/presentation/pages/imported_month_calendar_page.dart';
 import '../../../shift_templates/application/shift_template_controller.dart';
+import '../../../workflow/application/shift_calendar_workflow_controller.dart';
 import '../../domain/import_issue.dart';
 import '../../domain/import_summary.dart';
 import '../../application/import_staging_applier.dart';
@@ -30,6 +31,7 @@ class ImportSummaryPage extends StatefulWidget {
     required this.records,
     this.schedule,
     this.scheduleControllerFactory,
+    this.workflowControllerFactory,
     this.persistenceResult,
     this.scheduleSaver,
     this.existingScheduleLoader,
@@ -44,6 +46,8 @@ class ImportSummaryPage extends StatefulWidget {
   final List<ShiftRecord> records;
   final Schedule? schedule;
   final ScheduleController Function(Schedule)? scheduleControllerFactory;
+  final Future<ShiftCalendarWorkflowController> Function()?
+  workflowControllerFactory;
   final Result<Schedule>? persistenceResult;
   final Future<Result<Schedule>> Function(Schedule)? scheduleSaver;
   final Future<Result<Schedule?>> Function()? existingScheduleLoader;
@@ -861,6 +865,8 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
         builder: (_) => ImportedMonthCalendarPage(
           schedule: _currentSchedule,
           controllerFactory: widget.scheduleControllerFactory,
+          workflowControllerFactory: widget.workflowControllerFactory,
+          enableCalendarSync: _isSaved,
         ),
       ),
     );

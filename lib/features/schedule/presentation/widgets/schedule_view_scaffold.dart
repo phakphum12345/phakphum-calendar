@@ -13,12 +13,14 @@ class ScheduleViewScaffold extends StatelessWidget {
     required this.child,
     super.key,
     this.viewSelector,
+    this.appBarActions = const [],
   });
 
   final String title;
   final ScheduleController controller;
   final Widget child;
   final Widget? viewSelector;
+  final List<Widget> appBarActions;
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +30,7 @@ class ScheduleViewScaffold extends StatelessWidget {
         title: Text(title, style: theme.textTheme.titleLarge),
         centerTitle: false,
         scrolledUnderElevation: 1,
+        actions: appBarActions,
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
