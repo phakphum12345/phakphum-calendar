@@ -26,6 +26,9 @@ void main() {
     );
     expect(find.text('Monthly Schedule'), findsOneWidget);
     expect(find.byType(ScheduleGrid), findsOneWidget);
+    expect(find.text('Total shifts'), findsNothing);
+    await tester.tap(find.text('Statistics'));
+    await tester.pumpAndSettle();
     expect(find.text('Total shifts'), findsOneWidget);
 
     await tester.pumpWidget(
@@ -124,6 +127,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(home: DailySchedulePage(controller: controller)),
     );
+    await tester.tap(find.text('Filters'));
+    await tester.pumpAndSettle();
 
     expect(
       find.text('No assignments match the active filters for this date.'),
