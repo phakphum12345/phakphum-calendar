@@ -130,12 +130,17 @@ class ShiftTransactionScheduleProjector {
       );
     }
 
-    final targetEmployee = _employees(schedule)[toEmployeeId];
-    if (targetEmployee == null) {
+    final targetEmployees = _employees(schedule).values
+        .where((employee) => _matchesRosterIdentity(employee, toEmployeeId))
+        .toList();
+    if (targetEmployees.length != 1) {
       return _TransferResolution.warning(
-        'recipient employee $toEmployeeId is not present in the canonical roster.',
+        targetEmployees.isEmpty
+            ? 'recipient employee $toEmployeeId is not present in the canonical roster.'
+            : 'recipient employee $toEmployeeId matches more than one roster identity.',
       );
     }
+    final targetEmployee = targetEmployees.single;
 
     final sourceMatches = <int>[];
     for (var index = 0; index < day.assignments.length; index++) {
@@ -144,7 +149,7 @@ class ShiftTransactionScheduleProjector {
           !_matchesTimeRange(assignment, date, localStart, localEnd)) {
         continue;
       }
-      if (assignment.employee.id == fromEmployeeId &&
+      if (_matchesRosterIdentity(assignment.employee, fromEmployeeId) &&
           ShiftAssignmentIdentity.create(
                 scheduleId: schedule.id,
                 date: date,
@@ -218,6 +223,11 @@ class ShiftTransactionScheduleProjector {
     }
     return result;
   }
+
+  bool _matchesRosterIdentity(Employee employee, String employeeId) =>
+      employee.id == employeeId ||
+      employee.employeeCode == employeeId ||
+      employee.displayName == employeeId;
 
   bool _matchesTimeRange(
     ShiftAssignment assignment,
