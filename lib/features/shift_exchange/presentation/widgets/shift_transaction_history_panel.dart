@@ -6,12 +6,14 @@ class ShiftTransactionHistoryPanel extends StatefulWidget {
   const ShiftTransactionHistoryPanel({
     required this.apiClient,
     this.approvableOrganizationIds = const {},
+    this.mode,
     this.onChanged,
     super.key,
   });
 
   final ShiftTransactionApiClient apiClient;
   final Set<String> approvableOrganizationIds;
+  final String? mode;
   final VoidCallback? onChanged;
 
   @override
@@ -34,7 +36,7 @@ class _ShiftTransactionHistoryPanelState
   }
 
   Future<List<ShiftTransactionSnapshot>> _load() =>
-      widget.apiClient.listTransactions();
+      widget.apiClient.listTransactions(mode: widget.mode);
 
   void _reload() {
     if (!widget.apiClient.isConfigured) return;
