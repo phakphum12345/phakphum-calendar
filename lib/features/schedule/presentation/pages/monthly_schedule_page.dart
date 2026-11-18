@@ -13,10 +13,12 @@ class MonthlySchedulePage extends StatelessWidget {
     super.key,
     this.controller,
     this.title = 'Monthly Schedule',
+    this.appBarActions = const [],
   });
 
   final ScheduleController? controller;
   final String title;
+  final List<Widget> appBarActions;
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +27,7 @@ class MonthlySchedulePage extends StatelessWidget {
       builder: (context, controller) => ScheduleViewScaffold(
         title: title,
         controller: controller,
+        appBarActions: appBarActions,
         child: Column(
           children: [
             if (!controller.hasAssignments) ...[
