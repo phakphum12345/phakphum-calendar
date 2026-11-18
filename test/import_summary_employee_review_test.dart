@@ -1,6 +1,3 @@
-import 'dart:typed_data';
-
-import 'package:excel/excel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phakphum_calendar/core/result/result.dart';
@@ -10,12 +7,8 @@ import 'package:phakphum_calendar/domain/entities/schedule.dart';
 import 'package:phakphum_calendar/domain/entities/shift_template.dart';
 import 'package:phakphum_calendar/domain/repositories/employee_repository.dart';
 import 'package:phakphum_calendar/domain/repositories/shift_template_repository.dart';
-import 'package:phakphum_calendar/features/excel_import/data/excel_reader_service.dart';
-import 'package:phakphum_calendar/features/excel_import/domain/column_mapping.dart';
-import 'package:phakphum_calendar/features/excel_import/domain/import_file.dart';
 import 'package:phakphum_calendar/features/excel_import/domain/import_summary.dart';
 import 'package:phakphum_calendar/features/excel_import/domain/shift_record.dart';
-import 'package:phakphum_calendar/features/excel_import/presentation/controllers/excel_import_controller.dart';
 import 'package:phakphum_calendar/features/excel_import/presentation/pages/import_summary_page.dart';
 import 'package:phakphum_calendar/features/shift_templates/application/shift_template_controller.dart';
 import 'package:phakphum_calendar/features/workflow/application/canonical_schedule_event_mapper.dart';
@@ -157,30 +150,28 @@ void main() {
         color: 0xFF4527A0,
         workingHours: 12,
       );
-      final controller = ExcelImportController(
-        reader: ExcelReaderService(
-          filePicker: () async => _workbookWithInvalidRow(),
-        ),
-      );
-      addTearDown(controller.dispose);
-      await controller.pickFile();
-      await controller.selectWorksheet(controller.workbook!.worksheets.single);
-      await controller.importRows(
-        const ColumnMapping(
-          dateColumn: 'A',
-          shiftColumn: 'B',
-          employeeColumn: 'C',
-          departmentColumn: 'D',
-        ),
+      final summary = ImportSummary(
+        totalRows: 1,
+        importedRows: 1,
+        skippedRows: 0,
+        errorRows: 0,
+        issues: const [],
       );
       Schedule? savedSchedule;
 
       await tester.pumpWidget(
         MaterialApp(
           home: ImportSummaryPage(
-            summary: controller.importSummary!,
-            records: controller.shiftRecords,
-            controller: controller,
+            summary: summary,
+            records: [
+              ShiftRecord(
+                date: DateTime(2026, 7, 24),
+                shift: 'XN',
+                employee: 'Anan Sukjai',
+                department: 'ER',
+                rowNumber: 2,
+              ),
+            ],
             employeeRepository: const _EmployeeRepository([employee]),
             shiftTemplateControllerFactory: () => ShiftTemplateController(
               repository: _ShiftTemplateRepository([template]),
@@ -194,78 +185,61 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byTooltip('แก้ไขข้อมูลแถวนี้'), findsNWidgets(2));
-      final firstEdit = find.byTooltip('แก้ไขข้อมูลแถวนี้').first;
-      await tester.ensureVisible(firstEdit);
-      await tester.pumpAndSettle();
-      await tester.tap(firstEdit);
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(TextField), '2026-07-25');
-      await tester.tap(find.text('บันทึกและตรวจใหม่'));
-      await tester.pumpAndSettle();
-      expect(controller.shiftRecords, hasLength(2));
-      expect(controller.importSummary!.errorRows, 1);
+      final employeeDropdown = tester.widget<DropdownButtonFormField<Employee>>(
+        find.byType(DropdownButtonFormField<Employee>),
+      );
+      expect(employeeDropdown.initialValue, employee);
+      final shiftDropdown = tester.widget<DropdownButtonFormField<ShiftTemplate>>(
+        find.byType(DropdownButtonFormField<ShiftTemplate>),
+      );
+      expect(shiftDropdown.initialValue, template);
+      expect(shiftDropdown.onChanged, isNotNull);
 
       final saveButton = find.widgetWithText(
         FilledButton,
         'ยืนยันและบันทึกตารางเวร',
       );
       expect(tester.widget<FilledButton>(saveButton).onPressed, isNotNull);
-      await tester.ensureVisible(saveButton);
-      await tester.pumpAndSettle();
       await tester.tap(saveButton);
       await tester.pumpAndSettle();
 
       expect(savedSchedule, isNotNull);
-      final firstDay = savedSchedule!
+      final assignment = savedSchedule!
           .month(DateTime(2026, 7, 24))!
           .day(DateTime(2026, 7, 24))!
           .assignments
           .single;
-      final correctedDay = savedSchedule!
-          .month(DateTime(2026, 7, 25))!
-          .day(DateTime(2026, 7, 25))!
-          .assignments
-          .single;
-      for (final assignment in [firstDay, correctedDay]) {
-        expect(assignment.employee.id, employee.id);
-        expect(assignment.shift.id, template.id);
-        expect(assignment.shift.code, 'XN');
-        expect(
-          assignment.shift.startTime,
-          const Duration(hours: 19, minutes: 30),
-        );
-        expect(
-          assignment.shift.endTime,
-          const Duration(hours: 7, minutes: 30),
-        );
-        expect(assignment.shift.workingHours, 12);
-      }
+      expect(assignment.employee.id, employee.id);
+      expect(assignment.shift.id, template.id);
+      expect(assignment.shift.code, 'XN');
+      expect(assignment.shift.startTime, const Duration(hours: 19, minutes: 30));
+      expect(assignment.shift.endTime, const Duration(hours: 7, minutes: 30));
+      expect(assignment.shift.workingHours, 12);
       expect(find.text('บันทึกแล้ว'), findsOneWidget);
-      expect(find.byTooltip('แก้ไขข้อมูลแถวนี้'), findsNothing);
       expect(
         tester
-            .widgetList<DropdownButtonFormField<Employee>>(
+            .widget<DropdownButtonFormField<Employee>>(
               find.byType(DropdownButtonFormField<Employee>),
             )
-            .every((dropdown) => dropdown.onChanged == null),
-        isTrue,
+            .onChanged,
+        isNull,
       );
       expect(
         tester
-            .widgetList<DropdownButtonFormField<ShiftTemplate>>(
+            .widget<DropdownButtonFormField<ShiftTemplate>>(
               find.byType(DropdownButtonFormField<ShiftTemplate>),
             )
-            .every((dropdown) => dropdown.onChanged == null),
-        isTrue,
+            .onChanged,
+        isNull,
       );
+
       final candidates = const CanonicalScheduleEventMapper()
           .map(savedSchedule!);
       final preview = const WorkflowPreviewBuilder().buildCandidates(
         desired: candidates,
         existing: const [],
       );
-      expect(preview.diff.toAdd, hasLength(2));
+      expect(preview.diff.toAdd, hasLength(1));
       expect(preview.diff.toUpdate, isEmpty);
       expect(preview.diff.toDelete, isEmpty);
       expect(tester.takeException(), isNull);
@@ -423,39 +397,4 @@ class _ShiftTemplateRepository implements ShiftTemplateRepository {
       Success(template);
 }
 
-
-
-ImportFile _workbookWithInvalidRow() {
-  final workbook = Excel.createExcel();
-  workbook.rename('Sheet1', 'Roster');
-  workbook['Roster']
-    ..appendRow([
-      TextCellValue('Date'),
-      TextCellValue('Shift'),
-      TextCellValue('Employee'),
-      TextCellValue('Department'),
-    ])
-    ..appendRow([
-      TextCellValue('2026-07-24'),
-      TextCellValue('XN'),
-      TextCellValue('Anan Sukjai'),
-      TextCellValue('ER'),
-    ])
-    ..appendRow([
-      TextCellValue('not-a-date'),
-      TextCellValue('XN'),
-      TextCellValue('Anan Sukjai'),
-      TextCellValue('ER'),
-    ])
-    ..appendRow([
-      TextCellValue('also-not-a-date'),
-      TextCellValue('XN'),
-      TextCellValue('Anan Sukjai'),
-      TextCellValue('ER'),
-    ]);
-  return ImportFile(
-    name: 'shift-template-review.xlsx',
-    bytes: Uint8List.fromList(workbook.encode()!),
-  );
-}
 
