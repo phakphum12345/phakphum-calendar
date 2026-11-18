@@ -14,6 +14,7 @@ import '../../../../services/sheets_service.dart';
 import '../../../google_sheets/infrastructure/google_sheets_gateway.dart';
 import '../../../schedule/data/imported_schedule_adapter.dart';
 import '../../../schedule/presentation/controllers/schedule_controller.dart';
+import '../../../workflow/application/shift_calendar_workflow_controller.dart';
 import '../../../shift_templates/application/shift_template_controller.dart';
 import '../../data/excel_reader_service.dart';
 import '../../data/google_sheets_import_data_source.dart';
@@ -46,6 +47,7 @@ class ImportExcelPage extends StatefulWidget {
     this.googleSheetsImportDataSourceFactory,
     this.importedScheduleFactory,
     this.scheduleControllerFactory,
+    this.workflowControllerFactory,
     this.scheduleSaver,
     this.existingScheduleLoader,
     this.employeeRepository,
@@ -66,6 +68,8 @@ class ImportExcelPage extends StatefulWidget {
   googleSheetsImportDataSourceFactory;
   final Schedule Function(Iterable<ShiftRecord>)? importedScheduleFactory;
   final ScheduleController Function(Schedule)? scheduleControllerFactory;
+  final Future<ShiftCalendarWorkflowController> Function()?
+  workflowControllerFactory;
   final Future<Result<Schedule>> Function(Schedule)? scheduleSaver;
   final Future<Result<Schedule?>> Function()? existingScheduleLoader;
   final EmployeeRepository? employeeRepository;
@@ -341,6 +345,7 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
           records: records,
           schedule: schedule,
           scheduleControllerFactory: widget.scheduleControllerFactory,
+          workflowControllerFactory: widget.workflowControllerFactory,
           scheduleSaver: widget.scheduleSaver,
           existingScheduleLoader: widget.existingScheduleLoader,
           scheduleFactory: widget.importedScheduleFactory,
