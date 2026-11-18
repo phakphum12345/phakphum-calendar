@@ -42,9 +42,26 @@ class ShiftTransactionService
         $roles = [];
         $employeeIds = [];
         foreach ($participants as $participant) {
-            $user = DB::table('users')->where('google_subject', $participant['account_subject'])->first();
+            // The authenticated actor is authoritative for the requester.
+            // Recipients can be resolved by a registered subject (legacy),
+            // organization member ID, or verified email (personal flow).
+            if ($participant['role'] === 'requester') {
+                $user = $actor;
+            } elseif (! empty($participant['account_subject'])) {
+                $user = DB::table('users')
+                    ->where('google_subject', $participant['account_subject'])->first();
+            } elseif ($mode === 'organization' && ! empty($participant['user_id'])) {
+                $user = DB::table('users')->where('id', $participant['user_id'])->first();
+            } elseif (! empty($participant['email'])) {
+                $user = DB::table('users')
+                    ->where('email', strtolower(trim($participant['email'])))
+                    ->whereNotNull('email_verified_at')
+                    ->first();
+            } else {
+                $user = null;
+            }
             if ($user === null) {
-                throw ValidationException::withMessages(['participants' => 'Every participant must have a registered Google account.']);
+                throw ValidationException::withMessages(['participants' => 'Every recipient must resolve to a registered account with a verified identity.']);
             }
             if (isset($participantUsers[$user->id]) || in_array($participant['employee_id'], $employeeIds, true)) {
                 throw ValidationException::withMessages(['participants' => 'Participants must have distinct account and employee identities.']);
