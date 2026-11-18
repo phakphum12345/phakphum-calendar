@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:excel/excel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phakphum_calendar/core/result/result.dart';
@@ -8,6 +11,8 @@ import 'package:phakphum_calendar/domain/entities/shift_template.dart';
 import 'package:phakphum_calendar/domain/repositories/employee_repository.dart';
 import 'package:phakphum_calendar/domain/repositories/shift_template_repository.dart';
 import 'package:phakphum_calendar/features/excel_import/data/excel_reader_service.dart';
+import 'package:phakphum_calendar/features/excel_import/domain/column_mapping.dart';
+import 'package:phakphum_calendar/features/excel_import/domain/import_file.dart';
 import 'package:phakphum_calendar/features/excel_import/domain/import_issue.dart';
 import 'package:phakphum_calendar/features/excel_import/domain/import_summary.dart';
 import 'package:phakphum_calendar/features/excel_import/presentation/controllers/excel_import_controller.dart';
@@ -145,38 +150,27 @@ void main() {
       );
       final controller = ExcelImportController(
         reader: ExcelReaderService(
-          filePicker: () async => throw UnimplementedError(),
+          filePicker: () async => _workbookWithInvalidRow(),
         ),
       );
       addTearDown(controller.dispose);
+      await controller.pickFile();
+      await controller.selectWorksheet(controller.workbook!.worksheets.single);
+      await controller.importRows(
+        const ColumnMapping(
+          dateColumn: 'A',
+          shiftColumn: 'B',
+          employeeColumn: 'C',
+          departmentColumn: 'D',
+        ),
+      );
       Schedule? savedSchedule;
 
       await tester.pumpWidget(
         MaterialApp(
           home: ImportSummaryPage(
-            summary: ImportSummary(
-              totalRows: 1,
-              importedRows: 1,
-              skippedRows: 0,
-              errorRows: 1,
-              issues: const [
-                ImportIssue(
-                  rowNumber: 2,
-                  column: 'A',
-                  message: 'Invalid date retained for review',
-                  severity: ImportIssueSeverity.error,
-                ),
-              ],
-            ),
-            records: [
-              ShiftRecord(
-                date: DateTime(2026, 7, 24),
-                shift: 'XN',
-                employee: 'Anan Sukjai',
-                department: 'ER',
-                rowNumber: 2,
-              ),
-            ],
+            summary: controller.importSummary!,
+            records: controller.shiftRecords,
             controller: controller,
             employeeRepository: const _EmployeeRepository([employee]),
             shiftTemplateControllerFactory: () => ShiftTemplateController(
@@ -380,5 +374,35 @@ class _ShiftTemplateRepository implements ShiftTemplateRepository {
   @override
   Future<Result<ShiftTemplate>> save(ShiftTemplate template) async =>
       Success(template);
+}
+
+
+
+ImportFile _workbookWithInvalidRow() {
+  final workbook = Excel.createExcel();
+  workbook.rename('Sheet1', 'Roster');
+  workbook['Roster']
+    ..appendRow([
+      TextCellValue('Date'),
+      TextCellValue('Shift'),
+      TextCellValue('Employee'),
+      TextCellValue('Department'),
+    ])
+    ..appendRow([
+      TextCellValue('2026-07-24'),
+      TextCellValue('XN'),
+      TextCellValue('Anan Sukjai'),
+      TextCellValue('ER'),
+    ])
+    ..appendRow([
+      TextCellValue('not-a-date'),
+      TextCellValue('XN'),
+      TextCellValue('Anan Sukjai'),
+      TextCellValue('ER'),
+    ]);
+  return ImportFile(
+    name: 'shift-template-review.xlsx',
+    bytes: Uint8List.fromList(workbook.encode()!),
+  );
 }
 
