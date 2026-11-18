@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import '../../../../domain/entities/employee.dart';
 import '../../../../domain/entities/schedule.dart';
 import '../../../../domain/entities/shift_assignment.dart';
-import '../../../../domain/entities/shift_type.dart';
 import '../../../../l10n/l10n.dart';
 import '../../domain/shift_exchange_request.dart';
 import '../../application/shift_transaction_schedule_projector.dart';
@@ -82,7 +81,7 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
         final organizations = await api.listOrganizations();
         final selected = _selectedOrganization == null
             ? (organizations.isEmpty ? null : organizations.first)
-            : organizations.where((item) => item.id == _selectedOrganization!.id).firstOrNull;
+            : organizations.where((item) => item.id == _selectedOrganization!.id).toList().firstOrNull;
         final members = selected == null
             ? <ShiftTransactionOrganizationMemberSnapshot>[]
             : await api.listOrganizationMembers(selected.id);
@@ -110,7 +109,7 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
   }
 
   Future<void> _selectOrganization(String id) async {
-    final selected = _organizations.where((item) => item.id == id).firstOrNull;
+    final selected = _organizations.where((item) => item.id == id).toList().firstOrNull;
     if (selected == null) return;
     setState(() {
       _selectedOrganization = selected;
@@ -412,10 +411,10 @@ class _ShiftTransactionComposerDialogState
     final recipientId = _recipientEmployeeId;
     final requesterShift = _requesterShifts
         .where((item) => item.key == _requesterShiftKey)
-        .firstOrNull;
+        .toList().firstOrNull;
     final recipientShift = _recipientShifts
         .where((item) => item.key == _recipientShiftKey)
-        .firstOrNull;
+        .toList().firstOrNull;
     if (requesterId == null || recipientId == null ||
         requesterShift == null || requesterId == recipientId ||
         (_type == 'exchange' && recipientShift == null)) {
@@ -604,7 +603,7 @@ class _ShiftTransactionComposerDialogState
                       _recipientUserId = value;
                       _recipientEmployeeId = recipientMembers
                           .where((member) => member.userId == value)
-                          .firstOrNull?.employeeId;
+                          .toList().firstOrNull?.employeeId;
                       _recipientShiftKey = null;
                     }),
                     validator: (value) => value == null ? 'Select a recipient.' : null,
