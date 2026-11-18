@@ -56,12 +56,16 @@ class _ShiftTransactionHistoryPanelState
       switch (action) {
         case 'confirm':
           await widget.apiClient.confirmTransaction(transaction.id);
+          break;
         case 'reject':
           await widget.apiClient.rejectTransaction(transaction.id);
+          break;
         case 'approve':
           await widget.apiClient.approveTransaction(transaction.id);
+          break;
         case 'reject_by_approver':
           await widget.apiClient.rejectByApprover(transaction.id);
+          break;
       }
       if (!mounted) return;
       setState(() {
