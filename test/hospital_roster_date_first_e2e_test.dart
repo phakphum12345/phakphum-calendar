@@ -107,6 +107,36 @@ void main() {
     expect(report.warnings.join(' '), contains('ไม่ใช่วันที่ 1-31'));
   });
 
+  test('resolves leap day and rejects fractional numeric date headers', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 9,
+      sheetTitle: 'กุมภาพันธ์ 2567',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(6, ['วันที่', 16, 29, 1.5, 1]),
+        ..._row(7, ['ER เช้า', 'วัน 16', 'วันอธิกสุรทิน', 'เศษวัน', 'วัน 1']),
+        ..._row(2, ['เวรประจำเดือน 16 กุมภาพันธ์ พ.ศ. 2567 - 15 มีนาคม พ.ศ. 2567']),
+      ],
+    );
+
+    final report = const HospitalRosterParser().parse(input);
+
+    expect(report.assignments.map((item) => item.date), [
+      DateTime(2024, 2, 16),
+      DateTime(2024, 2, 29),
+      DateTime(2024, 3, 1),
+    ]);
+    expect(report.assignments.map((item) => item.workerName), [
+      'วัน 16',
+      'วันอธิกสุรทิน',
+      'วัน 1',
+    ]);
+    expect(report.warnings, hasLength(1));
+    expect(report.warnings.single, contains('ไม่ใช่วันที่ 1-31'));
+  });
+
   test('finds date header beyond first two rows and rejects missing date row', () {
     final valid = ShiftParserInput(
       spreadsheetId: 'spreadsheet',
