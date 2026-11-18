@@ -13,7 +13,6 @@ import 'package:phakphum_calendar/domain/repositories/shift_template_repository.
 import 'package:phakphum_calendar/features/excel_import/data/excel_reader_service.dart';
 import 'package:phakphum_calendar/features/excel_import/domain/column_mapping.dart';
 import 'package:phakphum_calendar/features/excel_import/domain/import_file.dart';
-import 'package:phakphum_calendar/features/excel_import/domain/import_issue.dart';
 import 'package:phakphum_calendar/features/excel_import/domain/import_summary.dart';
 import 'package:phakphum_calendar/features/excel_import/presentation/controllers/excel_import_controller.dart';
 import 'package:phakphum_calendar/features/shift_templates/application/shift_template_controller.dart';
