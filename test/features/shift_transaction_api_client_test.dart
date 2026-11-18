@@ -94,6 +94,94 @@ void main() {
     client.close();
   });
 
+  test('creates transactions with idempotency and exposes lifecycle actions', () async {
+    final requests = <http.Request>[];
+    final client = ShiftTransactionApiClient(
+      baseUrl: 'https://calendar.example.test',
+      idTokenProvider: () async => 'google-id-token',
+      httpClient: MockClient((request) async {
+        requests.add(request);
+        return http.Response(jsonEncode({'data': transaction}), 200);
+      }),
+    );
+
+    await client.createTransaction(
+      mode: 'personal',
+      type: 'give_up',
+      participants: const [
+        {'account_subject': 'alice', 'employee_id': 'A', 'role': 'requester'},
+        {'account_subject': 'bob', 'employee_id': 'B', 'role': 'recipient'},
+      ],
+      transfers: const [
+        {
+          'id': 'transfer-1',
+          'shift_id': 'shift-1',
+          'from_employee_id': 'A',
+          'to_employee_id': 'B',
+          'shift_code': 'morning',
+          'starts_at': '2026-11-18T08:00:00Z',
+          'ends_at': '2026-11-18T16:00:00Z',
+          'purpose': 'give_up',
+        },
+      ],
+      idempotencyKey: 'request-unique-001',
+    );
+    await client.confirmTransaction('transaction-1');
+    await client.rejectTransaction('transaction-1', reason: 'Unavailable');
+    await client.approveTransaction('transaction-1', note: 'Approved');
+    await client.rejectByApprover('transaction-1', reason: 'Policy');
+    await client.cancelTransaction('transaction-1');
+    await client.startCalendarSync('transaction-1', previewConfirmed: true);
+    await client.completeCalendarSync(
+      'transaction-1',
+      calendarEventIds: const ['event-1'],
+    );
+    await client.failCalendarSync('transaction-1', reason: 'Retry later');
+    await client.fulfillTransfer('transaction-1', transferId: 'transfer-1');
+
+    expect(requests, hasLength(10));
+    expect(requests.first.method, 'POST');
+    expect(requests.first.headers['Authorization'], 'Bearer google-id-token');
+    expect(requests.first.headers['Idempotency-Key'], 'request-unique-001');
+    expect(jsonDecode(requests.first.body), containsPair('type', 'give_up'));
+    expect(requests.map((request) => request.url.path), [
+      '/api/v1/shift-transactions',
+      '/api/v1/shift-transactions/transaction-1/confirm',
+      '/api/v1/shift-transactions/transaction-1/reject',
+      '/api/v1/shift-transactions/transaction-1/approve',
+      '/api/v1/shift-transactions/transaction-1/reject-by-approver',
+      '/api/v1/shift-transactions/transaction-1/cancel',
+      '/api/v1/shift-transactions/transaction-1/calendar-sync/start',
+      '/api/v1/shift-transactions/transaction-1/calendar-sync/complete',
+      '/api/v1/shift-transactions/transaction-1/calendar-sync/fail',
+      '/api/v1/shift-transactions/transaction-1/fulfill',
+    ]);
+    expect(jsonDecode(requests[6].body), {'preview_confirmed': true});
+    expect(jsonDecode(requests[7].body), {'calendar_event_ids': ['event-1']});
+    expect(jsonDecode(requests[9].body), {'transfer_id': 'transfer-1'});
+    client.close();
+  });
+
+  test('rejects transaction creation without an idempotency key', () async {
+    final client = ShiftTransactionApiClient(
+      baseUrl: 'https://calendar.example.test',
+      idTokenProvider: () async => 'token',
+      httpClient: MockClient((request) async => http.Response('{}', 200)),
+    );
+
+    expect(
+      () => client.createTransaction(
+        mode: 'personal',
+        type: 'give_up',
+        participants: const [],
+        transfers: const [],
+        idempotencyKey: ' ',
+      ),
+      throwsArgumentError,
+    );
+    client.close();
+  });
+
   test('does not make a request without a Google ID token', () async {
     var requestCount = 0;
     final client = ShiftTransactionApiClient(
