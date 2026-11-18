@@ -69,6 +69,79 @@ class ShiftTransactionSnapshot {
   }
 }
 
+class ShiftTransactionAccountSnapshot {
+  const ShiftTransactionAccountSnapshot({
+    required this.id,
+    this.email,
+    this.name,
+  });
+
+  final String id;
+  final String? email;
+  final String? name;
+
+  factory ShiftTransactionAccountSnapshot.fromJson(Map<String, dynamic> json) =>
+      ShiftTransactionAccountSnapshot(
+        id: json['id']?.toString() ?? (throw const FormatException('Missing account id.')),
+        email: json['email']?.toString(),
+        name: json['name']?.toString(),
+      );
+}
+
+class ShiftTransactionOrganizationSnapshot {
+  const ShiftTransactionOrganizationSnapshot({
+    required this.id,
+    required this.name,
+    required this.slug,
+    required this.employeeId,
+    required this.role,
+  });
+
+  final String id;
+  final String name;
+  final String slug;
+  final String employeeId;
+  final String role;
+
+  factory ShiftTransactionOrganizationSnapshot.fromJson(Map<String, dynamic> json) =>
+      ShiftTransactionOrganizationSnapshot(
+        id: json['id']?.toString() ?? (throw const FormatException('Missing organization id.')),
+        name: json['name']?.toString() ?? '',
+        slug: json['slug']?.toString() ?? '',
+        employeeId: json['employee_id']?.toString() ?? '',
+        role: json['role']?.toString() ?? '',
+      );
+}
+
+class ShiftTransactionOrganizationMemberSnapshot {
+  const ShiftTransactionOrganizationMemberSnapshot({
+    required this.userId,
+    required this.name,
+    required this.email,
+    required this.employeeId,
+    required this.role,
+    required this.status,
+  });
+
+  final String userId;
+  final String? name;
+  final String? email;
+  final String employeeId;
+  final String role;
+  final String status;
+
+  factory ShiftTransactionOrganizationMemberSnapshot.fromJson(
+    Map<String, dynamic> json,
+  ) => ShiftTransactionOrganizationMemberSnapshot(
+    userId: json['user_id']?.toString() ?? (throw const FormatException('Missing member user id.')),
+    name: json['name']?.toString(),
+    email: json['email']?.toString(),
+    employeeId: json['employee_id']?.toString() ?? '',
+    role: json['role']?.toString() ?? '',
+    status: json['status']?.toString() ?? '',
+  );
+}
+
 class ShiftTransactionApiException implements Exception {
   const ShiftTransactionApiException(this.statusCode, this.message);
 
@@ -79,10 +152,9 @@ class ShiftTransactionApiException implements Exception {
   String toString() => 'ShiftTransactionApiException($statusCode): $message';
 }
 
-/// Read-only API access for the transaction history and audit timeline.
+/// Authenticated API access for transaction lifecycle and participant identity.
 ///
-/// Mutating endpoints are deliberately not exposed here. Calendar sync must
-/// continue through the existing preview-and-confirm workflow.
+/// Calendar provider writes remain behind the preview-and-confirm workflow.
 class ShiftTransactionApiClient {
   ShiftTransactionApiClient({
     required String baseUrl,
@@ -109,6 +181,45 @@ class ShiftTransactionApiClient {
   }
 
   bool get isConfigured => _baseUri != null;
+
+  Future<ShiftTransactionAccountSnapshot> getCurrentUser() async {
+    final json = await _get('api/v1/me');
+    final data = json['data'];
+    if (data is! Map) throw const FormatException('Invalid current account response.');
+    return ShiftTransactionAccountSnapshot.fromJson(
+      data.map((key, value) => MapEntry(key.toString(), value)),
+    );
+  }
+
+  Future<List<ShiftTransactionOrganizationSnapshot>> listOrganizations() async {
+    final json = await _get('api/v1/organizations');
+    final data = json['data'];
+    if (data is! List) throw const FormatException('Invalid organization list response.');
+    return List.unmodifiable(data.map((item) {
+      if (item is! Map) throw const FormatException('Invalid organization item.');
+      return ShiftTransactionOrganizationSnapshot.fromJson(
+        item.map((key, value) => MapEntry(key.toString(), value)),
+      );
+    }));
+  }
+
+  Future<List<ShiftTransactionOrganizationMemberSnapshot>>
+  listOrganizationMembers(String organizationId) async {
+    if (organizationId.trim().isEmpty || organizationId.contains('/')) {
+      throw ArgumentError.value(organizationId, 'organizationId', 'An organization ID is required.');
+    }
+    final json = await _get(
+      'api/v1/organizations/${Uri.encodeComponent(organizationId)}/members',
+    );
+    final data = json['data'];
+    if (data is! List) throw const FormatException('Invalid organization member list response.');
+    return List.unmodifiable(data.map((item) {
+      if (item is! Map) throw const FormatException('Invalid organization member item.');
+      return ShiftTransactionOrganizationMemberSnapshot.fromJson(
+        item.map((key, value) => MapEntry(key.toString(), value)),
+      );
+    }));
+  }
 
   Future<List<ShiftTransactionSnapshot>> listTransactions({
     String? mode,
