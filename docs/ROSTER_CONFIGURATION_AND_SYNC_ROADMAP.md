@@ -1,8 +1,8 @@
 # Roster Configuration & Intelligent Sync Roadmap
 
-- Status: Proposed implementation roadmap; documentation baseline only
+- Status: Active target roadmap; delivery evidence and remaining gaps are tracked in section 17.
 - Repository: `phakphum12345/phakphum-calendar`
-- Baseline: `main@2778f7fb835a121c75b84dc6cb5f28f25ed831de`
+- Evidence baseline refreshed: `main@19a28843fa379c16417acff5fcdd691fc4f9818f` (2026-11-18)
 - Execution rule: READ → ANALYZE → MODIFY → TEST → AUDIT
 - Release rule: do not merge a PR while any required check is failing, pending, or otherwise unverified
 
@@ -289,10 +289,64 @@ For every PR:
 7. Merge only after required checks are confirmed green and merge authorization is clear.
 8. Verify main after merge and record the resulting commit SHA.
 
-## 16. Current documentation status
+## 16. Historical planning baseline and Phase 0 audit status
 
-This document records the agreed target behavior and implementation sequence. It does not claim that the features have been implemented. The first execution task is Phase 0 source-level audit, followed by implementation PRs in dependency order.
+The statements in this section describe the original planning baseline and must not be read as the current implementation inventory. The delivered implementation through PR #108 is summarized in section 17; remaining work is listed in section 17.4. The target behavior and dependency sequence in sections 1–15 remain the governing design unless superseded by newer evidence.
 
-## Phase 0 source audit
+### Historical Phase 0 source audit
 
-The initial source-level findings are recorded in [Roster Phase 0 Source Audit](ROSTER_PHASE_0_SOURCE_AUDIT.md). The audit is intentionally marked in progress: the targeted files and test inventory have been inspected, but full call-site tracing and a fresh test baseline remain open. The first corrective implementation closes the legacy automatic Calendar-write path and requires an explicit confirmation signal plus a prepared workflow. Do not treat Phase 0 as complete until its remaining verification items are closed.
+The initial source-level findings are recorded in [Roster Phase 0 Source Audit](ROSTER_PHASE_0_SOURCE_AUDIT.md). That audit is a historical snapshot from 2026-11-10, not a current claim that the first execution task is still pending. Any remaining call-site tracing or fresh test baseline must be tracked as an explicit open item and verified against current main before closure.
+
+
+## 17. Implementation status and evidence — 2026-11-18
+
+This section records the roster-import/review/preview delivery track. It is a current-state supplement to the target workflow above, not a claim that every target capability is complete. The broader Flexible Workforce phases in `docs/flexible-workforce/ROADMAP.md` remain a separate product roadmap.
+
+### 17.1 Delivered implementation
+
+| Capability | Evidence | Current disposition |
+|---|---|---|
+| Review and correct import issues, then re-process without editing the source workbook | PR #100 | Merged |
+| Selected read-only preview and proposed-change inspection | PR #101 | Merged |
+| Synthetic roster layout corpus, including full-month, cross-year rollover, and non-contiguous date columns | PR #102; corpus expanded to 12 scenarios | Merged |
+| Dynamic shift-template matching in parser paths | PRs #97, #98, #99, #103 | Merged; saved templates are consulted before legacy fallback rules |
+| Employee identity resolution and review | PRs #105, #106 | Merged; unique exact matches may resolve, ambiguous/unmatched records require explicit review |
+| Import → Review → Preview → Confirm local-save regression path | PR #104 | Merged; Calendar sync gateway is not called by the local confirmation path |
+| Saved shift-template review in the actual import summary UI | PR #107 | Merged; unknown/ambiguous labels require explicit template choice; unresolved records block local save and Calendar preview |
+| Wider roster workspace with collapsed Filters, Statistics, and Shift legend | PR #108 | Merged; table is the primary workspace |
+
+### 17.2 Exact-head CI and merge evidence
+
+The following PR heads were checked before merge. All listed PR-triggered required workflows completed with conclusion `success`:
+
+| PR | Exact head SHA | Auto Detect CI | Linux | Web build | Android | Windows | iOS | PR Gate |
+|---|---|---|---|---|---|---|---|---|
+| #107 | `319ee846ae3a8b56c2734d509896789a3e8eff41` | PASS | PASS | PASS | PASS | PASS | PASS | PASS |
+| #108 | `eb29be0dd6ef1bbe1a128fd01ee8f362a72e1012` | PASS | PASS | PASS | PASS | PASS | PASS | PASS |
+
+- #107 merge commit: `047c51871e0434be6efc946612293765587f2b25`.
+- #108 merge commit: `19a28843fa379c16417acff5fcdd691fc4f9818f`.
+- Both PRs were confirmed closed with `merged=true`; review-thread lists were empty at the pre-merge check.
+- The Web workflow built successfully; its Pages deployment step was skipped. No deployment was performed.
+- The current `main` ref was compared with the #108 merge commit and returned `identical` (0 ahead / 0 behind).
+
+### 17.3 Safety and scope boundaries
+
+- PR #104's Confirm path persists the canonical local Schedule only. It does not invoke Google Calendar writes.
+- PR #107 blocks local save and Calendar preview while employee or shift-template resolution remains unresolved.
+- No automatic Google Calendar write, production deployment, DISKPATH change, or file/data deletion was performed as part of PRs #107/#108 or this documentation update.
+- CI success is evidence for the tested PR heads; it does not turn unrelated or unexecuted integration/backend checks into PASS.
+
+### 17.4 Remaining work — not yet accepted as complete
+
+1. Complete reusable source/profile lifecycle: profile creation/edit/duplicate/archive/versioning, source association, and recovery/migration.
+2. Close remaining parser and layout edge cases with explicit ambiguity handling; do not silently infer dates, employees, or shift times.
+3. Define import staging, row-level create/update/skip decisions, cancellation, retry, idempotency, and rollback boundaries.
+4. Verify employee-directory and organization scoping end to end; current exact-match review does not prove full workforce master-data governance.
+5. Add and execute relevant integration and backend/PHP test workflows; absence or skipped execution is not PASS.
+6. Complete revision-bound approval, publication, and durable audit/history requirements before claiming enterprise workflow completion.
+7. Preserve the separate explicit Calendar confirmation boundary and existing Timeline/event metadata throughout future work.
+
+### 17.5 Phase disposition
+
+The roster review, template-resolution, synthetic-layout, preview, and local-confirmation slices listed above are delivered. The overall configuration-and-sync roadmap remains **in progress** because the remaining items in 17.4 and the target exit criteria in sections 12–13 are not all verified. This status is intentionally conservative.

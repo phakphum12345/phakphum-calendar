@@ -1,5 +1,7 @@
 # Flexible Workforce & Shift Scheduler — Roadmap
 
+> **Related delivery track:** roster import, shift-template resolution, review, preview, and explicit Calendar-sync boundaries are tracked separately in [Roster Configuration & Intelligent Sync Roadmap](../ROSTER_CONFIGURATION_AND_SYNC_ROADMAP.md). Current implementation evidence is recorded in [TRACEABILITY_MATRIX.md](TRACEABILITY_MATRIX.md). Merged roster PRs through #108 do not close the broader Phase 0–9 workforce requirements below.
+
 ## Delivery policy
 
 This roadmap is a proposed execution sequence. A phase is complete only when code, tests, documentation, and review evidence satisfy its exit criteria. Existing SCE capabilities must be audited before work is classified as new implementation.
