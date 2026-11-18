@@ -289,13 +289,13 @@ For every PR:
 7. Merge only after required checks are confirmed green and merge authorization is clear.
 8. Verify main after merge and record the resulting commit SHA.
 
-## 16. Current documentation status
+## 16. Historical planning baseline and Phase 0 audit status
 
-This document records the agreed target behavior and implementation sequence. It does not claim that the features have been implemented. The first execution task is Phase 0 source-level audit, followed by implementation PRs in dependency order.
+The statements in this section describe the original planning baseline and must not be read as the current implementation inventory. The delivered implementation through PR #108 is summarized in section 17; remaining work is listed in section 17.4. The target behavior and dependency sequence in sections 1–15 remain the governing design unless superseded by newer evidence.
 
-## Phase 0 source audit
+### Historical Phase 0 source audit
 
-The initial source-level findings are recorded in [Roster Phase 0 Source Audit](ROSTER_PHASE_0_SOURCE_AUDIT.md). The audit is intentionally marked in progress: the targeted files and test inventory have been inspected, but full call-site tracing and a fresh test baseline remain open. The first corrective implementation closes the legacy automatic Calendar-write path and requires an explicit confirmation signal plus a prepared workflow. Do not treat Phase 0 as complete until its remaining verification items are closed.
+The initial source-level findings are recorded in [Roster Phase 0 Source Audit](ROSTER_PHASE_0_SOURCE_AUDIT.md). That audit is a historical snapshot from 2026-11-10, not a current claim that the first execution task is still pending. Any remaining call-site tracing or fresh test baseline must be tracked as an explicit open item and verified against current main before closure.
 
 
 ## 17. Implementation status and evidence — 2026-11-18
