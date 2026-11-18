@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Contracts\GoogleIdentityTokenVerifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Tests\Fakes\FakeGoogleIdentityTokenVerifier;
 use Tests\TestCase;
@@ -44,6 +45,26 @@ class ShiftTransactionApiTest extends TestCase
         ]);
         $this->assertSame(3, DB::table('shift_transaction_events')->where('transaction_id', $created['id'])->count());
         $this->getJson('/api/v1/shift-transactions?month='.now()->format('Y-m').'&staff_id=A&shift_type=morning&type=give_up', $this->auth('alice-token'))
+            ->assertOk()->assertJsonCount(1, 'data');
+    }
+
+    public function test_month_filter_uses_effective_shift_date_instead_of_request_creation_date(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-15 12:00:00'));
+        $this->signIn('alice-token');
+        $this->signIn('bob-token');
+
+        $payload = $this->giveUp();
+        $payload['transfers'][0]['starts_at'] = '2026-12-01T08:00:00+07:00';
+        $payload['transfers'][0]['ends_at'] = '2026-12-01T16:00:00+07:00';
+        $created = $this->postJson('/api/v1/shift-transactions', $payload, [
+            'Authorization' => 'Bearer alice-token', 'Idempotency-Key' => 'effective-month-filter',
+        ])->assertCreated()->json('data');
+
+        $this->assertSame('2026-11', substr($created['created_at'], 0, 7));
+        $this->getJson('/api/v1/shift-transactions?month=2026-11', $this->auth('alice-token'))
+            ->assertOk()->assertJsonCount(0, 'data');
+        $this->getJson('/api/v1/shift-transactions?month=2026-12', $this->auth('alice-token'))
             ->assertOk()->assertJsonCount(1, 'data');
     }
 

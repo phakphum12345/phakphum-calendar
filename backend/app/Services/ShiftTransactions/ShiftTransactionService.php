@@ -166,10 +166,16 @@ class ShiftTransactionService
             $query->where('transactions.type', $filters['type']);
         }
         if (isset($filters['month'])) {
-            $query->whereBetween('transactions.created_at', [
-                $filters['month'].'-01 00:00:00',
-                date('Y-m-t 23:59:59', strtotime($filters['month'].'-01')),
-            ]);
+            // Historical timelines are filtered by the effective shift date,
+            // not by when the request happened to be created.
+            $monthStart = Carbon::parse($filters['month'].'-01')->startOfDay();
+            $nextMonthStart = $monthStart->copy()->addMonth();
+            $query->whereExists(function ($transfer) use ($monthStart, $nextMonthStart): void {
+                $transfer->selectRaw('1')->from('shift_transaction_transfers')
+                    ->whereColumn('shift_transaction_transfers.transaction_id', 'transactions.id')
+                    ->where('shift_transaction_transfers.starts_at', '>=', $monthStart)
+                    ->where('shift_transaction_transfers.starts_at', '<', $nextMonthStart);
+            });
         }
         if (isset($filters['organization_id'])) {
             $this->requireOrganizationMember($actor, $filters['organization_id']);
