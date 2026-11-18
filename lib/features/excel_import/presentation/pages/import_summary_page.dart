@@ -342,9 +342,14 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
                   ),
                 ),
             ],
-            onChanged: (employee) {
-              setState(() => _selectedEmployees[record.rowNumber] = employee);
-            },
+            onChanged: _saveResult is Success<Schedule> ||
+                    widget.persistenceResult is Success<Schedule>
+                ? null
+                : (employee) {
+                    setState(
+                      () => _selectedEmployees[record.rowNumber] = employee,
+                    );
+                  },
           ),
         ] else
           Text(
