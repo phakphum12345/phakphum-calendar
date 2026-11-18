@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phakphum_calendar/core/di/app_dependencies.dart';
-import 'package:phakphum_calendar/features/workflow/presentation/workflow_dashboard_screen.dart';
-import 'package:phakphum_calendar/l10n/app_localizations.dart';
+import 'package:phakphum_calendar/domain/entities/schedule.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_command.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_gateway.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/failed_sync_operation.dart';
@@ -15,8 +14,9 @@ import 'package:phakphum_calendar/features/rules/domain/rule_category.dart';
 import 'package:phakphum_calendar/features/rules/domain/rule_context.dart';
 import 'package:phakphum_calendar/features/rules/domain/rule_severity.dart';
 import 'package:phakphum_calendar/features/rules/domain/rule_violation.dart';
-import 'package:phakphum_calendar/domain/entities/schedule.dart';
 import 'package:phakphum_calendar/features/workflow/application/canonical_schedule_event_mapper.dart';
+import 'package:phakphum_calendar/features/workflow/presentation/workflow_dashboard_screen.dart';
+import 'package:phakphum_calendar/l10n/app_localizations.dart';
 
 import 'support/canonical_schedule_fixture.dart';
 
