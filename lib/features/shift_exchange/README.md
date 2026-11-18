@@ -20,9 +20,12 @@ previewed and explicitly confirmed by the user. The server-backed read-only hist
 transaction API and renders transfer details plus append-only audit events. The
 Flutter API adapter intentionally uses response DTOs separate from the local
 domain aggregate because the server does not expose participant Google subjects.
-Mutation endpoints are not exposed by this adapter. Future write integration
-must retain idempotency, server authorization, preview confirmation, and
-version-checked transitions.
+The authenticated API adapter exposes transaction creation and lifecycle
+transitions with idempotency keys, server authorization, and version-checked
+server state. The current `ShiftExchangePage` remains read-only until the
+user-facing receive/exchange/give-up workflow and canonical schedule projection
+are connected. Calendar writes remain behind the preview and explicit user
+confirmation workflow.
 
 No existing roster, Employee Directory, Calendar event, or historical Timeline
 record is changed by this domain foundation.
