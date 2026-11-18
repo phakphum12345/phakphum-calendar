@@ -135,3 +135,52 @@
 - No secrets, tokens, personal data, or spreadsheet URLs in logs/test fixtures.
 - Implementation map updated only for verified completed capabilities.
 - PR merged only when checks are green, conflicts are resolved, and changed files are audited.
+
+
+## Critical product mission — Shift transactions and historical timeline
+
+This is the product's primary use case, not an optional enhancement. The
+delivery sequence below takes precedence over unrelated feature expansion while
+preserving already-open work and dependencies.
+
+1. **Date-first roster correctness:** inspect every row and column to discover
+   date headers, month/year context, section boundaries, and shift rows before
+   reading worker names. Invalid or ambiguous dates must be surfaced for review,
+   never guessed. Test single-month, cross-month, multi-section, leap-year,
+   Thai Buddhist-year, and irregular-header layouts.
+2. **Transaction ledger integration:** audit the existing transaction model/API
+   and connect it to the user-facing workflow for receiving, exchanging, and
+   giving up shifts. Preserve the original shift owner, receiving person,
+   effective date, shift type, actor, approval, reason, and lifecycle status.
+3. **Historical timeline:** show linked history for both sides of each transfer
+   and exchange, with before/after ownership, who acted, when, and current
+   fulfillment state. History is append-only; corrections create new events.
+4. **Persistence and sync safety:** persist transaction history independently
+   from roster imports and calendar projections. A new import or calendar sync
+   must never erase the transaction ledger or silently overwrite its settings.
+   Use idempotent event identity and retry-safe sync operations.
+5. **End-to-end acceptance:** import a roster, verify every date, stage and save
+   assignments, receive/give up/exchange a shift, reopen the history, run a
+   subsequent import and sync, and verify all original and transaction history
+   remains intact. Calendar writes require explicit user confirmation.
+
+### Current execution queue
+
+| Order | Work item | Dependency | State |
+|---|---|---|---|
+| 1 | Finish and verify open Navigation PR #115 without dropping it | Current PR | In progress |
+| 2 | Harden HospitalRosterParser date-first scan and regression tests | Main baseline | In progress in dedicated PR |
+| 3 | Audit all parser entry points and synthetic/real roster corpus | 2 | Planned |
+| 4 | Audit existing transaction ledger/API and lifecycle transitions | Existing transaction foundation | Planned |
+| 5 | Connect receive, exchange, and give-up workflows to canonical persistence | 4 | Planned |
+| 6 | Complete historical timeline for both participants | 5 | Planned |
+| 7 | Prove persistence survives repeated import and calendar sync | 3, 5, 6 | Planned |
+| 8 | Personal/Organization isolation and platform E2E | 1–7 | Planned |
+
+### Critical acceptance rule
+
+A green CI check alone does not complete this mission. Completion requires
+evidence that the same roster dates, participants, transaction identities, and
+history are preserved through import, review, persistence, subsequent import,
+timeline reopening, and calendar synchronization. Missing, skipped, queued, or
+cancelled checks are never counted as passing.
