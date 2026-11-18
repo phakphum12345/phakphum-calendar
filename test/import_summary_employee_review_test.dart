@@ -56,7 +56,7 @@ void main() {
       MaterialApp(
         home: ImportSummaryPage(
           summary: summary,
-          records: const [
+          records: [
             ShiftRecord(
               date: DateTime(2026, 7, 24),
               shift: 'Morning',
@@ -92,6 +92,7 @@ void main() {
 
     expect(savedSchedule, isNotNull);
     final assignment = savedSchedule!
+        .month(DateTime(2026, 7, 24))!
         .day(DateTime(2026, 7, 24))!
         .assignments
         .single;
