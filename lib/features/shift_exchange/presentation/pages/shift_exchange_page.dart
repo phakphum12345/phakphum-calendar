@@ -109,7 +109,7 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
   }
 
   Future<void> _selectOrganization(String id) async {
-    final selected = _organizations.where((item) => item.id == id).toList().firstOrNull;
+    final selected = _firstOrNull(_organizations.where((item) => item.id == id));
     if (selected == null) return;
     setState(() {
       _selectedOrganization = selected;
@@ -409,12 +409,8 @@ class _ShiftTransactionComposerDialogState
     if (!_formKey.currentState!.validate()) return;
     final requesterId = _effectiveRequesterId;
     final recipientId = _recipientEmployeeId;
-    final requesterShift = _requesterShifts
-        .where((item) => item.key == _requesterShiftKey)
-        .toList().firstOrNull;
-    final recipientShift = _recipientShifts
-        .where((item) => item.key == _recipientShiftKey)
-        .toList().firstOrNull;
+    final requesterShift = _firstOrNull(_requesterShifts.where((item) => item.key == _requesterShiftKey));
+    final recipientShift = _firstOrNull(_recipientShifts.where((item) => item.key == _recipientShiftKey));
     if (requesterId == null || recipientId == null ||
         requesterShift == null || requesterId == recipientId ||
         (_type == 'exchange' && recipientShift == null)) {
@@ -601,9 +597,7 @@ class _ShiftTransactionComposerDialogState
                     ],
                     onChanged: _saving ? null : (value) => setState(() {
                       _recipientUserId = value;
-                      _recipientEmployeeId = recipientMembers
-                          .where((member) => member.userId == value)
-                          .toList().firstOrNull?.employeeId;
+                      _recipientEmployeeId = _firstOrNull(recipientMembers.where((member) => member.userId == value))?.employeeId;
                       _recipientShiftKey = null;
                     }),
                     validator: (value) => value == null ? 'Select a recipient.' : null,
@@ -738,4 +732,11 @@ class _RosterShiftChoice {
     employeeId: employee.id,
     shiftId: assignment.shift.id,
   );
+}
+
+T? _firstOrNull<T>(Iterable<T> values) {
+  for (final value in values) {
+    return value;
+  }
+  return null;
 }
