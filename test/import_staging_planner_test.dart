@@ -40,6 +40,43 @@ void main() {
     workingHours: 8,
   );
 
+  const employeeA = Employee(
+    id: 'A',
+    employeeCode: 'EA',
+    firstName: 'First',
+    lastName: 'Employee',
+    nickname: '',
+    department: Department(id: 'er', code: 'ER', name: 'Emergency'),
+    position: 'Nurse',
+  );
+  const employeeAB = Employee(
+    id: 'A|B',
+    employeeCode: 'EAB',
+    firstName: 'Second',
+    lastName: 'Employee',
+    nickname: '',
+    department: Department(id: 'er', code: 'ER', name: 'Emergency'),
+    position: 'Nurse',
+  );
+  const shiftC = ShiftType(
+    id: 'C',
+    code: 'C',
+    name: 'Shift C',
+    color: 0xFF1565C0,
+    startTime: Duration(hours: 8),
+    endTime: Duration(hours: 16),
+    workingHours: 8,
+  );
+  const shiftBC = ShiftType(
+    id: 'B|C',
+    code: 'BC',
+    name: 'Shift BC',
+    color: 0xFF1565C0,
+    startTime: Duration(hours: 8),
+    endTime: Duration(hours: 16),
+    workingHours: 8,
+  );
+
   ShiftAssignment assignment({String? remark, String? location}) =>
       ShiftAssignment(
         employee: employee,
@@ -218,6 +255,25 @@ void main() {
       plan.entries.single.reason,
       LegacyImportRowDecisionReason.ambiguousExistingAssignment,
     );
+  });
+
+  test('IDs containing delimiters cannot collide across row identities', () {
+    final first = ShiftAssignment(employee: employeeAB, shift: shiftC);
+    final second = ShiftAssignment(employee: employeeA, shift: shiftBC);
+    final plan = planner.build(
+      rows: [
+        ImportStagingRow(sourceRowNumber: 2, date: date, assignment: first),
+        ImportStagingRow(sourceRowNumber: 3, date: date, assignment: second),
+      ],
+      existingSchedule: scheduleWith(const []),
+    );
+
+    expect(
+      plan.entries.map((entry) => entry.decision),
+      [LegacyImportRowDecision.create, LegacyImportRowDecision.create],
+    );
+    expect(plan.createCount, 2);
+    expect(plan.reviewCount, 0);
   });
 
   test('different shift IDs on the same employee and date are separate keys', () {
