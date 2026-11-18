@@ -167,8 +167,8 @@ class ShiftTransactionApiClient {
       'type': type,
       'participants': participants,
       'transfers': transfers,
-      if (organizationId != null) 'organization_id': organizationId,
-      if (metadata.isNotEmpty) 'metadata': metadata,
+      'organization_id': ?organizationId,
+      'metadata': ?(metadata.isEmpty ? null : metadata),
     };
     return _postTransaction(
       'api/v1/shift-transactions',
@@ -185,7 +185,7 @@ class ShiftTransactionApiClient {
     String? reason,
   }) => _postTransaction(
     '${_transactionPath(id)}/reject',
-    body: {if (reason != null) 'reason': reason},
+    body: {'reason': ?reason},
   );
 
   Future<ShiftTransactionSnapshot> approveTransaction(
