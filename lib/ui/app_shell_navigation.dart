@@ -25,8 +25,8 @@ class AppShellNavigation {
       if (edition == AppEdition.organization) ...[
         AppShellDestination.rosterNames,
         AppShellDestination.employees,
-        AppShellDestination.shiftExchange,
       ],
+      AppShellDestination.shiftExchange,
       AppShellDestination.reports,
       if (edition == AppEdition.organization) AppShellDestination.admin,
       AppShellDestination.settings,
