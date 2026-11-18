@@ -5,12 +5,14 @@ import 'package:flutter/material.dart';
 import '../../../../core/result/result.dart';
 import '../../../../domain/entities/employee.dart';
 import '../../../../domain/entities/schedule.dart';
+import '../../../../domain/entities/shift_template.dart';
 import '../../../../domain/repositories/employee_repository.dart';
 import '../../../../l10n/l10n.dart';
 import '../../../employees/application/employee_match_resolver.dart';
 import '../../../schedule/data/imported_schedule_adapter.dart';
 import '../../../schedule/presentation/controllers/schedule_controller.dart';
 import '../../../schedule/presentation/pages/imported_month_calendar_page.dart';
+import '../../../shift_templates/application/shift_template_controller.dart';
 import '../../domain/import_issue.dart';
 import '../../domain/import_summary.dart';
 import '../../domain/shift_record.dart';
@@ -29,6 +31,7 @@ class ImportSummaryPage extends StatefulWidget {
     this.scheduleFactory,
     this.controller,
     this.employeeRepository,
+    this.shiftTemplateControllerFactory,
     super.key,
   });
 
@@ -41,6 +44,7 @@ class ImportSummaryPage extends StatefulWidget {
   final Schedule Function(Iterable<ShiftRecord>)? scheduleFactory;
   final ExcelImportController? controller;
   final EmployeeRepository? employeeRepository;
+  final ShiftTemplateController Function()? shiftTemplateControllerFactory;
 
   ImportSummary get _currentSummary => controller?.importSummary ?? summary;
   List<ShiftRecord> get _currentRecords => controller?.shiftRecords ?? records;
@@ -61,10 +65,31 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
   bool _employeeReviewLoading = false;
   String? _employeeReviewError;
   List<Employee> _employees = const [];
+  ShiftTemplateController? _shiftTemplateController;
+  List<ShiftTemplate> _shiftTemplates = const [];
+  bool _shiftReviewLoading = false;
+  String? _shiftReviewError;
+  final Map<int, List<ShiftTemplate>> _shiftMatchCandidates = {};
+  final Map<int, String> _shiftMatchStatus = {};
+  final Map<int, ShiftTemplate?> _selectedShiftTemplates = {};
   final Map<int, EmployeeMatchResult> _matchResults = {};
   final Map<int, Employee?> _selectedEmployees = {};
 
   bool get _employeeReviewEnabled => widget.employeeRepository != null;
+
+  bool get _shiftReviewEnabled => widget.shiftTemplateControllerFactory != null;
+
+  bool get _isSaved =>
+      _saveResult is Success<Schedule> ||
+      widget.persistenceResult is Success<Schedule>;
+
+  bool get _shiftReviewReady {
+    if (!_shiftReviewEnabled) return true;
+    if (_shiftReviewLoading || _shiftReviewError != null) return false;
+    return widget._currentRecords.every(
+      (record) => _selectedShiftTemplates[record.rowNumber] != null,
+    );
+  }
 
   bool get _employeeReviewReady {
     if (!_employeeReviewEnabled) return true;
@@ -77,17 +102,20 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
   List<ShiftRecord> get _resolvedRecords {
     return widget._currentRecords.map((record) {
       final employee = _selectedEmployees[record.rowNumber];
-      if (employee == null) return record;
+      final shiftTemplate = _selectedShiftTemplates[record.rowNumber];
       return record.copyWith(
-        employee: employee.fullName,
-        department: employee.department.name,
+        employee: employee?.fullName ?? record.employee,
+        department: employee?.department.name ?? record.department,
         resolvedEmployee: employee,
+        resolvedShiftTemplate: shiftTemplate,
       );
     }).toList(growable: false);
   }
 
   Schedule get _currentSchedule {
-    if (!_employeeReviewEnabled) return widget._currentSchedule;
+    if (!_employeeReviewEnabled && !_shiftReviewEnabled) {
+      return widget._currentSchedule;
+    }
     return widget.scheduleFactory?.call(_resolvedRecords) ??
         const ImportedScheduleAdapter().createSchedule(_resolvedRecords);
   }
@@ -96,6 +124,13 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
   void initState() {
     super.initState();
     if (_employeeReviewEnabled) unawaited(_loadEmployeeDirectory());
+    if (_shiftReviewEnabled) unawaited(_loadShiftTemplates());
+  }
+
+  @override
+  void dispose() {
+    _shiftTemplateController?.dispose();
+    super.dispose();
   }
 
   Future<void> _loadEmployeeDirectory() async {
@@ -130,10 +165,66 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
     setState(() => _employeeReviewLoading = false);
   }
 
+  Future<void> _loadShiftTemplates() async {
+    final factory = widget.shiftTemplateControllerFactory;
+    if (factory == null) return;
+    final controller = _shiftTemplateController ??= factory();
+    setState(() {
+      _shiftReviewLoading = true;
+      _shiftReviewError = null;
+    });
+    await controller.load();
+    if (!mounted) return;
+    if (controller.error != null) {
+      setState(() {
+        _shiftReviewError = controller.error;
+        _shiftReviewLoading = false;
+      });
+      return;
+    }
+    setState(() {
+      _shiftTemplates = controller.templates
+          .where((template) => template.active)
+          .toList(growable: false);
+      _resolveShiftTemplates();
+      _shiftReviewLoading = false;
+    });
+  }
+
+  void _resolveShiftTemplates() {
+    _shiftMatchCandidates.clear();
+    _shiftMatchStatus.clear();
+    _selectedShiftTemplates.clear();
+    for (final record in widget._currentRecords) {
+      final query = _normalizeShiftLabel(record.shift);
+      final matches = _shiftTemplates.where((template) {
+        return [template.code, template.name, template.shortName].any(
+          (alias) => alias.trim().isNotEmpty &&
+              _normalizeShiftLabel(alias) == query,
+        );
+      }).toList(growable: false);
+      if (matches.length == 1) {
+        _shiftMatchCandidates[record.rowNumber] = matches;
+        _shiftMatchStatus[record.rowNumber] = 'matched';
+        _selectedShiftTemplates[record.rowNumber] = matches.single;
+      } else if (matches.isNotEmpty) {
+        _shiftMatchCandidates[record.rowNumber] = matches;
+        _shiftMatchStatus[record.rowNumber] = 'ambiguous';
+      } else {
+        _shiftMatchCandidates[record.rowNumber] = _shiftTemplates;
+        _shiftMatchStatus[record.rowNumber] = 'unmatched';
+      }
+    }
+  }
+
+  String _normalizeShiftLabel(String value) =>
+      value.trim().replaceAll(RegExp(r'\s+'), '').toLowerCase();
+
   @override
   Widget build(BuildContext context) {
     final persistenceResult = _saveResult ?? widget.persistenceResult;
     final canSave = _employeeReviewReady &&
+        _shiftReviewReady &&
         !_saving &&
         persistenceResult is! Success<Schedule>;
     return Scaffold(
@@ -165,6 +256,10 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
                   if (_employeeReviewEnabled) ...[
                     const SizedBox(height: 24),
                     _buildEmployeeReview(context),
+                  ],
+                  if (_shiftReviewEnabled) ...[
+                    const SizedBox(height: 24),
+                    _buildShiftReview(context),
                   ],
                   if (persistenceResult case Failure<Schedule>(
                     message: final message,
@@ -210,7 +305,8 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
                     onPressed: widget._currentRecords.any(
                               (record) => record.date != null,
                             ) &&
-                            _employeeReviewReady
+                            _employeeReviewReady &&
+                            _shiftReviewReady
                         ? () => _openCalendar(context)
                         : null,
                     icon: const Icon(Icons.calendar_month),
@@ -226,7 +322,9 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
                   const SizedBox(height: 12),
                   IssueList(
                     issues: widget._currentSummary.issues,
-                    onEditIssue: widget.controller == null ? null : _editIssue,
+                    onEditIssue: widget.controller == null || _isSaved
+                        ? null
+                        : _editIssue,
                   ),
                 ],
               ),
@@ -302,6 +400,129 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
     );
   }
 
+  Widget _buildShiftReview(BuildContext context) {
+    if (_shiftReviewLoading) {
+      return const Card(
+        child: Padding(
+          padding: EdgeInsets.all(20),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+    if (_shiftReviewError != null) {
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('ไม่สามารถโหลดรูปแบบเวรได้'),
+              const SizedBox(height: 8),
+              Text(_shiftReviewError!),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: _loadShiftTemplates,
+                  child: const Text('ลองอีกครั้ง'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    final unresolved = widget._currentRecords
+        .where((record) => _selectedShiftTemplates[record.rowNumber] == null)
+        .length;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'ตรวจสอบรูปแบบเวร',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              unresolved == 0
+                  ? 'จับคู่รูปแบบเวรครบแล้ว'
+                  : 'เหลือ $unresolved รายการที่ต้องเลือกรูปแบบเวร',
+            ),
+            const SizedBox(height: 12),
+            for (final record in widget._currentRecords) ...[
+              _buildShiftMatchTile(context, record),
+              const Divider(height: 20),
+            ],
+            if (_shiftTemplates.isEmpty)
+              const Text(
+                'ไม่มีรูปแบบเวรที่เปิดใช้งาน กรุณาตั้งค่ารูปแบบเวรก่อนนำเข้า',
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShiftMatchTile(BuildContext context, ShiftRecord record) {
+    final status = _shiftMatchStatus[record.rowNumber];
+    final selected = _selectedShiftTemplates[record.rowNumber];
+    final candidates = _shiftMatchCandidates[record.rowNumber] ?? const [];
+    final statusText = switch (status) {
+      'matched' => 'จับคู่จากรหัสหรือชื่อเวรที่ตรงกัน',
+      'ambiguous' => 'พบรูปแบบเวรที่ตรงกันหลายรายการ กรุณาเลือก',
+      'unmatched' => 'ไม่พบชื่อเวรที่ตรงกัน กรุณาเลือกจากรูปแบบเวร',
+      _ => 'กำลังตรวจสอบ...',
+    };
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('แถว ${record.rowNumber}: ${record.shift}'),
+        const SizedBox(height: 4),
+        Text(statusText),
+        if (candidates.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          DropdownButtonFormField<ShiftTemplate>(
+            initialValue: selected,
+            isExpanded: true,
+            decoration: const InputDecoration(labelText: 'รูปแบบเวรในระบบ'),
+            hint: const Text('เลือกรูปแบบเวร'),
+            items: [
+              for (final template in candidates)
+                DropdownMenuItem(
+                  value: template,
+                  child: Text(
+                    '${template.name} • ${template.code} • '
+                    '${_formatTemplateTime(template.startTime)}–'
+                    '${_formatTemplateTime(template.endTime)}',
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+            ],
+            onChanged: _isSaved
+                ? null
+                : (template) {
+                    setState(() {
+                      _selectedShiftTemplates[record.rowNumber] = template;
+                    });
+                  },
+          ),
+        ] else
+          Text(
+            'ไม่มีรูปแบบเวรให้เลือก',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+      ],
+    );
+  }
+
+  String _formatTemplateTime(Duration value) {
+    final hours = value.inHours.remainder(24).toString().padLeft(2, '0');
+    final minutes = value.inMinutes.remainder(60).toString().padLeft(2, '0');
+    return '$hours:$minutes';
+  }
+
   Widget _buildEmployeeMatchTile(BuildContext context, ShiftRecord record) {
     final match = _matchResults[record.rowNumber];
     final selected = _selectedEmployees[record.rowNumber];
@@ -342,8 +563,7 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
                   ),
                 ),
             ],
-            onChanged: _saveResult is Success<Schedule> ||
-                    widget.persistenceResult is Success<Schedule>
+            onChanged: _isSaved
                 ? null
                 : (employee) {
                     setState(
@@ -362,7 +582,9 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
 
   Future<void> _editIssue(ImportIssue issue) async {
     final activeController = widget.controller;
-    if (activeController == null || !_isExcelColumn(issue.column)) return;
+    if (activeController == null || _isSaved || !_isExcelColumn(issue.column)) {
+      return;
+    }
 
     final editor = TextEditingController(
       text: activeController.valueAt(
@@ -405,6 +627,7 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
       if (!mounted) return;
       setState(() {});
       await _loadEmployeeDirectory();
+      if (_shiftReviewEnabled) await _loadShiftTemplates();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('ปรับข้อมูลและประมวลผลใหม่แล้ว')),
@@ -421,7 +644,13 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
 
   Future<void> _saveSchedule() async {
     final save = widget.scheduleSaver;
-    if (save == null || _saving || !_employeeReviewReady) return;
+    if (save == null ||
+        _saving ||
+        !_employeeReviewReady ||
+        !_shiftReviewReady ||
+        _isSaved) {
+      return;
+    }
     setState(() => _saving = true);
     final result = await save(_currentSchedule);
     if (!mounted) return;

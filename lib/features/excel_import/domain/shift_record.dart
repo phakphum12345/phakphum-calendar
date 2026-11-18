@@ -1,4 +1,5 @@
 import '../../../domain/entities/employee.dart';
+import '../../../domain/entities/shift_template.dart';
 
 class ShiftRecord {
   const ShiftRecord({
@@ -10,6 +11,7 @@ class ShiftRecord {
     this.location,
     this.notes,
     this.resolvedEmployee,
+    this.resolvedShiftTemplate,
   });
 
   final DateTime? date;
@@ -23,6 +25,9 @@ class ShiftRecord {
   /// Canonical directory identity selected during import review.
   final Employee? resolvedEmployee;
 
+  /// Canonical shift definition selected during import review.
+  final ShiftTemplate? resolvedShiftTemplate;
+
   ShiftRecord copyWith({
     DateTime? date,
     String? shift,
@@ -32,6 +37,8 @@ class ShiftRecord {
     String? notes,
     Employee? resolvedEmployee,
     bool clearResolvedEmployee = false,
+    ShiftTemplate? resolvedShiftTemplate,
+    bool clearResolvedShiftTemplate = false,
   }) {
     return ShiftRecord(
       date: date ?? this.date,
@@ -43,6 +50,9 @@ class ShiftRecord {
       resolvedEmployee: clearResolvedEmployee
           ? null
           : resolvedEmployee ?? this.resolvedEmployee,
+      resolvedShiftTemplate: clearResolvedShiftTemplate
+          ? null
+          : resolvedShiftTemplate ?? this.resolvedShiftTemplate,
       rowNumber: rowNumber,
     );
   }
