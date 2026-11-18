@@ -16,7 +16,7 @@ class ImportStagingPlanner {
   }) {
     final sourceRows = records.toList(growable: false);
     final entries = List<ImportStagingEntry?>.filled(sourceRows.length, null);
-    final candidatesByKey = <String, List<_CandidateRow>>{};
+    final candidatesByKey = <(String, String, String), List<_CandidateRow>>{};
 
     for (var index = 0; index < sourceRows.length; index++) {
       final record = sourceRows[index];
@@ -180,12 +180,16 @@ class ImportStagingPlanner {
         left.workingHours == right.workingHours;
   }
 
-  String _assignmentKey(DateTime date, String employeeId, String shiftId) {
+  (String, String, String) _assignmentKey(
+    DateTime date,
+    String employeeId,
+    String shiftId,
+  ) {
     final day =
         '${date.year.toString().padLeft(4, '0')}-'
         '${date.month.toString().padLeft(2, '0')}-'
         '${date.day.toString().padLeft(2, '0')}';
-    return '$day|$employeeId|$shiftId';
+    return (day, employeeId, shiftId);
   }
 }
 
