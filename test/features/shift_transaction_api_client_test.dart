@@ -182,6 +182,95 @@ void main() {
     client.close();
   });
 
+  test('loads current account, organizations, and active organization members', () async {
+    final requests = <http.Request>[];
+    final responses = <Map<String, dynamic>>[
+      {
+        'data': {'id': '7', 'email': 'alice@example.com', 'name': 'Alice'},
+      },
+      {
+        'data': [
+          {
+            'id': 'org-uuid',
+            'name': 'Radiology',
+            'slug': 'radiology',
+            'employee_id': 'A',
+            'role': 'owner',
+          },
+        ],
+      },
+      {
+        'data': [
+          {
+            'user_id': '7',
+            'name': 'Alice',
+            'email': 'alice@example.com',
+            'employee_id': 'A',
+            'role': 'owner',
+            'status': 'active',
+          },
+          {
+            'user_id': '8',
+            'name': 'Bob',
+            'email': 'bob@example.com',
+            'employee_id': 'B',
+            'role': 'staff',
+            'status': 'active',
+          },
+        ],
+      },
+    ];
+    final client = ShiftTransactionApiClient(
+      baseUrl: 'https://calendar.example.test',
+      idTokenProvider: () async => 'google-id-token',
+      httpClient: MockClient((request) async {
+        requests.add(request);
+        return http.Response(jsonEncode(responses.removeAt(0)), 200);
+      }),
+    );
+
+    final account = await client.getCurrentUser();
+    final organizations = await client.listOrganizations();
+    final members = await client.listOrganizationMembers('org-uuid');
+
+    expect(account.id, '7');
+    expect(account.email, 'alice@example.com');
+    expect(organizations.single.employeeId, 'A');
+    expect(organizations.single.role, 'owner');
+    expect(members.map((member) => member.userId), ['7', '8']);
+    expect(members.last.employeeId, 'B');
+    expect(members.last.email, 'bob@example.com');
+    expect(requests.map((request) => request.url.path), [
+      '/api/v1/me',
+      '/api/v1/organizations',
+      '/api/v1/organizations/org-uuid/members',
+    ]);
+    expect(
+      requests.every((request) => request.headers['Authorization'] == 'Bearer google-id-token'),
+      isTrue,
+    );
+    client.close();
+  });
+
+  test('rejects an empty organization ID before making a request', () async {
+    var requestCount = 0;
+    final client = ShiftTransactionApiClient(
+      baseUrl: 'https://calendar.example.test',
+      idTokenProvider: () async => 'token',
+      httpClient: MockClient((request) async {
+        requestCount++;
+        return http.Response('{}', 200);
+      }),
+    );
+
+    await expectLater(
+      client.listOrganizationMembers(' '),
+      throwsArgumentError,
+    );
+    expect(requestCount, 0);
+    client.close();
+  });
+
   test('does not make a request without a Google ID token', () async {
     var requestCount = 0;
     final client = ShiftTransactionApiClient(
