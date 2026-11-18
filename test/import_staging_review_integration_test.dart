@@ -4,7 +4,6 @@ import 'package:phakphum_calendar/core/result/result.dart';
 import 'package:phakphum_calendar/domain/entities/department.dart';
 import 'package:phakphum_calendar/domain/entities/employee.dart';
 import 'package:phakphum_calendar/domain/entities/schedule.dart';
-import 'package:phakphum_calendar/domain/entities/schedule_day.dart';
 import 'package:phakphum_calendar/domain/entities/schedule_month.dart';
 import 'package:phakphum_calendar/domain/entities/shift_template.dart';
 import 'package:phakphum_calendar/features/excel_import/domain/import_issue.dart';
