@@ -102,7 +102,7 @@ void main() {
       expect(saved.isSuccess, isTrue);
 
       final restored = dependencies.createImportedScheduleController(
-        const Schedule(id: 'temporary', name: 'Temporary'),
+        Schedule(id: 'temporary', name: 'Temporary'),
       );
       addTearDown(restored.dispose);
       final loaded = await restored.loadPersistedSchedule();
