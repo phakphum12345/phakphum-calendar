@@ -99,6 +99,13 @@ void main() {
     expect(assignment.employee.id, emergencyEmployee.id);
     expect(assignment.employee.department.id, 'emergency');
     expect(find.text('บันทึกแล้ว'), findsOneWidget);
+    expect(
+      tester.widget<DropdownButtonFormField<Employee>>(
+        find.byType(DropdownButtonFormField<Employee>),
+      ).onChanged,
+      isNull,
+      reason: 'A successfully saved employee identity must not remain editable',
+    );
     expect(tester.takeException(), isNull);
   });
 }
