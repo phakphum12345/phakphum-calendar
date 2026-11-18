@@ -131,7 +131,8 @@ List<ShiftRecord> _importRows() => [
 
 void main() {
   test(
-    'saved import updates and creates only selected identities, then reimport skips duplicates',
+    'saved import updates and creates only selected identities, '
+    'then reimport skips duplicates',
     () async {
       final repository = SharedPreferencesScheduleRepository(
         store: InMemoryScheduleKeyValueStore(),
@@ -170,14 +171,21 @@ void main() {
       expect(importedDay.assignments, hasLength(3));
       expect(
         importedDay.assignments
-            .singleWhere((item) => item.employee.id == _employee.id && item.shift.id == _night.id)
+            .singleWhere(
+              (item) =>
+                  item.employee.id == _employee.id &&
+                  item.shift.id == _night.id,
+            )
             .remark,
         'updated note',
       );
       expect(
         importedDay.assignments.any(
-          (item) => item.employee.id == _otherEmployee.id && item.shift.id == _evening.id &&
-              item.remark == 'keep this assignment' && item.location == 'Ward B',
+          (item) =>
+              item.employee.id == _otherEmployee.id &&
+              item.shift.id == _evening.id &&
+              item.remark == 'keep this assignment' &&
+              item.location == 'Ward B',
         ),
         isTrue,
       );
@@ -208,8 +216,11 @@ void main() {
         hasLength(3),
       );
       expect(
-        repeatedResult.month(_date)!.day(_date)!.assignments
-            .where((item) => item.employee.id == _employee.id && item.shift.id == _morning.id),
+        repeatedResult.month(_date)!.day(_date)!.assignments.where(
+          (item) =>
+              item.employee.id == _employee.id &&
+              item.shift.id == _morning.id,
+        ),
         hasLength(1),
       );
     },
