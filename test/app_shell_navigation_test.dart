@@ -11,12 +11,13 @@ void main() {
         AppShellDestination.dashboard,
         AppShellDestination.schedule,
         AppShellDestination.monthlyRoster,
+        AppShellDestination.shiftExchange,
         AppShellDestination.reports,
         AppShellDestination.settings,
       ]);
-      expect(navigation.primaryIndexes, [0, 1, 3]);
-      expect(navigation.secondaryIndexes, [2, 4]);
-      expect(navigation.destinationIndexForPrimaryTab(2), 3);
+      expect(navigation.primaryIndexes, [0, 1, 4]);
+      expect(navigation.secondaryIndexes, [2, 3, 5]);
+      expect(navigation.destinationIndexForPrimaryTab(2), 4);
     });
 
     test('organization edition adds organization destinations to workspace', () {
