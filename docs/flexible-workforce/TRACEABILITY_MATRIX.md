@@ -364,3 +364,62 @@ The production import save callback is wired, not merely injectable in tests:
 ### Safety
 
 No application runtime source, database schema, user data, or Calendar data was changed by this recheck. No file was deleted, no PR was merged, and no deployment or Calendar synchronization was performed.
+
+
+---
+
+## Roster workflow delivery evidence — 2026-11-18
+
+### Evidence baseline and interpretation
+
+- Current repository baseline: `main@19a28843fa379c16417acff5fcdd691fc4f9818f`.
+- This section supplements the original Phase 0 enterprise/workforce inventory; it does not retroactively change the 2026-11-14 source-only audit into a runtime verification.
+- The WF-001–WF-020 rows above retain their existing **UNKNOWN** status for full requirement acceptance unless a requirement is explicitly narrowed and verified below. A passing Flutter suite or a merged feature PR does not prove the entire workforce requirement.
+- PR references: [#97](https://github.com/phakphum12345/phakphum-calendar/pull/97), [#98](https://github.com/phakphum12345/phakphum-calendar/pull/98), [#99](https://github.com/phakphum12345/phakphum-calendar/pull/99), [#100](https://github.com/phakphum12345/phakphum-calendar/pull/100), [#101](https://github.com/phakphum12345/phakphum-calendar/pull/101), [#102](https://github.com/phakphum12345/phakphum-calendar/pull/102), [#103](https://github.com/phakphum12345/phakphum-calendar/pull/103), [#104](https://github.com/phakphum12345/phakphum-calendar/pull/104), [#105](https://github.com/phakphum12345/phakphum-calendar/pull/105), [#106](https://github.com/phakphum12345/phakphum-calendar/pull/106), [#107](https://github.com/phakphum12345/phakphum-calendar/pull/107), [#108](https://github.com/phakphum12345/phakphum-calendar/pull/108).
+
+### Roster-specific requirement traceability
+
+| Roster requirement | Implementation evidence | Verification evidence | Disposition |
+|---|---|---|---|
+| Correct an import issue and re-run mapping without changing the source workbook | PR #100 | Merged PR and its regression coverage | PASS for the scoped in-memory correction path |
+| Inspect selected schedule changes before local save | PR #101 | Merged read-only selected preview | PASS for the scoped preview |
+| Handle complex roster table layouts | PR #102 | Synthetic corpus expanded to 12 scenarios, including full-month, year rollover, and non-contiguous date columns | PASS for the listed fixtures; not universal parser coverage |
+| Resolve configured shift labels dynamically | PRs #97–#99 and #103 | Matching uses saved templates before legacy fallback; unknown labels remain unresolved in covered tests | PASS for covered parser/template paths; legacy fallback remains for compatibility |
+| Resolve employee identity during review | PRs #105–#106 | Unique exact matches can resolve; duplicates/ambiguous/partial/unknown matches require explicit review | PASS for covered resolver and UI behavior; not full organization-wide identity governance |
+| Import → Review → Preview → Confirm | PR #104 | E2E test covers local canonical save/reload; preview does not call Calendar sync gateway | PASS for the tested local workflow; Google Calendar write is a separate explicit action |
+| Apply configured shift templates in the production import review UI | PR #107 | Exact saved template can resolve; unknown labels require explicit choice; unresolved employee/template state blocks local save and Calendar preview | PASS for the covered widget/UI cases |
+| Give the roster table the available workspace width | PR #108 | Exact-head CI succeeded; UI test verifies collapsed controls can be expanded | PASS for the implemented layout behavior |
+
+### Exact-head CI evidence for the latest two PRs
+
+| PR | Head SHA | Auto Detect CI | Linux | Web build | Android | Windows | iOS | Pull Request Gate |
+|---|---|---|---|---|---|---|---|---|
+| #107 | `319ee846ae3a8b56c2734d509896789a3e8eff41` | PASS | PASS | PASS | PASS | PASS | PASS | PASS |
+| #108 | `eb29be0dd6ef1bbe1a128fd01ee8f362a72e1012` | PASS | PASS | PASS | PASS | PASS | PASS | PASS |
+
+- #107 merged as `047c51871e0434be6efc946612293765587f2b25`.
+- #108 merged as `19a28843fa379c16417acff5fcdd691fc4f9818f`.
+- Review-thread lists were empty at the pre-merge checks. Both PRs were subsequently verified as merged.
+- Web build passed, but Pages deployment was skipped; no deployment was performed.
+- `main` and the #108 merge commit compare as identical (0 ahead / 0 behind).
+- These are PR-triggered CI conclusions on the exact head SHAs. They do not assert that separate integration or backend/PHP suites ran.
+
+### Remaining requirements and non-PASS states
+
+The following remain **UNKNOWN** or require new evidence before acceptance:
+
+- Full reusable import-profile lifecycle, profile version history, source-to-profile association, and recovery.
+- Full import staging with per-row create/update/skip decisions, duplicate resolution against existing records, cancellation, idempotency, retry, and rollback.
+- Complete date/layout ambiguity coverage beyond the 12 synthetic fixtures.
+- End-to-end organization/tenant isolation across Flutter repositories and backend query boundaries.
+- Unified hard/soft/unknown rule semantics and revision-bound validation.
+- Revision-bound approval, explicit publication, and durable workflow audit.
+- Complete export modes beyond the existing PDF/report evidence.
+- Integration tests and backend/PHP feature tests where no successful execution evidence is recorded.
+- Backup/restore and cross-device persistence claims.
+
+### Safety and execution notes
+
+- Local schedule confirmation remains separate from Google Calendar synchronization; no Google Calendar write was performed by PR #104 or #107.
+- No files or user data were deleted, no DISKPATH change was made, and no production deployment occurred in the #107/#108 delivery.
+- Keep SKIPPED, missing, and unexecuted checks distinct from PASS in future updates.
