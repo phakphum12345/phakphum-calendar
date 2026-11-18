@@ -326,7 +326,7 @@ class _ImportSummaryPageState extends State<ImportSummaryPage> {
         if (candidates.isNotEmpty) ...[
           const SizedBox(height: 8),
           DropdownButtonFormField<Employee>(
-            value: selected,
+            initialValue: selected,
             isExpanded: true,
             decoration: const InputDecoration(
               labelText: 'พนักงานในระบบ',
