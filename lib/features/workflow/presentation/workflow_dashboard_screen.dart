@@ -124,8 +124,8 @@ class WorkflowDashboardScreen extends StatelessWidget {
                           : 'ซิงก์เสร็จแล้ว',
                     ),
                     subtitle: Text(
-                      'สำเร็จ ${controller.lastResult!.successCount} • '
-                      'ล้มเหลว ${controller.lastResult!.failureCount}',
+                      'สำเร็จ ${controller.lastResult!.operations.where((item) => item.success).length} • '
+                      'ล้มเหลว ${controller.lastResult!.operations.where((item) => !item.success).length}',
                     ),
                   ),
                 ),
