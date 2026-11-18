@@ -32,6 +32,7 @@ void main() {
     ]);
 
     final assignment = schedule
+        .month(DateTime(2026, 7, 24))!
         .day(DateTime(2026, 7, 24))!
         .assignments
         .single;
@@ -43,7 +44,7 @@ void main() {
 
   test('keeps provisional identity behavior for records not yet reviewed', () {
     final schedule = const ImportedScheduleAdapter().createSchedule([
-      const ShiftRecord(
+      ShiftRecord(
         date: DateTime(2026, 7, 24),
         shift: 'Morning',
         employee: 'Anan',
