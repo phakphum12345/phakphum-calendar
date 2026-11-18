@@ -74,8 +74,8 @@ void main() {
       existingSchedule: existing,
     );
 
-    expect(plan.entries.single.decision, ImportRowDecision.create);
-    expect(plan.entries.single.reason, ImportRowDecisionReason.newAssignment);
+    expect(plan.entries.single.decision, LegacyImportRowDecision.create);
+    expect(plan.entries.single.reason, LegacyImportRowDecisionReason.newAssignment);
     expect(plan.createCount, 1);
     expect(plan.isReadyForExplicitConfirmation, isTrue);
     expect(existing.month(date)!.day(date)!.assignments, isEmpty);
@@ -95,8 +95,8 @@ void main() {
       ]),
     );
 
-    expect(plan.entries.single.decision, ImportRowDecision.skip);
-    expect(plan.entries.single.reason, ImportRowDecisionReason.alreadyPresent);
+    expect(plan.entries.single.decision, LegacyImportRowDecision.skip);
+    expect(plan.entries.single.reason, LegacyImportRowDecisionReason.alreadyPresent);
   });
 
   test('classifies changed metadata on the same assignment key as update', () {
@@ -111,22 +111,21 @@ void main() {
       existingSchedule: scheduleWith([assignment(remark: 'Old note')]),
     );
 
-    expect(plan.entries.single.decision, ImportRowDecision.update);
+    expect(plan.entries.single.decision, LegacyImportRowDecision.update);
     expect(
       plan.entries.single.reason,
-      ImportRowDecisionReason.existingAssignmentChanged,
+      LegacyImportRowDecisionReason.existingAssignmentChanged,
     );
   });
 
   test('skips a repeated identical row after the first source occurrence', () {
-    final row = ImportStagingRow(
-      sourceRowNumber: 2,
-      date: date,
-      assignment: assignment(),
-    );
     final plan = planner.build(
       rows: [
-        row,
+        ImportStagingRow(
+          sourceRowNumber: 2,
+          date: date,
+          assignment: assignment(),
+        ),
         ImportStagingRow(
           sourceRowNumber: 3,
           date: date,
@@ -138,11 +137,11 @@ void main() {
 
     expect(
       plan.entries.map((entry) => entry.decision),
-      [ImportRowDecision.create, ImportRowDecision.skip],
+      [LegacyImportRowDecision.create, LegacyImportRowDecision.skip],
     );
     expect(
       plan.entries.last.reason,
-      ImportRowDecisionReason.repeatedIdenticalSourceRow,
+      LegacyImportRowDecisionReason.repeatedIdenticalSourceRow,
     );
   });
 
@@ -163,11 +162,10 @@ void main() {
       existingSchedule: scheduleWith(const []),
     );
 
-    expect(plan.entries.first.decision, ImportRowDecision.create);
-    expect(plan.entries.last.decision, ImportRowDecision.review);
+    expect(plan.entries.every((entry) => entry.requiresHumanReview), isTrue);
     expect(
-      plan.entries.last.reason,
-      ImportRowDecisionReason.conflictingSourceRows,
+      plan.entries.map((entry) => entry.reason),
+      everyElement(LegacyImportRowDecisionReason.conflictingSourceRows),
     );
     expect(plan.isReadyForExplicitConfirmation, isFalse);
   });
@@ -194,7 +192,7 @@ void main() {
       plan.entries.every(
         (entry) =>
             entry.reason ==
-            ImportRowDecisionReason.unresolvedDateOrIdentity,
+            LegacyImportRowDecisionReason.unresolvedDateOrIdentity,
       ),
       isTrue,
     );
@@ -215,10 +213,10 @@ void main() {
       ]),
     );
 
-    expect(plan.entries.single.decision, ImportRowDecision.review);
+    expect(plan.entries.single.decision, LegacyImportRowDecision.review);
     expect(
       plan.entries.single.reason,
-      ImportRowDecisionReason.ambiguousExistingAssignment,
+      LegacyImportRowDecisionReason.ambiguousExistingAssignment,
     );
   });
 
@@ -235,6 +233,6 @@ void main() {
       existingSchedule: scheduleWith([assignment()]),
     );
 
-    expect(plan.entries.single.decision, ImportRowDecision.create);
+    expect(plan.entries.single.decision, LegacyImportRowDecision.create);
   });
 }
