@@ -18,6 +18,8 @@ import 'package:phakphum_calendar/features/excel_import/domain/shift_record.dart
 import 'package:phakphum_calendar/features/excel_import/presentation/controllers/excel_import_controller.dart';
 import 'package:phakphum_calendar/features/excel_import/presentation/pages/import_summary_page.dart';
 import 'package:phakphum_calendar/features/shift_templates/application/shift_template_controller.dart';
+import 'package:phakphum_calendar/features/workflow/application/canonical_schedule_event_mapper.dart';
+import 'package:phakphum_calendar/features/workflow/application/workflow_preview_builder.dart';
 
 void main() {
   testWidgets('ambiguous employee must be explicitly selected before save', (
@@ -184,7 +186,15 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byTooltip('แก้ไขข้อมูลแถวนี้'), findsOneWidget);
+      expect(find.byTooltip('แก้ไขข้อมูลแถวนี้'), findsNWidgets(2));
+      await tester.tap(find.byTooltip('แก้ไขข้อมูลแถวนี้').first);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), '2026-07-25');
+      await tester.tap(find.text('บันทึกและตรวจใหม่'));
+      await tester.pumpAndSettle();
+      expect(controller.shiftRecords, hasLength(2));
+      expect(controller.importSummary!.errorRows, 1);
+
       final saveButton = find.widgetWithText(
         FilledButton,
         'ยืนยันและบันทึกตารางเวร',
@@ -196,31 +206,56 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(savedSchedule, isNotNull);
-      final assignment = savedSchedule!
+      final firstDay = savedSchedule!
           .month(DateTime(2026, 7, 24))!
           .day(DateTime(2026, 7, 24))!
           .assignments
           .single;
-      expect(assignment.employee.id, employee.id);
-      expect(assignment.shift.id, template.id);
-      expect(assignment.shift.code, 'XN');
-      expect(assignment.shift.startTime, const Duration(hours: 19, minutes: 30));
-      expect(assignment.shift.endTime, const Duration(hours: 7, minutes: 30));
-      expect(assignment.shift.workingHours, 12);
+      final correctedDay = savedSchedule!
+          .month(DateTime(2026, 7, 25))!
+          .day(DateTime(2026, 7, 25))!
+          .assignments
+          .single;
+      for (final assignment in [firstDay, correctedDay]) {
+        expect(assignment.employee.id, employee.id);
+        expect(assignment.shift.id, template.id);
+        expect(assignment.shift.code, 'XN');
+        expect(
+          assignment.shift.startTime,
+          const Duration(hours: 19, minutes: 30),
+        );
+        expect(
+          assignment.shift.endTime,
+          const Duration(hours: 7, minutes: 30),
+        );
+        expect(assignment.shift.workingHours, 12);
+      }
       expect(find.text('บันทึกแล้ว'), findsOneWidget);
       expect(find.byTooltip('แก้ไขข้อมูลแถวนี้'), findsNothing);
       expect(
-        tester.widget<DropdownButtonFormField<Employee>>(
-          find.byType(DropdownButtonFormField<Employee>),
-        ).onChanged,
-        isNull,
+        tester
+            .widgetList<DropdownButtonFormField<Employee>>(
+              find.byType(DropdownButtonFormField<Employee>),
+            )
+            .every((dropdown) => dropdown.onChanged == null),
+        isTrue,
       );
       expect(
-        tester.widget<DropdownButtonFormField<ShiftTemplate>>(
-          find.byType(DropdownButtonFormField<ShiftTemplate>),
-        ).onChanged,
-        isNull,
+        tester
+            .widgetList<DropdownButtonFormField<ShiftTemplate>>(
+              find.byType(DropdownButtonFormField<ShiftTemplate>),
+            )
+            .every((dropdown) => dropdown.onChanged == null),
+        isTrue,
       );
+      final candidates = const CanonicalScheduleEventMapper().map(savedSchedule!);
+      final preview = const WorkflowPreviewBuilder().buildCandidates(
+        desired: candidates,
+        existing: const [],
+      );
+      expect(preview.diff.toAdd, hasLength(2));
+      expect(preview.diff.toUpdate, isEmpty);
+      expect(preview.diff.toDelete, isEmpty);
       expect(tester.takeException(), isNull);
     },
   );
@@ -395,6 +430,12 @@ ImportFile _workbookWithInvalidRow() {
     ])
     ..appendRow([
       TextCellValue('not-a-date'),
+      TextCellValue('XN'),
+      TextCellValue('Anan Sukjai'),
+      TextCellValue('ER'),
+    ])
+    ..appendRow([
+      TextCellValue('also-not-a-date'),
       TextCellValue('XN'),
       TextCellValue('Anan Sukjai'),
       TextCellValue('ER'),
