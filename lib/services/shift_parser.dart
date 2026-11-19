@@ -457,7 +457,9 @@ class ShiftParser
 
   int? _dayNumber(Object? value) {
     final number = value is num
-        ? value.toInt()
+        ? (value.isFinite && value == value.roundToDouble()
+              ? value.toInt()
+              : null)
         : int.tryParse(value?.toString().trim() ?? '');
     return number != null && number >= 1 && number <= 31 ? number : null;
   }
