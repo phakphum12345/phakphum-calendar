@@ -651,9 +651,10 @@ class MonthlyRosterSectionParser {
           .toList();
       candidates.addAll(texts);
     }
-    // Some real workbooks place the period heading immediately below the
-    // numeric date row. Search forward within this date grid as well, stopping
-    // at the next date header so a later section's period cannot leak backward.
+    // Some real workbooks place the explicit period heading immediately
+    // below the numeric date row. Only consume consecutive period-heading
+    // rows: scanning through assignment rows can accidentally borrow a later
+    // section's heading when that section shares the same worksheet.
     final lastRow = cellsByRow.keys.fold<int>(
       headerRow,
       (current, row) => current > row ? current : row,
@@ -666,6 +667,10 @@ class MonthlyRosterSectionParser {
           .whereType<String>()
           .where((text) => text.isNotEmpty)
           .toList();
+      final hasPeriodHeading = texts.any(
+        (text) => _tryParsePeriod(text) != null || text.contains('ประจำเดือน'),
+      );
+      if (!hasPeriodHeading) break;
       candidates.addAll(texts);
     }
 
