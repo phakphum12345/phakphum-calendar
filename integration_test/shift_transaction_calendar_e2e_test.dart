@@ -263,6 +263,8 @@ void main() {
         '/api/v1/shift-transactions/11111111-1111-4111-8111-111111111111/confirm',
       ]);
 
+      await tester.tap(find.text('Give up · approved'));
+      await tester.pumpAndSettle();
       expect(find.text('Preview & sync Calendar'), findsOneWidget);
       await tester.tap(find.text('Preview & sync Calendar'));
       await tester.pumpAndSettle();
