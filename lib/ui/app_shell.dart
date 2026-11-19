@@ -2284,7 +2284,9 @@ class _DashboardPageState extends State<_DashboardPage> {
                           child: Text(
                             buildEmptyRosterSyncDiagnostic(
                               selectedPeriodsLabel:
-                                  controller.settings.effectivePeriods
+                                  controller.settings.effectivePeriods.isEmpty
+                                  ? 'ยังไม่ได้เลือกเดือน'
+                                  : controller.settings.effectivePeriods
                                       .map((period) =>
                                           '${period.month}/${period.year + 543}')
                                       .join(', '),
