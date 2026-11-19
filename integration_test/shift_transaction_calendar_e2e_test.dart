@@ -277,6 +277,20 @@ void main() {
         '/api/v1/shift-transactions/11111111-1111-4111-8111-111111111111/confirm',
       ]);
 
+      await tester.tap(find.text('Cancel preview'));
+      await tester.pumpAndSettle();
+      expect(gateway.writeCount, 0);
+      expect(postPaths, [
+        '/api/v1/shift-transactions/11111111-1111-4111-8111-111111111111/confirm',
+      ]);
+
+      await tester.tap(find.text('Give up · approved'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Preview & sync Calendar'));
+      await tester.pumpAndSettle();
+      expect(find.text('Review Calendar preview'), findsOneWidget);
+      expect(gateway.writeCount, 0);
+
       await tester.tap(find.text('Confirm and sync'));
       await tester.pumpAndSettle();
 
