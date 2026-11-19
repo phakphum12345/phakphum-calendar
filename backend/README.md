@@ -127,3 +127,8 @@ Every create and lifecycle transition appends a row to `shift_transaction_events
 Calendar sync start requires `preview_confirmed=true`. Completion records one distinct Google Calendar event reference per transfer supplied by the authenticated client; this API records the client acknowledgement and does not itself call Google Calendar. A successful Calendar write does not complete the shift transaction. Only the employee receiving a transfer may confirm fulfillment, and only after the scheduled shift end. Exchange-and-return remains approved until every transfer leg is fulfilled.
 
 Validation: `composer validate --strict`, `vendor/bin/pint --test app config database routes tests`, and `php artisan test`. These checks run in `.github/workflows/laravel.yml`.
+
+
+## Continuous integration
+
+The Laravel GitHub Actions workflow creates an empty `.env` file in its isolated test workspace. All test configuration is supplied through the workflow environment; developer and production secrets are not copied into CI. The workflow validates Composer, installs the locked dependencies, audits the lock file, checks PHP formatting and bootstrap syntax, and runs the Laravel test suite.
