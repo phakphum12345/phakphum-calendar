@@ -17,7 +17,7 @@ class CalendarSyncPreparation {
     required this.plan,
     required this.timeMin,
     required this.timeMax,
-    required this.existingEventIdsBySyncId,
+    this.existingEventIdsBySyncId = const {},
   });
 
   final CalendarDiff diff;
