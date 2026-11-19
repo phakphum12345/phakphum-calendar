@@ -109,7 +109,8 @@ class MonthlyRosterSectionParser {
         dateAnomalies
             .where((anomaly) => anomaly.code != 'unresolved_date')
             .map(
-              (anomaly) => 'ต้องตรวจสอบวันที่: ${anomaly.message}',
+              (anomaly) =>
+                  'ต้องตรวจสอบวันที่ในส่วน "$title": ${anomaly.message}',
             ),
       );
 
