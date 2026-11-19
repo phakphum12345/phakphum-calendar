@@ -244,12 +244,14 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: ShiftTransactionHistoryPanel(
-            apiClient: client,
-            rosterTimelines: {
-              timeline.positionKey: timeline,
-              unrelated.positionKey: unrelated,
-            },
+          body: SingleChildScrollView(
+            child: ShiftTransactionHistoryPanel(
+              apiClient: client,
+              rosterTimelines: {
+                timeline.positionKey: timeline,
+                unrelated.positionKey: unrelated,
+              },
+            ),
           ),
         ),
       ),
