@@ -35,10 +35,8 @@ void main() {
     final controller = AppDependencies.production().createDemoAppController();
     addTearDown(controller.dispose);
 
-    await controller.updateSettings(
-      controller.settings.copyWith(
-        periods: const [RosterPeriod(year: 2026, month: 11)],
-      ),
+    controller.settings = controller.settings.copyWith(
+      periods: const [RosterPeriod(year: 2026, month: 11)],
     );
     await controller.adoptCanonicalSchedule(
       Schedule(id: 'empty-november', name: 'Empty November roster'),
