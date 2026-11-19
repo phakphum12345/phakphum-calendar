@@ -118,6 +118,15 @@ class GoogleCertificateIdentityTokenVerifierTest extends TestCase
         $this->assertSame('google-subject', $claims['sub']);
     }
 
+    public function test_it_rejects_a_non_string_authorized_party(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        app(GoogleCertificateIdentityTokenVerifier::class)->verify(
+            $this->token(['azp' => null]),
+        );
+    }
+
     public function test_it_rejects_an_expired_token(): void
     {
         $this->expectException(InvalidArgumentException::class);
