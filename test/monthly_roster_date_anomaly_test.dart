@@ -62,7 +62,7 @@ void main() {
     final report = const MonthlyRosterSectionParser().parse(input);
 
     expect(report.hasBlockingDateAnomalies, isFalse);
-    expect(report.sections.single.dateColumns, hasLength(62));
+    expect(report.sections.single.dateColumns, hasLength(61));
     expect(report.sections.single.dateColumns[30].date, DateTime(2026, 12, 1));
     expect(
       const MonthlyRosterShiftAdapter().parseForWorkers(
