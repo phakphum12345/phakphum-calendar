@@ -232,6 +232,10 @@ void main() {
     expect(plan.updates, hasLength(1));
     expect(plan.updates.single.eventId, 'legacy-existing-event');
     expect(plan.updates.single.command.syncId, desired.syncId);
+    expect(
+      controller.schedulePreparation!.existingEventIdsBySyncId[desired.syncId],
+      'legacy-existing-event',
+    );
 
     await controller.synchronize();
 
