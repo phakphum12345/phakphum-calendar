@@ -11,10 +11,14 @@ class MonthlyRosterConversionReport {
   const MonthlyRosterConversionReport({
     required this.shifts,
     required this.unconvertedAssignments,
+    this.blockingDateAnomalies = const [],
   });
 
   final List<Shift> shifts;
   final List<MonthlyRosterAssignment> unconvertedAssignments;
+  final List<MonthlyRosterDateAnomaly> blockingDateAnomalies;
+
+  bool get hasBlockingDateAnomalies => blockingDateAnomalies.isNotEmpty;
 
   int get convertedCount => shifts.length;
   int get unconvertedCount => unconvertedAssignments.length;
@@ -37,13 +41,18 @@ extension MonthlyRosterShiftAdapterDiagnostics on MonthlyRosterShiftAdapter {
       return const MonthlyRosterConversionReport(
         shifts: [],
         unconvertedAssignments: [],
+        blockingDateAnomalies: report.blockingDateAnomalies,
       );
     }
 
-    final eligible = report.assignments.where((assignment) {
-      final worker = _compact(assignment.workerName);
-      return worker.isNotEmpty && targets.any(worker.contains);
-    }).toList(growable: false);
+    final eligible = report.sections
+        .where((section) => !section.hasBlockingDateAnomalies)
+        .expand((section) => section.assignments)
+        .where((assignment) {
+          final worker = _compact(assignment.workerName);
+          return worker.isNotEmpty && targets.any(worker.contains);
+        })
+        .toList(growable: false);
 
     final shifts = parseForWorkers(
       report,
@@ -63,6 +72,7 @@ extension MonthlyRosterShiftAdapterDiagnostics on MonthlyRosterShiftAdapter {
     return MonthlyRosterConversionReport(
       shifts: List.unmodifiable(shifts),
       unconvertedAssignments: List.unmodifiable(unconverted),
+      blockingDateAnomalies: report.blockingDateAnomalies,
     );
   }
 
