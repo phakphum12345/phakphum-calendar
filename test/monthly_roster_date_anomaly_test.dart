@@ -50,20 +50,20 @@ void main() {
   test('allows repeated day numbers when a two-month period contains both dates', () {
     final days = <Object?>[
       'วันที่',
-      ...List<int>.generate(31, (index) => index + 1),
+      ...List<int>.generate(30, (index) => index + 1),
       ...List<int>.generate(31, (index) => index + 1),
     ];
     final input = _input(
       title: 'ตารางหลัก 1 พฤศจิกายน 2569 - 31 ธันวาคม 2569',
       days: days,
-      workers: ['P1 เช้า', ...List<String>.filled(62, 'นายสมชาย')],
+      workers: ['P1 เช้า', ...List<String>.filled(61, 'นายสมชาย')],
     );
 
     final report = const MonthlyRosterSectionParser().parse(input);
 
     expect(report.hasBlockingDateAnomalies, isFalse);
     expect(report.sections.single.dateColumns, hasLength(62));
-    expect(report.sections.single.dateColumns[31].date, DateTime(2026, 12, 1));
+    expect(report.sections.single.dateColumns[30].date, DateTime(2026, 12, 1));
     expect(
       const MonthlyRosterShiftAdapter().parseForWorkers(
         report,
