@@ -16,7 +16,8 @@ import '../widgets/shift_transaction_history_panel.dart';
 /// Transaction workspace for personal and organization editions.
 ///
 /// The server is authoritative for participant identity, consent, and
-/// organization approval. This page never writes to Google Calendar.
+/// organization approval. Calendar writes are delegated to the app controller
+/// and remain behind a transaction-specific preview and explicit confirmation.
 class ShiftExchangePage extends StatefulWidget {
   const ShiftExchangePage({
     required this.schedule,
