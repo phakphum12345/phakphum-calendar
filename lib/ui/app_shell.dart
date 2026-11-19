@@ -4194,6 +4194,28 @@ class _PreviewPage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _unconvertedAssignmentsWarning(context),
+        if (controller.shiftTransactionProjectionWarnings.isNotEmpty)
+          Card(
+            margin: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'ธุรกรรมที่ยังนำไปใช้กับตารางไม่ได้',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 6),
+                  for (final warning in controller.shiftTransactionProjectionWarnings)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text('• $warning'),
+                    ),
+                ],
+              ),
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
           child: Align(
