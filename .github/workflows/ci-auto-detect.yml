@@ -108,7 +108,7 @@ jobs:
       - name: Integration tests
         if: needs.detect.outputs.has_integration_tests == 'true' && needs.detect.outputs.is_flutter == 'true'
         shell: bash
-        run: flutter test integration_test
+        run: flutter test -d chrome integration_test
 
   platform-summary:
     name: Platform activation summary
