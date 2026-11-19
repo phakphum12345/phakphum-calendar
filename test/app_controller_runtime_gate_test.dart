@@ -4,6 +4,8 @@ import 'package:phakphum_calendar/domain/entities/schedule.dart';
 import 'package:phakphum_calendar/models/roster_period.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   test('Calendar writes require explicit confirmation and a prepared preview', () async {
     final controller = AppDependencies.production().createDemoAppController();
     addTearDown(controller.dispose);
