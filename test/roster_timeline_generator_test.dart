@@ -108,7 +108,7 @@ void main() {
   });
 
   test('does not expose a Google Sheets link for synthetic revision metadata', () {
-    const shift = Shift(
+    final shift = Shift(
       code: 'UP1',
       rowLabel: 'P1 เช้า',
       assignedName: 'Alice',
