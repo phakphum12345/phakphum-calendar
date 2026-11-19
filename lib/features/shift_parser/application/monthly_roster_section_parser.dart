@@ -106,9 +106,11 @@ class MonthlyRosterSectionParser {
         end: end,
       );
       warnings.addAll(
-        dateAnomalies.map(
-          (anomaly) => 'ต้องตรวจสอบวันที่: ${anomaly.message}',
-        ),
+        dateAnomalies
+            .where((anomaly) => anomaly.code != 'unresolved_date')
+            .map(
+              (anomaly) => 'ต้องตรวจสอบวันที่: ${anomaly.message}',
+            ),
       );
 
       final dateColumns = <MonthlyRosterDateColumn>[
@@ -374,7 +376,7 @@ class MonthlyRosterSectionParser {
         }
         continue;
       }
-      if (previousResolved != null) {
+      if (completeRangeHeader && previousResolved != null) {
         final gap = DateTime.utc(
           resolved.year, resolved.month, resolved.day,
         ).difference(DateTime.utc(
