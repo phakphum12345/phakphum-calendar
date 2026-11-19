@@ -804,15 +804,17 @@ class _AppShellState extends State<AppShell> {
                   ),
                 const Divider(),
                 Text('เพิ่ม ${preview.insertCount} รายการ'),
+                for (final title in preview.insertTitles)
+                  Text('  + $title'),
                 Text('แก้ไข ${preview.updateCount} รายการ'),
+                for (final title in preview.updateTitles)
+                  Text('  ↻ $title'),
                 Text('ลบ ${preview.deleteCount} รายการ'),
                 if (preview.deleteTitles.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   const Text('รายการที่จะลบจาก Calendar:'),
-                  for (final title in preview.deleteTitles.take(10))
+                  for (final title in preview.deleteTitles)
                     Text('• $title'),
-                  if (preview.deleteTitles.length > 10)
-                    Text('และอีก ${preview.deleteTitles.length - 10} รายการ'),
                 ],
                 if (preview.warnings.isNotEmpty) ...[
                   const Divider(),
