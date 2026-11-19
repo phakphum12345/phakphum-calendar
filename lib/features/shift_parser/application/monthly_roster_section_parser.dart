@@ -99,6 +99,21 @@ class MonthlyRosterSectionParser {
         warnings: warnings,
       );
 
+      final dateAnomalies = _validateDateColumns(
+        daysByColumn: daysByColumn,
+        datesByColumn: datesByColumn,
+        start: start,
+        end: end,
+      );
+      warnings.addAll(
+        dateAnomalies
+            .where((anomaly) => anomaly.code != 'unresolved_date')
+            .map(
+              (anomaly) =>
+                  'ต้องตรวจสอบวันที่ในส่วน "$title": ${anomaly.message}',
+            ),
+      );
+
       final dateColumns = <MonthlyRosterDateColumn>[
         for (final entry in datesByColumn.entries)
           MonthlyRosterDateColumn(
@@ -134,6 +149,7 @@ class MonthlyRosterSectionParser {
           rosterRows: List.unmodifiable(rosterRows),
           startDate: start,
           endDate: end,
+          dateAnomalies: List.unmodifiable(dateAnomalies),
         ),
       );
     }
@@ -202,6 +218,7 @@ class MonthlyRosterSectionParser {
           rosterRows: section.rosterRows,
           startDate: section.startDate,
           endDate: section.endDate,
+          dateAnomalies: section.dateAnomalies,
         ),
       );
     }
@@ -300,6 +317,178 @@ class MonthlyRosterSectionParser {
       }
     }
     return result;
+  }
+
+  List<MonthlyRosterDateAnomaly> _validateDateColumns({
+    required Map<int, int> daysByColumn,
+    required Map<int, DateTime> datesByColumn,
+    required DateTime start,
+    required DateTime end,
+  }) {
+    final anomalies = <MonthlyRosterDateAnomaly>[];
+    final columns = daysByColumn.keys.toList()..sort();
+    final columnsByDay = <int, List<int>>{};
+    for (final column in columns) {
+      columnsByDay.putIfAbsent(daysByColumn[column]!, () => []).add(column);
+    }
+
+    // Repeated day numbers are valid across different months only when the
+    // declared period actually contains that many occurrences of the day.
+    for (final entry in columnsByDay.entries) {
+      var possibleOccurrences = 0;
+      for (
+        var date = DateTime(start.year, start.month, start.day);
+        !date.isAfter(end);
+        date = DateTime(date.year, date.month, date.day + 1)
+      ) {
+        if (date.day == entry.key) possibleOccurrences++;
+      }
+      if (entry.value.length > 1 &&
+          entry.value.length > possibleOccurrences) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'duplicate_day',
+            displayedDay: entry.key,
+            columnIndex: entry.value[1],
+            message: 'พบเลขวันที่ ${entry.key} ซ้ำในช่วงวันที่ของส่วนนี้',
+          ),
+        );
+      }
+    }
+
+    final expectedDayCount = DateTime.utc(
+      end.year, end.month, end.day,
+    ).difference(DateTime.utc(start.year, start.month, start.day)).inDays + 1;
+    final completeRangeHeader = columns.length == expectedDayCount;
+    // Treat near-full headers as complete enough to validate their endpoints;
+    // short sample grids remain valid when they cover only part of a period.
+    final nearCompleteRangeHeader =
+        columns.length >= (expectedDayCount * 0.9).ceil();
+    DateTime? previousResolved;
+    for (final column in columns) {
+      final resolved = datesByColumn[column];
+      if (resolved == null) {
+        if (!completeRangeHeader) {
+          final day = daysByColumn[column]!;
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'unresolved_date',
+              displayedDay: day,
+              columnIndex: column,
+              message: 'วันที่ $day ที่คอลัมน์ ${column + 1} เรียงผิดลำดับหรืออยู่นอกช่วงที่ระบุ',
+            ),
+          );
+        }
+        continue;
+      }
+      if (nearCompleteRangeHeader && previousResolved != null) {
+        final gap = DateTime.utc(
+          resolved.year, resolved.month, resolved.day,
+        ).difference(DateTime.utc(
+          previousResolved.year, previousResolved.month, previousResolved.day,
+        )).inDays;
+        if (gap > 1) {
+          final missing = <String>[];
+          for (var offset = 1; offset < gap; offset++) {
+            final missingDate = DateTime(
+              previousResolved.year,
+              previousResolved.month,
+              previousResolved.day + offset,
+            );
+            missing.add(_formatDate(missingDate));
+          }
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'missing_dates',
+              columnIndex: column,
+              displayedDay: daysByColumn[column],
+              message: 'ลำดับวันที่ขาด ${missing.join(', ')} ก่อนคอลัมน์ ${column + 1}',
+            ),
+          );
+        } else if (gap <= 0) {
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'out_of_order',
+              columnIndex: column,
+              displayedDay: daysByColumn[column],
+              message: 'วันที่ในคอลัมน์ ${column + 1} ไม่เรียงตามปฏิทิน',
+            ),
+          );
+        }
+      }
+      previousResolved = resolved;
+    }
+
+    if (!completeRangeHeader && nearCompleteRangeHeader && columns.isNotEmpty) {
+      final firstResolved = datesByColumn[columns.first];
+      if (firstResolved == null ||
+          firstResolved.year != start.year ||
+          firstResolved.month != start.month ||
+          firstResolved.day != start.day) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'missing_start_date',
+            columnIndex: columns.first,
+            displayedDay: daysByColumn[columns.first],
+            message: 'หัวตารางขาดวันเริ่มต้น ${_formatDate(start)}',
+          ),
+        );
+      }
+      final lastResolved = datesByColumn[columns.last];
+      if (lastResolved == null ||
+          lastResolved.year != end.year ||
+          lastResolved.month != end.month ||
+          lastResolved.day != end.day) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'missing_end_date',
+            columnIndex: columns.last,
+            displayedDay: daysByColumn[columns.last],
+            message: 'หัวตารางขาดวันสิ้นสุด ${_formatDate(end)}',
+          ),
+        );
+      }
+    }
+
+    if (completeRangeHeader) {
+      final resolvedKeys = datesByColumn.values
+          .map((date) => '${date.year}-${date.month}-${date.day}')
+          .toSet();
+      final missing = <String>[];
+      for (var offset = 0; offset < expectedDayCount; offset++) {
+        final expected = DateTime(start.year, start.month, start.day + offset);
+        final expectedKey = '${expected.year}-${expected.month}-${expected.day}';
+        if (!resolvedKeys.contains(expectedKey)) {
+          missing.add(_formatDate(expected));
+        }
+        final actualDay = daysByColumn[columns[offset]]!;
+        if (actualDay != expected.day) {
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'day_sequence_mismatch',
+              columnIndex: columns[offset],
+              displayedDay: actualDay,
+              message: 'คอลัมน์ ${columns[offset] + 1} แสดงวันที่ $actualDay แต่ตามช่วงที่ระบุควรเป็น ${expected.day}',
+            ),
+          );
+        }
+      }
+      if (missing.isNotEmpty) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'missing_dates',
+            message: 'ไม่สามารถจับคู่วันที่ในช่วงที่ระบุได้ครบ: ${missing.join(', ')}',
+          ),
+        );
+      }
+    }
+
+    final unique = <String, MonthlyRosterDateAnomaly>{};
+    for (final anomaly in anomalies) {
+      final key = '${anomaly.code}|${anomaly.columnIndex ?? ''}|${anomaly.displayedDay ?? ''}|${anomaly.message}';
+      unique.putIfAbsent(key, () => anomaly);
+    }
+    return List.unmodifiable(unique.values);
   }
 
   Map<int, DateTime> _resolveDatesByColumn({
@@ -447,52 +636,55 @@ class MonthlyRosterShiftAdapter {
     if (targets.isEmpty) return const [];
 
     final shiftsByKey = <String, Shift>{};
-    for (final assignment in report.assignments) {
-      final worker = assignment.workerName.trim();
-      final normalizedWorker = _compact(worker);
-      if (worker.isEmpty || !targets.any(normalizedWorker.contains)) {
-        continue;
+    for (final section in report.sections) {
+      if (section.hasBlockingDateAnomalies) continue;
+      for (final assignment in section.assignments) {
+        final worker = assignment.workerName.trim();
+        final normalizedWorker = _compact(worker);
+        if (worker.isEmpty || !targets.any(normalizedWorker.contains)) {
+          continue;
+        }
+  
+        final rule = _ruleForLabel(
+          assignment.rowLabel,
+          shiftTemplates: shiftTemplates,
+        );
+        if (rule == null) continue;
+  
+        final date = assignment.date;
+        final start = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          rule.startHour,
+          rule.startMinute,
+        );
+        var end = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          rule.endHour,
+          rule.endMinute,
+        );
+        if (!end.isAfter(start)) end = end.add(const Duration(days: 1));
+  
+        final sourceColor = _colorValue(assignment.backgroundColor);
+        final colorMatch = ShiftColorService.classify(sourceColor);
+        final shift = Shift(
+          code: rule.code,
+          rowLabel: assignment.rowLabel,
+          assignedName: worker,
+          start: start,
+          end: end,
+          sheetTitle: assignment.sheetTitle ?? assignment.sectionTitle,
+          cell: assignment.sourceCell,
+          category: colorMatch?.category ?? rule.category,
+          sourceColorValue: sourceColor,
+          sourceSpreadsheetId: assignment.spreadsheetId,
+          sourceSheetId: assignment.sheetId,
+        );
+        shiftsByKey.putIfAbsent(shift.sourceIdentityKey, () => shift);
       }
-
-      final rule = _ruleForLabel(
-        assignment.rowLabel,
-        shiftTemplates: shiftTemplates,
-      );
-      if (rule == null) continue;
-
-      final date = assignment.date;
-      final start = DateTime(
-        date.year,
-        date.month,
-        date.day,
-        rule.startHour,
-        rule.startMinute,
-      );
-      var end = DateTime(
-        date.year,
-        date.month,
-        date.day,
-        rule.endHour,
-        rule.endMinute,
-      );
-      if (!end.isAfter(start)) end = end.add(const Duration(days: 1));
-
-      final sourceColor = _colorValue(assignment.backgroundColor);
-      final colorMatch = ShiftColorService.classify(sourceColor);
-      final shift = Shift(
-        code: rule.code,
-        rowLabel: assignment.rowLabel,
-        assignedName: worker,
-        start: start,
-        end: end,
-        sheetTitle: assignment.sheetTitle ?? assignment.sectionTitle,
-        cell: assignment.sourceCell,
-        category: colorMatch?.category ?? rule.category,
-        sourceColorValue: sourceColor,
-        sourceSpreadsheetId: assignment.spreadsheetId,
-        sourceSheetId: assignment.sheetId,
-      );
-      shiftsByKey.putIfAbsent(shift.sourceIdentityKey, () => shift);
     }
 
     return shiftsByKey.values.toList()

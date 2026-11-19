@@ -945,6 +945,7 @@ class AppController extends ChangeNotifier implements ControllerState {
             monthlyConversion.shifts.map(_applyShiftOverride),
           ),
           unconvertedAssignments: monthlyConversion.unconvertedAssignments,
+          blockingDateAnomalies: monthlyConversion.blockingDateAnomalies,
         );
         final monthlyParsed = monthlyRosterConversion.shifts;
         // Analyze both readers together; monthly-only candidates are retained
@@ -1292,6 +1293,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           monthlyConversion.shifts.map(_applyShiftOverride),
         ),
         unconvertedAssignments: monthlyConversion.unconvertedAssignments,
+        blockingDateAnomalies: monthlyConversion.blockingDateAnomalies,
       );
       final monthlyParsed = monthlyRosterConversion.shifts;
       // Use the same analyzer for local imports as for Google Sheets so a
@@ -2012,6 +2014,22 @@ class AppController extends ChangeNotifier implements ControllerState {
 
   Future<ShiftCalendarWorkflowController>
   _createPreparedCalendarWorkflow() async {
+    final dateAnomalies = monthlyRoster.blockingDateAnomalies;
+    if (dateAnomalies.isNotEmpty) {
+      final details = monthlyRoster.sections
+          .where((section) => section.hasBlockingDateAnomalies)
+          .expand(
+            (section) => section.dateAnomalies.map(
+              (anomaly) => '${section.title}: ${anomaly.message}',
+            ),
+          )
+          .take(8)
+          .join('；');
+      throw StateError(
+        'พบข้อผิดปกติของแถววันที่ในตารางเวร จึงหยุดก่อนสร้าง Preview และก่อนเชื่อมต่อ Google Calendar '
+        'กรุณาตรวจสอบวันที่ซ้ำ วันที่ขาด หรือวันที่เรียงผิดลำดับ: $details',
+      );
+    }
     final schedule = _scheduleForActivePeriods();
     final assignmentCount = schedule.months.fold<int>(
       0,
