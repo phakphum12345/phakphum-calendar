@@ -41,6 +41,7 @@ import '../services/drive_ownership_service.dart';
 import '../services/google_auth_service.dart';
 import '../services/shift_color_service.dart';
 import 'app_shell_navigation.dart';
+import 'empty_roster_sync_diagnostic.dart';
 import 'first_login_setup_dialog.dart';
 import 'google_sign_in_button.dart';
 
@@ -2267,6 +2268,43 @@ class _DashboardPageState extends State<_DashboardPage> {
                           ),
                         ],
                       ),
+                      if (controller.hasRosterSource &&
+                          controller.shifts.isEmpty) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          key: const Key('empty-roster-sync-diagnostic'),
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            buildEmptyRosterSyncDiagnostic(
+                              selectedPeriodsLabel:
+                                  controller.settings.effectivePeriods.isEmpty
+                                  ? 'ยังไม่ได้เลือกเดือน'
+                                  : controller.settings.effectivePeriods
+                                      .map((period) =>
+                                          '${period.month}/${period.year + 543}')
+                                      .join(', '),
+                              parsedShiftCount:
+                                  controller.loadedRosterShiftCount,
+                              filteredShiftCount:
+                                  controller.filteredRosterShiftCount,
+                              monthlyAssignmentCount:
+                                  controller.monthlyRoster.assignments.length,
+                              unconvertedAssignmentCount: controller
+                                  .monthlyRosterConversion
+                                  .unconvertedAssignments
+                                  .length,
+                              warnings: controller.monthlyRoster.warnings,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
