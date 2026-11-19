@@ -275,6 +275,7 @@ class _AppShellState extends State<AppShell> {
               controllerFactory: widget.shiftExchangeControllerFactory,
               historyApiClient: _shiftTransactionApiClient,
               onTransactionsLoaded: controller.updateShiftTransactions,
+              accountId: controller.auth.account?.id,
             ),
             MonthlyScheduleReportPage(
               schedule: controller.effectiveSchedule,
