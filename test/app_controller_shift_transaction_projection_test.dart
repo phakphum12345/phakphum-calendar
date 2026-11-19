@@ -89,7 +89,7 @@ void main() {
     controller.updateShiftTransactions([transaction]);
 
     expect(
-      controller.canonicalSchedule.month(date)!.day(date)!.assignments.single.employee.employeeCode,
+      controller.canonicalSchedule.month(date)!.day(date)!.assignments.first.employee.employeeCode,
       'A',
     );
     expect(
@@ -105,7 +105,7 @@ void main() {
       controller.canonicalSchedule.month(date)!.day(date)!.assignments.single.employee.employeeCode,
       'A',
     );
-    expect(controller.effectiveShifts.single.assignedName, 'Bob');
+    expect(controller.effectiveShifts.first.assignedName, 'Bob');
 
     controller.clearShiftTransactions();
     expect(controller.effectiveShifts.first.assignedName, 'Alice');
