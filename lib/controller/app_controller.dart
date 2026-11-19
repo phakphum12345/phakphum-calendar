@@ -28,7 +28,7 @@ import '../features/shift_parser/application/monthly_roster_section_parser.dart'
 import '../features/shift_exchange/application/shift_transaction_schedule_projector.dart';
 import '../features/shift_exchange/infrastructure/shift_transaction_api_client.dart';
 import '../features/shift_exchange/application/shift_transaction_calendar_sync_preview.dart';
-import '../features/workflow/application/canonical_schedule_event_mapper.dart';
+import '../features/shift_exchange/application/shift_transaction_calendar_sync_mapper.dart';
 import '../features/shift_parser/application/monthly_roster_conversion_diagnostics.dart';
 import '../features/shift_parser/application/smart_roster_analyze_generator.dart';
 import '../features/shift_parser/domain/monthly_roster_section.dart';
@@ -1828,7 +1828,10 @@ class AppController extends ChangeNotifier implements ControllerState {
       _pendingShiftTransactionCalendarSync?.workflow.dispose();
       _pendingShiftTransactionCalendarSync = null;
       final schedule = _scheduleForActivePeriods();
-      final syncIds = _transactionCalendarSyncIds(schedule, transaction);
+      final syncIds = const ShiftTransactionCalendarSyncMapper().map(
+        schedule: schedule,
+        transaction: transaction,
+      );
       final workflow = await _calendarWorkflowControllerFactory();
       try {
         await workflow.prepareSchedule(schedule);
@@ -1897,7 +1900,10 @@ class AppController extends ChangeNotifier implements ControllerState {
           !identical(pending.sourceSchedule, canonicalSchedule)) {
         throw StateError('ตัวอย่างหมดอายุแล้ว กรุณาเตรียม Preview ใหม่');
       }
-      final currentIds = _transactionCalendarSyncIds(_scheduleForActivePeriods(), transaction);
+      final currentIds = const ShiftTransactionCalendarSyncMapper().map(
+        schedule: _scheduleForActivePeriods(),
+        transaction: transaction,
+      );
       if (currentIds.length != pending.syncIds.length ||
           !currentIds.toSet().containsAll(pending.syncIds)) {
         throw StateError('ตารางเวรเปลี่ยนหลัง Preview กรุณาตรวจสอบใหม่');
@@ -1968,64 +1974,6 @@ class AppController extends ChangeNotifier implements ControllerState {
     _pendingShiftTransactionCalendarSync = null;
   }
 
-  List<String> _transactionCalendarSyncIds(
-    Schedule schedule,
-    ShiftTransactionSnapshot transaction,
-  ) {
-    final candidates = const CanonicalScheduleEventMapper().map(schedule);
-    final syncIds = <String>[];
-    for (final transfer in transaction.transfers) {
-      final start = DateTime.tryParse(
-        transfer['starts_at']?.toString() ?? '',
-      )?.toLocal();
-      final end = DateTime.tryParse(
-        transfer['ends_at']?.toString() ?? '',
-      )?.toLocal();
-      final target = transfer['to_employee_id']?.toString();
-      if (start == null || end == null || target == null || !end.isAfter(start)) {
-        throw StateError('ข้อมูลเวลาและผู้รับของธุรกรรมไม่สมบูรณ์');
-      }
-
-      final matches = <String>[];
-      var candidateIndex = 0;
-      for (final month in schedule.months) {
-        for (final day in month.days) {
-          final date = DateTime(day.date.year, day.date.month, day.date.day);
-          for (final assignment in day.assignments) {
-            final candidate = candidates[candidateIndex++];
-            final assignmentStart = date.add(assignment.shift.startTime);
-            var assignmentEnd = date.add(assignment.shift.endTime);
-            if (!assignmentEnd.isAfter(assignmentStart)) {
-              assignmentEnd = assignmentEnd.add(const Duration(days: 1));
-            }
-            final employee = assignment.employee;
-            final identityMatches = employee.id == target ||
-                employee.employeeCode == target ||
-                employee.fullName == target ||
-                employee.displayName == target;
-            if (identityMatches &&
-                assignment.shift.code == transfer['shift_code']?.toString() &&
-                assignmentStart.isAtSameMomentAs(start) &&
-                assignmentEnd.isAtSameMomentAs(end)) {
-              matches.add(candidate.syncId);
-            }
-          }
-        }
-      }
-      if (matches.length != 1) {
-        throw StateError(
-          matches.isEmpty
-              ? 'ไม่พบเวรปลายทางในตารางผลลัพธ์'
-              : 'พบเวรปลายทางมากกว่าหนึ่งรายการ ไม่สามารถจับคู่ Event ID ได้',
-        );
-      }
-      syncIds.add(matches.single);
-    }
-    if (syncIds.toSet().length != syncIds.length) {
-      throw StateError('หลายธุรกรรมชี้ไปยัง Calendar Event เดียวกัน');
-    }
-    return List.unmodifiable(syncIds);
-  }
 
   /// Prepares a preview for a pre-mapped list of desired calendar event
   /// candidates (used for swap/one-off previews) and returns the computed diff.
