@@ -24,7 +24,7 @@ import '../domain/repositories/shift_template_repository.dart';
 import '../core/result/result.dart';
 import '../features/schedule/data/legacy_schedule_adapter.dart';
 import '../features/google_sheets/domain/sheet_color.dart';
-import '../features/shift_parser/application/monthly_roster_section_parser.dart';
+import '../features/shift_parser/application/monthly_roster_workbook_scanner.dart';
 import '../features/shift_exchange/application/shift_transaction_schedule_projector.dart';
 import '../features/shift_exchange/infrastructure/shift_transaction_api_client.dart';
 import '../features/shift_exchange/application/shift_transaction_calendar_sync_preview.dart';
@@ -1444,55 +1444,11 @@ class AppController extends ChangeNotifier implements ControllerState {
     required String spreadsheetId,
     bool applyPeriodFilter = true,
   }) {
-    final sections = <MonthlyRosterSection>[];
-    final warnings = <String>[];
-    const parser = MonthlyRosterSectionParser();
-
-    for (var sheetIndex = 0; sheetIndex < snapshots.length; sheetIndex++) {
-      final snapshot = snapshots[sheetIndex];
-      final cells = <NormalizedCell>[];
-      for (var rowIndex = 0; rowIndex < snapshot.rows.length; rowIndex++) {
-        final row = snapshot.rows[rowIndex];
-        for (var columnIndex = 0; columnIndex < row.length; columnIndex++) {
-          final value = row[columnIndex];
-          final text = value?.toString().trim();
-          if ((text == null || text.isEmpty) &&
-              snapshot.backgroundColorAt(rowIndex, columnIndex) == null) {
-            continue;
-          }
-          cells.add(
-            NormalizedCell(
-              sheetId: snapshot.sheetId ?? sheetIndex,
-              sheetTitle: snapshot.title,
-              a1: '',
-              rowIndex: rowIndex,
-              columnIndex: columnIndex,
-              text: text == null || text.isEmpty ? null : text,
-              rawValue: value,
-              backgroundColor: _sheetColor(
-                snapshot.backgroundColorAt(rowIndex, columnIndex),
-              ),
-            ),
-          );
-        }
-      }
-      final report = parser.parse(
-        ShiftParserInput(
-          spreadsheetId: spreadsheetId,
-          spreadsheetTitle: selectedSourceSheetTitle,
-          sheetId: snapshot.sheetId ?? sheetIndex,
-          sheetTitle: snapshot.title,
-          timeZone: 'Asia/Bangkok',
-          cells: cells,
-        ),
-      );
-      sections.addAll(report.sections);
-      warnings.addAll(report.warnings);
-    }
-
-    final report = MonthlyRosterParseReport(
-      sections: List.unmodifiable(sections),
-      warnings: List.unmodifiable(warnings),
+    final report = const MonthlyRosterWorkbookScanner().scan(
+      snapshots: snapshots,
+      spreadsheetId: spreadsheetId,
+      spreadsheetTitle: selectedSourceSheetTitle,
+      timeZone: 'Asia/Bangkok',
     );
     return !applyPeriodFilter || settings.effectivePeriods.isEmpty
         ? report
