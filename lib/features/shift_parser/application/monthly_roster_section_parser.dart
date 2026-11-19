@@ -83,10 +83,9 @@ class MonthlyRosterSectionParser {
       // own day sequence is strictly increasing and stays inside that month.
       // Never infer a month for a sequence that wraps from 30/31 back to 1;
       // that may be a cross-month roster and needs an explicit section range.
-      final sheetFallback = headerRows.length == 1
-          ? tabPeriod
-          : _canUseSingleMonthTabFallback(tabPeriod, daysByColumn);
-      final period = explicitPeriod ?? (sheetFallback ? tabPeriod : null);
+      final canUseSheetFallback = headerRows.length == 1 ||
+          _canUseSingleMonthTabFallback(tabPeriod, daysByColumn);
+      final period = explicitPeriod ?? (canUseSheetFallback ? tabPeriod : null);
       if (period == null) {
         warnings.add(
           'ไม่พบช่วงวันที่เฉพาะของส่วน "$title"; '
