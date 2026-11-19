@@ -28,6 +28,63 @@ void main() {
     expect(shifts.map((shift) => shift.assignedName), ['สมชาย', 'ภาคภูมิ']);
   });
 
+  test('does not truncate fractional numeric values in legacy date headers', () {
+    final days = <Object?>[
+      'วันที่',
+      1.5,
+      ...List<int>.generate(29, (index) => index + 2),
+    ];
+    final row = _row('P1 เช้า');
+    row[1] = 'ผู้ใช้งานทดสอบ';
+
+    final shifts = parser.parse(
+      snapshots: [
+        SheetSnapshot(
+          title: 'พฤศจิกายน 2569',
+          rows: [
+            ['ประจำเดือน พฤศจิกายน 2569'],
+            days,
+            row,
+          ],
+        ),
+      ],
+      targetName: 'ผู้ใช้งานทดสอบ',
+      year: 2026,
+      month: 11,
+    );
+
+    expect(shifts, isEmpty);
+  });
+
+  test('accepts integer-valued doubles in legacy date headers', () {
+    final days = <Object?>[
+      'วันที่',
+      1.0,
+      ...List<int>.generate(29, (index) => index + 2),
+    ];
+    final row = _row('P1 เช้า');
+    row[1] = 'ผู้ใช้งานทดสอบ';
+
+    final shifts = parser.parse(
+      snapshots: [
+        SheetSnapshot(
+          title: 'พฤศจิกายน 2569',
+          rows: [
+            ['ประจำเดือน พฤศจิกายน 2569'],
+            days,
+            row,
+          ],
+        ),
+      ],
+      targetName: 'ผู้ใช้งานทดสอบ',
+      year: 2026,
+      month: 11,
+    );
+
+    expect(shifts, hasLength(1));
+    expect(shifts.single.start, DateTime(2026, 11, 1, 8));
+  });
+
   test('maps rollover dates and overnight shift times', () {
     final days = <Object?>[
       'เวร',
