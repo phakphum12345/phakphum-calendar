@@ -11,6 +11,12 @@ void main() {
     ]).values.single;
 
     expect(timeline.workerChain, ['A', 'B', 'A']);
+    expect(timeline.start, DateTime(2026, 8, 18, 8));
+    expect(timeline.end, DateTime(2026, 8, 18, 16));
+    expect(timeline.shiftCode, 'UP3');
+    expect(timeline.sheetTitle, '16 สค - 15 กย 69');
+    expect(timeline.rowLabel, 'P3 เช้า');
+    expect(timeline.column, 'D');
   });
 
   test('keeps onward transfer A to B to C', () {
