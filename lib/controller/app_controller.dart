@@ -1363,11 +1363,19 @@ class AppController extends ChangeNotifier implements ControllerState {
           spreadsheetId: spreadsheetId,
           applyPeriodFilter: false,
         );
-        _allMonthlyRoster = parsedMonthly.sections.isEmpty
-            ? MonthlyRosterParseReport.fromShifts(
-                _parseAllRosterSnapshots(snapshots, fallback: const []),
-              )
-            : parsedMonthly;
+        if (parsedMonthly.sections.isEmpty) {
+          final recovered = MonthlyRosterParseReport.fromShifts(
+            _parseAllRosterSnapshots(snapshots, fallback: const []),
+          );
+          _allMonthlyRoster = MonthlyRosterParseReport(
+            sections: recovered.sections,
+            warnings: [...parsedMonthly.warnings, ...recovered.warnings],
+            sourceSheetCount: parsedMonthly.sourceSheetCount,
+            sheetSummaries: parsedMonthly.sheetSummaries,
+          );
+        } else {
+          _allMonthlyRoster = parsedMonthly;
+        }
         monthlyRoster = _filterMonthlyReportToSelectedPeriods(
           _allMonthlyRoster,
         );
@@ -1418,9 +1426,19 @@ class AppController extends ChangeNotifier implements ControllerState {
         legacyShifts: legacyParsed,
         monthlyShifts: monthlyParsed,
       );
-      _allMonthlyRoster = parsedMonthly.sections.isEmpty
-          ? MonthlyRosterParseReport.fromShifts(smartAnalysis.mergedShifts)
-          : parsedMonthly;
+      if (parsedMonthly.sections.isEmpty) {
+        final recovered = MonthlyRosterParseReport.fromShifts(
+          smartAnalysis.mergedShifts,
+        );
+        _allMonthlyRoster = MonthlyRosterParseReport(
+          sections: recovered.sections,
+          warnings: [...parsedMonthly.warnings, ...recovered.warnings],
+          sourceSheetCount: parsedMonthly.sourceSheetCount,
+          sheetSummaries: parsedMonthly.sheetSummaries,
+        );
+      } else {
+        _allMonthlyRoster = parsedMonthly;
+      }
       monthlyRoster = _filterMonthlyReportToSelectedPeriods(
         _allMonthlyRoster,
       );
