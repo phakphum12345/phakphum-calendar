@@ -28,10 +28,22 @@ class RosterAssignmentTimeline {
   const RosterAssignmentTimeline({
     required this.positionKey,
     required this.versions,
+    this.start,
+    this.end,
+    this.shiftCode,
+    this.sheetTitle,
+    this.rowLabel,
+    this.column,
   });
 
   final String positionKey;
   final List<RosterAssignmentVersion> versions;
+  final DateTime? start;
+  final DateTime? end;
+  final String? shiftCode;
+  final String? sheetTitle;
+  final String? rowLabel;
+  final String? column;
 
   List<String> get workerChain => [
     for (final version in versions) version.assignedName,
@@ -56,12 +68,14 @@ Map<String, RosterAssignmentTimeline> buildRosterAssignmentTimelines(
   final sorted = revisions.toList()
     ..sort((left, right) => left.modifiedAt.compareTo(right.modifiedAt));
   final versionsByPosition = <String, List<RosterAssignmentVersion>>{};
+  final firstShiftByPosition = <String, Shift>{};
 
   for (final revision in sorted) {
     final byPosition = <String, Shift>{
       for (final shift in revision.shifts) rosterPositionKey(shift): shift,
     };
     for (final entry in byPosition.entries) {
+      firstShiftByPosition.putIfAbsent(entry.key, () => entry.value);
       final assignedName = entry.value.assignedName.trim();
       if (assignedName.isEmpty) continue;
       final versions = versionsByPosition.putIfAbsent(entry.key, () => []);
@@ -86,6 +100,14 @@ Map<String, RosterAssignmentTimeline> buildRosterAssignmentTimelines(
         entry.key: RosterAssignmentTimeline(
           positionKey: entry.key,
           versions: List.unmodifiable(entry.value),
+          start: firstShiftByPosition[entry.key]!.start,
+          end: firstShiftByPosition[entry.key]!.end,
+          shiftCode: firstShiftByPosition[entry.key]!.code,
+          sheetTitle: firstShiftByPosition[entry.key]!.sheetTitle,
+          rowLabel: firstShiftByPosition[entry.key]!.rowLabel,
+          column: RegExp(r'^[A-Za-z]+')
+              .firstMatch(firstShiftByPosition[entry.key]!.cell)
+              ?.group(0),
         ),
   };
 }
