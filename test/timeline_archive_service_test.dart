@@ -111,7 +111,7 @@ void main() {
     );
 
     final skipped = <String>[];
-    final records = await archive.readRevisions(
+    final records = await archive.readRevisionsWithLegacyAccountScope(
       accountId: 'user@example.com',
       fileId: 'sheet-1',
       onRevisionSkipped: (revisionId, error) {
