@@ -2391,6 +2391,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       _timelineLoadGeneration++;
       timelineLoading = false;
       _observedAccountId = accountId;
+      _shiftTransactions = const [];
       settings = settings.clearRosterSelection();
       _autoRefreshTimer?.cancel();
       _replaceLegacyShifts(const []);
