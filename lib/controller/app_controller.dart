@@ -24,6 +24,7 @@ import '../domain/repositories/shift_template_repository.dart';
 import '../core/result/result.dart';
 import '../features/schedule/data/legacy_schedule_adapter.dart';
 import '../features/shift_parser/application/monthly_roster_workbook_scanner.dart';
+import '../features/shift_parser/application/monthly_roster_section_parser.dart';
 import '../features/shift_exchange/application/shift_transaction_schedule_projector.dart';
 import '../features/shift_exchange/infrastructure/shift_transaction_api_client.dart';
 import '../features/shift_exchange/application/shift_transaction_calendar_sync_preview.dart';
