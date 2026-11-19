@@ -428,7 +428,7 @@ class MonthlyRosterSectionParser {
             code: 'missing_start_date',
             columnIndex: columns.first,
             displayedDay: daysByColumn[columns.first],
-            message: 'หัวตารางขาดวันเริ่มต้น ' + _formatDate(start),
+            message: 'หัวตารางขาดวันเริ่มต้น ${_formatDate(start)}',
           ),
         );
       }
@@ -442,7 +442,7 @@ class MonthlyRosterSectionParser {
             code: 'missing_end_date',
             columnIndex: columns.last,
             displayedDay: daysByColumn[columns.last],
-            message: 'หัวตารางขาดวันสิ้นสุด ' + _formatDate(end),
+            message: 'หัวตารางขาดวันสิ้นสุด ${_formatDate(end)}',
           ),
         );
       }
