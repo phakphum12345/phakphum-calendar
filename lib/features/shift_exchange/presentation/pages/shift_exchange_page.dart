@@ -274,7 +274,7 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
         const SizedBox(height: 16),
         if (widget.historyApiClient != null)
           ShiftTransactionHistoryPanel(
-            key: ValueKey('${widget.accountId}-${widget.organizationMode}-${_selectedOrganization?.id}-${_historyRevision}'),
+            key: ValueKey('${widget.accountId}-${widget.organizationMode}-${_selectedOrganization?.id}-$_historyRevision'),
             apiClient: widget.historyApiClient!,
             approvableOrganizationIds: _approvableOrganizationIds,
             mode: widget.organizationMode ? 'organization' : 'personal',
