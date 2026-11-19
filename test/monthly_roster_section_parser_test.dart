@@ -265,6 +265,40 @@ void main() {
     expect(report.sections.single.title, 'ต้นฉบับ: กล้อง');
     expect(report.assignments.single.rowLabel, 'รายการจากกล้อง');
   });
+  test('preserves unlabeled GEN afternoon continuation rows', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'คลินิกพิเศษ',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['GEN คลินิกพิเศษ ประจำเดือน พฤศจิกายน พ.ศ. 2569']),
+        ..._row(1, ['วันที่', 1, 2, 3, 4, 5, 6, 7]),
+        ..._row(2, ['GEN', 'บุคลากรเช้า']),
+        ..._row(3, [null, 'บุคลากรบ่าย']),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(
+      report.sections.single.rosterRows.map((row) => row.label),
+      ['GEN', 'GEN บ่าย'],
+    );
+    expect(report.assignments, hasLength(2));
+    expect(report.assignments.last.workerName, 'บุคลากรบ่าย');
+
+    final shifts = const MonthlyRosterShiftAdapter().parseForWorkers(
+      report,
+      targetNames: ['บุคลากรบ่าย'],
+    );
+    expect(shifts, hasLength(1));
+    expect(shifts.single.code, 'AG');
+    expect(shifts.single.start, DateTime(2026, 11, 1, 16, 30));
+    expect(shifts.single.end, DateTime(2026, 11, 1, 20));
+  });
+
   test('converts monthly roster assignments to calendar shifts for the selected worker', () {
     final labels = <String>[
       'P1 เช้า',
