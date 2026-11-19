@@ -207,6 +207,7 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _selectEdition(AppEdition value) async {
     await editionRepository.save(value);
+    widget.controller.clearShiftTransactions();
     widget.controller.shiftTimelineEnabled =
         value == AppEdition.organization;
     if (mounted) {
@@ -264,18 +265,20 @@ class _AppShellState extends State<AppShell> {
             if (currentEdition == AppEdition.organization) ...[
               RosterNameListPage(controller: controller, perform: _perform),
               EmployeeDirectoryPage(
-                schedule: controller.canonicalSchedule,
+                schedule: controller.effectiveSchedule,
                 controllerFactory: widget.employeeDirectoryControllerFactory,
               ),
             ],
             ShiftExchangePage(
-              schedule: controller.canonicalSchedule,
+              schedule: controller.effectiveSchedule,
               organizationMode: currentEdition == AppEdition.organization,
               controllerFactory: widget.shiftExchangeControllerFactory,
               historyApiClient: _shiftTransactionApiClient,
+              onTransactionsLoaded: controller.updateShiftTransactions,
+              accountId: controller.auth.account?.id,
             ),
             MonthlyScheduleReportPage(
-              schedule: controller.canonicalSchedule,
+              schedule: controller.effectiveSchedule,
               controllerFactory: widget.reportControllerFactory,
             ),
             if (currentEdition == AppEdition.organization)
@@ -1771,7 +1774,7 @@ class _DashboardPageState extends State<_DashboardPage> {
               const SizedBox(height: 16),
               DashboardSummaryGrid(
                 summary: widget.dashboardSummaryService.build(
-                  schedule: controller.canonicalSchedule,
+                  schedule: controller.effectiveSchedule,
                   now: DateTime.now(),
                   conflictCount: controller.pendingAlertCount,
                 ),
@@ -4169,7 +4172,8 @@ class _PreviewPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (controller.shifts.isEmpty) {
+    final visibleShifts = controller.effectiveShifts;
+    if (visibleShifts.isEmpty) {
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
@@ -4191,6 +4195,28 @@ class _PreviewPage extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _unconvertedAssignmentsWarning(context),
+        if (controller.shiftTransactionProjectionWarnings.isNotEmpty)
+          Card(
+            margin: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'ธุรกรรมที่ยังนำไปใช้กับตารางไม่ได้',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 6),
+                  for (final warning in controller.shiftTransactionProjectionWarnings)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text('• $warning'),
+                    ),
+                ],
+              ),
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
           child: Align(
@@ -4205,10 +4231,12 @@ class _PreviewPage extends StatelessWidget {
         Expanded(
           child: ListView.separated(
             padding: const EdgeInsets.all(20),
-            itemCount: controller.shifts.length,
+            itemCount: visibleShifts.length,
             separatorBuilder: (_, _) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
-              final shift = controller.shifts[index];
+              final shift = visibleShifts[index];
+              final isTransactionProjected =
+                  shift.assignedName != controller.shifts[index].assignedName;
               final exists = CalendarService.matchesExisting(
                 shift,
                 controller.existingKeys,
@@ -4232,7 +4260,9 @@ class _PreviewPage extends StatelessWidget {
                     builder: (context, constraints) {
                       final narrow = constraints.maxWidth < 620;
                       final selector = OutlinedButton.icon(
-                        onPressed: () => _editShift(context, index, shift),
+                        onPressed: isTransactionProjected
+                            ? null
+                            : () => _editShift(context, index, shift),
                         icon: const Icon(Icons.palette_outlined),
                         label: const Text('ตั้งวันที่ เวลา ชื่อ ประเภท และสี'),
                       );
@@ -4248,6 +4278,12 @@ class _PreviewPage extends StatelessWidget {
                                 shift.displayName,
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
+                              if (isTransactionProjected)
+                                const Chip(
+                                  visualDensity: VisualDensity.compact,
+                                  avatar: Icon(Icons.swap_horiz, size: 16),
+                                  label: Text('เจ้าของจากธุรกรรม'),
+                                ),
                               Chip(
                                 visualDensity: VisualDensity.compact,
                                 avatar: Icon(
@@ -4314,10 +4350,12 @@ class _PreviewPage extends StatelessWidget {
                       );
                       final check = Checkbox(
                         value: !shift.excluded,
-                        onChanged: (value) => controller.updateShift(
-                          index,
-                          excluded: value != true,
-                        ),
+                        onChanged: isTransactionProjected
+                            ? null
+                            : (value) => controller.updateShift(
+                                index,
+                                excluded: value != true,
+                              ),
                       );
                       final bar = Container(
                         width: 5,

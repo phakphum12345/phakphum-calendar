@@ -24,6 +24,8 @@ class ShiftExchangePage extends StatefulWidget {
     this.controller,
     this.controllerFactory,
     this.historyApiClient,
+    this.onTransactionsLoaded,
+    this.accountId,
     super.key,
   });
 
@@ -32,6 +34,8 @@ class ShiftExchangePage extends StatefulWidget {
   final ShiftExchangeController? controller;
   final ShiftExchangeController Function()? controllerFactory;
   final ShiftTransactionApiClient? historyApiClient;
+  final ValueChanged<List<ShiftTransactionSnapshot>>? onTransactionsLoaded;
+  final String? accountId;
 
   @override
   State<ShiftExchangePage> createState() => _ShiftExchangePageState();
@@ -48,8 +52,23 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
   String? _directoryError;
   List<ShiftTransactionOrganizationSnapshot> _organizations = const [];
   List<ShiftTransactionOrganizationMemberSnapshot> _members = const [];
+  List<ShiftTransactionSnapshot> _historyTransactions = const [];
   ShiftTransactionOrganizationSnapshot? _selectedOrganization;
   int _historyRevision = 0;
+
+  void _handleTransactionsLoaded(List<ShiftTransactionSnapshot> items) {
+    _historyTransactions = List.unmodifiable(items);
+    _publishScopedTransactions();
+  }
+
+  void _publishScopedTransactions() {
+    final scoped = widget.organizationMode
+        ? _historyTransactions.where(
+            (item) => item.organizationId == _selectedOrganization?.id,
+          )
+        : _historyTransactions.where((item) => item.organizationId == null);
+    widget.onTransactionsLoaded?.call(List.unmodifiable(scoped));
+  }
 
   Set<String> get _approvableOrganizationIds => {
     for (final organization in _organizations)
@@ -61,6 +80,26 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
   void initState() {
     super.initState();
     _loadDirectory();
+  }
+
+  @override
+  void didUpdateWidget(covariant ShiftExchangePage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.accountId != widget.accountId ||
+        oldWidget.organizationMode != widget.organizationMode) {
+      _organizations = const [];
+      _members = const [];
+      _historyTransactions = const [];
+      _selectedOrganization = null;
+      _directoryError = null;
+      _loadingDirectory = false;
+      _historyRevision++;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        widget.onTransactionsLoaded?.call(const []);
+        _loadDirectory();
+      });
+    }
   }
 
   @override
@@ -92,6 +131,7 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
           _members = members;
           _loadingDirectory = false;
         });
+        _publishScopedTransactions();
       } else {
         await api.getCurrentUser();
         if (!mounted) return;
@@ -114,9 +154,11 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
     setState(() {
       _selectedOrganization = selected;
       _members = const [];
+      _historyRevision++;
       _loadingDirectory = true;
       _directoryError = null;
     });
+    _publishScopedTransactions();
     try {
       final members = await widget.historyApiClient!.listOrganizationMembers(id);
       if (!mounted) return;
@@ -232,11 +274,12 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
         const SizedBox(height: 16),
         if (widget.historyApiClient != null)
           ShiftTransactionHistoryPanel(
-            key: ValueKey(_historyRevision),
+            key: ValueKey('${widget.accountId}-${widget.organizationMode}-${_selectedOrganization?.id}-$_historyRevision'),
             apiClient: widget.historyApiClient!,
             approvableOrganizationIds: _approvableOrganizationIds,
             mode: widget.organizationMode ? 'organization' : 'personal',
-            onChanged: () => setState(() => _historyRevision++),
+            organizationId: widget.organizationMode ? _selectedOrganization?.id : null,
+            onTransactionsLoaded: _handleTransactionsLoaded,
           ),
         const SizedBox(height: 16),
         Wrap(

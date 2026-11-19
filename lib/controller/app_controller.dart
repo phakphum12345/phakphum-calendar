@@ -25,6 +25,8 @@ import '../core/result/result.dart';
 import '../features/schedule/data/legacy_schedule_adapter.dart';
 import '../features/google_sheets/domain/sheet_color.dart';
 import '../features/shift_parser/application/monthly_roster_section_parser.dart';
+import '../features/shift_exchange/application/shift_transaction_schedule_projector.dart';
+import '../features/shift_exchange/infrastructure/shift_transaction_api_client.dart';
 import '../features/shift_parser/application/monthly_roster_conversion_diagnostics.dart';
 import '../features/shift_parser/application/smart_roster_analyze_generator.dart';
 import '../features/shift_parser/domain/monthly_roster_section.dart';
@@ -216,8 +218,40 @@ class AppController extends ChangeNotifier implements ControllerState {
   /// Canonical runtime schedule used by all legacy schedule orchestration.
   Schedule get canonicalSchedule => _legacySchedule.schedule;
 
-  /// Read-only compatibility projection consumed by the legacy shell.
+  /// Read-only compatibility projection for source editing and import workflows.
+  /// This remains the original canonical schedule, not a transaction overlay.
   List<Shift> get shifts => _legacySchedule.toLegacyShifts();
+
+  final ShiftTransactionScheduleProjector _shiftTransactionProjector =
+      const ShiftTransactionScheduleProjector();
+  List<ShiftTransactionSnapshot> _shiftTransactions = const [];
+
+  ShiftTransactionScheduleProjection get _shiftTransactionProjection =>
+      _shiftTransactionProjector.project(
+        source: canonicalSchedule,
+        transactions: _shiftTransactions,
+      );
+
+  /// Effective view with approved transfers applied; canonical source is untouched.
+  Schedule get effectiveSchedule => _shiftTransactionProjection.schedule;
+
+  /// Legacy read-only view of the effective schedule, retaining imported metadata.
+  List<Shift> get effectiveShifts =>
+      _legacySchedule.toLegacyShifts(schedule: effectiveSchedule);
+
+  List<String> get shiftTransactionProjectionWarnings =>
+      _shiftTransactionProjection.warnings;
+
+  void updateShiftTransactions(List<ShiftTransactionSnapshot> transactions) {
+    _shiftTransactions = List.unmodifiable(transactions);
+    notifyListeners();
+  }
+
+  void clearShiftTransactions() {
+    if (_shiftTransactions.isEmpty) return;
+    _shiftTransactions = const [];
+    notifyListeners();
+  }
   List<ShiftAlert> alerts = [];
   List<CalendarBusyPeriod> calendarPeriods = [];
   Set<String> _duplicateCalendarEventIds = {};
@@ -284,10 +318,10 @@ class AppController extends ChangeNotifier implements ControllerState {
   @override
   String? get message => error ?? status;
 
-  int get includedCount => shifts.where((shift) => !shift.excluded).length;
-  int get existingCount => shifts.where(_matchesCurrentCalendar).length;
+  int get includedCount => effectiveShifts.where((shift) => !shift.excluded).length;
+  int get existingCount => effectiveShifts.where(_matchesCurrentCalendar).length;
   int get duplicateCalendarEventCount => _duplicateCalendarEventIds.length;
-  int get newCount => shifts
+  int get newCount => effectiveShifts
       .where((shift) => !shift.excluded && !_matchesCurrentCalendar(shift))
       .length;
   int get pendingAlertCount => alerts.where((alert) => alert.isPending).length;
@@ -409,6 +443,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     await auth.signOut();
     _autoRefreshTimer?.cancel();
     _replaceLegacyShifts(const []);
+    _shiftTransactions = const [];
     alerts = [];
     calendarPeriods = [];
     existingKeys = {};
@@ -1550,7 +1585,7 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   Future<void> compareCalendar() async {
-    if (shifts.isEmpty) throw StateError('กรุณาอ่านตารางเวรก่อน');
+    if (effectiveShifts.isEmpty) throw StateError('กรุณาอ่านตารางเวรก่อน');
     await _run('เปรียบเทียบ Google Calendar', () async {
       final periods = _activeRosterPeriods();
       final client = await auth.clientFor([
@@ -1594,7 +1629,7 @@ class AppController extends ChangeNotifier implements ControllerState {
               client,
               year: period.year,
               month: period.month,
-              desiredShifts: shifts
+              desiredShifts: effectiveShifts
                   .where(
                     (shift) =>
                         !shift.excluded &&
@@ -2356,6 +2391,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       _timelineLoadGeneration++;
       timelineLoading = false;
       _observedAccountId = accountId;
+      _shiftTransactions = const [];
       settings = settings.clearRosterSelection();
       _autoRefreshTimer?.cancel();
       _replaceLegacyShifts(const []);
@@ -2626,8 +2662,9 @@ class AppController extends ChangeNotifier implements ControllerState {
 
   Schedule _scheduleForActivePeriods() {
     final activePeriods = _activeRosterPeriods().toSet();
-    return canonicalSchedule.copyWith(
-      months: canonicalSchedule.months
+    final schedule = effectiveSchedule;
+    return schedule.copyWith(
+      months: schedule.months
           .where(
             (month) => activePeriods.contains(
               RosterPeriod(year: month.month.year, month: month.month.month),

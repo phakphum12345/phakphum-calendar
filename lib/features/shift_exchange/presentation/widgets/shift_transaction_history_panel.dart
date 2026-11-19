@@ -7,14 +7,16 @@ class ShiftTransactionHistoryPanel extends StatefulWidget {
     required this.apiClient,
     this.approvableOrganizationIds = const {},
     this.mode,
-    this.onChanged,
+    this.organizationId,
+    this.onTransactionsLoaded,
     super.key,
   });
 
   final ShiftTransactionApiClient apiClient;
   final Set<String> approvableOrganizationIds;
   final String? mode;
-  final VoidCallback? onChanged;
+  final String? organizationId;
+  final ValueChanged<List<ShiftTransactionSnapshot>>? onTransactionsLoaded;
 
   @override
   State<ShiftTransactionHistoryPanel> createState() =>
@@ -35,8 +37,18 @@ class _ShiftTransactionHistoryPanelState
         : Future<List<ShiftTransactionSnapshot>>.value(const []);
   }
 
-  Future<List<ShiftTransactionSnapshot>> _load() =>
-      widget.apiClient.listTransactions(mode: widget.mode);
+  Future<List<ShiftTransactionSnapshot>> _load() async {
+    final items = await widget.apiClient.listTransactions(
+      mode: widget.mode,
+      organizationId: widget.organizationId,
+    );
+    if (mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onTransactionsLoaded?.call(items);
+      });
+    }
+    return items;
+  }
 
   void _reload() {
     if (!widget.apiClient.isConfigured) return;
@@ -84,7 +96,7 @@ class _ShiftTransactionHistoryPanelState
         _actingOn = null;
         _history = _load();
       });
-      widget.onChanged?.call();
+
     } catch (error) {
       if (!mounted) return;
       setState(() {
