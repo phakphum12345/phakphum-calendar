@@ -52,8 +52,23 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
   String? _directoryError;
   List<ShiftTransactionOrganizationSnapshot> _organizations = const [];
   List<ShiftTransactionOrganizationMemberSnapshot> _members = const [];
+  List<ShiftTransactionSnapshot> _historyTransactions = const [];
   ShiftTransactionOrganizationSnapshot? _selectedOrganization;
   int _historyRevision = 0;
+
+  void _handleTransactionsLoaded(List<ShiftTransactionSnapshot> items) {
+    _historyTransactions = List.unmodifiable(items);
+    _publishScopedTransactions();
+  }
+
+  void _publishScopedTransactions() {
+    final scoped = widget.organizationMode
+        ? _historyTransactions.where(
+            (item) => item.organizationId == _selectedOrganization?.id,
+          )
+        : _historyTransactions.where((item) => item.organizationId == null);
+    widget.onTransactionsLoaded?.call(List.unmodifiable(scoped));
+  }
 
   Set<String> get _approvableOrganizationIds => {
     for (final organization in _organizations)
@@ -74,6 +89,8 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
         oldWidget.organizationMode != widget.organizationMode) {
       _organizations = const [];
       _members = const [];
+      _historyTransactions = const [];
+      widget.onTransactionsLoaded?.call(const []);
       _selectedOrganization = null;
       _directoryError = null;
       _loadingDirectory = false;
@@ -113,6 +130,7 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
           _members = members;
           _loadingDirectory = false;
         });
+        _publishScopedTransactions();
       } else {
         await api.getCurrentUser();
         if (!mounted) return;
@@ -138,6 +156,7 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
       _loadingDirectory = true;
       _directoryError = null;
     });
+    _publishScopedTransactions();
     try {
       final members = await widget.historyApiClient!.listOrganizationMembers(id);
       if (!mounted) return;
@@ -257,7 +276,7 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
             apiClient: widget.historyApiClient!,
             approvableOrganizationIds: _approvableOrganizationIds,
             mode: widget.organizationMode ? 'organization' : 'personal',
-            onTransactionsLoaded: widget.onTransactionsLoaded,
+            onTransactionsLoaded: _handleTransactionsLoaded,
           ),
         const SizedBox(height: 16),
         Wrap(
