@@ -93,7 +93,7 @@ void main() {
       'A',
     );
     expect(
-      controller.effectiveSchedule.month(date)!.day(date)!.assignments.single.employee.employeeCode,
+      controller.effectiveSchedule.month(date)!.day(date)!.assignments.first.employee.employeeCode,
       'B',
     );
     expect(controller.shifts.first.assignedName, 'Alice');
@@ -102,7 +102,7 @@ void main() {
     // A repeated import replaces only the source; the server ledger is replayed.
     await controller.adoptCanonicalSchedule(sourceSchedule(), persist: false);
     expect(
-      controller.canonicalSchedule.month(date)!.day(date)!.assignments.single.employee.employeeCode,
+      controller.canonicalSchedule.month(date)!.day(date)!.assignments.first.employee.employeeCode,
       'A',
     );
     expect(controller.effectiveShifts.first.assignedName, 'Bob');
