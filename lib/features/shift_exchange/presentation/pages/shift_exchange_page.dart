@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 
+import '../../../../models/roster_assignment_timeline.dart';
+
 import '../../../../domain/entities/employee.dart';
 import '../../../../domain/entities/schedule.dart';
 import '../../../../domain/entities/shift_assignment.dart';
@@ -26,6 +28,7 @@ class ShiftExchangePage extends StatefulWidget {
     this.controllerFactory,
     this.historyApiClient,
     this.onTransactionsLoaded,
+    this.rosterTimelines = const {},
     this.accountId,
     this.onSyncTransaction,
     super.key,
@@ -37,6 +40,7 @@ class ShiftExchangePage extends StatefulWidget {
   final ShiftExchangeController Function()? controllerFactory;
   final ShiftTransactionApiClient? historyApiClient;
   final ValueChanged<List<ShiftTransactionSnapshot>>? onTransactionsLoaded;
+  final Map<String, RosterAssignmentTimeline> rosterTimelines;
   final String? accountId;
   final Future<void> Function(ShiftTransactionSnapshot transaction)? onSyncTransaction;
 
@@ -282,6 +286,7 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
             approvableOrganizationIds: _approvableOrganizationIds,
             mode: widget.organizationMode ? 'organization' : 'personal',
             organizationId: widget.organizationMode ? _selectedOrganization?.id : null,
+            rosterTimelines: widget.rosterTimelines,
             onTransactionsLoaded: _handleTransactionsLoaded,
             onSyncTransaction: widget.onSyncTransaction,
           ),
