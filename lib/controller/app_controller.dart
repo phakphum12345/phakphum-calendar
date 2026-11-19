@@ -1926,13 +1926,27 @@ class AppController extends ChangeNotifier implements ControllerState {
           throw StateError('อ่านยืนยันรายการ Calendar หลังซิงก์ไม่สำเร็จ');
         }
         final providerIds = verification.schedulePreparation!.existingEventIdsBySyncId;
-        final eventIds = [
-          for (final syncId in pending.syncIds)
-            if (providerIds[syncId] != null && providerIds[syncId]!.isNotEmpty)
-              providerIds[syncId]!,
-        ];
-        if (eventIds.length != pending.syncIds.length ||
-            eventIds.toSet().length != pending.syncIds.length) {
+        final writtenIds = {
+          for (final operation in result.operations)
+            if (operation.success &&
+                operation.providerEventId != null &&
+                operation.providerEventId!.isNotEmpty)
+              operation.referenceId: operation.providerEventId!,
+        };
+        final eventIds = <String>[];
+        for (final syncId in pending.syncIds) {
+          final readBackId = providerIds[syncId];
+          final writtenId = writtenIds[syncId];
+          if (readBackId == null ||
+              readBackId.isEmpty ||
+              (writtenId != null && writtenId != readBackId)) {
+            throw StateError(
+              'Calendar read-back ไม่ตรงกับ Event ID ที่ได้จากการเขียน',
+            );
+          }
+          eventIds.add(readBackId);
+        }
+        if (eventIds.toSet().length != pending.syncIds.length) {
           throw StateError('Calendar read-back ไม่พบ Event ID ที่ไม่ซ้ำกันครบทุกเวร');
         }
         final updated = await apiClient.completeCalendarSync(
