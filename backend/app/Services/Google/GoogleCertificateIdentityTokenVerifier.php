@@ -141,14 +141,15 @@ class GoogleCertificateIdentityTokenVerifier implements GoogleIdentityTokenVerif
             throw new RuntimeException('No Google server client ID is configured.');
         }
 
-        $audiences = $claims['aud'] ?? [];
-        $audiences = is_array($audiences) ? $audiences : [$audiences];
+        $audienceClaim = $claims['aud'] ?? [];
+        $audiences = is_array($audienceClaim) ? $audienceClaim : [$audienceClaim];
+        $hasInvalidAudienceShape = $audiences === [] || ! array_is_list($audiences);
         $hasUntrustedAudience = array_filter(
             $audiences,
             static fn ($audience): bool => ! is_string($audience) ||
                 ! in_array($audience, $allowedAudiences, true),
         ) !== [];
-        if ($audiences === [] || $hasUntrustedAudience) {
+        if ($hasInvalidAudienceShape || $hasUntrustedAudience) {
             throw new InvalidArgumentException('Google identity token audience is invalid.');
         }
 
