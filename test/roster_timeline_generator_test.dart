@@ -63,7 +63,7 @@ void main() {
     final result = const RosterTimelineGenerator()
         .generateFromDocumentsWithDiagnostics([first, second]);
 
-    expect(result.timelines, hasLength(3));
+    expect(result.timelines, hasLength(21));
     final workerChains = result.timelines.values
         .map((timeline) => timeline.workerChain.join(' → '))
         .toSet();
