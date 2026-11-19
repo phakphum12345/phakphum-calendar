@@ -366,8 +366,13 @@ class MonthlyRosterSectionParser {
     final result = <int, int>{};
     for (final cell in cells) {
       final value = cell.rawValue ?? cell.text;
+      // Excel can represent a numeric cell as a double. Accept values such as
+      // 1.0, but never truncate 1.5 to day 1: that would silently assign a
+      // worker to the wrong calendar date.
       final day = value is num
-          ? value.toInt()
+          ? (value.isFinite && value == value.roundToDouble()
+                ? value.toInt()
+                : null)
           : int.tryParse(value?.toString().trim() ?? '');
       if (day != null && day >= 1 && day <= 31) {
         result[cell.columnIndex as int] = day;
