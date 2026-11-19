@@ -158,6 +158,66 @@ void main() {
         DateTime(2026, 12, 15));
   });
 
+  test('uses a single-month tab title for multiple ordered split sections', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['เวรหลัก']),
+        ..._row(1, ['วันที่', ...List<int>.generate(15, (i) => i + 1)]),
+        ..._row(2, ['เวรเช้า', 'นาย ก']),
+        ..._row(4, ['เวรเสริม']),
+        ..._row(5, ['วันที่', ...List<int>.generate(15, (i) => i + 16)]),
+        ..._row(6, ['เวรบ่าย', 'นาย ข']),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.warnings, isEmpty);
+    expect(report.sections, hasLength(2));
+    expect(report.assignments, hasLength(2));
+    expect(report.assignments.map((item) => item.date), [
+      DateTime(2026, 11, 1),
+      DateTime(2026, 11, 16),
+    ]);
+    expect(report.assignments.map((item) => item.workerName), ['นาย ก', 'นาย ข']);
+  });
+
+  test('does not infer a single-month tab for a split section that wraps months', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['เวรหลัก']),
+        ..._row(1, [
+          'วันที่',
+          ...List<int>.generate(15, (i) => i + 16),
+          ...List<int>.generate(15, (i) => i + 1),
+        ]),
+        ..._row(2, ['เวรเช้า', 'นาย ก']),
+        ..._row(4, ['เวรเสริม']),
+        ..._row(5, ['วันที่', ...List<int>.generate(15, (i) => i + 16)]),
+        ..._row(6, ['เวรบ่าย', 'นาย ข']),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, hasLength(1));
+    expect(report.sections.single.title, 'เวรเสริม');
+    expect(report.assignments.single.workerName, 'นาย ข');
+    expect(report.assignments.single.date, DateTime(2026, 11, 16));
+    expect(report.warnings, hasLength(1));
+    expect(report.warnings.single, contains('ไม่ใช้เดือนจากชื่อชีตแทน'));
+  });
+
   test('does not borrow the tab month for an undated section in a multi-section sheet', () {
     final input = ShiftParserInput(
       spreadsheetId: 'spreadsheet',
