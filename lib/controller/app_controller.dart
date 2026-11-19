@@ -1864,6 +1864,8 @@ class AppController extends ChangeNotifier implements ControllerState {
             for (final transfer in transaction.transfers)
               '${transfer['shift_code'] ?? 'Shift'} · ${transfer['from_employee_id'] ?? '?'} → ${transfer['to_employee_id'] ?? '?'} · ${transfer['starts_at'] ?? ''} – ${transfer['ends_at'] ?? ''}',
           ],
+          insertTitles: [for (final item in preparation.diff.toAdd) item.title],
+          updateTitles: [for (final item in preparation.diff.toUpdate) item.title],
           deleteTitles: [for (final item in preparation.diff.toDelete) item.title],
           warnings: workflow.validationResult?.warnings
                   .map((item) => item.message).toList(growable: false) ??
