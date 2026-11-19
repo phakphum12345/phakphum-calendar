@@ -146,7 +146,7 @@ class MonthlyRosterSectionParser {
         final effectiveRowLabel = isGenAfternoon ? 'GEN บ่าย' : rowLabel;
         previousWasGen = rowLabel
                 .toUpperCase()
-                .replaceAll(RegExp(r'[\\s.\\-_]+'), '') ==
+                .replaceAll(RegExp(r'[\s.\-_]+'), '') ==
             'GEN';
         if (effectiveRowLabel.isEmpty || _looksLikeHeading(effectiveRowLabel)) {
           continue;
