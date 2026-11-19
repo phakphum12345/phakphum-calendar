@@ -1212,13 +1212,13 @@ class AppController extends ChangeNotifier implements ControllerState {
                 currentRevision,
               ]);
           _revisionTimelines = generatedTimeline.timelines;
-          appendTimelineGenerationWarnings(generatedTimeline.warnings);
           _loadedTimelineScope = timelineScope;
           if (mergedRevisions.isEmpty) {
             timelineWarning = shouldRefreshDriveHistory
                 ? 'ไม่พบประวัติ revision ที่อ่านได้ จึงแสดงเฉพาะรายชื่อเวรปัจจุบัน'
                 : 'ใช้คลัง Timeline ในเครื่อง; กด “ซิงค์ Timeline ย้อนหลัง” เพื่อตรวจ revision ใหม่จาก Drive';
           }
+          appendTimelineGenerationWarnings(generatedTimeline.warnings);
           if (unresolvedRevisionIds.isNotEmpty) {
             final skippedIds = unresolvedRevisionIds.toList()..sort();
             final shownIds = skippedIds.take(5).join(', ');
@@ -1262,10 +1262,10 @@ class AppController extends ChangeNotifier implements ControllerState {
         final currentTimeline = await timelineGenerator
             .generateFromDocumentsWithDiagnosticsAsync([currentRevision]);
         _revisionTimelines = currentTimeline.timelines;
-        appendTimelineGenerationWarnings(currentTimeline.warnings);
         _loadedTimelineScope = timelineScope;
         timelineWarning =
             'อ่านประวัติ Timeline จาก Google Drive ไม่สำเร็จ: $caught';
+        appendTimelineGenerationWarnings(currentTimeline.warnings);
         await _addAudit('sheet.timeline.failed', timelineWarning!, false);
         debugPrintStack(
           label: 'Could not load Google Sheets revision timeline',
