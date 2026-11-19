@@ -154,6 +154,7 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
     setState(() {
       _selectedOrganization = selected;
       _members = const [];
+      _historyRevision++;
       _loadingDirectory = true;
       _directoryError = null;
     });
@@ -273,10 +274,11 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
         const SizedBox(height: 16),
         if (widget.historyApiClient != null)
           ShiftTransactionHistoryPanel(
-            key: ValueKey('${widget.accountId}-${widget.organizationMode}-${_historyRevision}'),
+            key: ValueKey('${widget.accountId}-${widget.organizationMode}-${_selectedOrganization?.id}-${_historyRevision}'),
             apiClient: widget.historyApiClient!,
             approvableOrganizationIds: _approvableOrganizationIds,
             mode: widget.organizationMode ? 'organization' : 'personal',
+            organizationId: widget.organizationMode ? _selectedOrganization?.id : null,
             onTransactionsLoaded: _handleTransactionsLoaded,
           ),
         const SizedBox(height: 16),
