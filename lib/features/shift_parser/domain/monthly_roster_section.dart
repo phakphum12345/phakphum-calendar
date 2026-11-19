@@ -14,6 +14,21 @@ class MonthlyRosterDateColumn {
 }
 
 /// A shift row discovered independently of the worker names in its cells.
+/// A blocking date-grid issue that must be reviewed before calendar sync.
+class MonthlyRosterDateAnomaly {
+  const MonthlyRosterDateAnomaly({
+    required this.code,
+    required this.message,
+    this.columnIndex,
+    this.displayedDay,
+  });
+
+  final String code;
+  final String message;
+  final int? columnIndex;
+  final int? displayedDay;
+}
+
 class MonthlyRosterRow {
   const MonthlyRosterRow({required this.rowIndex, required this.label});
 
@@ -31,6 +46,7 @@ class MonthlyRosterSection {
     this.rosterRows = const [],
     this.startDate,
     this.endDate,
+    this.dateAnomalies = const [],
   });
 
   final String title;
@@ -41,6 +57,9 @@ class MonthlyRosterSection {
   final List<MonthlyRosterRow> rosterRows;
   final DateTime? startDate;
   final DateTime? endDate;
+  final List<MonthlyRosterDateAnomaly> dateAnomalies;
+
+  bool get hasBlockingDateAnomalies => dateAnomalies.isNotEmpty;
 }
 
 class MonthlyRosterAssignment {
@@ -116,6 +135,12 @@ class MonthlyRosterParseReport {
   final List<String> warnings;
   final int sourceSheetCount;
   final List<MonthlyRosterSheetScanSummary> sheetSummaries;
+
+  List<MonthlyRosterDateAnomaly> get blockingDateAnomalies => [
+    for (final section in sections) ...section.dateAnomalies,
+  ];
+
+  bool get hasBlockingDateAnomalies => blockingDateAnomalies.isNotEmpty;
 
   /// Builds a source-neutral monthly view when an imported source does not
   /// expose a recognizable table grid, such as a confirmed camera entry.
@@ -241,7 +266,27 @@ class MonthlyRosterParseReport {
                 'row ${assignment.rowIndex + 1}'.contains(normalizedQuery);
           })
           .toList(growable: false);
-      if (filteredAssignments.isEmpty) continue;
+      var anomalousSectionInScope = false;
+      if (section.hasBlockingDateAnomalies &&
+          (normalizedQuery.isEmpty || sectionMatches)) {
+        final start = section.startDate;
+        final end = section.endDate;
+        if (includesDate == null) {
+          anomalousSectionInScope = true;
+        } else if (start != null && end != null) {
+          for (
+            var date = DateTime(start.year, start.month, start.day);
+            !date.isAfter(end);
+            date = DateTime(date.year, date.month, date.day + 1)
+          ) {
+            if (includesDate(date)) {
+              anomalousSectionInScope = true;
+              break;
+            }
+          }
+        }
+      }
+      if (filteredAssignments.isEmpty && !anomalousSectionInScope) continue;
       filteredSections.add(
         MonthlyRosterSection(
           title: section.title,
@@ -252,6 +297,7 @@ class MonthlyRosterParseReport {
           rosterRows: section.rosterRows,
           startDate: section.startDate,
           endDate: section.endDate,
+          dateAnomalies: section.dateAnomalies,
         ),
       );
     }
