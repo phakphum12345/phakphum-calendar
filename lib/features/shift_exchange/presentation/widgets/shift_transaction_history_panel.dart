@@ -228,12 +228,13 @@ class _ShiftTransactionHistoryPanelState
                               dense: true,
                               title: Text(
                                 '${transfer['shift_code'] ?? 'Shift'} · '
-                                '${transfer['from_employee_id'] ?? '?'} → '
-                                '${transfer['to_employee_id'] ?? '?'}',
+                                '${_participantLabel(item, transfer['from_employee_id'])} → '
+                                '${_participantLabel(item, transfer['to_employee_id'])}',
                               ),
                               subtitle: Text(
                                 '${transfer['starts_at'] ?? ''} – '
-                                '${transfer['ends_at'] ?? ''}',
+                                '${transfer['ends_at'] ?? ''}\n'
+                                '${transfer['fulfilled_at'] == null ? 'Fulfillment: waiting' : 'Fulfilled: ${transfer['fulfilled_at']}'}',
                               ),
                             ),
                           if (_canAct(item))
@@ -250,11 +251,15 @@ class _ShiftTransactionHistoryPanelState
                             ListTile(
                               dense: true,
                               leading: const Icon(Icons.history, size: 18),
-                              title: Text(event['event_type']?.toString() ?? 'Event'),
-                              subtitle: Text(
-                                '${event['actor_name'] ?? 'System'} · '
-                                '${event['occurred_at'] ?? ''}',
+                              title: Text(
+                                '${event['event_type']?.toString() ?? 'Event'}'
+                                ' · v${event['transaction_version'] ?? '?'}',
                               ),
+                              subtitle: Text([
+                                '${event['actor_name'] ?? 'System'} · '
+                                    '${event['occurred_at'] ?? ''}',
+                                _eventDetails(event),
+                              ].where((line) => line.isNotEmpty).join('\n')),
                             ),
                         ],
                       ),
@@ -374,6 +379,43 @@ class _ShiftTransactionHistoryPanelState
       }
     }
     return actions;
+  }
+
+  String _participantLabel(
+    ShiftTransactionSnapshot transaction,
+    Object? employeeId,
+  ) {
+    final id = employeeId?.toString() ?? '?';
+    for (final participant in transaction.participants) {
+      if (participant['employee_id']?.toString() == id) {
+        final name = participant['name']?.toString().trim();
+        if (name != null && name.isNotEmpty) return '$name ($id)';
+      }
+    }
+    return id;
+  }
+
+  String _eventDetails(Map<String, dynamic> event) {
+    final rawData = event['data'];
+    if (rawData is! Map) return '';
+    final data = rawData.map((key, value) => MapEntry(key.toString(), value));
+    final details = <String>[];
+    if (data['account_confirmed'] == true) {
+      details.add('Participant confirmed');
+    }
+    final note = data['note']?.toString().trim();
+    final reason = data['reason']?.toString().trim();
+    if (note != null && note.isNotEmpty) details.add('Note: $note');
+    if (reason != null && reason.isNotEmpty) details.add('Reason: $reason');
+    final transferId = data['transfer_id']?.toString();
+    if (transferId != null && transferId.isNotEmpty) {
+      details.add('Transfer: $transferId');
+    }
+    final shiftId = data['shift_id']?.toString();
+    if (shiftId != null && shiftId.isNotEmpty) details.add('Shift: $shiftId');
+    final eventIds = data['calendar_event_ids'];
+    if (eventIds is List) details.add('Calendar events recorded: ${eventIds.length}');
+    return details.join(' · ');
   }
 
   String _typeLabel(String type) => switch (type) {
