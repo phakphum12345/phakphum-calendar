@@ -47,6 +47,41 @@ void main() {
     expect(december.sections, isEmpty);
   });
 
+  test('blocks near-complete headers missing the first or last boundary date', () {
+    final parser = const MonthlyRosterSectionParser();
+    final missingFirst = parser.parse(
+      _input(
+        title: 'X-OPD 1 พฤศจิกายน 2569 - 30 พฤศจิกายน 2569',
+        days: [
+          'วันที่',
+          ...List<int>.generate(29, (index) => index + 2),
+        ],
+        workers: ['P1 เช้า', ...List<String>.filled(29, 'นายสมชาย')],
+      ),
+    );
+    final missingLast = parser.parse(
+      _input(
+        title: 'X-OPD 1 พฤศจิกายน 2569 - 30 พฤศจิกายน 2569',
+        days: [
+          'วันที่',
+          ...List<int>.generate(29, (index) => index + 1),
+        ],
+        workers: ['P1 เช้า', ...List<String>.filled(29, 'นายสมชาย')],
+      ),
+    );
+
+    expect(
+      missingFirst.sections.single.dateAnomalies.map((item) => item.code),
+      contains('missing_start_date'),
+    );
+    expect(
+      missingLast.sections.single.dateAnomalies.map((item) => item.code),
+      contains('missing_end_date'),
+    );
+    expect(missingFirst.hasBlockingDateAnomalies, isTrue);
+    expect(missingLast.hasBlockingDateAnomalies, isTrue);
+  });
+
   test('allows repeated day numbers when a two-month period contains both dates', () {
     final days = <Object?>[
       'วันที่',
