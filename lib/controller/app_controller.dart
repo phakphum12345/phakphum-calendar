@@ -2016,9 +2016,14 @@ class AppController extends ChangeNotifier implements ControllerState {
   _createPreparedCalendarWorkflow() async {
     final dateAnomalies = monthlyRoster.blockingDateAnomalies;
     if (dateAnomalies.isNotEmpty) {
-      final details = dateAnomalies
+      final details = monthlyRoster.sections
+          .where((section) => section.hasBlockingDateAnomalies)
+          .expand(
+            (section) => section.dateAnomalies.map(
+              (anomaly) => section.title + ': ' + anomaly.message,
+            ),
+          )
           .take(8)
-          .map((anomaly) => anomaly.message)
           .join('；');
       throw StateError(
         'พบข้อผิดปกติของแถววันที่ในตารางเวร จึงหยุดก่อนสร้าง Preview และก่อนเชื่อมต่อ Google Calendar '
