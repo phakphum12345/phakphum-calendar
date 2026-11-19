@@ -2012,6 +2012,17 @@ class AppController extends ChangeNotifier implements ControllerState {
 
   Future<ShiftCalendarWorkflowController>
   _createPreparedCalendarWorkflow() async {
+    final dateAnomalies = monthlyRoster.blockingDateAnomalies;
+    if (dateAnomalies.isNotEmpty) {
+      final details = dateAnomalies
+          .take(8)
+          .map((anomaly) => anomaly.message)
+          .join('；');
+      throw StateError(
+        'พบข้อผิดปกติของแถววันที่ในตารางเวร จึงหยุดก่อนสร้าง Preview และก่อนเชื่อมต่อ Google Calendar '
+        'กรุณาตรวจสอบวันที่ซ้ำ วันที่ขาด หรือวันที่เรียงผิดลำดับ: $details',
+      );
+    }
     final schedule = _scheduleForActivePeriods();
     final assignmentCount = schedule.months.fold<int>(
       0,
