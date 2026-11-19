@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../models/roster_assignment_timeline.dart';
 import '../../infrastructure/shift_transaction_api_client.dart';
 
 class ShiftTransactionHistoryPanel extends StatefulWidget {
@@ -8,6 +9,7 @@ class ShiftTransactionHistoryPanel extends StatefulWidget {
     this.approvableOrganizationIds = const {},
     this.mode,
     this.organizationId,
+    this.rosterTimelines = const {},
     this.onTransactionsLoaded,
     this.onSyncTransaction,
     super.key,
@@ -17,6 +19,7 @@ class ShiftTransactionHistoryPanel extends StatefulWidget {
   final Set<String> approvableOrganizationIds;
   final String? mode;
   final String? organizationId;
+  final Map<String, RosterAssignmentTimeline> rosterTimelines;
   final ValueChanged<List<ShiftTransactionSnapshot>>? onTransactionsLoaded;
   final Future<void> Function(ShiftTransactionSnapshot transaction)? onSyncTransaction;
 
@@ -223,7 +226,7 @@ class _ShiftTransactionHistoryPanelState
                                     : 'Confirmed ${participant['confirmed_at']}',
                               ),
                             ),
-                          for (final transfer in item.transfers)
+                          for (final transfer in item.transfers) ...[
                             ListTile(
                               dense: true,
                               title: Text(
@@ -237,6 +240,8 @@ class _ShiftTransactionHistoryPanelState
                                 '${transfer['fulfilled_at'] == null ? 'Fulfillment: waiting' : 'Fulfilled: ${transfer['fulfilled_at']}'}',
                               ),
                             ),
+                            ..._rosterHistoryForTransfer(item, transfer),
+                          ],
                           if (_canAct(item))
                             Padding(
                               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -379,6 +384,131 @@ class _ShiftTransactionHistoryPanelState
       }
     }
     return actions;
+  }
+
+  List<Widget> _rosterHistoryForTransfer(
+    ShiftTransactionSnapshot item,
+    Map<String, dynamic> transfer,
+  ) {
+    final start = _parseTransferInstant(transfer['starts_at']);
+    final end = _parseTransferInstant(transfer['ends_at']);
+    final shiftCode = transfer['shift_code']?.toString().trim();
+    final fromName = _participantName(item, transfer['from_employee_id']);
+    final toName = _participantName(item, transfer['to_employee_id']);
+    if (start == null ||
+        end == null ||
+        !end.isAfter(start) ||
+        shiftCode == null ||
+        shiftCode.isEmpty ||
+        fromName == null ||
+        toName == null) {
+      return const [];
+    }
+
+    final matching = widget.rosterTimelines.values.where((timeline) {
+      final timelineStart = timeline.start;
+      final timelineEnd = timeline.end;
+      final timelineCode = timeline.shiftCode?.trim();
+      return timelineStart != null &&
+          timelineEnd != null &&
+          timelineCode != null &&
+          timelineCode.toLowerCase() == shiftCode.toLowerCase() &&
+          _sameBangkokWallClock(timelineStart, start) &&
+          _sameBangkokWallClock(timelineEnd, end) &&
+          _containsOwnershipTransition(timeline, fromName, toName);
+    }).toList();
+
+    // A transfer can be linked to a roster position only when exactly one
+    // candidate has the same Bangkok wall-clock slot, shift code, and
+    // consecutive owner transition. Never show several plausible histories.
+    if (matching.length != 1) return const [];
+    final timeline = matching.single;
+    return [
+      Padding(
+        padding: const EdgeInsets.only(left: 16, right: 8, bottom: 8),
+        child: ExpansionTile(
+          dense: true,
+          leading: const Icon(Icons.history_toggle_off, size: 18),
+          title: const Text('Roster ownership history'),
+          subtitle: Text(timeline.workerChain.join(' → ')),
+          children: [
+            ListTile(
+              dense: true,
+              title: Text(
+                '${timeline.sheetTitle ?? 'Roster'} · '
+                '${timeline.rowLabel ?? timeline.shiftCode ?? 'Shift'}'
+                '${timeline.column == null ? '' : ' · ${timeline.column}'}',
+              ),
+            ),
+            for (final version in timeline.versions)
+              ListTile(
+                dense: true,
+                contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                title: Text(version.assignedName),
+                subtitle: Text(version.modifiedAt.toLocal().toString()),
+              ),
+          ],
+        ),
+      ),
+    ];
+  }
+
+  DateTime? _parseTransferInstant(Object? value) {
+    final raw = value?.toString().trim() ?? '';
+    final hasExplicitZone =
+        RegExp(r'(?:Z|[+-]\d{2}:\d{2})$', caseSensitive: false)
+            .hasMatch(raw);
+    if (!hasExplicitZone) return null;
+    return DateTime.tryParse(raw)?.toUtc();
+  }
+
+  bool _sameBangkokWallClock(DateTime rosterWallClock, DateTime transferInstant) {
+    // Roster parser values are Bangkok wall-clock fields; transaction API
+    // timestamps are instants. Convert the latter to UTC+07:00 explicitly
+    // instead of relying on the viewer device's local timezone.
+    final bangkok = transferInstant.toUtc().add(const Duration(hours: 7));
+    return rosterWallClock.year == bangkok.year &&
+        rosterWallClock.month == bangkok.month &&
+        rosterWallClock.day == bangkok.day &&
+        rosterWallClock.hour == bangkok.hour &&
+        rosterWallClock.minute == bangkok.minute &&
+        rosterWallClock.second == bangkok.second &&
+        rosterWallClock.millisecond == bangkok.millisecond &&
+        rosterWallClock.microsecond == bangkok.microsecond;
+  }
+
+  bool _containsOwnershipTransition(
+    RosterAssignmentTimeline timeline,
+    String fromName,
+    String toName,
+  ) {
+    final from = _normalizeParticipantName(fromName);
+    final to = _normalizeParticipantName(toName);
+    for (var index = 0; index + 1 < timeline.versions.length; index++) {
+      if (_normalizeParticipantName(timeline.versions[index].assignedName) ==
+              from &&
+          _normalizeParticipantName(timeline.versions[index + 1].assignedName) ==
+              to) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  String _normalizeParticipantName(String value) =>
+      value.trim().replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
+
+  String? _participantName(
+    ShiftTransactionSnapshot transaction,
+    Object? employeeId,
+  ) {
+    final id = employeeId?.toString() ?? '';
+    for (final participant in transaction.participants) {
+      if (participant['employee_id']?.toString() != id) continue;
+      final name = participant['name']?.toString().trim();
+      if (name != null && name.isNotEmpty) return name;
+    }
+    return null;
   }
 
   String _participantLabel(

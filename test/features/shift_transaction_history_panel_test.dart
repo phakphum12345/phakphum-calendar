@@ -7,6 +7,7 @@ import 'package:http/testing.dart';
 
 import 'package:phakphum_calendar/features/shift_exchange/infrastructure/shift_transaction_api_client.dart';
 import 'package:phakphum_calendar/features/shift_exchange/presentation/widgets/shift_transaction_history_panel.dart';
+import 'package:phakphum_calendar/models/roster_assignment_timeline.dart';
 
 Map<String, dynamic> transaction({
   String status = 'pending_response',
@@ -184,6 +185,147 @@ void main() {
     expect(find.textContaining('Participant confirmed'), findsOneWidget);
     expect(find.textContaining('Transfer: transfer-1 · Shift: shift-1'), findsOneWidget);
     expect(find.textContaining('Bob · 2026-11-18T09:05:00Z'), findsOneWidget);
+    client.close();
+  });
+
+  testWidgets('shows matching historical roster ownership beside a transfer', (tester) async {
+    final item = transaction();
+    // Timeline dates are Bangkok wall-clock values; transfer timestamps are UTC.
+    final start = DateTime(2026, 11, 18, 8);
+    final end = DateTime(2026, 11, 18, 16);
+    final timeline = RosterAssignmentTimeline(
+      positionKey: 'position-1',
+      start: start,
+      end: end,
+      shiftCode: 'M',
+      sheetTitle: 'Main roster',
+      rowLabel: 'Morning',
+      column: 'B',
+      versions: [
+        RosterAssignmentVersion(
+          revisionId: 'revision-1',
+          modifiedAt: DateTime.utc(2026, 11, 1),
+          assignedName: 'Alice',
+        ),
+        RosterAssignmentVersion(
+          revisionId: 'revision-2',
+          modifiedAt: DateTime.utc(2026, 11, 10),
+          assignedName: 'Bob',
+        ),
+      ],
+    );
+    final unrelated = RosterAssignmentTimeline(
+      positionKey: 'position-2',
+      start: start,
+      end: end,
+      shiftCode: 'N',
+      sheetTitle: 'Other roster',
+      rowLabel: 'Night',
+      column: 'C',
+      versions: [
+        RosterAssignmentVersion(
+          revisionId: 'revision-3',
+          modifiedAt: DateTime.utc(2026, 11, 1),
+          assignedName: 'Carol',
+        ),
+        RosterAssignmentVersion(
+          revisionId: 'revision-4',
+          modifiedAt: DateTime.utc(2026, 11, 10),
+          assignedName: 'Dana',
+        ),
+      ],
+    );
+    final client = ShiftTransactionApiClient(
+      baseUrl: 'https://calendar.example.test',
+      idTokenProvider: () async => 'token',
+      httpClient: MockClient((request) async =>
+          http.Response(jsonEncode({'data': [item]}), 200)),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: ShiftTransactionHistoryPanel(
+              apiClient: client,
+              rosterTimelines: {
+                timeline.positionKey: timeline,
+                unrelated.positionKey: unrelated,
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Give up · pending_response'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Roster ownership history'), findsOneWidget);
+    expect(find.text('Alice → Bob'), findsOneWidget);
+    expect(find.text('Carol → Dana'), findsNothing);
+
+    await tester.tap(find.text('Roster ownership history'));
+    await tester.pumpAndSettle();
+    expect(find.text('Main roster · Morning · B'), findsOneWidget);
+    expect(find.text('Alice'), findsOneWidget);
+    expect(find.text('Bob'), findsOneWidget);
+    client.close();
+  });
+
+  testWidgets('suppresses roster history when same-time shift positions are ambiguous', (tester) async {
+    final item = transaction();
+    final start = DateTime(2026, 11, 18, 8);
+    final end = DateTime(2026, 11, 18, 16);
+    RosterAssignmentTimeline candidate(String key, String sheet, String row) =>
+        RosterAssignmentTimeline(
+          positionKey: key,
+          start: start,
+          end: end,
+          shiftCode: 'M',
+          sheetTitle: sheet,
+          rowLabel: row,
+          column: 'B',
+          versions: [
+            RosterAssignmentVersion(
+              revisionId: '$key-1',
+              modifiedAt: DateTime.utc(2026, 11, 1),
+              assignedName: 'Alice',
+            ),
+            RosterAssignmentVersion(
+              revisionId: '$key-2',
+              modifiedAt: DateTime.utc(2026, 11, 10),
+              assignedName: 'Bob',
+            ),
+          ],
+        );
+    final client = ShiftTransactionApiClient(
+      baseUrl: 'https://calendar.example.test',
+      idTokenProvider: () async => 'token',
+      httpClient: MockClient((request) async =>
+          http.Response(jsonEncode({'data': [item]}), 200)),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: ShiftTransactionHistoryPanel(
+              apiClient: client,
+              rosterTimelines: {
+                'position-a': candidate('position-a', 'Main roster', 'Morning'),
+                'position-b': candidate('position-b', 'Other roster', 'Morning'),
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Give up · pending_response'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Roster ownership history'), findsNothing);
     client.close();
   });
 

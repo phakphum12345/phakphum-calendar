@@ -270,6 +270,10 @@ class AppController extends ChangeNotifier implements ControllerState {
   List<RecentOwnedSheet> recentOwnedSheets = [];
   Set<String> existingKeys = {};
   Map<String, RosterAssignmentTimeline> _revisionTimelines = const {};
+
+  /// Read-only historical roster ownership chains for connected workspaces.
+  Map<String, RosterAssignmentTimeline> get revisionTimelines =>
+      Map.unmodifiable(_revisionTimelines);
   int _loadedRevisionCount = 0;
   int _timelineLoadGeneration = 0;
   bool timelineLoading = false;
