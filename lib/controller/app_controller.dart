@@ -945,6 +945,7 @@ class AppController extends ChangeNotifier implements ControllerState {
             monthlyConversion.shifts.map(_applyShiftOverride),
           ),
           unconvertedAssignments: monthlyConversion.unconvertedAssignments,
+          blockingDateAnomalies: monthlyConversion.blockingDateAnomalies,
         );
         final monthlyParsed = monthlyRosterConversion.shifts;
         // Analyze both readers together; monthly-only candidates are retained
