@@ -259,7 +259,7 @@ class _ShiftTransactionHistoryPanelState
                                 '${event['actor_name'] ?? 'System'} · '
                                     '${event['occurred_at'] ?? ''}',
                                 _eventDetails(event),
-                              ].where((line) => line.isNotEmpty).join('\\n')),
+                              ].where((line) => line.isNotEmpty).join('\n')),
                             ),
                         ],
                       ),
