@@ -57,13 +57,16 @@ void main() {
   );
 
   Map<String, dynamic> transactionJson({
+    String status = 'pending_response',
     String syncStatus = 'not_started',
     int version = 1,
+    bool recipientConfirmed = false,
+    String? fulfilledAt,
   }) => {
     'id': '11111111-1111-4111-8111-111111111111',
     'mode': 'personal',
     'type': 'give_up',
-    'status': 'approved',
+    'status': status,
     'sync_status': syncStatus,
     'version': version,
     'created_at': '2026-11-18T00:00:00Z',
@@ -75,14 +78,14 @@ void main() {
         'role': 'requester',
         'name': 'Alice',
         'confirmed_at': '2026-11-18T00:10:00Z',
-        'is_current_user': true,
+        'is_current_user': false,
       },
       {
         'employee_id': 'B',
         'role': 'recipient',
         'name': 'Bob',
-        'confirmed_at': '2026-11-18T00:11:00Z',
-        'is_current_user': false,
+        'confirmed_at': recipientConfirmed ? '2026-11-18T00:11:00Z' : null,
+        'is_current_user': true,
       },
     ],
     'transfers': [
@@ -95,7 +98,7 @@ void main() {
         'starts_at': date.add(const Duration(hours: 8)).toIso8601String(),
         'ends_at': date.add(const Duration(hours: 16)).toIso8601String(),
         'purpose': 'give_up',
-        'fulfilled_at': null,
+        'fulfilled_at': fulfilledAt,
       },
     ],
     'timeline': [],
@@ -130,16 +133,45 @@ void main() {
           }
           postPaths.add(request.url.path);
           final body = jsonDecode(request.body) as Map<String, dynamic>;
+          if (request.url.path.endsWith('/confirm')) {
+            current = transactionJson(
+              status: 'approved',
+              version: 2,
+              recipientConfirmed: true,
+            );
+            return http.Response(jsonEncode({'data': current}), 200);
+          }
           if (request.url.path.endsWith('/calendar-sync/start')) {
             expect(body['preview_confirmed'], isTrue);
-            current = transactionJson(syncStatus: 'pending', version: 2);
+            current = transactionJson(
+              status: 'approved',
+              syncStatus: 'pending',
+              version: 3,
+              recipientConfirmed: true,
+            );
             gateway.syncStarted = true;
             return http.Response(jsonEncode({'data': current}), 200);
           }
           if (request.url.path.endsWith('/calendar-sync/complete')) {
             expect(gateway.writeCount, 1);
             expect(body['calendar_event_ids'], ['provider-event-1']);
-            current = transactionJson(syncStatus: 'synced', version: 3);
+            current = transactionJson(
+              status: 'approved',
+              syncStatus: 'synced',
+              version: 4,
+              recipientConfirmed: true,
+            );
+            return http.Response(jsonEncode({'data': current}), 200);
+          }
+          if (request.url.path.endsWith('/fulfill')) {
+            expect(body['transfer_id'], 'transfer-1');
+            current = transactionJson(
+              status: 'completed',
+              syncStatus: 'synced',
+              version: 5,
+              recipientConfirmed: true,
+              fulfilledAt: DateTime.now().toIso8601String(),
+            );
             return http.Response(jsonEncode({'data': current}), 200);
           }
           return http.Response('Not found', 404);
@@ -222,6 +254,15 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      await tester.tap(find.text('Give up · pending_response'));
+      await tester.pumpAndSettle();
+      expect(find.text('Confirm'), findsOneWidget);
+      await tester.tap(find.text('Confirm'));
+      await tester.pumpAndSettle();
+      expect(postPaths, [
+        '/api/v1/shift-transactions/11111111-1111-4111-8111-111111111111/confirm',
+      ]);
+
       await tester.tap(find.text('Give up · approved'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Preview & sync Calendar'));
@@ -229,7 +270,9 @@ void main() {
 
       expect(find.text('Review Calendar preview'), findsOneWidget);
       expect(gateway.writeCount, 0);
-      expect(postPaths, isEmpty);
+      expect(postPaths, [
+        '/api/v1/shift-transactions/11111111-1111-4111-8111-111111111111/confirm',
+      ]);
 
       await tester.tap(find.text('Confirm and sync'));
       await tester.pumpAndSettle();
@@ -237,10 +280,17 @@ void main() {
       expect(gateway.syncStarted, isTrue);
       expect(gateway.writeCount, 1);
       expect(postPaths, [
+        '/api/v1/shift-transactions/11111111-1111-4111-8111-111111111111/confirm',
         '/api/v1/shift-transactions/11111111-1111-4111-8111-111111111111/calendar-sync/start',
         '/api/v1/shift-transactions/11111111-1111-4111-8111-111111111111/calendar-sync/complete',
       ]);
       expect(current['sync_status'], 'synced');
+      expect(find.text('Confirm fulfillment'), findsOneWidget);
+      await tester.tap(find.text('Confirm fulfillment'));
+      await tester.pumpAndSettle();
+      expect(postPaths.last, '/api/v1/shift-transactions/11111111-1111-4111-8111-111111111111/fulfill');
+      expect(current['status'], 'completed');
+      expect(current['transfers'][0]['fulfilled_at'], isNotNull);
       apiClient.close();
     },
   );
