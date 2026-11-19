@@ -6,6 +6,8 @@ class ShiftTransactionCalendarSyncPreview {
     required this.updateCount,
     required this.deleteCount,
     required this.transferLines,
+    required this.insertTitles,
+    required this.updateTitles,
     required this.deleteTitles,
     required this.warnings,
   });
@@ -16,6 +18,8 @@ class ShiftTransactionCalendarSyncPreview {
   final int updateCount;
   final int deleteCount;
   final List<String> transferLines;
+  final List<String> insertTitles;
+  final List<String> updateTitles;
   final List<String> deleteTitles;
   final List<String> warnings;
 
