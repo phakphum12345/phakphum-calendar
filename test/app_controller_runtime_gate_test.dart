@@ -1,7 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:phakphum_calendar/core/di/app_dependencies.dart';
+import 'package:phakphum_calendar/domain/entities/schedule.dart';
+import 'package:phakphum_calendar/models/roster_period.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
+
   test('Calendar writes require explicit confirmation and a prepared preview', () async {
     final controller = AppDependencies.production().createDemoAppController();
     addTearDown(controller.dispose);
@@ -29,4 +35,32 @@ void main() {
     );
     expect(controller.busy, isTrue);
   });
+  test('blocks Calendar preview when selected months produce an empty schedule', () async {
+    final controller = AppDependencies.production().createDemoAppController();
+    addTearDown(controller.dispose);
+
+    controller.settings = controller.settings.copyWith(
+      periods: const [RosterPeriod(year: 2026, month: 11)],
+    );
+    await controller.adoptCanonicalSchedule(
+      Schedule(id: 'empty-november', name: 'Empty November roster'),
+      persist: false,
+    );
+
+    await expectLater(
+      controller.prepareCalendarSync(),
+      throwsA(
+        isA<StateError>().having(
+          (error) => error.message,
+          'message',
+          allOf(
+            contains('ไม่พบรายการเวร'),
+            contains('11/2569'),
+            contains('หยุดก่อนอ่านหรือเขียน Google Calendar'),
+          ),
+        ),
+      ),
+    );
+  });
+
 }
