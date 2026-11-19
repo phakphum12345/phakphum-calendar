@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:phakphum_calendar/domain/entities/department.dart';
@@ -24,6 +25,7 @@ import 'package:phakphum_calendar/features/shift_exchange/infrastructure/shift_t
 import 'package:phakphum_calendar/features/shift_exchange/presentation/widgets/shift_transaction_history_panel.dart';
 
 void main() {
+  IntegrationTestWidgetsFlutterBinding.ensureInitialized();
   final date = DateTime(2026, 11, 18);
   final shift = ShiftType(
     id: 'morning',
