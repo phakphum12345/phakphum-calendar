@@ -78,7 +78,9 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
       _directoryError = null;
       _loadingDirectory = false;
       _historyRevision++;
-      _loadDirectory();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _loadDirectory();
+      });
     }
   }
 
