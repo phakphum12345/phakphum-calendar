@@ -24,6 +24,7 @@ class ShiftExchangePage extends StatefulWidget {
     this.controller,
     this.controllerFactory,
     this.historyApiClient,
+    this.onTransactionsLoaded,
     super.key,
   });
 
@@ -32,6 +33,7 @@ class ShiftExchangePage extends StatefulWidget {
   final ShiftExchangeController? controller;
   final ShiftExchangeController Function()? controllerFactory;
   final ShiftTransactionApiClient? historyApiClient;
+  final ValueChanged<List<ShiftTransactionSnapshot>>? onTransactionsLoaded;
 
   @override
   State<ShiftExchangePage> createState() => _ShiftExchangePageState();
@@ -232,11 +234,11 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
         const SizedBox(height: 16),
         if (widget.historyApiClient != null)
           ShiftTransactionHistoryPanel(
-            key: ValueKey(_historyRevision),
+            key: ValueKey('${widget.organizationMode}-${_historyRevision}'),
             apiClient: widget.historyApiClient!,
             approvableOrganizationIds: _approvableOrganizationIds,
             mode: widget.organizationMode ? 'organization' : 'personal',
-            onChanged: () => setState(() => _historyRevision++),
+            onTransactionsLoaded: widget.onTransactionsLoaded,
           ),
         const SizedBox(height: 16),
         Wrap(
