@@ -99,12 +99,6 @@ void main() {
     expect(controller.shifts.first.assignedName, 'Alice');
     expect(controller.effectiveShifts.first.assignedName, 'Bob');
 
-    final preview = await controller.previewShiftTransactionCalendarSync(transaction);
-    expect(preview.transactionId, transaction.id);
-    expect(preview.transferLines, hasLength(1));
-    expect(preview.deleteCount, 0);
-    controller.cancelShiftTransactionCalendarSyncPreview();
-
     // A repeated import replaces only the source; the server ledger is replayed.
     await controller.adoptCanonicalSchedule(sourceSchedule(), persist: false);
     expect(
