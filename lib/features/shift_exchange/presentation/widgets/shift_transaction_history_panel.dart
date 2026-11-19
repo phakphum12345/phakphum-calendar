@@ -88,6 +88,12 @@ class _ShiftTransactionHistoryPanelState
         case 'sync_calendar':
           await widget.onSyncTransaction?.call(transaction);
           break;
+        case 'recover_sync':
+          await widget.apiClient.failCalendarSync(
+            transaction.id,
+            reason: 'Participant marked a stalled Calendar sync for retry.',
+          );
+          break;
         default:
           if (action.startsWith('fulfill:')) {
             await widget.apiClient.fulfillTransfer(
@@ -319,6 +325,19 @@ class _ShiftTransactionHistoryPanelState
           onPressed: () => _act(item, 'cancel'),
           icon: const Icon(Icons.cancel_outlined),
           label: const Text('Cancel request'),
+        ),
+      );
+    }
+
+    if (item.syncStatus == 'pending' &&
+        currentParticipant != null &&
+        DateTime.now().difference(item.updatedAt.toLocal()) >=
+            const Duration(minutes: 30)) {
+      actions.add(
+        OutlinedButton.icon(
+          onPressed: () => _act(item, 'recover_sync'),
+          icon: const Icon(Icons.restart_alt),
+          label: const Text('Reset stalled Calendar sync'),
         ),
       );
     }
