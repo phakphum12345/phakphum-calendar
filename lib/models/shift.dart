@@ -146,13 +146,16 @@ class Shift {
 
   /// Opens the exact source tab and cell when the Google source is known.
   String? get sourceUrl {
-    if (sourceSpreadsheetId == null ||
-        sourceSheetId == null ||
+    final spreadsheetId = sourceSpreadsheetId;
+    final sheetId = sourceSheetId;
+    if (spreadsheetId == null ||
+        spreadsheetId.trim().isEmpty ||
+        sheetId == null ||
         cell.isEmpty) {
       return null;
     }
-    return 'https://docs.google.com/spreadsheets/d/$sourceSpreadsheetId/edit'
-        '#gid=$sourceSheetId&range=$cell';
+    return 'https://docs.google.com/spreadsheets/d/$spreadsheetId/edit'
+        '#gid=$sheetId&range=$cell';
   }
 
   Shift withSourceIdentity({
