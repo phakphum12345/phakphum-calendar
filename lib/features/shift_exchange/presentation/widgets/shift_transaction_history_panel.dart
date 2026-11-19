@@ -236,7 +236,7 @@ class _ShiftTransactionHistoryPanelState
                               ),
                               subtitle: Text(
                                 '${transfer['starts_at'] ?? ''} – '
-                                '${transfer['ends_at'] ?? ''}\\n'
+                                '${transfer['ends_at'] ?? ''}\n'
                                 '${transfer['fulfilled_at'] == null ? 'Fulfillment: waiting' : 'Fulfilled: ${transfer['fulfilled_at']}'}',
                               ),
                             ),
