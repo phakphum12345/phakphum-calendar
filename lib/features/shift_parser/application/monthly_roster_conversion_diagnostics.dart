@@ -38,7 +38,7 @@ extension MonthlyRosterShiftAdapterDiagnostics on MonthlyRosterShiftAdapter {
         .where((value) => value.length >= 2)
         .toSet();
     if (targets.isEmpty) {
-      return const MonthlyRosterConversionReport(
+      return MonthlyRosterConversionReport(
         shifts: [],
         unconvertedAssignments: [],
         blockingDateAnomalies: report.blockingDateAnomalies,
