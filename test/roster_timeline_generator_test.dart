@@ -28,6 +28,7 @@ void main() {
             ['GEN ประจำเดือน ธันวาคม พ.ศ. 2569'],
             ['วันที่', 1, 2, 3, 4, 5, 6, 7],
             ['GEN', 'Eve', 'Eve', 'Eve', 'Eve', 'Eve', 'Eve', 'Eve'],
+            ['', 'Eve บ่าย', 'Eve บ่าย', 'Eve บ่าย', 'Eve บ่าย', 'Eve บ่าย', 'Eve บ่าย', 'Eve บ่าย'],
           ],
         ),
       ],
@@ -55,6 +56,7 @@ void main() {
             ['GEN ประจำเดือน ธันวาคม พ.ศ. 2569'],
             ['วันที่', 1, 2, 3, 4, 5, 6, 7],
             ['GEN', 'Frank', 'Frank', 'Frank', 'Frank', 'Frank', 'Frank', 'Frank'],
+            ['', 'Frank บ่าย', 'Frank บ่าย', 'Frank บ่าย', 'Frank บ่าย', 'Frank บ่าย', 'Frank บ่าย', 'Frank บ่าย'],
           ],
         ),
       ],
@@ -63,7 +65,7 @@ void main() {
     final result = const RosterTimelineGenerator()
         .generateFromDocumentsWithDiagnostics([first, second]);
 
-    expect(result.timelines, hasLength(21));
+    expect(result.timelines, hasLength(28));
     final workerChains = result.timelines.values
         .map((timeline) => timeline.workerChain.join(' → '))
         .toSet();
@@ -71,6 +73,7 @@ void main() {
       'Alice → Bob',
       'Carol → Dana',
       'Eve → Frank',
+      'Eve บ่าย → Frank บ่าย',
     });
     expect(result.warnings, isEmpty);
   });
