@@ -11,16 +11,17 @@ import 'package:phakphum_calendar/domain/entities/schedule_day.dart';
 import 'package:phakphum_calendar/domain/entities/schedule_month.dart';
 import 'package:phakphum_calendar/domain/entities/shift_assignment.dart';
 import 'package:phakphum_calendar/domain/entities/shift_type.dart';
-import 'package:phakphum_calendar/features/calendar_engine/application/calendar_sync_plan_builder.dart';
-import 'package:phakphum_calendar/features/calendar_engine/application/resilient_calendar_sync_executor.dart';
+import 'package:phakphum_calendar/core/di/app_dependencies.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_command.dart';
+import 'package:phakphum_calendar/features/calendar_engine/domain/failed_sync_operation.dart';
+import 'package:phakphum_calendar/features/calendar_engine/domain/failed_sync_repository.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_gateway.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/managed_calendar_event.dart';
-import 'package:phakphum_calendar/features/history/infrastructure/in_memory_sync_history_repository.dart';
+import 'package:phakphum_calendar/features/history/domain/sync_history_entry.dart';
+import 'package:phakphum_calendar/features/history/domain/sync_history_repository.dart';
 import 'package:phakphum_calendar/features/shift_exchange/application/shift_transaction_calendar_sync_mapper.dart';
 import 'package:phakphum_calendar/features/shift_exchange/infrastructure/shift_transaction_api_client.dart';
 import 'package:phakphum_calendar/features/shift_exchange/presentation/widgets/shift_transaction_history_panel.dart';
-import 'package:phakphum_calendar/features/workflow/application/calendar_sync_coordinator.dart';
 
 void main() {
   final date = DateTime(2026, 11, 18);
@@ -104,13 +105,10 @@ void main() {
     'approved shift transfer stays read-only until confirmation, then syncs and records read-back Event ID',
     (tester) async {
       final gateway = _FakeCalendarGateway();
-      final coordinator = CalendarSyncCoordinator(
-        gateway: gateway,
-        planBuilder: const CalendarSyncPlanBuilder(),
-        executor: ResilientCalendarSyncExecutor(
-          gateway: gateway,
-          historyRepository: InMemorySyncHistoryRepository(),
-        ),
+      final dependencies = AppDependencies(
+        scheduleRules: const [],
+        syncHistoryRepository: _MemorySyncHistoryRepository(),
+        failedSyncRepository: _MemoryFailedSyncRepository(),
       );
       final mapper = const ShiftTransactionCalendarSyncMapper();
       final transferSnapshot = ShiftTransactionSnapshot.fromJson(
@@ -156,7 +154,9 @@ void main() {
             body: ShiftTransactionHistoryPanel(
               apiClient: apiClient,
               onSyncTransaction: (transaction) async {
-                final preparation = await coordinator.prepareSchedule(schedule);
+                final workflow = dependencies.createShiftCalendarWorkflowController(gateway);
+                await workflow.prepareSchedule(schedule);
+                final preparation = workflow.schedulePreparation!;
                 expect(gateway.writeCount, 0);
                 final confirmed = await showDialog<bool>(
                   context: navigatorKey.currentContext!,
@@ -179,28 +179,42 @@ void main() {
                     ],
                   ),
                 );
-                if (confirmed != true) return;
+                if (confirmed != true) {
+                  workflow.dispose();
+                  return;
+                }
 
-                await apiClient.startCalendarSync(
-                  transaction.id,
-                  previewConfirmed: true,
-                );
-                final result = await coordinator.execute(preparation);
-                expect(result.hasFailures, isFalse);
-                final readBack = await coordinator.prepareSchedule(schedule);
-                final eventIds = [
-                  for (final syncId in transferSyncIds)
-                    readBack.existingEventIdsBySyncId[syncId]!,
-                ];
-                expect(eventIds, ['provider-event-1']);
-                expect(
-                  result.operations.single.providerEventId,
-                  eventIds.single,
-                );
-                await apiClient.completeCalendarSync(
-                  transaction.id,
-                  calendarEventIds: eventIds,
-                );
+                try {
+                  await apiClient.startCalendarSync(
+                    transaction.id,
+                    previewConfirmed: true,
+                  );
+                  await workflow.synchronize();
+                  final result = workflow.lastResult!;
+                  expect(result.hasFailures, isFalse);
+                  final verification = dependencies.createShiftCalendarWorkflowController(gateway);
+                  try {
+                    await verification.prepareSchedule(schedule);
+                    final readBack = verification.schedulePreparation!;
+                    final eventIds = [
+                      for (final syncId in transferSyncIds)
+                        readBack.existingEventIdsBySyncId[syncId]!,
+                    ];
+                    expect(eventIds, ['provider-event-1']);
+                    expect(
+                      result.operations.single.providerEventId,
+                      eventIds.single,
+                    );
+                    await apiClient.completeCalendarSync(
+                      transaction.id,
+                      calendarEventIds: eventIds,
+                    );
+                  } finally {
+                    verification.dispose();
+                  }
+                } finally {
+                  workflow.dispose();
+                }
               },
             ),
           ),
@@ -295,4 +309,41 @@ class _FakeCalendarGateway implements CalendarSyncGateway {
       if (!event.start.isBefore(timeMin) && event.start.isBefore(timeMax))
         event,
   ];
+}
+
+class _MemorySyncHistoryRepository implements SyncHistoryRepository {
+  final Map<String, SyncHistoryEntry> entries = {};
+
+  @override
+  Future<SyncHistoryEntry?> findById(String id) async => entries[id];
+
+  @override
+  Future<List<SyncHistoryEntry>> list({int limit = 100}) async =>
+      entries.values.take(limit).toList(growable: false);
+
+  @override
+  Future<void> save(SyncHistoryEntry entry) async {
+    entries[entry.id] = entry;
+  }
+}
+
+class _MemoryFailedSyncRepository implements FailedSyncRepository {
+  final Map<String, List<FailedSyncOperation>> operations = {};
+
+  @override
+  Future<void> replaceForHistory(
+    String historyId,
+    List<FailedSyncOperation> next,
+  ) async {
+    operations[historyId] = List.unmodifiable(next);
+  }
+
+  @override
+  Future<List<FailedSyncOperation>> listForHistory(String historyId) async =>
+      operations[historyId] ?? const [];
+
+  @override
+  Future<void> clearHistory(String historyId) async {
+    operations.remove(historyId);
+  }
 }
