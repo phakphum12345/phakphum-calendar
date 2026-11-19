@@ -260,11 +260,11 @@ void main() {
 
     expect(find.text('Roster ownership history'), findsOneWidget);
     expect(find.text('Alice → Bob'), findsOneWidget);
-    expect(find.text('Main roster · Morning · B'), findsOneWidget);
     expect(find.text('Carol → Dana'), findsNothing);
 
     await tester.tap(find.text('Roster ownership history'));
     await tester.pumpAndSettle();
+    expect(find.text('Main roster · Morning · B'), findsOneWidget);
     expect(find.text('Alice'), findsOneWidget);
     expect(find.text('Bob'), findsOneWidget);
     client.close();
