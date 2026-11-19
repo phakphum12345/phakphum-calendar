@@ -222,6 +222,10 @@ class AppController extends ChangeNotifier implements ControllerState {
   /// This remains the original canonical schedule, not a transaction overlay.
   List<Shift> get shifts => _legacySchedule.toLegacyShifts();
 
+  int get loadedRosterShiftCount => _loadedRosterShifts.length;
+  int get filteredRosterShiftCount =>
+      _filterToSyncDateRange(_loadedRosterShifts).length;
+
   final ShiftTransactionScheduleProjector _shiftTransactionProjector =
       const ShiftTransactionScheduleProjector();
   List<ShiftTransactionSnapshot> _shiftTransactions = const [];
