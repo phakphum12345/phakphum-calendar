@@ -57,8 +57,13 @@ class RosterTimelineGenerator {
     http.Client client,
     String fileId, {
     RosterRevisionService service = const RosterRevisionService(),
+    void Function(String revisionId, Object error)? onRevisionSkipped,
   }) async {
-    final docs = await service.readHistoryTransient(client, fileId);
+    final docs = await service.readHistoryTransient(
+      client,
+      fileId,
+      onRevisionSkipped: onRevisionSkipped,
+    );
     return generateFromDocuments(docs);
   }
 }
