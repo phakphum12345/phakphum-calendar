@@ -611,51 +611,51 @@ class MonthlyRosterShiftAdapter {
     for (final section in report.sections) {
       if (section.hasBlockingDateAnomalies) continue;
       for (final assignment in section.assignments) {
-      final worker = assignment.workerName.trim();
-      final normalizedWorker = _compact(worker);
-      if (worker.isEmpty || !targets.any(normalizedWorker.contains)) {
-        continue;
-      }
-
-      final rule = _ruleForLabel(
-        assignment.rowLabel,
-        shiftTemplates: shiftTemplates,
-      );
-      if (rule == null) continue;
-
-      final date = assignment.date;
-      final start = DateTime(
-        date.year,
-        date.month,
-        date.day,
-        rule.startHour,
-        rule.startMinute,
-      );
-      var end = DateTime(
-        date.year,
-        date.month,
-        date.day,
-        rule.endHour,
-        rule.endMinute,
-      );
-      if (!end.isAfter(start)) end = end.add(const Duration(days: 1));
-
-      final sourceColor = _colorValue(assignment.backgroundColor);
-      final colorMatch = ShiftColorService.classify(sourceColor);
-      final shift = Shift(
-        code: rule.code,
-        rowLabel: assignment.rowLabel,
-        assignedName: worker,
-        start: start,
-        end: end,
-        sheetTitle: assignment.sheetTitle ?? assignment.sectionTitle,
-        cell: assignment.sourceCell,
-        category: colorMatch?.category ?? rule.category,
-        sourceColorValue: sourceColor,
-        sourceSpreadsheetId: assignment.spreadsheetId,
-        sourceSheetId: assignment.sheetId,
-      );
-      shiftsByKey.putIfAbsent(shift.sourceIdentityKey, () => shift);
+        final worker = assignment.workerName.trim();
+        final normalizedWorker = _compact(worker);
+        if (worker.isEmpty || !targets.any(normalizedWorker.contains)) {
+          continue;
+        }
+  
+        final rule = _ruleForLabel(
+          assignment.rowLabel,
+          shiftTemplates: shiftTemplates,
+        );
+        if (rule == null) continue;
+  
+        final date = assignment.date;
+        final start = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          rule.startHour,
+          rule.startMinute,
+        );
+        var end = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          rule.endHour,
+          rule.endMinute,
+        );
+        if (!end.isAfter(start)) end = end.add(const Duration(days: 1));
+  
+        final sourceColor = _colorValue(assignment.backgroundColor);
+        final colorMatch = ShiftColorService.classify(sourceColor);
+        final shift = Shift(
+          code: rule.code,
+          rowLabel: assignment.rowLabel,
+          assignedName: worker,
+          start: start,
+          end: end,
+          sheetTitle: assignment.sheetTitle ?? assignment.sectionTitle,
+          cell: assignment.sourceCell,
+          category: colorMatch?.category ?? rule.category,
+          sourceColorValue: sourceColor,
+          sourceSpreadsheetId: assignment.spreadsheetId,
+          sourceSheetId: assignment.sheetId,
+        );
+        shiftsByKey.putIfAbsent(shift.sourceIdentityKey, () => shift);
       }
     }
 
