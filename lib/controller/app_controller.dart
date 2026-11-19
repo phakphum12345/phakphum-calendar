@@ -245,11 +245,20 @@ class AppController extends ChangeNotifier implements ControllerState {
       _shiftTransactionProjection.warnings;
 
   void updateShiftTransactions(List<ShiftTransactionSnapshot> transactions) {
+    final pending = _pendingShiftTransactionCalendarSync;
+    if (pending != null) {
+      final latest = transactions.where((item) => item.id == pending.transactionId);
+      if (latest.length != 1 ||
+          latest.single.version != pending.transactionVersion) {
+        cancelShiftTransactionCalendarSyncPreview();
+      }
+    }
     _shiftTransactions = List.unmodifiable(transactions);
     notifyListeners();
   }
 
   void clearShiftTransactions() {
+    cancelShiftTransactionCalendarSyncPreview();
     if (_shiftTransactions.isEmpty) return;
     _shiftTransactions = const [];
     notifyListeners();
@@ -3016,6 +3025,7 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   void _replaceLegacyShifts(List<Shift> next, {bool persist = true}) {
+    cancelShiftTransactionCalendarSyncPreview();
     final conversion = _legacyScheduleAdapter.toCanonical(
       next,
       id: _runtimeScheduleId,
@@ -3041,6 +3051,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     Schedule schedule, {
     bool persist = true,
   }) async {
+    cancelShiftTransactionCalendarSyncPreview();
     _legacySchedule = _legacyScheduleAdapter.wrapCanonical(schedule);
     _rebuildAlerts();
     if (persist) {
