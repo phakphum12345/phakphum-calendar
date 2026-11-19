@@ -22,6 +22,7 @@ import '../features/dashboard/presentation/widgets/dashboard_summary_grid.dart';
 import '../features/shift_exchange/presentation/pages/shift_exchange_page.dart';
 import '../features/shift_exchange/presentation/controllers/shift_exchange_controller.dart';
 import '../features/shift_exchange/infrastructure/shift_transaction_api_client.dart';
+import '../features/shift_exchange/application/shift_transaction_calendar_sync_preview.dart';
 import '../features/shift_parser/domain/monthly_roster_section.dart';
 import '../features/shift_parser/domain/monthly_roster_template.dart';
 import '../features/shift_templates/application/shift_template_controller.dart';
@@ -276,6 +277,7 @@ class _AppShellState extends State<AppShell> {
               historyApiClient: _shiftTransactionApiClient,
               onTransactionsLoaded: controller.updateShiftTransactions,
               accountId: controller.auth.account?.id,
+              onSyncTransaction: _syncShiftTransactionCalendar,
             ),
             MonthlyScheduleReportPage(
               schedule: controller.effectiveSchedule,
@@ -758,6 +760,103 @@ class _AppShellState extends State<AppShell> {
     );
     if (!synced && widget.controller.pendingAlertCount > 0) {
       await _showConflictWarningDialog();
+    }
+  }
+
+  Future<void> _syncShiftTransactionCalendar(
+    ShiftTransactionSnapshot transaction,
+  ) async {
+    final controller = widget.controller;
+    ShiftTransactionCalendarSyncPreview preview;
+    try {
+      preview = await controller.previewShiftTransactionCalendarSync(transaction);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('เตรียม Preview ไม่สำเร็จ: $error')),
+        );
+      }
+      return;
+    }
+    if (!mounted) {
+      controller.cancelShiftTransactionCalendarSyncPreview();
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('ตรวจสอบก่อนซิงก์ Google Calendar'),
+        content: SizedBox(
+          width: 520,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'ตัวอย่างนี้ใช้ตารางเวรผลลัพธ์ทั้งช่วงที่เลือก ไม่ได้เขียนข้อมูลก่อนกดยืนยัน',
+                ),
+                const SizedBox(height: 12),
+                for (final line in preview.transferLines)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text('• $line'),
+                  ),
+                const Divider(),
+                Text('เพิ่ม ${preview.insertCount} รายการ'),
+                Text('แก้ไข ${preview.updateCount} รายการ'),
+                Text('ลบ ${preview.deleteCount} รายการ'),
+                if (preview.deleteTitles.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  const Text('รายการที่จะลบจาก Calendar:'),
+                  for (final title in preview.deleteTitles.take(10))
+                    Text('• $title'),
+                  if (preview.deleteTitles.length > 10)
+                    Text('และอีก ${preview.deleteTitles.length - 10} รายการ'),
+                ],
+                if (preview.warnings.isNotEmpty) ...[
+                  const Divider(),
+                  const Text('คำเตือนที่ควรตรวจสอบ:'),
+                  for (final warning in preview.warnings)
+                    Text('• $warning'),
+                ],
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('ยกเลิก'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('ยืนยันและซิงก์'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) {
+      controller.cancelShiftTransactionCalendarSyncPreview();
+      return;
+    }
+    try {
+      await controller.confirmShiftTransactionCalendarSync(
+        transaction: transaction,
+        apiClient: _shiftTransactionApiClient,
+        userConfirmed: true,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ซิงก์ Calendar และบันทึก Event ID สำเร็จ')),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('ซิงก์ Calendar ไม่สำเร็จ: $error')),
+        );
+      }
     }
   }
 
