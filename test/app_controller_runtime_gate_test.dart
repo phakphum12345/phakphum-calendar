@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:phakphum_calendar/core/di/app_dependencies.dart';
 import 'package:phakphum_calendar/domain/entities/schedule.dart';
 import 'package:phakphum_calendar/models/roster_period.dart';
+import 'package:phakphum_calendar/features/shift_parser/domain/monthly_roster_section.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +36,47 @@ void main() {
     );
     expect(controller.busy, isTrue);
   });
+  test('blocks Calendar preview when the selected roster has malformed date headers', () async {
+    final controller = AppDependencies.production().createDemoAppController();
+    addTearDown(controller.dispose);
+    controller.monthlyRoster = MonthlyRosterParseReport(
+      sections: [
+        MonthlyRosterSection(
+          title: 'X-OPD พฤศจิกายน 2569',
+          headerRowIndex: 1,
+          assignments: const [],
+          startDate: DateTime(2026, 11, 1),
+          endDate: DateTime(2026, 11, 30),
+          dateAnomalies: const [
+            MonthlyRosterDateAnomaly(
+              code: 'duplicate_day',
+              message: 'พบเลขวันที่ 30 ซ้ำ',
+              displayedDay: 30,
+              columnIndex: 17,
+            ),
+          ],
+        ),
+      ],
+      warnings: const [],
+    );
+
+    await expectLater(
+      controller.prepareCalendarSync(),
+      throwsA(
+        isA<StateError>().having(
+          (error) => error.message,
+          'message',
+          allOf(
+            contains('ข้อผิดปกติของแถววันที่'),
+            contains('หยุดก่อนสร้าง Preview'),
+            contains('X-OPD พฤศจิกายน 2569'),
+            contains('พบเลขวันที่ 30 ซ้ำ'),
+          ),
+        ),
+      ),
+    );
+  });
+
   test('blocks Calendar preview when selected months produce an empty schedule', () async {
     final controller = AppDependencies.production().createDemoAppController();
     addTearDown(controller.dispose);
