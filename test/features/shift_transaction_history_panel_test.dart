@@ -14,6 +14,8 @@ Map<String, dynamic> transaction({
   String? organizationId,
   bool currentUser = true,
   String? confirmedAt,
+  String? fulfilledAt,
+  List<Map<String, dynamic>> timeline = const [],
 }) => {
   'id': '11111111-1111-4111-8111-111111111111',
   'mode': organizationId == null ? 'personal' : 'organization',
@@ -50,10 +52,10 @@ Map<String, dynamic> transaction({
       'starts_at': '2026-11-18T01:00:00Z',
       'ends_at': '2026-11-18T09:00:00Z',
       'purpose': 'give_up',
-      'fulfilled_at': null,
+      'fulfilled_at': fulfilledAt,
     },
   ],
-  'timeline': [],
+  'timeline': timeline,
 };
 
 void main() {
@@ -134,6 +136,54 @@ void main() {
     await tester.tap(find.text('Preview & sync Calendar'));
     await tester.pumpAndSettle();
     expect(previewRequested, isTrue);
+    client.close();
+  });
+
+  testWidgets('shows named transfer ownership, fulfillment and event audit details', (tester) async {
+    final completedLeg = transaction(
+      status: 'approved',
+      syncStatus: 'synced',
+      fulfilledAt: '2026-11-18T09:05:00Z',
+      timeline: [
+        {
+          'event_type': 'confirm',
+          'transaction_version': 2,
+          'actor_name': 'Alice',
+          'occurred_at': '2026-11-18T02:00:00Z',
+          'data': {'account_confirmed': true},
+        },
+        {
+          'event_type': 'fulfill',
+          'transaction_version': 3,
+          'actor_name': 'Bob',
+          'occurred_at': '2026-11-18T09:05:00Z',
+          'data': {'transfer_id': 'transfer-1', 'shift_id': 'shift-1'},
+        },
+      ],
+    );
+    final client = ShiftTransactionApiClient(
+      baseUrl: 'https://calendar.example.test',
+      idTokenProvider: () async => 'token',
+      httpClient: MockClient((request) async =>
+          http.Response(jsonEncode({'data': [completedLeg]}), 200)),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ShiftTransactionHistoryPanel(apiClient: client),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Give up · approved'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Alice (A) → Bob (B)'), findsOneWidget);
+    expect(find.textContaining('Fulfilled: 2026-11-18T09:05:00Z'), findsOneWidget);
+    expect(find.textContaining('Participant confirmed'), findsOneWidget);
+    expect(find.textContaining('Transfer: transfer-1 · Shift: shift-1'), findsOneWidget);
+    expect(find.textContaining('Bob · 2026-11-18T09:05:00Z'), findsOneWidget);
     client.close();
   });
 
