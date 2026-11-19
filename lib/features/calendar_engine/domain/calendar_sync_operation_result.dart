@@ -6,10 +6,12 @@ class CalendarSyncOperationResult {
     required this.referenceId,
     required this.success,
     this.message,
+    this.providerEventId,
   });
 
   final CalendarSyncOperationType type;
   final String referenceId;
   final bool success;
   final String? message;
+  final String? providerEventId;
 }
