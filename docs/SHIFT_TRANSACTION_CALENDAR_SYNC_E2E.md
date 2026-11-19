@@ -36,6 +36,7 @@ Connect an approved shift transaction to the effective roster and the existing G
 - Prepared Calendar comparisons expose existing provider IDs by stable sync ID.
 - AppController preview maps every approved transfer to exactly one effective-schedule Calendar event.
 - History UI exposes Preview & sync only for approved, not-yet-synced transactions and gates writes behind a confirmation dialog.
+- The integration_test flow exercises the transaction history action, no-write-before-confirmation, sync-start, fake Calendar provider insert, read-back Event ID, and sync-complete API transition.
 - Backend feature tests cover explicit preview confirmation, one distinct Event ID per transfer, sync failure/retry, and recipient-only post-shift fulfillment.
 
 ## Remaining manual E2E
