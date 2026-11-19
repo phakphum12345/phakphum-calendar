@@ -82,6 +82,54 @@ void main() {
     expect(missingLast.hasBlockingDateAnomalies, isTrue);
   });
 
+  test('blocks fractional numeric date cells instead of truncating them', () {
+    final report = const MonthlyRosterSectionParser().parse(
+      _input(
+        title: 'X-OPD 1 พฤศจิกายน 2569 - 30 พฤศจิกายน 2569',
+        days: [
+          'วันที่',
+          1.5,
+          ...List<int>.generate(29, (index) => index + 2),
+        ],
+        workers: ['P1 เช้า', ...List<String>.filled(30, 'นายสมชาย')],
+      ),
+    );
+
+    final section = report.sections.single;
+    expect(section.dateColumns.first.displayedDay, 2);
+    expect(section.dateColumns.any((column) => column.columnIndex == 1), isFalse);
+    expect(
+      section.dateAnomalies.map((item) => item.code),
+      contains('missing_start_date'),
+    );
+
+    final converted = const MonthlyRosterShiftAdapter()
+        .parseForWorkersWithDiagnostics(
+          report,
+          targetNames: ['นายสมชาย'],
+        );
+    expect(converted.shifts, isEmpty);
+    expect(converted.hasBlockingDateAnomalies, isTrue);
+  });
+
+  test('accepts integer-valued numeric date cells represented as doubles', () {
+    final report = const MonthlyRosterSectionParser().parse(
+      _input(
+        title: 'X-OPD 1 พฤศจิกายน 2569 - 30 พฤศจิกายน 2569',
+        days: [
+          'วันที่',
+          1.0,
+          ...List<int>.generate(29, (index) => index + 2),
+        ],
+        workers: ['P1 เช้า', ...List<String>.filled(30, 'นายสมชาย')],
+      ),
+    );
+
+    expect(report.sections.single.dateColumns, hasLength(30));
+    expect(report.sections.single.dateColumns.first.date, DateTime(2026, 11, 1));
+    expect(report.hasBlockingDateAnomalies, isFalse);
+  });
+
   test('allows repeated day numbers when a two-month period contains both dates', () {
     final days = <Object?>[
       'วันที่',
