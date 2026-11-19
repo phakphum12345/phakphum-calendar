@@ -85,5 +85,6 @@ void main() {
     expect(result.hasFailures, isFalse);
     expect(result.historyEntry.status, SyncHistoryStatus.success);
     expect(result.historyEntry.inserted, 1);
+    expect(result.operations.single.providerEventId, 'event-1');
   });
 }
