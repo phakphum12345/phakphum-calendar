@@ -71,6 +71,7 @@ class TimelineArchiveService {
   Future<List<RosterRevisionDocument>> readRevisions({
     required String accountId,
     required String fileId,
+    void Function(String revisionId, Object error)? onRevisionSkipped,
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final scope = _scope(accountId, fileId);
@@ -84,7 +85,13 @@ class TimelineArchiveService {
       }
       final id = ids[index];
       final raw = prefs.getString(_recordKey(scope, id));
-      if (raw == null) continue;
+      if (raw == null) {
+        onRevisionSkipped?.call(
+          id,
+          StateError('Timeline revision record is missing from the local archive.'),
+        );
+        continue;
+      }
       try {
         final map = jsonDecode(raw) as Map<String, dynamic>;
         final snapshots = (map['snapshots'] as List<dynamic>? ?? const [])
@@ -111,7 +118,8 @@ class TimelineArchiveService {
           modifiedAt: DateTime.parse(map['modifiedAt'] as String),
           snapshots: snapshots,
         ));
-      } on Object {
+      } on Object catch (error) {
+        onRevisionSkipped?.call(id, error);
         continue;
       }
     }
@@ -126,15 +134,24 @@ class TimelineArchiveService {
     required String fileId,
     String? legacyAccountId,
     void Function(Object error)? onMigrationError,
+    void Function(String revisionId, Object error)? onRevisionSkipped,
   }) async {
-    final current = await readRevisions(accountId: accountId, fileId: fileId);
+    final current = await readRevisions(
+      accountId: accountId,
+      fileId: fileId,
+      onRevisionSkipped: onRevisionSkipped,
+    );
     final legacyId = legacyAccountId?.trim() ?? '';
     if (legacyId.isEmpty ||
         legacyId.toLowerCase() == accountId.trim().toLowerCase()) {
       return current;
     }
 
-    final legacy = await readRevisions(accountId: legacyId, fileId: fileId);
+    final legacy = await readRevisions(
+      accountId: legacyId,
+      fileId: fileId,
+      onRevisionSkipped: onRevisionSkipped,
+    );
     final merged = <String, RosterRevisionDocument>{
       for (final revision in legacy) revision.revisionId: revision,
       for (final revision in current) revision.revisionId: revision,
