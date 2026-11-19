@@ -63,6 +63,15 @@ class MonthlyRosterSectionParser {
       warnings.add('ไม่พบแถววันที่ตาม Layout Profile ครบทุกแถวที่กำหนด');
     }
     final sections = <MonthlyRosterSection>[];
+    final tabPeriod = _tryParsePeriod(input.sheetTitle);
+    final hasExplicitSectionPeriod = headerRows.any((row) {
+      final title = _sectionTitle(
+        input: input,
+        cellsByRow: cellsByRow,
+        headerRow: row,
+      );
+      return _tryParsePeriod(title) != null;
+    });
 
     for (var index = 0; index < headerRows.length; index++) {
       final headerRow = headerRows[index];
@@ -77,14 +86,15 @@ class MonthlyRosterSectionParser {
       );
 
       final explicitPeriod = _tryParsePeriod(title);
-      final tabPeriod = _tryParsePeriod(input.sheetTitle);
-      // A single-month tab can safely supply context to repeated split
-      // sections (for example days 1-15 and 16-30) only when each section's
-      // own day sequence is strictly increasing and stays inside that month.
-      // Never infer a month for a sequence that wraps from 30/31 back to 1;
-      // that may be a cross-month roster and needs an explicit section range.
+      // A worksheet month may fill in dates for genuinely split, undated
+      // sections only when no section declares its own period. If one section
+      // has an explicit range, other undated sections must not borrow the tab
+      // month: they may represent a different roster period.
+      // Each inferred section must still have a strictly increasing sequence
+      // of days contained within the worksheet's single month.
       final canUseSheetFallback = headerRows.length == 1 ||
-          _canUseSingleMonthTabFallback(tabPeriod, daysByColumn);
+          (!hasExplicitSectionPeriod &&
+              _canUseSingleMonthTabFallback(tabPeriod, daysByColumn));
       final period = explicitPeriod ?? (canUseSheetFallback ? tabPeriod : null);
       if (period == null) {
         warnings.add(
