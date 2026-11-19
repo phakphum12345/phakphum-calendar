@@ -1834,7 +1834,7 @@ class AppController extends ChangeNotifier implements ControllerState {
         await workflow.prepareSchedule(schedule);
         if (workflow.hasBlockingFailures) {
           throw StateError(workflow.validationResult?.errors
-              .map((item) => item.message).join('\\n') ?? 'ตารางเวรไม่ผ่านการตรวจสอบ');
+              .map((item) => item.message).join('\n') ?? 'ตารางเวรไม่ผ่านการตรวจสอบ');
         }
         final preparation = workflow.schedulePreparation;
         if (preparation == null) throw StateError('ไม่พบแผน Calendar ที่ผ่านการตรวจสอบ');
@@ -1884,7 +1884,12 @@ class AppController extends ChangeNotifier implements ControllerState {
     return _run('ยืนยันและซิงก์ Calendar สำหรับธุรกรรมเวร', () async {
       if (!userConfirmed) throw StateError('ต้องยืนยันจากหน้าตัวอย่างก่อนบันทึก Calendar');
       final pending = _pendingShiftTransactionCalendarSync;
+      final currentTransactions = _shiftTransactions.where(
+        (item) => item.id == transaction.id,
+      );
       if (pending == null ||
+          currentTransactions.length != 1 ||
+          currentTransactions.single.version != transaction.version ||
           pending.transactionId != transaction.id ||
           pending.transactionVersion != transaction.version ||
           !identical(pending.sourceSchedule, canonicalSchedule)) {
@@ -1895,12 +1900,12 @@ class AppController extends ChangeNotifier implements ControllerState {
           !currentIds.toSet().containsAll(pending.syncIds)) {
         throw StateError('ตารางเวรเปลี่ยนหลัง Preview กรุณาตรวจสอบใหม่');
       }
-      var syncStarted = false;
+      var syncStartAttempted = false;
       var syncCompleted = false;
       ShiftCalendarWorkflowController? verification;
       try {
+        syncStartAttempted = true;
         await apiClient.startCalendarSync(transaction.id, previewConfirmed: true);
-        syncStarted = true;
         await pending.workflow.synchronize();
         final result = pending.workflow.lastResult;
         if (result == null || result.hasFailures) {
@@ -1940,7 +1945,7 @@ class AppController extends ChangeNotifier implements ControllerState {
         notifyListeners();
         return updated;
       } catch (error) {
-        if (syncStarted && !syncCompleted) {
+        if (syncStartAttempted && !syncCompleted) {
           try {
             await apiClient.failCalendarSync(transaction.id, reason: error.toString());
           } catch (_) {}
