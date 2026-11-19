@@ -651,6 +651,23 @@ class MonthlyRosterSectionParser {
           .toList();
       candidates.addAll(texts);
     }
+    // Some real workbooks place the period heading immediately below the
+    // numeric date row. Search forward within this date grid as well, stopping
+    // at the next date header so a later section's period cannot leak backward.
+    final lastRow = cellsByRow.keys.fold<int>(
+      headerRow,
+      (current, row) => current > row ? current : row,
+    );
+    for (var row = headerRow + 1; row <= lastRow; row++) {
+      final rowCells = cellsByRow[row] ?? const [];
+      if (_isDateHeaderRow(rowCells)) break;
+      final texts = rowCells
+          .map((cell) => cell.text?.toString().trim())
+          .whereType<String>()
+          .where((text) => text.isNotEmpty)
+          .toList();
+      candidates.addAll(texts);
+    }
 
     // An explicit month/range heading is authoritative even when the sheet
     // tab was named for a different month. Prefer the closest valid heading.
