@@ -1293,6 +1293,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           monthlyConversion.shifts.map(_applyShiftOverride),
         ),
         unconvertedAssignments: monthlyConversion.unconvertedAssignments,
+        blockingDateAnomalies: monthlyConversion.blockingDateAnomalies,
       );
       final monthlyParsed = monthlyRosterConversion.shifts;
       // Use the same analyzer for local imports as for Google Sheets so a
