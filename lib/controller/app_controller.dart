@@ -1086,7 +1086,8 @@ class AppController extends ChangeNotifier implements ControllerState {
     } else {
       if (generation == _timelineLoadGeneration) timelineWarning = null;
       try {
-        var skippedRevisionCount = 0;
+        final skippedArchiveRevisionIds = <String>{};
+        final skippedDriveRevisionIds = <String>{};
         final legacyAccountId = auth.account?.email.trim();
         const archive = TimelineArchiveService();
         var archivedRevisions = <RosterRevisionDocument>[];
@@ -1099,6 +1100,9 @@ class AppController extends ChangeNotifier implements ControllerState {
               accountId: accountId,
               legacyAccountId: legacyAccountId,
               fileId: spreadsheetId,
+              onRevisionSkipped: (revisionId, error) {
+                skippedArchiveRevisionIds.add(revisionId);
+              },
               onMigrationError: (migrationError) {
                 final message =
                     'ย้ายคลัง Timeline จากอีเมลไปยังรหัสบัญชี Google ไม่สำเร็จ: '
@@ -1127,6 +1131,9 @@ class AppController extends ChangeNotifier implements ControllerState {
                 'ไม่พบอีเมลบัญชี Google จึงไม่สามารถแยกคลัง Timeline ตามบัญชีได้';
           }
         }
+        skippedArchiveRevisionIds.removeAll(
+          archivedRevisions.map((revision) => revision.revisionId),
+        );
 
         try {
           if (generation != _timelineLoadGeneration) return;
@@ -1138,19 +1145,28 @@ class AppController extends ChangeNotifier implements ControllerState {
           // archive avoid Drive revision exports; explicit refresh still
           // checks Drive for revisions added since the last archive.
           final shouldRefreshDriveHistory =
-              refreshHistoricalTimeline || archivedRevisions.isEmpty;
+              refreshHistoricalTimeline ||
+              archivedRevisions.isEmpty ||
+              skippedArchiveRevisionIds.isNotEmpty;
           final missingRevisions = shouldRefreshDriveHistory
               ? await const RosterRevisionService().readHistoryTransient(
                   client,
                   spreadsheetId,
                   knownRevisionIds: knownRevisionIds,
                   onRevisionSkipped: (revisionId, error) {
-                    skippedRevisionCount++;
+                    skippedDriveRevisionIds.add(revisionId);
                   },
                 )
               : <RosterRevisionDocument>[];
 
           if (generation != _timelineLoadGeneration) return;
+          final recoveredRevisionIds = missingRevisions
+              .map((revision) => revision.revisionId)
+              .toSet();
+          final unresolvedRevisionIds = <String>{
+            ...skippedArchiveRevisionIds.difference(recoveredRevisionIds),
+            ...skippedDriveRevisionIds,
+          };
 
           // Persist each downloaded revision before adding it to the
           // in-memory timeline. If a write fails, the local archive remains
@@ -1186,10 +1202,15 @@ class AppController extends ChangeNotifier implements ControllerState {
                 ? 'ไม่พบประวัติ revision ที่อ่านได้ จึงแสดงเฉพาะรายชื่อเวรปัจจุบัน'
                 : 'ใช้คลัง Timeline ในเครื่อง; กด “ซิงค์ Timeline ย้อนหลัง” เพื่อตรวจ revision ใหม่จาก Drive';
           }
-          if (skippedRevisionCount > 0) {
+          if (unresolvedRevisionIds.isNotEmpty) {
+            final skippedIds = unresolvedRevisionIds.toList()..sort();
+            final shownIds = skippedIds.take(5).join(', ');
+            final more = skippedIds.length > 5
+                ? ' และอีก \${skippedIds.length - 5} รายการ'
+                : '';
             final skippedWarning =
-                'ข้าม revision ที่อ่านไม่ได้ $skippedRevisionCount รายการ; '
-                'Timeline อาจไม่ครบ';
+                'อ่าน revision ไม่สำเร็จ \${skippedIds.length} รายการ '
+                '(\$shownIds\$more); Timeline อาจไม่ครบ';
             timelineWarning = timelineWarning == null
                 ? skippedWarning
                 : '$timelineWarning; $skippedWarning';
