@@ -68,6 +68,65 @@ void main() {
       expect(completeRoster, hasLength(3));
     });
 
+
+    test('includes every split section day for November 2026', () {
+      const selected = [RosterPeriod(year: 2026, month: 11)];
+      final range = RosterSyncPeriodFilter.rangeFor(selected);
+
+      expect(range!.start, DateTime(2026, 11, 1));
+      expect(range.end, DateTime(2026, 11, 30));
+      for (final day in [1, 15, 16, 30]) {
+        expect(
+          RosterSyncPeriodFilter.includes(DateTime(2026, 11, day), selected),
+          isTrue,
+          reason: 'November $day must remain eligible for sync',
+        );
+      }
+      expect(
+        RosterSyncPeriodFilter.includes(DateTime(2026, 10, 31), selected),
+        isFalse,
+      );
+      expect(
+        RosterSyncPeriodFilter.includes(DateTime(2026, 12, 1), selected),
+        isFalse,
+      );
+    });
+
+    test('includes November and December together without losing either half-month', () {
+      const selected = [
+        RosterPeriod(year: 2026, month: 11),
+        RosterPeriod(year: 2026, month: 12),
+      ];
+      final range = RosterSyncPeriodFilter.rangeFor(selected);
+
+      expect(range!.start, DateTime(2026, 11, 1));
+      expect(range.end, DateTime(2026, 12, 31));
+      for (final date in [
+        DateTime(2026, 11, 1),
+        DateTime(2026, 11, 15),
+        DateTime(2026, 11, 16),
+        DateTime(2026, 11, 30),
+        DateTime(2026, 12, 1),
+        DateTime(2026, 12, 15),
+        DateTime(2026, 12, 16),
+        DateTime(2026, 12, 31),
+      ]) {
+        expect(
+          RosterSyncPeriodFilter.includes(date, selected),
+          isTrue,
+          reason: '${date.day}/${date.month} must remain eligible for sync',
+        );
+      }
+      expect(
+        RosterSyncPeriodFilter.includes(DateTime(2026, 10, 31), selected),
+        isFalse,
+      );
+      expect(
+        RosterSyncPeriodFilter.includes(DateTime(2027, 1, 1), selected),
+        isFalse,
+      );
+    });
+
     test('does not filter when no month is selected', () {
       expect(
         RosterSyncPeriodFilter.includes(DateTime(2026, 8, 15), const []),
