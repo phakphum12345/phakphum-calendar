@@ -360,6 +360,8 @@ class MonthlyRosterSectionParser {
       end.year, end.month, end.day,
     ).difference(DateTime.utc(start.year, start.month, start.day)).inDays + 1;
     final completeRangeHeader = columns.length == expectedDayCount;
+    final nearCompleteRangeHeader =
+        columns.length >= (expectedDayCount * 0.8).ceil();
     DateTime? previousResolved;
     for (final column in columns) {
       final resolved = datesByColumn[column];
@@ -377,7 +379,7 @@ class MonthlyRosterSectionParser {
         }
         continue;
       }
-      if (completeRangeHeader && previousResolved != null) {
+      if (nearCompleteRangeHeader && previousResolved != null) {
         final gap = DateTime.utc(
           resolved.year, resolved.month, resolved.day,
         ).difference(DateTime.utc(
@@ -413,6 +415,37 @@ class MonthlyRosterSectionParser {
         }
       }
       previousResolved = resolved;
+    }
+
+    if (!completeRangeHeader && nearCompleteRangeHeader && columns.isNotEmpty) {
+      final firstResolved = datesByColumn[columns.first];
+      if (firstResolved == null ||
+          firstResolved.year != start.year ||
+          firstResolved.month != start.month ||
+          firstResolved.day != start.day) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'missing_start_date',
+            columnIndex: columns.first,
+            displayedDay: daysByColumn[columns.first],
+            message: 'หัวตารางขาดวันเริ่มต้น ' + _formatDate(start),
+          ),
+        );
+      }
+      final lastResolved = datesByColumn[columns.last];
+      if (lastResolved == null ||
+          lastResolved.year != end.year ||
+          lastResolved.month != end.month ||
+          lastResolved.day != end.day) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'missing_end_date',
+            columnIndex: columns.last,
+            displayedDay: daysByColumn[columns.last],
+            message: 'หัวตารางขาดวันสิ้นสุด ' + _formatDate(end),
+          ),
+        );
+      }
     }
 
     if (completeRangeHeader) {
