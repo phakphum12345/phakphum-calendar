@@ -8,6 +8,8 @@ import 'package:phakphum_calendar/domain/entities/shift_assignment.dart';
 import 'package:phakphum_calendar/domain/entities/shift_type.dart';
 import 'package:phakphum_calendar/features/shift_exchange/application/shift_transaction_schedule_projector.dart';
 import 'package:phakphum_calendar/features/shift_exchange/infrastructure/shift_transaction_api_client.dart';
+import 'package:phakphum_calendar/features/schedule/data/legacy_schedule_adapter.dart';
+import 'package:phakphum_calendar/models/shift.dart' as legacy;
 
 void main() {
   const projector = ShiftTransactionScheduleProjector();
@@ -206,6 +208,61 @@ void main() {
     expect(result.schedule, same(source));
     expect(result.warnings, hasLength(1));
     expect(result.warnings.single, contains('source assignment'));
+  });
+}
+
+  test('reconstructs an effective legacy schedule without changing imported source metadata', () {
+    const adapter = LegacyScheduleAdapter();
+    final conversion = adapter.toCanonical([
+      legacy.Shift(
+        code: 'M',
+        rowLabel: 'Morning',
+        assignedName: 'A',
+        start: DateTime(2026, 11, 18, 8),
+        end: DateTime(2026, 11, 18, 16),
+        sheetTitle: 'November',
+        cell: 'D5',
+        category: legacy.ShiftCategory.own,
+      ),
+      legacy.Shift(
+        code: 'E',
+        rowLabel: 'Evening',
+        assignedName: 'B',
+        start: DateTime(2026, 11, 18, 16),
+        end: DateTime(2026, 11, 18, 23),
+        sheetTitle: 'November',
+        cell: 'D6',
+        category: legacy.ShiftCategory.own,
+      ),
+    ], id: 'schedule-1');
+    final sourceAssignment = conversion.schedule
+        .month(date)!.day(date)!.assignments.first;
+    final transferSnapshot = transaction(
+      id: 'legacy-overlay',
+      status: 'approved',
+      createdAt: DateTime(2026, 11, 1),
+      transfers: [
+        transfer(
+          from: 'A',
+          to: 'B',
+          shift: sourceAssignment.shift,
+          purpose: 'give_up',
+        ),
+      ],
+    );
+
+    final projected = projector.project(
+      source: conversion.schedule,
+      transactions: [transferSnapshot],
+    );
+    final effectiveLegacy = conversion.toLegacyShifts(schedule: projected.schedule);
+
+    expect(projected.warnings, isEmpty);
+    expect(effectiveLegacy.first.assignedName, 'B');
+    expect(effectiveLegacy.first.sheetTitle, 'November');
+    expect(effectiveLegacy.first.cell, 'D5');
+    expect(conversion.toLegacyShifts().first.assignedName, 'A');
+    expect(conversion.schedule.month(date)!.day(date)!.assignments.first.employee.employeeCode, 'A');
   });
 }
 
