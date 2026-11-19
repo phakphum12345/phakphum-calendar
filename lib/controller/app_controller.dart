@@ -2020,7 +2020,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           .where((section) => section.hasBlockingDateAnomalies)
           .expand(
             (section) => section.dateAnomalies.map(
-              (anomaly) => section.title + ': ' + anomaly.message,
+              (anomaly) => '${section.title}: ${anomaly.message}',
             ),
           )
           .take(8)
