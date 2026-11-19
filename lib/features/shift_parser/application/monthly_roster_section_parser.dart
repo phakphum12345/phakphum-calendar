@@ -99,6 +99,18 @@ class MonthlyRosterSectionParser {
         warnings: warnings,
       );
 
+      final dateAnomalies = _validateDateColumns(
+        daysByColumn: daysByColumn,
+        datesByColumn: datesByColumn,
+        start: start,
+        end: end,
+      );
+      warnings.addAll(
+        dateAnomalies.map(
+          (anomaly) => 'ต้องตรวจสอบวันที่: ' + anomaly.message,
+        ),
+      );
+
       final dateColumns = <MonthlyRosterDateColumn>[
         for (final entry in datesByColumn.entries)
           MonthlyRosterDateColumn(
@@ -134,6 +146,7 @@ class MonthlyRosterSectionParser {
           rosterRows: List.unmodifiable(rosterRows),
           startDate: start,
           endDate: end,
+          dateAnomalies: List.unmodifiable(dateAnomalies),
         ),
       );
     }
@@ -202,6 +215,7 @@ class MonthlyRosterSectionParser {
           rosterRows: section.rosterRows,
           startDate: section.startDate,
           endDate: section.endDate,
+          dateAnomalies: section.dateAnomalies,
         ),
       );
     }
@@ -300,6 +314,153 @@ class MonthlyRosterSectionParser {
       }
     }
     return result;
+  }
+
+  List<MonthlyRosterDateAnomaly> _validateDateColumns({
+    required Map<int, int> daysByColumn,
+    required Map<int, DateTime> datesByColumn,
+    required DateTime start,
+    required DateTime end,
+  }) {
+    final anomalies = <MonthlyRosterDateAnomaly>[];
+    final columns = daysByColumn.keys.toList()..sort();
+    final columnsByDay = <int, List<int>>{};
+    for (final column in columns) {
+      columnsByDay.putIfAbsent(daysByColumn[column]!, () => []).add(column);
+    }
+
+    // Repeated day numbers are valid across different months only when the
+    // declared period actually contains that many occurrences of the day.
+    for (final entry in columnsByDay.entries) {
+      var possibleOccurrences = 0;
+      for (
+        var date = DateTime(start.year, start.month, start.day);
+        !date.isAfter(end);
+        date = DateTime(date.year, date.month, date.day + 1)
+      ) {
+        if (date.day == entry.key) possibleOccurrences++;
+      }
+      if (entry.value.length > possibleOccurrences) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'duplicate_day',
+            displayedDay: entry.key,
+            columnIndex: entry.value[1],
+            message: 'พบเลขวันที่ ' + entry.key.toString() +
+                ' ซ้ำในช่วงวันที่ของส่วนนี้',
+          ),
+        );
+      }
+    }
+
+    final expectedDayCount = DateTime.utc(
+      end.year, end.month, end.day,
+    ).difference(DateTime.utc(start.year, start.month, start.day)).inDays + 1;
+    final completeRangeHeader = columns.length == expectedDayCount;
+    DateTime? previousResolved;
+    for (final column in columns) {
+      final resolved = datesByColumn[column];
+      if (resolved == null) {
+        if (!completeRangeHeader) {
+          final day = daysByColumn[column]!;
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'unresolved_date',
+              displayedDay: day,
+              columnIndex: column,
+              message: 'วันที่ ' + day.toString() + ' ที่คอลัมน์ ' +
+                  (column + 1).toString() +
+                  ' เรียงผิดลำดับหรืออยู่นอกช่วงที่ระบุ',
+            ),
+          );
+        }
+        continue;
+      }
+      if (previousResolved != null) {
+        final gap = DateTime.utc(
+          resolved.year, resolved.month, resolved.day,
+        ).difference(DateTime.utc(
+          previousResolved.year, previousResolved.month, previousResolved.day,
+        )).inDays;
+        if (gap > 1) {
+          final missing = <String>[];
+          for (var offset = 1; offset < gap; offset++) {
+            final missingDate = DateTime(
+              previousResolved.year,
+              previousResolved.month,
+              previousResolved.day + offset,
+            );
+            missing.add(_formatDate(missingDate));
+          }
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'missing_dates',
+              columnIndex: column,
+              displayedDay: daysByColumn[column],
+              message: 'ลำดับวันที่ขาด ' + missing.join(', ') +
+                  ' ก่อนคอลัมน์ ' + (column + 1).toString(),
+            ),
+          );
+        } else if (gap <= 0) {
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'out_of_order',
+              columnIndex: column,
+              displayedDay: daysByColumn[column],
+              message: 'วันที่ในคอลัมน์ ' + (column + 1).toString() +
+                  ' ไม่เรียงตามปฏิทิน',
+            ),
+          );
+        }
+      }
+      previousResolved = resolved;
+    }
+
+    if (completeRangeHeader) {
+      final resolvedKeys = datesByColumn.values
+          .map((date) => date.year.toString() + '-' +
+              date.month.toString() + '-' + date.day.toString())
+          .toSet();
+      final missing = <String>[];
+      for (var offset = 0; offset < expectedDayCount; offset++) {
+        final expected = DateTime(start.year, start.month, start.day + offset);
+        final expectedKey = expected.year.toString() + '-' +
+            expected.month.toString() + '-' + expected.day.toString();
+        if (!resolvedKeys.contains(expectedKey)) {
+          missing.add(_formatDate(expected));
+        }
+        final actualDay = daysByColumn[columns[offset]]!;
+        if (actualDay != expected.day) {
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'day_sequence_mismatch',
+              columnIndex: columns[offset],
+              displayedDay: actualDay,
+              message: 'คอลัมน์ ' + (columns[offset] + 1).toString() +
+                  ' แสดงวันที่ ' + actualDay.toString() +
+                  ' แต่ตามช่วงที่ระบุควรเป็น ' + expected.day.toString(),
+            ),
+          );
+        }
+      }
+      if (missing.isNotEmpty) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'missing_dates',
+            message: 'ไม่สามารถจับคู่วันที่ในช่วงที่ระบุได้ครบ: ' +
+                missing.join(', '),
+          ),
+        );
+      }
+    }
+
+    final unique = <String, MonthlyRosterDateAnomaly>{};
+    for (final anomaly in anomalies) {
+      final key = anomaly.code + '|' + (anomaly.columnIndex?.toString() ?? '') +
+          '|' + (anomaly.displayedDay?.toString() ?? '') + '|' + anomaly.message;
+      unique.putIfAbsent(key, () => anomaly);
+    }
+    return List.unmodifiable(unique.values);
   }
 
   Map<int, DateTime> _resolveDatesByColumn({
@@ -447,7 +608,9 @@ class MonthlyRosterShiftAdapter {
     if (targets.isEmpty) return const [];
 
     final shiftsByKey = <String, Shift>{};
-    for (final assignment in report.assignments) {
+    for (final section in report.sections) {
+      if (section.hasBlockingDateAnomalies) continue;
+      for (final assignment in section.assignments) {
       final worker = assignment.workerName.trim();
       final normalizedWorker = _compact(worker);
       if (worker.isEmpty || !targets.any(normalizedWorker.contains)) {
@@ -493,6 +656,7 @@ class MonthlyRosterShiftAdapter {
         sourceSheetId: assignment.sheetId,
       );
       shiftsByKey.putIfAbsent(shift.sourceIdentityKey, () => shift);
+      }
     }
 
     return shiftsByKey.values.toList()
