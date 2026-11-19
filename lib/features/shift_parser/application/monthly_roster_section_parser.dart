@@ -360,8 +360,10 @@ class MonthlyRosterSectionParser {
       end.year, end.month, end.day,
     ).difference(DateTime.utc(start.year, start.month, start.day)).inDays + 1;
     final completeRangeHeader = columns.length == expectedDayCount;
+    // Treat near-full headers as complete enough to validate their endpoints;
+    // short sample grids remain valid when they cover only part of a period.
     final nearCompleteRangeHeader =
-        columns.length >= (expectedDayCount * 0.8).ceil();
+        columns.length >= (expectedDayCount * 0.9).ceil();
     DateTime? previousResolved;
     for (final column in columns) {
       final resolved = datesByColumn[column];
