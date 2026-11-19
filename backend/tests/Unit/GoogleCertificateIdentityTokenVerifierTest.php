@@ -83,6 +83,15 @@ class GoogleCertificateIdentityTokenVerifierTest extends TestCase
         );
     }
 
+    public function test_it_rejects_an_object_shaped_audience_claim(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        app(GoogleCertificateIdentityTokenVerifier::class)->verify(
+            $this->token(['aud' => ['client' => 'server-client-id']]),
+        );
+    }
+
     public function test_it_requires_an_authorized_party_for_multiple_audiences(): void
     {
         config([
