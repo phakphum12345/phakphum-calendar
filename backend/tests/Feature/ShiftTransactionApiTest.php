@@ -52,6 +52,61 @@ class ShiftTransactionApiTest extends TestCase
             ->assertOk()->assertJsonCount(1, 'data');
     }
 
+    public function test_timeline_is_consistent_for_both_participants_and_idempotent_replay_adds_no_events(): void
+    {
+        $this->signIn('alice-token');
+        $this->signIn('bob-token');
+        $payload = $this->giveUp();
+        $headers = [
+            'Authorization' => 'Bearer alice-token',
+            'Idempotency-Key' => 'timeline-both-participants',
+        ];
+
+        $created = $this->postJson('/api/v1/shift-transactions', $payload, $headers)
+            ->assertCreated()->json('data');
+
+        $this->postJson("/api/v1/shift-transactions/{$created['id']}/confirm", [], $this->auth('alice-token'))
+            ->assertOk();
+        $this->postJson("/api/v1/shift-transactions/{$created['id']}/confirm", [], $this->auth('bob-token'))
+            ->assertOk();
+
+        $aliceHistory = $this->getJson(
+            "/api/v1/shift-transactions/{$created['id']}",
+            $this->auth('alice-token'),
+        )->assertOk()->json('data');
+        $bobHistory = $this->getJson(
+            "/api/v1/shift-transactions/{$created['id']}",
+            $this->auth('bob-token'),
+        )->assertOk()->json('data');
+
+        $this->assertSame($aliceHistory['timeline'], $bobHistory['timeline']);
+        $this->assertSame(
+            ['created', 'confirm', 'confirm'],
+            collect($aliceHistory['timeline'])->pluck('event_type')->all(),
+        );
+        $this->assertSame(
+            [1, 2, 3],
+            collect($aliceHistory['timeline'])->pluck('transaction_version')->all(),
+        );
+        $this->assertSame(
+            ['Alice', 'Alice', 'Bob'],
+            collect($aliceHistory['timeline'])->pluck('actor_name')->all(),
+        );
+        $this->assertTrue(collect($aliceHistory['participants'])->firstWhere('role', 'requester')['is_current_user']);
+        $this->assertFalse(collect($aliceHistory['participants'])->firstWhere('role', 'recipient')['is_current_user']);
+        $this->assertFalse(collect($bobHistory['participants'])->firstWhere('role', 'requester')['is_current_user']);
+        $this->assertTrue(collect($bobHistory['participants'])->firstWhere('role', 'recipient')['is_current_user']);
+
+        $replayed = $this->postJson('/api/v1/shift-transactions', $payload, $headers)
+            ->assertCreated()->json('data');
+        $this->assertSame($created['id'], $replayed['id']);
+        $this->assertSame($aliceHistory['timeline'], $replayed['timeline']);
+        $this->assertSame(
+            3,
+            DB::table('shift_transaction_events')->where('transaction_id', $created['id'])->count(),
+        );
+    }
+
     public function test_month_filter_uses_effective_shift_date_instead_of_request_creation_date(): void
     {
         $this->travelTo(Carbon::parse('2026-11-15 12:00:00'));
