@@ -209,7 +209,6 @@ void main() {
     expect(result.warnings, hasLength(1));
     expect(result.warnings.single, contains('source assignment'));
   });
-}
 
   test('reconstructs an effective legacy schedule without changing imported source metadata', () {
     const adapter = LegacyScheduleAdapter();
