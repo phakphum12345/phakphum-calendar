@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../models/roster_assignment_timeline.dart';
 import '../../infrastructure/shift_transaction_api_client.dart';
 
 class ShiftTransactionHistoryPanel extends StatefulWidget {
@@ -8,6 +9,7 @@ class ShiftTransactionHistoryPanel extends StatefulWidget {
     this.approvableOrganizationIds = const {},
     this.mode,
     this.organizationId,
+    this.rosterTimelines = const {},
     this.onTransactionsLoaded,
     this.onSyncTransaction,
     super.key,
@@ -17,6 +19,7 @@ class ShiftTransactionHistoryPanel extends StatefulWidget {
   final Set<String> approvableOrganizationIds;
   final String? mode;
   final String? organizationId;
+  final Map<String, RosterAssignmentTimeline> rosterTimelines;
   final ValueChanged<List<ShiftTransactionSnapshot>>? onTransactionsLoaded;
   final Future<void> Function(ShiftTransactionSnapshot transaction)? onSyncTransaction;
 
@@ -223,7 +226,7 @@ class _ShiftTransactionHistoryPanelState
                                     : 'Confirmed ${participant['confirmed_at']}',
                               ),
                             ),
-                          for (final transfer in item.transfers)
+                          for (final transfer in item.transfers) ...[
                             ListTile(
                               dense: true,
                               title: Text(
@@ -233,10 +236,12 @@ class _ShiftTransactionHistoryPanelState
                               ),
                               subtitle: Text(
                                 '${transfer['starts_at'] ?? ''} – '
-                                '${transfer['ends_at'] ?? ''}\n'
+                                '${transfer['ends_at'] ?? ''}\\n'
                                 '${transfer['fulfilled_at'] == null ? 'Fulfillment: waiting' : 'Fulfilled: ${transfer['fulfilled_at']}'}',
                               ),
                             ),
+                            ..._rosterHistoryForTransfer(transfer),
+                          ],
                           if (_canAct(item))
                             Padding(
                               padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -379,6 +384,71 @@ class _ShiftTransactionHistoryPanelState
       }
     }
     return actions;
+  }
+
+  List<Widget> _rosterHistoryForTransfer(
+    Map<String, dynamic> transfer,
+  ) {
+    final start = DateTime.tryParse(transfer['starts_at']?.toString() ?? '');
+    final end = DateTime.tryParse(transfer['ends_at']?.toString() ?? '');
+    final shiftCode = transfer['shift_code']?.toString().trim();
+    if (start == null ||
+        end == null ||
+        !end.isAfter(start) ||
+        shiftCode == null ||
+        shiftCode.isEmpty) {
+      return const [];
+    }
+
+    final localStart = start.toLocal();
+    final localEnd = end.toLocal();
+    final matching = widget.rosterTimelines.values.where((timeline) {
+      final timelineStart = timeline.start;
+      final timelineEnd = timeline.end;
+      final timelineCode = timeline.shiftCode?.trim();
+      return timelineStart != null &&
+          timelineEnd != null &&
+          timelineCode != null &&
+          timelineCode.toLowerCase() == shiftCode.toLowerCase() &&
+          timelineStart.isAtSameMomentAs(localStart) &&
+          timelineEnd.isAtSameMomentAs(localEnd);
+    }).toList()..sort((left, right) {
+      final bySheet = (left.sheetTitle ?? '').compareTo(right.sheetTitle ?? '');
+      if (bySheet != 0) return bySheet;
+      final byRow = (left.rowLabel ?? '').compareTo(right.rowLabel ?? '');
+      if (byRow != 0) return byRow;
+      return (left.column ?? '').compareTo(right.column ?? '');
+    });
+
+    return [
+      for (final timeline in matching)
+        Padding(
+          padding: const EdgeInsets.only(left: 16, right: 8, bottom: 8),
+          child: ExpansionTile(
+            dense: true,
+            leading: const Icon(Icons.history_toggle_off, size: 18),
+            title: const Text('Roster ownership history'),
+            subtitle: Text(timeline.workerChain.join(' → ')),
+            children: [
+              ListTile(
+                dense: true,
+                title: Text(
+                  '${timeline.sheetTitle ?? 'Roster'} · '
+                  '${timeline.rowLabel ?? timeline.shiftCode ?? 'Shift'}'
+                  '${timeline.column == null ? '' : ' · ${timeline.column}'}',
+                ),
+              ),
+              for (final version in timeline.versions)
+                ListTile(
+                  dense: true,
+                  contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                  title: Text(version.assignedName),
+                  subtitle: Text(version.modifiedAt.toLocal().toString()),
+                ),
+            ],
+          ),
+        ),
+    ];
   }
 
   String _participantLabel(
