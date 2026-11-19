@@ -56,11 +56,6 @@ jobs:
       - name: Install dependencies
         run: composer install --no-interaction --prefer-dist --no-progress
 
-      - name: Audit locked Composer dependencies
-        run: composer audit --locked
-        env:
-          COMPOSER_NO_AUDIT: "0"
-
       - name: Check PHP formatting
         run: vendor/bin/pint --test app config database routes tests
 
@@ -69,3 +64,10 @@ jobs:
 
       - name: Run Laravel tests
         run: php artisan test
+
+      # Run the audit even if the test suite fails so both findings remain visible.
+      - name: Audit locked Composer dependencies
+        if: always() && !cancelled()
+        run: composer audit --locked
+        env:
+          COMPOSER_NO_AUDIT: "0"
