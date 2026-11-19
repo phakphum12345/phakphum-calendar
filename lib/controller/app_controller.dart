@@ -23,7 +23,6 @@ import '../domain/repositories/schedule_repository.dart';
 import '../domain/repositories/shift_template_repository.dart';
 import '../core/result/result.dart';
 import '../features/schedule/data/legacy_schedule_adapter.dart';
-import '../features/google_sheets/domain/sheet_color.dart';
 import '../features/shift_parser/application/monthly_roster_workbook_scanner.dart';
 import '../features/shift_exchange/application/shift_transaction_schedule_projector.dart';
 import '../features/shift_exchange/infrastructure/shift_transaction_api_client.dart';
@@ -32,9 +31,7 @@ import '../features/shift_exchange/application/shift_transaction_calendar_sync_m
 import '../features/shift_parser/application/monthly_roster_conversion_diagnostics.dart';
 import '../features/shift_parser/application/smart_roster_analyze_generator.dart';
 import '../features/shift_parser/domain/monthly_roster_section.dart';
-import '../features/shift_parser/domain/normalized_cell.dart';
 import '../features/shift_parser/domain/roster_sync_period_filter.dart';
-import '../features/shift_parser/domain/shift_parser_input.dart';
 import '../features/workflow/application/shift_calendar_workflow_controller.dart';
 import '../features/diff_engine/domain/calendar_event_candidate.dart';
 import '../services/calendar_service.dart';
@@ -1465,15 +1462,6 @@ class AppController extends ChangeNotifier implements ControllerState {
     );
   }
 
-  SheetColor? _sheetColor(int? value) {
-    if (value == null) return null;
-    return SheetColor(
-      red: ((value >> 16) & 0xFF) / 255,
-      green: ((value >> 8) & 0xFF) / 255,
-      blue: (value & 0xFF) / 255,
-      alpha: ((value >> 24) & 0xFF) / 255,
-    );
-  }
 
   Future<void> attachLocalReferenceFile() async {
     final searchNames = rosterSearchNames;
