@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/testing.dart';
 import 'package:http/http.dart' as http;
@@ -67,6 +70,59 @@ void main() {
         fileId: 'sheet-2',
       ),
       isEmpty,
+    );
+  });
+
+  test('reports corrupt and missing local revision records instead of silently skipping them', () async {
+    const archive = TimelineArchiveService();
+    final good = RosterRevisionDocument(
+      revisionId: 'revision-good',
+      modifiedAt: DateTime.utc(2026, 9, 28),
+      snapshots: const [
+        SheetSnapshot(
+          title: 'Roster',
+          rows: [
+            ['Name', 'Shift'],
+            ['A', 'ER'],
+          ],
+        ),
+      ],
+    );
+    await archive.putRevision(
+      accountId: 'user@example.com',
+      fileId: 'sheet-1',
+      document: good,
+    );
+
+    final scope = sha256
+        .convert(utf8.encode('user@example.com|sheet-1'))
+        .toString();
+    final corruptHash = sha256
+        .convert(utf8.encode('revision-corrupt'))
+        .toString();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+      'timeline_archive_index_v1_$scope',
+      ['revision-good', 'revision-corrupt', 'revision-missing'],
+    );
+    await prefs.setString(
+      'timeline_archive_record_v1_\${scope}_\$corruptHash',
+      '{invalid-json',
+    );
+
+    final skipped = <String>[];
+    final records = await archive.readRevisions(
+      accountId: 'user@example.com',
+      fileId: 'sheet-1',
+      onRevisionSkipped: (revisionId, error) {
+        skipped.add('\$revisionId:\${error.runtimeType}');
+      },
+    );
+
+    expect(records.map((record) => record.revisionId), ['revision-good']);
+    expect(
+      skipped.map((entry) => entry.split(':').first),
+      ['revision-corrupt', 'revision-missing'],
     );
   });
 
