@@ -1985,7 +1985,8 @@ class AppController extends ChangeNotifier implements ControllerState {
             }
             final employee = assignment.employee;
             final identityMatches = employee.id == target ||
-                employee.employeeCode == target || employee.fullName == target;
+                employee.employeeCode == target ||
+                employee.fullName == target || employee.displayName == target;
             if (identityMatches &&
                 assignment.shift.code == transfer['shift_code']?.toString() &&
                 assignmentStart.isAtSameMomentAs(start) &&
