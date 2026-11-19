@@ -340,7 +340,8 @@ class MonthlyRosterSectionParser {
       ) {
         if (date.day == entry.key) possibleOccurrences++;
       }
-      if (entry.value.length > possibleOccurrences) {
+      if (entry.value.length > 1 &&
+          entry.value.length > possibleOccurrences) {
         anomalies.add(
           MonthlyRosterDateAnomaly(
             code: 'duplicate_day',
