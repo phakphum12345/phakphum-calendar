@@ -1076,7 +1076,21 @@ class AppController extends ChangeNotifier implements ControllerState {
       modifiedAt: DateTime.now(),
       snapshots: snapshots,
     );
-    final timelineGenerator = const RosterTimelineGenerator();
+    final timelineGenerator = RosterTimelineGenerator(
+      shiftTemplates: _shiftTemplates,
+    );
+    void appendTimelineGenerationWarnings(Iterable<String> source) {
+      final messages = source.toList(growable: false);
+      if (messages.isEmpty) return;
+      final shown = messages.take(4).join('；');
+      final more = messages.length > 4
+          ? ' และอีก ${messages.length - 4} รายการ'
+          : '';
+      final warning = 'Timeline มีข้อมูลบางส่วนที่ถูกข้าม: $shown$more';
+      timelineWarning = timelineWarning == null
+          ? warning
+          : '$timelineWarning; $warning';
+    }
     if (background &&
         _loadedRevisionCount > 0 &&
         _loadedTimelineScope == timelineScope) {
@@ -1192,10 +1206,13 @@ class AppController extends ChangeNotifier implements ControllerState {
 
           if (generation != _timelineLoadGeneration) return;
           _loadedRevisionCount = mergedRevisions.length + 1;
-          _revisionTimelines = await timelineGenerator.generateFromDocumentsAsync([
-            ...mergedRevisions,
-            currentRevision,
-          ]);
+          final generatedTimeline = await timelineGenerator
+              .generateFromDocumentsWithDiagnosticsAsync([
+                ...mergedRevisions,
+                currentRevision,
+              ]);
+          _revisionTimelines = generatedTimeline.timelines;
+          appendTimelineGenerationWarnings(generatedTimeline.warnings);
           _loadedTimelineScope = timelineScope;
           if (mergedRevisions.isEmpty) {
             timelineWarning = shouldRefreshDriveHistory
@@ -1218,10 +1235,13 @@ class AppController extends ChangeNotifier implements ControllerState {
         } on Object catch (historyError) {
           if (generation != _timelineLoadGeneration) return;
           _loadedRevisionCount = archivedRevisions.length + 1;
-          _revisionTimelines = await timelineGenerator.generateFromDocumentsAsync([
-            ...archivedRevisions,
-            currentRevision,
-          ]);
+          final fallbackTimeline = await timelineGenerator
+              .generateFromDocumentsWithDiagnosticsAsync([
+                ...archivedRevisions,
+                currentRevision,
+              ]);
+          _revisionTimelines = fallbackTimeline.timelines;
+          appendTimelineGenerationWarnings(fallbackTimeline.warnings);
           _loadedTimelineScope = timelineScope;
           final fallbackWarning = archivedRevisions.isEmpty
               ? 'อ่านประวัติ Timeline จาก Drive ไม่สำเร็จและไม่มีคลังในเครื่อง: $historyError'
@@ -1239,9 +1259,10 @@ class AppController extends ChangeNotifier implements ControllerState {
       } on Object catch (caught, stackTrace) {
         if (generation != _timelineLoadGeneration) return;
         _loadedRevisionCount = 1;
-        _revisionTimelines = await timelineGenerator.generateFromDocumentsAsync([
-          currentRevision,
-        ]);
+        final currentTimeline = await timelineGenerator
+            .generateFromDocumentsWithDiagnosticsAsync([currentRevision]);
+        _revisionTimelines = currentTimeline.timelines;
+        appendTimelineGenerationWarnings(currentTimeline.warnings);
         _loadedTimelineScope = timelineScope;
         timelineWarning =
             'อ่านประวัติ Timeline จาก Google Drive ไม่สำเร็จ: $caught';
