@@ -77,10 +77,16 @@ class MonthlyRosterSectionParser {
       );
 
       final explicitPeriod = _tryParsePeriod(title);
+      final tabPeriod = _tryParsePeriod(input.sheetTitle);
+      // A single-month tab can safely supply context to repeated split
+      // sections (for example days 1-15 and 16-30) only when each section's
+      // own day sequence is strictly increasing and stays inside that month.
+      // Never infer a month for a sequence that wraps from 30/31 back to 1;
+      // that may be a cross-month roster and needs an explicit section range.
       final sheetFallback = headerRows.length == 1
-          ? _tryParsePeriod(input.sheetTitle)
-          : null;
-      final period = explicitPeriod ?? sheetFallback;
+          ? tabPeriod
+          : _canUseSingleMonthTabFallback(tabPeriod, daysByColumn);
+      final period = explicitPeriod ?? (sheetFallback ? tabPeriod : null);
       if (period == null) {
         warnings.add(
           'ไม่พบช่วงวันที่เฉพาะของส่วน "$title"; '
@@ -291,6 +297,31 @@ class MonthlyRosterSectionParser {
     } on FormatException {
       return null;
     }
+  }
+
+  bool _canUseSingleMonthTabFallback(
+    ThaiRosterPeriod? period,
+    Map<int, int> daysByColumn,
+  ) {
+    if (period == null ||
+        period.start.year != period.end.year ||
+        period.start.month != period.end.month ||
+        daysByColumn.isEmpty) {
+      return false;
+    }
+
+    final daysInMonth = period.end.day;
+    final orderedDays = daysByColumn.entries.toList()
+      ..sort((left, right) => left.key.compareTo(right.key));
+    var previousDay = 0;
+    for (final entry in orderedDays) {
+      final day = entry.value;
+      if (day < 1 || day > daysInMonth || day <= previousDay) {
+        return false;
+      }
+      previousDay = day;
+    }
+    return true;
   }
 
   bool _isDateHeaderRow(List<dynamic> cells) {
