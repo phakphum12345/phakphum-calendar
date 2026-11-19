@@ -104,6 +104,38 @@ void main() {
     client.close();
   });
 
+  testWidgets('offers transaction Calendar preview only through the supplied explicit-confirmation callback', (tester) async {
+    final approved = transaction(status: 'approved');
+    var previewRequested = false;
+    final client = ShiftTransactionApiClient(
+      baseUrl: 'https://calendar.example.test',
+      idTokenProvider: () async => 'token',
+      httpClient: MockClient((request) async =>
+          http.Response(jsonEncode({'data': [approved]}), 200)),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ShiftTransactionHistoryPanel(
+            apiClient: client,
+            onSyncTransaction: (item) async {
+              expect(item.id, approved['id']);
+              previewRequested = true;
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Give up · approved'));
+    await tester.pumpAndSettle();
+    expect(find.text('Preview & sync Calendar'), findsOneWidget);
+    await tester.tap(find.text('Preview & sync Calendar'));
+    await tester.pumpAndSettle();
+    expect(previewRequested, isTrue);
+    client.close();
+  });
+
   testWidgets('shows organization approval only to an authorized organization manager', (tester) async {
     final requests = <http.Request>[];
     final pendingApproval = transaction(
