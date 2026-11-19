@@ -1206,11 +1206,11 @@ class AppController extends ChangeNotifier implements ControllerState {
             final skippedIds = unresolvedRevisionIds.toList()..sort();
             final shownIds = skippedIds.take(5).join(', ');
             final more = skippedIds.length > 5
-                ? ' และอีก \${skippedIds.length - 5} รายการ'
+                ? ' และอีก ${skippedIds.length - 5} รายการ'
                 : '';
             final skippedWarning =
-                'อ่าน revision ไม่สำเร็จ \${skippedIds.length} รายการ '
-                '(\$shownIds\$more); Timeline อาจไม่ครบ';
+                'อ่าน revision ไม่สำเร็จ ${skippedIds.length} รายการ '
+                '($shownIds$more); Timeline อาจไม่ครบ';
             timelineWarning = timelineWarning == null
                 ? skippedWarning
                 : '$timelineWarning; $skippedWarning';
