@@ -456,7 +456,7 @@ class _ShiftTransactionHistoryPanelState
   DateTime? _parseTransferInstant(Object? value) {
     final raw = value?.toString().trim() ?? '';
     final hasExplicitZone =
-        RegExp(r'(?:Z|[+-]\d{2}:\d{2})
+        RegExp(r'(?:Z|[+-]\d{2}:\d{2})$', caseSensitive: false)
             .hasMatch(raw);
     if (!hasExplicitZone) return null;
     return DateTime.tryParse(raw)?.toUtc();
