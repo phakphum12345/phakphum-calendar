@@ -288,12 +288,12 @@ void main() {
           column: 'B',
           versions: [
             RosterAssignmentVersion(
-              revisionId: '${key}-1',
+              revisionId: '$key-1',
               modifiedAt: DateTime.utc(2026, 11, 1),
               assignedName: 'Alice',
             ),
             RosterAssignmentVersion(
-              revisionId: '${key}-2',
+              revisionId: '$key-2',
               modifiedAt: DateTime.utc(2026, 11, 10),
               assignedName: 'Bob',
             ),
