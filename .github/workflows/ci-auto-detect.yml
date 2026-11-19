@@ -116,7 +116,8 @@ jobs:
             liblzma-dev \
             libstdc++-12-dev \
             ninja-build \
-            pkg-config
+            pkg-config \
+            xvfb
 
       - name: Enable Linux integration-test device
         if: needs.detect.outputs.has_integration_tests == 'true' && needs.detect.outputs.is_flutter == 'true'
@@ -125,7 +126,7 @@ jobs:
       - name: Integration tests
         if: needs.detect.outputs.has_integration_tests == 'true' && needs.detect.outputs.is_flutter == 'true'
         shell: bash
-        run: flutter test -d linux integration_test
+        run: xvfb-run -a flutter test -d linux integration_test
 
   platform-summary:
     name: Platform activation summary
