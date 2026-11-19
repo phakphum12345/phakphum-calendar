@@ -23,7 +23,7 @@ import '../domain/repositories/schedule_repository.dart';
 import '../domain/repositories/shift_template_repository.dart';
 import '../core/result/result.dart';
 import '../features/schedule/data/legacy_schedule_adapter.dart';
-import '../features/google_sheets/domain/sheet_color.dart';
+import '../features/shift_parser/application/monthly_roster_workbook_scanner.dart';
 import '../features/shift_parser/application/monthly_roster_section_parser.dart';
 import '../features/shift_exchange/application/shift_transaction_schedule_projector.dart';
 import '../features/shift_exchange/infrastructure/shift_transaction_api_client.dart';
@@ -32,9 +32,7 @@ import '../features/shift_exchange/application/shift_transaction_calendar_sync_m
 import '../features/shift_parser/application/monthly_roster_conversion_diagnostics.dart';
 import '../features/shift_parser/application/smart_roster_analyze_generator.dart';
 import '../features/shift_parser/domain/monthly_roster_section.dart';
-import '../features/shift_parser/domain/normalized_cell.dart';
 import '../features/shift_parser/domain/roster_sync_period_filter.dart';
-import '../features/shift_parser/domain/shift_parser_input.dart';
 import '../features/workflow/application/shift_calendar_workflow_controller.dart';
 import '../features/diff_engine/domain/calendar_event_candidate.dart';
 import '../services/calendar_service.dart';
@@ -1366,20 +1364,33 @@ class AppController extends ChangeNotifier implements ControllerState {
           spreadsheetId: spreadsheetId,
           applyPeriodFilter: false,
         );
-        _allMonthlyRoster = parsedMonthly.sections.isEmpty
-            ? MonthlyRosterParseReport.fromShifts(
-                _parseAllRosterSnapshots(snapshots, fallback: const []),
-              )
-            : parsedMonthly;
+        if (parsedMonthly.sections.isEmpty) {
+          final recovered = MonthlyRosterParseReport.fromShifts(
+            _parseAllRosterSnapshots(snapshots, fallback: const []),
+          );
+          _allMonthlyRoster = MonthlyRosterParseReport(
+            sections: recovered.sections,
+            warnings: [...parsedMonthly.warnings, ...recovered.warnings],
+            sourceSheetCount: parsedMonthly.sourceSheetCount,
+            sheetSummaries: parsedMonthly.sheetSummaries,
+          );
+        } else {
+          _allMonthlyRoster = parsedMonthly;
+        }
         monthlyRoster = _filterMonthlyReportToSelectedPeriods(
           _allMonthlyRoster,
         );
         sheetTitles = snapshots.map((sheet) => sheet.title).toList();
         localSourceLabel = null;
         lastRefresh = DateTime.now();
+        final emptySheetCount = monthlyRoster.sheetSummaries
+            .where((sheet) => sheet.blockCount == 0)
+            .length;
         status =
-            'อ่านตารางรายเดือน ${monthlyRoster.sections.length} บล็อก '
-            '${monthlyRoster.assignments.length} ช่อง';
+            'สแกน ${monthlyRoster.sourceSheetCount} แท็บ • '
+            'พบ ${monthlyRoster.sections.length} บล็อก '
+            '${monthlyRoster.assignments.length} ช่อง • '
+            'แท็บไม่พบบล็อก $emptySheetCount';
         await _addAudit(
           'monthly_roster.sheet.read',
           'อ่านตารางรายเดือนจาก Google Sheets แบบ read-only '
@@ -1416,18 +1427,33 @@ class AppController extends ChangeNotifier implements ControllerState {
         legacyShifts: legacyParsed,
         monthlyShifts: monthlyParsed,
       );
-      _allMonthlyRoster = parsedMonthly.sections.isEmpty
-          ? MonthlyRosterParseReport.fromShifts(smartAnalysis.mergedShifts)
-          : parsedMonthly;
+      if (parsedMonthly.sections.isEmpty) {
+        final recovered = MonthlyRosterParseReport.fromShifts(
+          smartAnalysis.mergedShifts,
+        );
+        _allMonthlyRoster = MonthlyRosterParseReport(
+          sections: recovered.sections,
+          warnings: [...parsedMonthly.warnings, ...recovered.warnings],
+          sourceSheetCount: parsedMonthly.sourceSheetCount,
+          sheetSummaries: parsedMonthly.sheetSummaries,
+        );
+      } else {
+        _allMonthlyRoster = parsedMonthly;
+      }
       monthlyRoster = _filterMonthlyReportToSelectedPeriods(
         _allMonthlyRoster,
       );
       sheetTitles = document.snapshots.map((sheet) => sheet.title).toList();
       localSourceLabel = 'ไฟล์ .${document.extension} ในเครื่อง';
       lastRefresh = DateTime.now();
+      final emptySheetCount = monthlyRoster.sheetSummaries
+          .where((sheet) => sheet.blockCount == 0)
+          .length;
       status =
-          'นำเข้าตารางรายเดือน ${monthlyRoster.sections.length} บล็อก '
-          '${monthlyRoster.assignments.length} ช่อง; '
+          'สแกน ${monthlyRoster.sourceSheetCount} แท็บ • '
+          'พบ ${monthlyRoster.sections.length} บล็อก '
+          '${monthlyRoster.assignments.length} ช่อง • '
+          'แท็บไม่พบบล็อก $emptySheetCount • '
           'ตัวอ่านอัจฉริยะกู้คืนเพิ่ม ${smartAnalysis.recoveredCount} เวร; '
           'ไฟล์ไม่ถูกอัปโหลด';
       await _addAudit(
@@ -1444,55 +1470,11 @@ class AppController extends ChangeNotifier implements ControllerState {
     required String spreadsheetId,
     bool applyPeriodFilter = true,
   }) {
-    final sections = <MonthlyRosterSection>[];
-    final warnings = <String>[];
-    const parser = MonthlyRosterSectionParser();
-
-    for (var sheetIndex = 0; sheetIndex < snapshots.length; sheetIndex++) {
-      final snapshot = snapshots[sheetIndex];
-      final cells = <NormalizedCell>[];
-      for (var rowIndex = 0; rowIndex < snapshot.rows.length; rowIndex++) {
-        final row = snapshot.rows[rowIndex];
-        for (var columnIndex = 0; columnIndex < row.length; columnIndex++) {
-          final value = row[columnIndex];
-          final text = value?.toString().trim();
-          if ((text == null || text.isEmpty) &&
-              snapshot.backgroundColorAt(rowIndex, columnIndex) == null) {
-            continue;
-          }
-          cells.add(
-            NormalizedCell(
-              sheetId: snapshot.sheetId ?? sheetIndex,
-              sheetTitle: snapshot.title,
-              a1: '',
-              rowIndex: rowIndex,
-              columnIndex: columnIndex,
-              text: text == null || text.isEmpty ? null : text,
-              rawValue: value,
-              backgroundColor: _sheetColor(
-                snapshot.backgroundColorAt(rowIndex, columnIndex),
-              ),
-            ),
-          );
-        }
-      }
-      final report = parser.parse(
-        ShiftParserInput(
-          spreadsheetId: spreadsheetId,
-          spreadsheetTitle: selectedSourceSheetTitle,
-          sheetId: snapshot.sheetId ?? sheetIndex,
-          sheetTitle: snapshot.title,
-          timeZone: 'Asia/Bangkok',
-          cells: cells,
-        ),
-      );
-      sections.addAll(report.sections);
-      warnings.addAll(report.warnings);
-    }
-
-    final report = MonthlyRosterParseReport(
-      sections: List.unmodifiable(sections),
-      warnings: List.unmodifiable(warnings),
+    final report = const MonthlyRosterWorkbookScanner().scan(
+      snapshots: snapshots,
+      spreadsheetId: spreadsheetId,
+      spreadsheetTitle: selectedSourceSheetTitle,
+      timeZone: 'Asia/Bangkok',
     );
     return !applyPeriodFilter || settings.effectivePeriods.isEmpty
         ? report
@@ -1509,15 +1491,6 @@ class AppController extends ChangeNotifier implements ControllerState {
     );
   }
 
-  SheetColor? _sheetColor(int? value) {
-    if (value == null) return null;
-    return SheetColor(
-      red: ((value >> 16) & 0xFF) / 255,
-      green: ((value >> 8) & 0xFF) / 255,
-      blue: (value & 0xFF) / 255,
-      alpha: ((value >> 24) & 0xFF) / 255,
-    );
-  }
 
   Future<void> attachLocalReferenceFile() async {
     final searchNames = rosterSearchNames;

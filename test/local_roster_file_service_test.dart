@@ -42,6 +42,12 @@ void main() {
     );
     expect(roster.rows[1], ['ภาคภูมิ', 'P1 เช้า']);
     expect(roster.backgroundColors[1][1], 0xFFF44336);
+    expect(document.snapshots.map((sheet) => sheet.title), contains('Sheet1'));
+    expect(
+      document.snapshots.singleWhere((sheet) => sheet.title == 'Sheet1').rows,
+      isEmpty,
+      reason: 'Empty workbook tabs must remain visible to the scanner',
+    );
   });
 
   test('rejects unsupported formats before reading content', () {

@@ -86,14 +86,36 @@ class MonthlyRosterAssignment {
   }
 }
 
+class MonthlyRosterSheetScanSummary {
+  const MonthlyRosterSheetScanSummary({
+    required this.sheetId,
+    required this.title,
+    required this.hidden,
+    required this.blockCount,
+    required this.assignmentCount,
+    required this.warningCount,
+  });
+
+  final int sheetId;
+  final String title;
+  final bool hidden;
+  final int blockCount;
+  final int assignmentCount;
+  final int warningCount;
+}
+
 class MonthlyRosterParseReport {
   const MonthlyRosterParseReport({
     required this.sections,
     required this.warnings,
+    this.sourceSheetCount = 0,
+    this.sheetSummaries = const [],
   });
 
   final List<MonthlyRosterSection> sections;
   final List<String> warnings;
+  final int sourceSheetCount;
+  final List<MonthlyRosterSheetScanSummary> sheetSummaries;
 
   /// Builds a source-neutral monthly view when an imported source does not
   /// expose a recognizable table grid, such as a confirmed camera entry.
@@ -237,6 +259,8 @@ class MonthlyRosterParseReport {
     return MonthlyRosterParseReport(
       sections: List.unmodifiable(filteredSections),
       warnings: warnings,
+      sourceSheetCount: sourceSheetCount,
+      sheetSummaries: sheetSummaries,
     );
   }
 }
