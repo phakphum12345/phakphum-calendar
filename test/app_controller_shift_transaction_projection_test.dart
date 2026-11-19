@@ -27,6 +27,15 @@ void main() {
       endTime: const Duration(hours: 16),
       workingHours: 8,
     );
+    final evening = ShiftType(
+      id: 'evening',
+      code: 'E',
+      name: 'Evening',
+      color: 0,
+      startTime: const Duration(hours: 16),
+      endTime: const Duration(hours: 23),
+      workingHours: 7,
+    );
 
     Schedule sourceSchedule() => Schedule(
       id: 'schedule-1',
@@ -37,6 +46,7 @@ void main() {
             date: date,
             assignments: [
               ShiftAssignment(employee: alice, shift: morning),
+              ShiftAssignment(employee: bob, shift: evening),
             ],
           ),
         ),
@@ -86,8 +96,8 @@ void main() {
       controller.effectiveSchedule.month(date)!.day(date)!.assignments.single.employee.employeeCode,
       'B',
     );
-    expect(controller.shifts.single.assignedName, 'Alice');
-    expect(controller.effectiveShifts.single.assignedName, 'Bob');
+    expect(controller.shifts.first.assignedName, 'Alice');
+    expect(controller.effectiveShifts.first.assignedName, 'Bob');
 
     // A repeated import replaces only the source; the server ledger is replayed.
     await controller.adoptCanonicalSchedule(sourceSchedule(), persist: false);
@@ -98,7 +108,7 @@ void main() {
     expect(controller.effectiveShifts.single.assignedName, 'Bob');
 
     controller.clearShiftTransactions();
-    expect(controller.effectiveShifts.single.assignedName, 'Alice');
+    expect(controller.effectiveShifts.first.assignedName, 'Alice');
   });
 }
 
