@@ -2,8 +2,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:phakphum_calendar/core/di/app_dependencies.dart';
 import 'package:phakphum_calendar/domain/entities/schedule.dart';
-import 'package:phakphum_calendar/models/roster_period.dart';
 import 'package:phakphum_calendar/features/shift_parser/domain/monthly_roster_section.dart';
+import 'package:phakphum_calendar/models/roster_period.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
