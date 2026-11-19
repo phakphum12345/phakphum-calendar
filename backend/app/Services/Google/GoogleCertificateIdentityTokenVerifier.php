@@ -143,12 +143,22 @@ class GoogleCertificateIdentityTokenVerifier implements GoogleIdentityTokenVerif
 
         $audiences = $claims['aud'] ?? [];
         $audiences = is_array($audiences) ? $audiences : [$audiences];
-        if (array_intersect($allowedAudiences, $audiences) === []) {
+        $hasUntrustedAudience = array_filter(
+            $audiences,
+            static fn ($audience): bool => ! is_string($audience) ||
+                ! in_array($audience, $allowedAudiences, true),
+        ) !== [];
+        if ($audiences === [] || $hasUntrustedAudience) {
             throw new InvalidArgumentException('Google identity token audience is invalid.');
         }
 
-        if (isset($claims['azp']) &&
-            ! in_array($claims['azp'], $allowedAudiences, true)) {
+        $authorizedParty = $claims['azp'] ?? null;
+        if (count($audiences) > 1 && ! is_string($authorizedParty)) {
+            throw new InvalidArgumentException('Google identity token authorized party is invalid.');
+        }
+        if ($authorizedParty !== null &&
+            (! is_string($authorizedParty) ||
+                ! in_array($authorizedParty, $allowedAudiences, true))) {
             throw new InvalidArgumentException('Google identity token authorized party is invalid.');
         }
 
