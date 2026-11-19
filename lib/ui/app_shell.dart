@@ -275,6 +275,7 @@ class _AppShellState extends State<AppShell> {
               organizationMode: currentEdition == AppEdition.organization,
               controllerFactory: widget.shiftExchangeControllerFactory,
               historyApiClient: _shiftTransactionApiClient,
+              rosterTimelines: controller.revisionTimelines,
               onTransactionsLoaded: controller.updateShiftTransactions,
               accountId: controller.auth.account?.id,
               onSyncTransaction: _syncShiftTransactionCalendar,
