@@ -132,11 +132,28 @@ class MonthlyRosterSectionParser {
               configuredEnd < headerRow + 1
           ? nextHeader
           : (configuredEnd + 1 < nextHeader ? configuredEnd + 1 : nextHeader);
+      var previousWasGen = false;
       for (var rowIndex = firstDataRow; rowIndex < sectionEnd; rowIndex++) {
         final rowCells = cellsByRow[rowIndex] ?? const [];
         final rowLabel = _rowLabelFor(rowCells, daysByColumn.keys);
-        if (rowLabel.isEmpty || _looksLikeHeading(rowLabel)) continue;
-        rosterRows.add(MonthlyRosterRow(rowIndex: rowIndex, label: rowLabel));
+        final hasAssignedWorker = rowCells.any(
+          (cell) =>
+              daysByColumn.containsKey(cell.columnIndex) &&
+              (cell.text?.toString().trim().isNotEmpty ?? false),
+        );
+        final isGenAfternoon =
+            rowLabel.isEmpty && previousWasGen && hasAssignedWorker;
+        final effectiveRowLabel = isGenAfternoon ? 'GEN บ่าย' : rowLabel;
+        previousWasGen = rowLabel
+                .toUpperCase()
+                .replaceAll(RegExp(r'[\\s.\\-_]+'), '') ==
+            'GEN';
+        if (effectiveRowLabel.isEmpty || _looksLikeHeading(effectiveRowLabel)) {
+          continue;
+        }
+        rosterRows.add(
+          MonthlyRosterRow(rowIndex: rowIndex, label: effectiveRowLabel),
+        );
       }
 
       sections.add(
@@ -738,6 +755,16 @@ class MonthlyRosterShiftAdapter {
         startHour: 7,
         startMinute: 30,
         endHour: 12,
+        endMinute: 0,
+        category: ShiftCategory.clinic,
+      );
+    }
+    if (value == 'GENบ่าย' || value == 'AG') {
+      return const _MonthlyShiftRule(
+        code: 'AG',
+        startHour: 16,
+        startMinute: 30,
+        endHour: 20,
         endMinute: 0,
         category: ShiftCategory.clinic,
       );
