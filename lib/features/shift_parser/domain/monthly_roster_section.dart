@@ -13,7 +13,6 @@ class MonthlyRosterDateColumn {
   final DateTime date;
 }
 
-/// A shift row discovered independently of the worker names in its cells.
 /// A blocking date-grid issue that must be reviewed before calendar sync.
 class MonthlyRosterDateAnomaly {
   const MonthlyRosterDateAnomaly({
@@ -29,6 +28,7 @@ class MonthlyRosterDateAnomaly {
   final int? displayedDay;
 }
 
+/// A shift row discovered independently of the worker names in its cells.
 class MonthlyRosterRow {
   const MonthlyRosterRow({required this.rowIndex, required this.label});
 
