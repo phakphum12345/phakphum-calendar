@@ -24,8 +24,8 @@ Connect an approved shift transaction to the effective roster and the existing G
 - Preview is read-only. Cancel disposes the prepared plan and causes no Calendar write.
 - Confirmation is tied to the transaction ID/version and the canonical source schedule instance. A changed roster or ledger invalidates the preview.
 - Calendar sync uses the effective schedule and the existing validation/diff engine. The preview explicitly includes any deletion operations because the plan covers the selected schedule range.
-- Provider event IDs are collected from the sync executor and verified with a fresh read-only Calendar comparison before the sync_complete transition.
-- A provider write failure or failed read-back records sync_fail; a retry starts with a fresh preview and relies on stable sync IDs and managed-event deduplication.
+- Provider IDs returned by insert/update operations and IDs for already-managed events are reconciled with a fresh read-only Calendar comparison before the sync_complete transition.
+- A provider write failure or failed read-back records sync_fail; a retry starts with a fresh preview and relies on stable sync IDs and managed-event deduplication. A participant can explicitly reset a pending sync after 30 minutes if the original client stopped responding.
 - sync_complete requires one distinct provider event reference for every transfer leg.
 - The server prevents fulfillment before the transfer's scheduled end, by anyone other than the receiving participant, or before successful Calendar sync.
 - No automatic Calendar write, deployment, source-roster mutation, or silent deletion is allowed.
