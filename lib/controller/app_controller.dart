@@ -2039,9 +2039,35 @@ class AppController extends ChangeNotifier implements ControllerState {
 
   Future<ShiftCalendarWorkflowController>
   _createPreparedCalendarWorkflow() async {
+    final schedule = _scheduleForActivePeriods();
+    final assignmentCount = schedule.months.fold<int>(
+      0,
+      (total, month) => total + month.days.fold<int>(
+        0,
+        (dayTotal, day) => dayTotal + day.assignments.length,
+      ),
+    );
+    if (assignmentCount == 0) {
+      final selectedPeriods = _activeRosterPeriods();
+      final selectedLabel = selectedPeriods
+          .map((period) => '${period.month}/${period.year + 543}')
+          .join(', ');
+      final parsedCount = _loadedRosterShifts.length;
+      final filteredCount = _filterToSyncDateRange(_loadedRosterShifts).length;
+      throw StateError(
+        'ไม่พบรายการเวรในตารางสำหรับเดือนที่เลือก ($selectedLabel) '
+        'จึงยังสร้าง Preview ไม่ได้ '
+        '(อ่านเวรต้นทางได้ $parsedCount รายการ; หลังกรองเดือน/ช่วงวันที่เหลือ $filteredCount รายการ; '
+        'ช่องตารางรายเดือนที่อ่านได้ ${monthlyRoster.assignments.length}; '
+        'ช่องที่ยังแปลงเป็นเวรไม่ได้ ${monthlyRosterConversion.unconvertedAssignments.length}). '
+        'ระบบหยุดก่อนอ่านหรือเขียน Google Calendar เพื่อป้องกันการสร้างแผนจากตารางว่าง '
+        'กรุณาตรวจปี/เดือนและผลการแปลงตารางเวร',
+      );
+    }
+
     final workflow = await _calendarWorkflowControllerFactory();
     try {
-      await workflow.prepareSchedule(_scheduleForActivePeriods());
+      await workflow.prepareSchedule(schedule);
       if (workflow.hasBlockingFailures) {
         throw StateError(
           workflow.validationResult?.errors
