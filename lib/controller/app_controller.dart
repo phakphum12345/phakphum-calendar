@@ -1374,9 +1374,14 @@ class AppController extends ChangeNotifier implements ControllerState {
         sheetTitles = snapshots.map((sheet) => sheet.title).toList();
         localSourceLabel = null;
         lastRefresh = DateTime.now();
+        final emptySheetCount = monthlyRoster.sheetSummaries
+            .where((sheet) => sheet.blockCount == 0)
+            .length;
         status =
-            'อ่านตารางรายเดือน ${monthlyRoster.sections.length} บล็อก '
-            '${monthlyRoster.assignments.length} ช่อง';
+            'สแกน ${monthlyRoster.sourceSheetCount} แท็บ • '
+            'พบ ${monthlyRoster.sections.length} บล็อก '
+            '${monthlyRoster.assignments.length} ช่อง • '
+            'แท็บไม่พบบล็อก $emptySheetCount';
         await _addAudit(
           'monthly_roster.sheet.read',
           'อ่านตารางรายเดือนจาก Google Sheets แบบ read-only '
@@ -1422,9 +1427,14 @@ class AppController extends ChangeNotifier implements ControllerState {
       sheetTitles = document.snapshots.map((sheet) => sheet.title).toList();
       localSourceLabel = 'ไฟล์ .${document.extension} ในเครื่อง';
       lastRefresh = DateTime.now();
+      final emptySheetCount = monthlyRoster.sheetSummaries
+          .where((sheet) => sheet.blockCount == 0)
+          .length;
       status =
-          'นำเข้าตารางรายเดือน ${monthlyRoster.sections.length} บล็อก '
-          '${monthlyRoster.assignments.length} ช่อง; '
+          'สแกน ${monthlyRoster.sourceSheetCount} แท็บ • '
+          'พบ ${monthlyRoster.sections.length} บล็อก '
+          '${monthlyRoster.assignments.length} ช่อง • '
+          'แท็บไม่พบบล็อก $emptySheetCount • '
           'ตัวอ่านอัจฉริยะกู้คืนเพิ่ม ${smartAnalysis.recoveredCount} เวร; '
           'ไฟล์ไม่ถูกอัปโหลด';
       await _addAudit(
