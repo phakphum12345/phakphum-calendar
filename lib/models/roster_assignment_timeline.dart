@@ -38,7 +38,9 @@ class RosterAssignmentTimeline {
 
   final String positionKey;
   final List<RosterAssignmentVersion> versions;
+  /// Bangkok roster wall-clock fields, not UTC instants.
   final DateTime? start;
+  /// Bangkok roster wall-clock fields, not UTC instants.
   final DateTime? end;
   final String? shiftCode;
   final String? sheetTitle;
