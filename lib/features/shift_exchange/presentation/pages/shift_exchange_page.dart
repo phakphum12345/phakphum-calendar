@@ -90,13 +90,14 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
       _organizations = const [];
       _members = const [];
       _historyTransactions = const [];
-      widget.onTransactionsLoaded?.call(const []);
       _selectedOrganization = null;
       _directoryError = null;
       _loadingDirectory = false;
       _historyRevision++;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) _loadDirectory();
+        if (!mounted) return;
+        widget.onTransactionsLoaded?.call(const []);
+        _loadDirectory();
       });
     }
   }
