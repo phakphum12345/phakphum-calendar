@@ -96,39 +96,18 @@ class SheetsService implements RosterSheetsGateway {
   ) async {
     final id = spreadsheetIdFromUrl(sourceUrl);
     final api = sheets.SheetsApi(client);
-    final requestedSheetId = sheetIdFromUrl(sourceUrl);
-    List<sheets.Sheet> sourceSheets;
-    if (requestedSheetId != null) {
-      // A URL copied from a specific tab carries gid=<sheetId>. Honor that
-      // choice rather than parsing every tab in the spreadsheet.
-      final metadata = await api.spreadsheets.get(
-        id,
-        includeGridData: false,
-        $fields: 'sheets(properties(sheetId,title,hidden))',
-      );
-      final selected = (metadata.sheets ?? const <sheets.Sheet>[])
-          .where((sheet) => sheet.properties?.sheetId == requestedSheetId)
-          .firstOrNull;
-      final selectedTitle = selected?.properties?.title;
-      if (selectedTitle == null || selectedTitle.isEmpty) {
-        throw StateError(
-          'ไม่พบแท็บ Google Sheets ที่เลือก (gid=$requestedSheetId)',
-        );
-      }
-      sourceSheets = [selected!];
-    } else {
-      final metadata = await api.spreadsheets.get(
-        id,
-        includeGridData: false,
-        $fields: 'sheets(properties(sheetId,title,hidden))',
-      );
-      // Include hidden tabs as source data too. Their visibility is preserved
-      // in the snapshot so the UI can distinguish them without losing records.
-      sourceSheets = [
-        for (final sheet in metadata.sheets ?? const <sheets.Sheet>[])
-          if ((sheet.properties?.title ?? '').isNotEmpty) sheet,
-      ];
-    }
+    final metadata = await api.spreadsheets.get(
+      id,
+      includeGridData: false,
+      $fields: 'sheets(properties(sheetId,title,hidden))',
+    );
+    // Roster imports are workbook-wide: a URL's gid identifies the tab the
+    // user copied the link from, but must not silently hide other worksheets.
+    // Hidden tabs are included and their visibility remains in each snapshot.
+    final sourceSheets = [
+      for (final sheet in metadata.sheets ?? const <sheets.Sheet>[])
+        if ((sheet.properties?.title ?? '').isNotEmpty) sheet,
+    ];
     final titles = sourceSheets.map((sheet) => sheet.properties!.title!).toList();
     // A sheet-only A1 range asks Sheets for its populated value range rather
     // than silently truncating at AF180.
