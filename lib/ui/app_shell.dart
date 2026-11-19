@@ -267,12 +267,13 @@ class _AppShellState extends State<AppShell> {
                 schedule: controller.canonicalSchedule,
                 controllerFactory: widget.employeeDirectoryControllerFactory,
               ),
-              ShiftExchangePage(
-                schedule: controller.canonicalSchedule,
-                controllerFactory: widget.shiftExchangeControllerFactory,
-                historyApiClient: _shiftTransactionApiClient,
-              ),
             ],
+            ShiftExchangePage(
+              schedule: controller.canonicalSchedule,
+              organizationMode: currentEdition == AppEdition.organization,
+              controllerFactory: widget.shiftExchangeControllerFactory,
+              historyApiClient: _shiftTransactionApiClient,
+            ),
             MonthlyScheduleReportPage(
               schedule: controller.canonicalSchedule,
               controllerFactory: widget.reportControllerFactory,

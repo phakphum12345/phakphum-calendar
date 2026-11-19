@@ -251,7 +251,20 @@ class ShiftTransactionService
         $participants = DB::table('shift_transaction_participants as participants')
             ->join('users', 'users.id', '=', 'participants.user_id')
             ->where('participants.transaction_id', $id)->orderBy('participants.id')
-            ->get(['participants.employee_id', 'participants.role', 'participants.confirmed_at', 'users.name']);
+            ->get([
+                'participants.user_id',
+                'participants.employee_id',
+                'participants.role',
+                'participants.confirmed_at',
+                'users.name',
+            ])
+            ->map(fn ($participant): array => [
+                'employee_id' => $participant->employee_id,
+                'role' => $participant->role,
+                'confirmed_at' => $participant->confirmed_at,
+                'name' => $participant->name,
+                'is_current_user' => (int) $participant->user_id === (int) $actor->id,
+            ]);
         $transfers = DB::table('shift_transaction_transfers')->where('transaction_id', $id)->orderBy('id')->get();
         $events = DB::table('shift_transaction_events as events')
             ->leftJoin('users', 'users.id', '=', 'events.actor_user_id')

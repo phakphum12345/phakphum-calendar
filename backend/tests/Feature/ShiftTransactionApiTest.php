@@ -37,6 +37,10 @@ class ShiftTransactionApiTest extends TestCase
             ->assertOk()->json('data');
 
         $this->assertSame('approved', $confirmed['status']);
+        $this->assertTrue(collect($created['participants'])->firstWhere('role', 'requester')['is_current_user']);
+        $this->assertFalse(collect($created['participants'])->firstWhere('role', 'recipient')['is_current_user']);
+        $this->assertTrue(collect($confirmed['participants'])->firstWhere('role', 'recipient')['is_current_user']);
+        $this->assertFalse(collect($confirmed['participants'])->firstWhere('role', 'requester')['is_current_user']);
         $this->assertDatabaseHas('shift_transaction_events', [
             'transaction_id' => $created['id'], 'event_type' => 'created', 'transaction_version' => 1,
         ]);
