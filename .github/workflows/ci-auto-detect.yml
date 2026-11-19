@@ -105,10 +105,28 @@ jobs:
             dart test
           fi
 
+      - name: Install Linux integration-test dependencies
+        if: needs.detect.outputs.has_integration_tests == 'true' && needs.detect.outputs.is_flutter == 'true'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes \
+            clang \
+            cmake \
+            libgtk-3-dev \
+            liblzma-dev \
+            libstdc++-12-dev \
+            ninja-build \
+            pkg-config \
+            xvfb
+
+      - name: Enable Linux integration-test device
+        if: needs.detect.outputs.has_integration_tests == 'true' && needs.detect.outputs.is_flutter == 'true'
+        run: flutter config --enable-linux-desktop
+
       - name: Integration tests
         if: needs.detect.outputs.has_integration_tests == 'true' && needs.detect.outputs.is_flutter == 'true'
         shell: bash
-        run: flutter test integration_test
+        run: xvfb-run -a flutter test -d linux integration_test
 
   platform-summary:
     name: Platform activation summary

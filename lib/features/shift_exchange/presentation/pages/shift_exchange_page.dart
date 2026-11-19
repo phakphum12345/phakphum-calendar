@@ -16,7 +16,8 @@ import '../widgets/shift_transaction_history_panel.dart';
 /// Transaction workspace for personal and organization editions.
 ///
 /// The server is authoritative for participant identity, consent, and
-/// organization approval. This page never writes to Google Calendar.
+/// organization approval. Calendar writes are delegated to the app controller
+/// and remain behind a transaction-specific preview and explicit confirmation.
 class ShiftExchangePage extends StatefulWidget {
   const ShiftExchangePage({
     required this.schedule,
@@ -26,6 +27,7 @@ class ShiftExchangePage extends StatefulWidget {
     this.historyApiClient,
     this.onTransactionsLoaded,
     this.accountId,
+    this.onSyncTransaction,
     super.key,
   });
 
@@ -36,6 +38,7 @@ class ShiftExchangePage extends StatefulWidget {
   final ShiftTransactionApiClient? historyApiClient;
   final ValueChanged<List<ShiftTransactionSnapshot>>? onTransactionsLoaded;
   final String? accountId;
+  final Future<void> Function(ShiftTransactionSnapshot transaction)? onSyncTransaction;
 
   @override
   State<ShiftExchangePage> createState() => _ShiftExchangePageState();
@@ -280,6 +283,7 @@ class _ShiftExchangePageState extends State<ShiftExchangePage> {
             mode: widget.organizationMode ? 'organization' : 'personal',
             organizationId: widget.organizationMode ? _selectedOrganization?.id : null,
             onTransactionsLoaded: _handleTransactionsLoaded,
+            onSyncTransaction: widget.onSyncTransaction,
           ),
         const SizedBox(height: 16),
         Wrap(

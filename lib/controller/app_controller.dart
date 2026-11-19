@@ -27,6 +27,8 @@ import '../features/google_sheets/domain/sheet_color.dart';
 import '../features/shift_parser/application/monthly_roster_section_parser.dart';
 import '../features/shift_exchange/application/shift_transaction_schedule_projector.dart';
 import '../features/shift_exchange/infrastructure/shift_transaction_api_client.dart';
+import '../features/shift_exchange/application/shift_transaction_calendar_sync_preview.dart';
+import '../features/shift_exchange/application/shift_transaction_calendar_sync_mapper.dart';
 import '../features/shift_parser/application/monthly_roster_conversion_diagnostics.dart';
 import '../features/shift_parser/application/smart_roster_analyze_generator.dart';
 import '../features/shift_parser/domain/monthly_roster_section.dart';
@@ -243,11 +245,20 @@ class AppController extends ChangeNotifier implements ControllerState {
       _shiftTransactionProjection.warnings;
 
   void updateShiftTransactions(List<ShiftTransactionSnapshot> transactions) {
+    final pending = _pendingShiftTransactionCalendarSync;
+    if (pending != null) {
+      final latest = transactions.where((item) => item.id == pending.transactionId);
+      if (latest.length != 1 ||
+          latest.single.version != pending.transactionVersion) {
+        cancelShiftTransactionCalendarSyncPreview();
+      }
+    }
     _shiftTransactions = List.unmodifiable(transactions);
     notifyListeners();
   }
 
   void clearShiftTransactions() {
+    cancelShiftTransactionCalendarSyncPreview();
     if (_shiftTransactions.isEmpty) return;
     _shiftTransactions = const [];
     notifyListeners();
@@ -305,6 +316,7 @@ class AppController extends ChangeNotifier implements ControllerState {
   final Map<String, _ShiftOverride> _shiftOverrides = {};
   final Map<String, String> _shiftOverrideSourceKeys = {};
   ShiftCalendarWorkflowController? _pendingCalendarWorkflow;
+  _PendingShiftTransactionCalendarSync? _pendingShiftTransactionCalendarSync;
 
   static const _runtimeScheduleId = 'legacy-runtime';
   static const _runtimeScheduleName = 'Legacy runtime schedule';
@@ -1800,6 +1812,183 @@ class AppController extends ChangeNotifier implements ControllerState {
     });
   }
 
+  Future<ShiftTransactionCalendarSyncPreview>
+  previewShiftTransactionCalendarSync(ShiftTransactionSnapshot transaction) {
+    return _run('ตรวจสอบตัวอย่าง Calendar สำหรับธุรกรรมเวร', () async {
+      if (transaction.status != 'approved') {
+        throw StateError('ต้องอนุมัติธุรกรรมก่อนเตรียม Calendar');
+      }
+      if (transaction.syncStatus == 'pending' ||
+          transaction.syncStatus == 'synced') {
+        throw StateError('ธุรกรรมนี้กำลังซิงก์หรือซิงก์สำเร็จแล้ว');
+      }
+      if (shiftTransactionProjectionWarnings.isNotEmpty) {
+        throw StateError('มีธุรกรรมที่นำไปใช้กับตารางไม่ได้ กรุณาแก้ไขก่อนซิงก์ Calendar');
+      }
+      _pendingShiftTransactionCalendarSync?.workflow.dispose();
+      _pendingShiftTransactionCalendarSync = null;
+      final schedule = _scheduleForActivePeriods();
+      final syncIds = const ShiftTransactionCalendarSyncMapper().map(
+        schedule: schedule,
+        transaction: transaction,
+      );
+      final workflow = await _calendarWorkflowControllerFactory();
+      try {
+        await workflow.prepareSchedule(schedule);
+        if (workflow.hasBlockingFailures) {
+          throw StateError(workflow.validationResult?.errors
+              .map((item) => item.message).join('\n') ?? 'ตารางเวรไม่ผ่านการตรวจสอบ');
+        }
+        final preparation = workflow.schedulePreparation;
+        if (preparation == null) throw StateError('ไม่พบแผน Calendar ที่ผ่านการตรวจสอบ');
+        final plannedIds = {
+          ...preparation.existingEventIdsBySyncId.keys,
+          ...preparation.plan.inserts.map((item) => item.syncId),
+          ...preparation.plan.updates.map((item) => item.command.syncId),
+        };
+        if (syncIds.any((id) => !plannedIds.contains(id))) {
+          throw StateError('ไม่พบรายการเวรของธุรกรรมในแผน Calendar ที่เตรียมไว้');
+        }
+        _pendingShiftTransactionCalendarSync = _PendingShiftTransactionCalendarSync(
+          transactionId: transaction.id,
+          transactionVersion: transaction.version,
+          sourceSchedule: canonicalSchedule,
+          schedule: schedule,
+          workflow: workflow,
+          syncIds: syncIds,
+        );
+        return ShiftTransactionCalendarSyncPreview(
+          transactionId: transaction.id,
+          transactionVersion: transaction.version,
+          insertCount: preparation.diff.toAdd.length,
+          updateCount: preparation.diff.toUpdate.length,
+          deleteCount: preparation.diff.toDelete.length,
+          transferLines: [
+            for (final transfer in transaction.transfers)
+              '${transfer['shift_code'] ?? 'Shift'} · ${transfer['from_employee_id'] ?? '?'} → ${transfer['to_employee_id'] ?? '?'} · ${transfer['starts_at'] ?? ''} – ${transfer['ends_at'] ?? ''}',
+          ],
+          insertTitles: [for (final item in preparation.diff.toAdd) item.title],
+          updateTitles: [for (final item in preparation.diff.toUpdate) item.title],
+          deleteTitles: [for (final item in preparation.diff.toDelete) item.title],
+          warnings: workflow.validationResult?.warnings
+                  .map((item) => item.message).toList(growable: false) ??
+              const <String>[],
+        );
+      } catch (_) {
+        workflow.dispose();
+        rethrow;
+      }
+    });
+  }
+
+  Future<ShiftTransactionSnapshot> confirmShiftTransactionCalendarSync({
+    required ShiftTransactionSnapshot transaction,
+    required ShiftTransactionApiClient apiClient,
+    required bool userConfirmed,
+  }) {
+    return _run('ยืนยันและซิงก์ Calendar สำหรับธุรกรรมเวร', () async {
+      if (!userConfirmed) throw StateError('ต้องยืนยันจากหน้าตัวอย่างก่อนบันทึก Calendar');
+      final pending = _pendingShiftTransactionCalendarSync;
+      final currentTransactions = _shiftTransactions.where(
+        (item) => item.id == transaction.id,
+      );
+      if (pending == null ||
+          currentTransactions.length != 1 ||
+          currentTransactions.single.version != transaction.version ||
+          pending.transactionId != transaction.id ||
+          pending.transactionVersion != transaction.version ||
+          !identical(pending.sourceSchedule, canonicalSchedule)) {
+        throw StateError('ตัวอย่างหมดอายุแล้ว กรุณาเตรียม Preview ใหม่');
+      }
+      final currentIds = const ShiftTransactionCalendarSyncMapper().map(
+        schedule: _scheduleForActivePeriods(),
+        transaction: transaction,
+      );
+      if (currentIds.length != pending.syncIds.length ||
+          !currentIds.toSet().containsAll(pending.syncIds)) {
+        throw StateError('ตารางเวรเปลี่ยนหลัง Preview กรุณาตรวจสอบใหม่');
+      }
+      var syncStartAttempted = false;
+      var syncCompleted = false;
+      ShiftCalendarWorkflowController? verification;
+      try {
+        syncStartAttempted = true;
+        await apiClient.startCalendarSync(transaction.id, previewConfirmed: true);
+        await pending.workflow.synchronize();
+        final result = pending.workflow.lastResult;
+        if (result == null || result.hasFailures) {
+          throw StateError('Calendar ซิงก์ไม่ครบ กรุณาตรวจประวัติและลองใหม่');
+        }
+        verification = await _calendarWorkflowControllerFactory();
+        await verification.prepareSchedule(pending.schedule);
+        if (verification.hasBlockingFailures ||
+            verification.schedulePreparation == null) {
+          throw StateError('อ่านยืนยันรายการ Calendar หลังซิงก์ไม่สำเร็จ');
+        }
+        final providerIds = verification.schedulePreparation!.existingEventIdsBySyncId;
+        final writtenIds = {
+          for (final operation in result.operations)
+            if (operation.success &&
+                operation.providerEventId != null &&
+                operation.providerEventId!.isNotEmpty)
+              operation.referenceId: operation.providerEventId!,
+        };
+        final eventIds = <String>[];
+        for (final syncId in pending.syncIds) {
+          final readBackId = providerIds[syncId];
+          final writtenId = writtenIds[syncId];
+          if (readBackId == null ||
+              readBackId.isEmpty ||
+              (writtenId != null && writtenId != readBackId)) {
+            throw StateError(
+              'Calendar read-back ไม่ตรงกับ Event ID ที่ได้จากการเขียน',
+            );
+          }
+          eventIds.add(readBackId);
+        }
+        if (eventIds.toSet().length != pending.syncIds.length) {
+          throw StateError('Calendar read-back ไม่พบ Event ID ที่ไม่ซ้ำกันครบทุกเวร');
+        }
+        final updated = await apiClient.completeCalendarSync(
+          transaction.id,
+          calendarEventIds: eventIds,
+        );
+        syncCompleted = true;
+        _shiftTransactions = List.unmodifiable([
+          for (final item in _shiftTransactions)
+            if (item.id == updated.id) updated else item,
+        ]);
+        status = 'ซิงก์ Calendar และยืนยัน Event ID ของธุรกรรมแล้ว';
+        await _addAudit(
+          'shift_transaction.calendar_sync',
+          'ยืนยัน Calendar Event ${eventIds.length} รายการสำหรับธุรกรรม ${transaction.id}',
+          true,
+        );
+        notifyListeners();
+        return updated;
+      } catch (error) {
+        if (syncStartAttempted && !syncCompleted) {
+          try {
+            await apiClient.failCalendarSync(transaction.id, reason: error.toString());
+          } catch (_) {}
+        }
+        rethrow;
+      } finally {
+        verification?.dispose();
+        pending.workflow.dispose();
+        if (identical(_pendingShiftTransactionCalendarSync, pending)) {
+          _pendingShiftTransactionCalendarSync = null;
+        }
+      }
+    });
+  }
+
+  void cancelShiftTransactionCalendarSyncPreview() {
+    _pendingShiftTransactionCalendarSync?.workflow.dispose();
+    _pendingShiftTransactionCalendarSync = null;
+  }
+
+
   /// Prepares a preview for a pre-mapped list of desired calendar event
   /// candidates (used for swap/one-off previews) and returns the computed diff.
   Future<CalendarDiff> previewCandidates(
@@ -2822,6 +3011,7 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   void _replaceLegacyShifts(List<Shift> next, {bool persist = true}) {
+    cancelShiftTransactionCalendarSyncPreview();
     final conversion = _legacyScheduleAdapter.toCanonical(
       next,
       id: _runtimeScheduleId,
@@ -2847,6 +3037,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     Schedule schedule, {
     bool persist = true,
   }) async {
+    cancelShiftTransactionCalendarSyncPreview();
     _legacySchedule = _legacyScheduleAdapter.wrapCanonical(schedule);
     _rebuildAlerts();
     if (persist) {
@@ -2859,10 +3050,29 @@ class AppController extends ChangeNotifier implements ControllerState {
   void dispose() {
     _autoRefreshTimer?.cancel();
     _pendingCalendarWorkflow?.dispose();
+    cancelShiftTransactionCalendarSyncPreview();
     auth.removeListener(_onAuthChanged);
     auth.dispose();
     super.dispose();
   }
+}
+
+class _PendingShiftTransactionCalendarSync {
+  const _PendingShiftTransactionCalendarSync({
+    required this.transactionId,
+    required this.transactionVersion,
+    required this.sourceSchedule,
+    required this.schedule,
+    required this.workflow,
+    required this.syncIds,
+  });
+
+  final String transactionId;
+  final int transactionVersion;
+  final Schedule sourceSchedule;
+  final Schedule schedule;
+  final ShiftCalendarWorkflowController workflow;
+  final List<String> syncIds;
 }
 
 class _ShiftOverride {

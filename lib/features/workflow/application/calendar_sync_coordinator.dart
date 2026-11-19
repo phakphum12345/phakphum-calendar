@@ -17,12 +17,14 @@ class CalendarSyncPreparation {
     required this.plan,
     required this.timeMin,
     required this.timeMax,
+    this.existingEventIdsBySyncId = const {},
   });
 
   final CalendarDiff diff;
   final CalendarSyncPlan plan;
   final DateTime timeMin;
   final DateTime timeMax;
+  final Map<String, String> existingEventIdsBySyncId;
 }
 
 class CalendarSyncCoordinator {
@@ -102,6 +104,10 @@ class CalendarSyncCoordinator {
       plan: plan,
       timeMin: range.$1,
       timeMax: range.$2,
+      existingEventIdsBySyncId: Map.unmodifiable({
+        for (final event in adopted)
+          if (event.eventId.isNotEmpty) event.syncId: event.eventId,
+      }),
     );
   }
 

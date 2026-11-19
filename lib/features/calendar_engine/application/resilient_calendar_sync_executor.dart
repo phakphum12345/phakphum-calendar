@@ -4,6 +4,7 @@ import '../domain/calendar_sync_gateway.dart';
 import '../domain/calendar_sync_operation_result.dart';
 import '../domain/failed_sync_operation.dart';
 import '../domain/failed_sync_repository.dart';
+import '../domain/managed_calendar_event.dart';
 import 'calendar_sync_plan.dart';
 
 class ResilientCalendarSyncResult {
@@ -176,11 +177,14 @@ class ResilientCalendarSyncExecutor {
 
     for (var attempt = 1; attempt <= maxAttempts; attempt++) {
       try {
-        await operation();
+        final value = await operation();
         return CalendarSyncOperationResult(
           type: type,
           referenceId: referenceId,
           success: true,
+          providerEventId: value is ManagedCalendarEvent && value.eventId.isNotEmpty
+              ? value.eventId
+              : null,
         );
       } catch (error) {
         lastError = error;

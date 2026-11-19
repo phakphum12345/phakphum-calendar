@@ -10,6 +10,7 @@ import 'package:phakphum_calendar/features/shift_exchange/presentation/widgets/s
 
 Map<String, dynamic> transaction({
   String status = 'pending_response',
+  String syncStatus = 'not_started',
   String? organizationId,
   bool currentUser = true,
   String? confirmedAt,
@@ -18,7 +19,7 @@ Map<String, dynamic> transaction({
   'mode': organizationId == null ? 'personal' : 'organization',
   'type': 'give_up',
   'status': status,
-  'sync_status': 'not_started',
+  'sync_status': syncStatus,
   'version': 1,
   'created_at': '2026-11-18T01:00:00Z',
   'updated_at': '2026-11-18T01:00:00Z',
@@ -101,6 +102,73 @@ void main() {
     );
     expect(getCount, greaterThanOrEqualTo(2));
     expect(find.text('Confirm'), findsNothing);
+    client.close();
+  });
+
+  testWidgets('offers transaction Calendar preview only through the supplied explicit-confirmation callback', (tester) async {
+    final approved = transaction(status: 'approved');
+    var previewRequested = false;
+    final client = ShiftTransactionApiClient(
+      baseUrl: 'https://calendar.example.test',
+      idTokenProvider: () async => 'token',
+      httpClient: MockClient((request) async =>
+          http.Response(jsonEncode({'data': [approved]}), 200)),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ShiftTransactionHistoryPanel(
+            apiClient: client,
+            onSyncTransaction: (item) async {
+              expect(item.id, approved['id']);
+              previewRequested = true;
+            },
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Give up · approved'));
+    await tester.pumpAndSettle();
+    expect(find.text('Preview & sync Calendar'), findsOneWidget);
+    await tester.tap(find.text('Preview & sync Calendar'));
+    await tester.pumpAndSettle();
+    expect(previewRequested, isTrue);
+    client.close();
+  });
+
+  testWidgets('allows a participant to recover a stalled Calendar sync', (tester) async {
+    final pending = transaction(status: 'approved', syncStatus: 'pending');
+    final failed = {...pending, 'sync_status': 'failed', 'version': 2};
+    final requests = <http.Request>[];
+    final client = ShiftTransactionApiClient(
+      baseUrl: 'https://calendar.example.test',
+      idTokenProvider: () async => 'token',
+      httpClient: MockClient((request) async {
+        requests.add(request);
+        if (request.method == 'GET') {
+          return http.Response(jsonEncode({'data': [pending]}), 200);
+        }
+        return http.Response(jsonEncode({'data': failed}), 200);
+      }),
+    );
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ShiftTransactionHistoryPanel(apiClient: client),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Give up · approved'));
+    await tester.pumpAndSettle();
+    expect(find.text('Reset stalled Calendar sync'), findsOneWidget);
+    await tester.tap(find.text('Reset stalled Calendar sync'));
+    await tester.pumpAndSettle();
+    expect(
+      requests.where((request) => request.method == 'POST').single.url.path,
+      '/api/v1/shift-transactions/11111111-1111-4111-8111-111111111111/calendar-sync/fail',
+    );
     client.close();
   });
 
