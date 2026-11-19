@@ -286,6 +286,8 @@ void main() {
         '/api/v1/shift-transactions/11111111-1111-4111-8111-111111111111/calendar-sync/complete',
       ]);
       expect(current['sync_status'], 'synced');
+      await tester.tap(find.text('Give up · approved'));
+      await tester.pumpAndSettle();
       expect(find.text('Confirm fulfillment'), findsOneWidget);
       await tester.tap(find.text('Confirm fulfillment'));
       await tester.pumpAndSettle();
