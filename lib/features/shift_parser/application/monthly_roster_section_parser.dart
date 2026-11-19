@@ -63,6 +63,15 @@ class MonthlyRosterSectionParser {
       warnings.add('ไม่พบแถววันที่ตาม Layout Profile ครบทุกแถวที่กำหนด');
     }
     final sections = <MonthlyRosterSection>[];
+    final tabPeriod = _tryParsePeriod(input.sheetTitle);
+    final hasExplicitSectionPeriod = headerRows.any((row) {
+      final title = _sectionTitle(
+        input: input,
+        cellsByRow: cellsByRow,
+        headerRow: row,
+      );
+      return _tryParsePeriod(title) != null;
+    });
 
     for (var index = 0; index < headerRows.length; index++) {
       final headerRow = headerRows[index];
@@ -77,10 +86,16 @@ class MonthlyRosterSectionParser {
       );
 
       final explicitPeriod = _tryParsePeriod(title);
-      final sheetFallback = headerRows.length == 1
-          ? _tryParsePeriod(input.sheetTitle)
-          : null;
-      final period = explicitPeriod ?? sheetFallback;
+      // A worksheet month may fill in dates for genuinely split, undated
+      // sections only when no section declares its own period. If one section
+      // has an explicit range, other undated sections must not borrow the tab
+      // month: they may represent a different roster period.
+      // Each inferred section must still have a strictly increasing sequence
+      // of days contained within the worksheet's single month.
+      final canUseSheetFallback = headerRows.length == 1 ||
+          (!hasExplicitSectionPeriod &&
+              _canUseSingleMonthTabFallback(tabPeriod, daysByColumn));
+      final period = explicitPeriod ?? (canUseSheetFallback ? tabPeriod : null);
       if (period == null) {
         warnings.add(
           'ไม่พบช่วงวันที่เฉพาะของส่วน "$title"; '
@@ -291,6 +306,31 @@ class MonthlyRosterSectionParser {
     } on FormatException {
       return null;
     }
+  }
+
+  bool _canUseSingleMonthTabFallback(
+    ThaiRosterPeriod? period,
+    Map<int, int> daysByColumn,
+  ) {
+    if (period == null ||
+        period.start.year != period.end.year ||
+        period.start.month != period.end.month ||
+        daysByColumn.isEmpty) {
+      return false;
+    }
+
+    final daysInMonth = period.end.day;
+    final orderedDays = daysByColumn.entries.toList()
+      ..sort((left, right) => left.key.compareTo(right.key));
+    var previousDay = 0;
+    for (final entry in orderedDays) {
+      final day = entry.value;
+      if (day < 1 || day > daysInMonth || day <= previousDay) {
+        return false;
+      }
+      previousDay = day;
+    }
+    return true;
   }
 
   bool _isDateHeaderRow(List<dynamic> cells) {
