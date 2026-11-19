@@ -107,7 +107,7 @@ class MonthlyRosterSectionParser {
       );
       warnings.addAll(
         dateAnomalies.map(
-          (anomaly) => 'ต้องตรวจสอบวันที่: ' + anomaly.message,
+          (anomaly) => 'ต้องตรวจสอบวันที่: ${anomaly.message}',
         ),
       );
 
@@ -347,8 +347,7 @@ class MonthlyRosterSectionParser {
             code: 'duplicate_day',
             displayedDay: entry.key,
             columnIndex: entry.value[1],
-            message: 'พบเลขวันที่ ' + entry.key.toString() +
-                ' ซ้ำในช่วงวันที่ของส่วนนี้',
+            message: 'พบเลขวันที่ ${entry.key} ซ้ำในช่วงวันที่ของส่วนนี้',
           ),
         );
       }
@@ -369,9 +368,7 @@ class MonthlyRosterSectionParser {
               code: 'unresolved_date',
               displayedDay: day,
               columnIndex: column,
-              message: 'วันที่ ' + day.toString() + ' ที่คอลัมน์ ' +
-                  (column + 1).toString() +
-                  ' เรียงผิดลำดับหรืออยู่นอกช่วงที่ระบุ',
+              message: 'วันที่ $day ที่คอลัมน์ ${column + 1} เรียงผิดลำดับหรืออยู่นอกช่วงที่ระบุ',
             ),
           );
         }
@@ -398,8 +395,7 @@ class MonthlyRosterSectionParser {
               code: 'missing_dates',
               columnIndex: column,
               displayedDay: daysByColumn[column],
-              message: 'ลำดับวันที่ขาด ' + missing.join(', ') +
-                  ' ก่อนคอลัมน์ ' + (column + 1).toString(),
+              message: 'ลำดับวันที่ขาด ${missing.join(', ')} ก่อนคอลัมน์ ${column + 1}',
             ),
           );
         } else if (gap <= 0) {
@@ -408,8 +404,7 @@ class MonthlyRosterSectionParser {
               code: 'out_of_order',
               columnIndex: column,
               displayedDay: daysByColumn[column],
-              message: 'วันที่ในคอลัมน์ ' + (column + 1).toString() +
-                  ' ไม่เรียงตามปฏิทิน',
+              message: 'วันที่ในคอลัมน์ ${column + 1} ไม่เรียงตามปฏิทิน',
             ),
           );
         }
@@ -419,14 +414,12 @@ class MonthlyRosterSectionParser {
 
     if (completeRangeHeader) {
       final resolvedKeys = datesByColumn.values
-          .map((date) => date.year.toString() + '-' +
-              date.month.toString() + '-' + date.day.toString())
+          .map((date) => '${date.year}-${date.month}-${date.day}')
           .toSet();
       final missing = <String>[];
       for (var offset = 0; offset < expectedDayCount; offset++) {
         final expected = DateTime(start.year, start.month, start.day + offset);
-        final expectedKey = expected.year.toString() + '-' +
-            expected.month.toString() + '-' + expected.day.toString();
+        final expectedKey = '${expected.year}-${expected.month}-${expected.day}';
         if (!resolvedKeys.contains(expectedKey)) {
           missing.add(_formatDate(expected));
         }
@@ -437,9 +430,7 @@ class MonthlyRosterSectionParser {
               code: 'day_sequence_mismatch',
               columnIndex: columns[offset],
               displayedDay: actualDay,
-              message: 'คอลัมน์ ' + (columns[offset] + 1).toString() +
-                  ' แสดงวันที่ ' + actualDay.toString() +
-                  ' แต่ตามช่วงที่ระบุควรเป็น ' + expected.day.toString(),
+              message: 'คอลัมน์ ${columns[offset] + 1} แสดงวันที่ $actualDay แต่ตามช่วงที่ระบุควรเป็น ${expected.day}',
             ),
           );
         }
@@ -448,8 +439,7 @@ class MonthlyRosterSectionParser {
         anomalies.add(
           MonthlyRosterDateAnomaly(
             code: 'missing_dates',
-            message: 'ไม่สามารถจับคู่วันที่ในช่วงที่ระบุได้ครบ: ' +
-                missing.join(', '),
+            message: 'ไม่สามารถจับคู่วันที่ในช่วงที่ระบุได้ครบ: ${missing.join(', ')}',
           ),
         );
       }
@@ -457,8 +447,7 @@ class MonthlyRosterSectionParser {
 
     final unique = <String, MonthlyRosterDateAnomaly>{};
     for (final anomaly in anomalies) {
-      final key = anomaly.code + '|' + (anomaly.columnIndex?.toString() ?? '') +
-          '|' + (anomaly.displayedDay?.toString() ?? '') + '|' + anomaly.message;
+      final key = '${anomaly.code}|${anomaly.columnIndex ?? ''}|${anomaly.displayedDay ?? ''}|${anomaly.message}';
       unique.putIfAbsent(key, () => anomaly);
     }
     return List.unmodifiable(unique.values);
