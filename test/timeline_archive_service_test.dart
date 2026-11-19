@@ -106,7 +106,7 @@ void main() {
       ['revision-good', 'revision-corrupt', 'revision-missing'],
     );
     await prefs.setString(
-      'timeline_archive_record_v1_\${scope}_\$corruptHash',
+      'timeline_archive_record_v1_${scope}_$corruptHash',
       '{invalid-json',
     );
 
@@ -115,7 +115,7 @@ void main() {
       accountId: 'user@example.com',
       fileId: 'sheet-1',
       onRevisionSkipped: (revisionId, error) {
-        skipped.add('\$revisionId:\${error.runtimeType}');
+        skipped.add('$revisionId:${error.runtimeType}');
       },
     );
 
