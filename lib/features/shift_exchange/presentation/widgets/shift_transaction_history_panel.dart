@@ -9,6 +9,7 @@ class ShiftTransactionHistoryPanel extends StatefulWidget {
     this.mode,
     this.organizationId,
     this.onTransactionsLoaded,
+    this.onSyncTransaction,
     super.key,
   });
 
@@ -17,6 +18,7 @@ class ShiftTransactionHistoryPanel extends StatefulWidget {
   final String? mode;
   final String? organizationId;
   final ValueChanged<List<ShiftTransactionSnapshot>>? onTransactionsLoaded;
+  final Future<void> Function(ShiftTransactionSnapshot transaction)? onSyncTransaction;
 
   @override
   State<ShiftTransactionHistoryPanel> createState() =>
@@ -82,6 +84,9 @@ class _ShiftTransactionHistoryPanelState
           break;
         case 'cancel':
           await widget.apiClient.cancelTransaction(transaction.id);
+          break;
+        case 'sync_calendar':
+          await widget.onSyncTransaction?.call(transaction);
           break;
         default:
           if (action.startsWith('fulfill:')) {
@@ -318,11 +323,25 @@ class _ShiftTransactionHistoryPanelState
       );
     }
 
+    if (item.status == 'approved' &&
+        !['pending', 'synced'].contains(item.syncStatus) &&
+        currentParticipant != null && widget.onSyncTransaction != null) {
+      actions.add(
+        FilledButton.icon(
+          onPressed: () => _act(item, 'sync_calendar'),
+          icon: const Icon(Icons.calendar_month_outlined),
+          label: const Text('Preview & sync Calendar'),
+        ),
+      );
+    }
+
     if (item.status == 'approved' && item.syncStatus == 'synced' &&
         currentParticipant != null) {
       for (final transfer in item.transfers) {
+        final endsAt = DateTime.tryParse(transfer['ends_at']?.toString() ?? '');
         if (transfer['to_employee_id'] == currentParticipant['employee_id'] &&
-            transfer['fulfilled_at'] == null) {
+            transfer['fulfilled_at'] == null &&
+            endsAt != null && !DateTime.now().isBefore(endsAt.toLocal())) {
           final transferKey = transfer['transfer_key']?.toString();
           if (transferKey == null || transferKey.isEmpty) continue;
           actions.add(
