@@ -71,3 +71,5 @@ jobs:
           git diff --check
 
 # This workflow is limited to the dedicated dependency maintenance branch.
+
+# The refresh job fetches the latest branch head before writing generated files.
