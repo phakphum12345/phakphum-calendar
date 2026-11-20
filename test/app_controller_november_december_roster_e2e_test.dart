@@ -120,11 +120,15 @@ void main() {
       await controller.prepareCalendarSync();
       await controller.syncCalendar(userConfirmed: true);
       expect(gateway.insertAttempts, 61);
-      expect(gateway.events, hasLength(61));
+      expect(
+        gateway.events.where((event) => event.start.month == 11),
+        hasLength(30),
+      );
       expect(
         gateway.events.where((event) => event.start.month == 12),
         hasLength(31),
       );
+      expect(gateway.events, hasLength(61));
 
       await controller.updateSettings(
         controller.settings.copyWith(periods: const [november, december]),
