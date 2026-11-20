@@ -78,6 +78,7 @@ or cross-device synchronization.
 
 ## Safety
 
-Retry is appropriate because inserts use deterministic Sync IDs, but production
-code must re-check for existing managed events before retrying ambiguous network
-failures to avoid duplicate events.
+Insert retries and resume re-check existing managed events by deterministic Sync
+ID before another insert. If verification fails or finds duplicate IDs, the
+operation remains failed for review rather than risking another provider write.
+This does not serialize simultaneous syncs from independent devices.
