@@ -24,6 +24,11 @@ jobs:
           ref: ${{ github.ref }}
           fetch-depth: 0
 
+      - name: Synchronize to latest maintenance branch head
+        run: |
+          git fetch origin "$GITHUB_REF_NAME"
+          git reset --hard "origin/$GITHUB_REF_NAME"
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
