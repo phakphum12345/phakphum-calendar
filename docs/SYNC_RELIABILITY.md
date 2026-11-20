@@ -37,7 +37,18 @@ Default:
 2 attempts per operation
 ```
 
-A short incremental delay is applied between attempts.
+When an insert fails after submission, the executor looks up managed events in
+the target interval and reconciles by the deterministic `sceSyncId` before
+another insert attempt. Exactly one match is treated as success and its provider
+event ID is retained. Multiple matches or a failed verification lookup remain
+failed; the executor does not blindly issue another insert when the provider
+outcome is unknown.
+
+Resume performs the same lookup before inserting and again after an ambiguous
+insert failure. This protects retry and resume from duplicate creation when the
+provider accepted a write but the client lost the response. It is not a
+distributed lock for simultaneous independent clients; cross-device concurrent
+sync coordination remains a separate concern.
 
 ## Partial success
 
