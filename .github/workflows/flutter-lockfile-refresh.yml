@@ -61,8 +61,20 @@ jobs:
             git push origin "HEAD:$GITHUB_REF_NAME"
           fi
 
-      - name: Enforce committed dependency lockfile
-        run: flutter pub get --enforce-lockfile
+      - name: Enforce committed dependency lockfile without generated-file drift
+        shell: bash
+        run: |
+          flutter pub get --enforce-lockfile
+          if ! git diff --quiet -- pubspec.lock; then
+            echo "Enforced dependency resolution changed pubspec.lock unexpectedly."
+            exit 1
+          fi
+          git diff --name-only > "$RUNNER_TEMP/pub-get-worktree-changes.txt"
+          if [ -s "$RUNNER_TEMP/pub-get-worktree-changes.txt" ]; then
+            echo "Reverting only transient generated files from dependency resolution in the disposable checkout."
+            cat "$RUNNER_TEMP/pub-get-worktree-changes.txt"
+            git restore --worktree -- .
+          fi
 
       - name: Verify committed DISKPATH manifests
         run: |
