@@ -36,7 +36,7 @@ The branch protection observation is informational only. Repository settings and
 | #153 | MERGED | Adds repository completion index, requirements traceability and API/database guides | Merge commit `8ef620213ef8629d64bf0d916ee0688e298bfd3b`; exact-head CI passed and 35 documentation links verified |
 | #154 | MERGED | Updates vulnerable Composer dependency graph and adds `composer audit --locked` CI gate | Merge commit `e3c248480ebc55aa4b552cafb2291be9d00c0ecc`; exact-head Laravel, Flutter, Windows, Android, iOS, Linux, Web and PR Gate checks passed; Pages deployment skipped |
 | #147 | Previously merged | Google ID-token verification hardening | Retain regression coverage |
-| #144 | MERGED | Preserve managed events outside selected roster months; November/December E2E regression | Exact-head CI: 10 PASS, 1 SKIPPED (Pages); post-merge main CI is still running |
+| #144 | MERGED | Preserve managed events outside selected roster months; November/December E2E regression | Exact-head CI: 10 PASS, 1 SKIPPED (Pages); post-merge main CI evidence remains UNKNOWN |
 
 ## Current work
 
@@ -53,13 +53,13 @@ The branch protection observation is informational only. Repository settings and
 | Organization membership administration | PARTIAL | Create, join-request and approval flows exist; member role-change/removal endpoints were not found |
 | Responsive UI | NEEDS REVIEW | Large app shell; mobile/tablet/desktop behavior needs a dedicated screen-by-screen audit |
 | Performance | UNKNOWN | No repository-wide performance baseline or benchmark suite was identified |
-| Documentation | IN_PROGRESS | This inventory and the central index are being added; existing documents are mapped rather than duplicated |
+| Documentation | MERGED, ONGOING MAINTENANCE | Central index, implementation status, requirements traceability and API/database guides are merged; continue keeping them synchronized |
 
 ## Security findings
 
 ### Composer dependencies
 
-The pre-remediation backend lockfile was reported by Composer audit as having **27 advisories across 8 packages**. PR #154 updated the dependency graph; exact-head `composer audit --locked` returned exit code 0 with an empty advisory list, and Laravel CI now runs this audit on every relevant change. The following locked versions were independently identified as needing updates:
+The pre-remediation backend lockfile was reported by Composer audit as having **27 advisories across 8 packages**. PR #154 updated the dependency graph; exact-head `composer audit --locked` returned exit code 0 with an empty advisory list, and Laravel CI now runs this audit on every relevant change. The following were the pre-remediation locked versions:
 
 | Locked package | Locked version | Patched version identified |
 |---|---:|---:|
@@ -71,7 +71,7 @@ The pre-remediation backend lockfile was reported by Composer audit as having **
 
 The vulnerable lockfile has been remediated and the CI audit gate is merged. Keep post-merge verification UNKNOWN until a completed `main` workflow is observed; continue reviewing local data protection and other security findings separately.
 
-PR #149 changes validation order for two email inputs. It does **not** replace the required framework and transitive dependency upgrades.
+PR #149 hardened email validation. PR #154 separately upgraded the framework and transitive dependency graph and added the CI audit gate.
 
 ### Logging and local persistence
 
