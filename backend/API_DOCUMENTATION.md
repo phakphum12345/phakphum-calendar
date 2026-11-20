@@ -66,7 +66,7 @@ Supported values:
 - `participants`: exactly two entries, one `requester` and one `recipient`; account and employee identities must be distinct.
 - `transfers`: one or two transfer entries, each with a unique transfer ID, shift ID, source/destination employee IDs, shift code, start/end timestamps and purpose. Allowed purposes are `give_up`, `exchange`, `primary` and `return_shift`.
 - `organization_id`: required for organization mode and prohibited for personal mode.
-- `metadata`: optional array. Do not send tokens, secrets, full rosters or unnecessary personal data.
+- `metadata`: optional array. On the snapshot base for this document, the backend accepts an arbitrary array; PR #151 proposes limiting it to bounded `note` and `schedule_id` fields. Do not send tokens, secrets, full rosters or unnecessary personal data.
 
 Example shape:
 
