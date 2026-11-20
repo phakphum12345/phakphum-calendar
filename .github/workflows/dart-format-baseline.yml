@@ -77,3 +77,5 @@ jobs:
           path: ${{ runner.temp }}/dart-format-audit.log
           if-no-files-found: error
           retention-days: 7
+
+# Push-triggered audit is intentionally informational until the baseline is reviewed.
