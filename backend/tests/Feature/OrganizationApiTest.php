@@ -82,7 +82,7 @@ class OrganizationApiTest extends TestCase
         $this->postJson("/api/v1/organizations/{$organizationId}/members", [
             'email' => 'member@example.com',
             'employee_id' => 'EMP-MEMBER',
-            'role' => 'staff',
+            'role' => 'member',
         ], $this->auth('owner-token'))->assertCreated();
 
         $this->putJson(
