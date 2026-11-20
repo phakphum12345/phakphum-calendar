@@ -1,7 +1,7 @@
 # Repository Implementation Status
 
 **Snapshot date:** 2026-11-20  
-**Snapshot base:** `main` at `5a8f2a6fe900b55237b5aa72db80f02dc1db339b`  
+**Snapshot base:** `main` at `9397693422b28fdd29bb395cbe5cc61635609dc5`  
 **Scope:** Whole repository, Flutter client, Laravel API, persistence, synchronization, CI/CD, security and documentation.
 
 > This is a point-in-time engineering inventory, not a declaration that the repository is complete or production-ready. Source code, migrations, exact-head CI and observed runtime behavior take precedence over this document. `SKIPPED` and `UNKNOWN` are never treated as `PASS`.
@@ -13,7 +13,7 @@
 | Default branch | `main` |
 | Main SHA | `5a8f2a6fe900b55237b5aa72db80f02dc1db339b` |
 | Open issues | 0 at snapshot time |
-| Open PRs | PR #150 (documentation) and PR #151 (metadata validation) at snapshot time |
+| Open PRs | PR #150 (documentation) and PR #152 (client diagnostic log privacy) at snapshot time |
 | Test files | 157 Dart test files |
 | GitHub workflow files | 13 |
 | Markdown files | 118 |
@@ -31,6 +31,7 @@ The branch protection observation is informational only. Repository settings and
 | #145 | MERGED | Dependabot version-update configuration | Does not itself remediate Composer advisories |
 | #148 | MERGED | Deterministic Calendar event IDs and reconciliation after ambiguous insert outcomes | Post-merge CI must remain green |
 | #149 | MERGED | Bounds user-supplied email before Laravel email validation | PHP/Laravel suite: 42 tests, 278 assertions; defense-in-depth only |
+| #151 | MERGED | Restricts shift transaction metadata to bounded `note` and `schedule_id` keys | Merge commit `9397693422b28fdd29bb395cbe5cc61635609dc5`; exact-head Laravel CI passed |
 | #147 | Previously merged | Google ID-token verification hardening | Retain regression coverage |
 | #144 | MERGED | Preserve managed events outside selected roster months; November/December E2E regression | Exact-head CI: 10 PASS, 1 SKIPPED (Pages); post-merge main CI is still running |
 
@@ -41,7 +42,7 @@ The branch protection observation is informational only. Repository settings and
 | November/December selected-month synchronization | MERGED, POST-MERGE VERIFICATION | PR #144 merged as `5a8f2a6f…`; exact-head CI passed and regression verifies that December sync preserves November events |
 | Calendar insert idempotency | IMPLEMENTED, POST-MERGE VERIFICATION | PR #148 is merged; monitor main CI and provider reconciliation |
 | Backend email validation guard | MERGED | PR #149 PHP/Laravel suite: 42 tests, 278 assertions |
-| Shift transaction metadata bounds | IN_PROGRESS | PR #151; restricts metadata to bounded `note` and `schedule_id`; PHP CI pending |
+| Shift transaction metadata bounds | MERGED | PR #151; metadata is restricted to bounded `note` and `schedule_id`; exact-head Laravel CI passed |
 | Composer dependency remediation | FAIL / BLOCKED ON UPDATES | Composer audit reported 27 advisories across 8 packages; Dependabot configuration is merged, but lockfile remediation is not |
 | Historical roster timeline | PARTIAL | Revision archive and ownership-history display exist; a complete restore workflow was not found |
 | Notifications and reminders | MISSING | `NotificationService` is an interface only; no concrete implementation or notification package was found |
@@ -71,8 +72,8 @@ PR #149 changes validation order for two email inputs. It does **not** replace t
 
 ### Logging and local persistence
 
-- `ClientErrorController` logs the client-provided `message` field. Request validation blocks separate token/roster fields, but does not redact secrets or personal data embedded inside the message. Add message redaction or log a safe error code only.
-- `ShiftTransactionController` currently validates `metadata` as an array without a nested key allowlist or field-size bounds. The Flutter caller currently sends only `note` and `schedule_id`; enforce that bounded contract server-side.
+- `ClientErrorController` previously logged the client-provided `message` field. PR #152 removes that free-form message from log context and retains only its character length; merge and post-merge verification remain pending.
+- `ShiftTransactionController` now restricts metadata to `note` (maximum 1,000 characters) and `schedule_id` (maximum 128 characters) through merged PR #151.
 - Timeline/revision snapshots are cached locally through SharedPreferences. Review the privacy implications and evaluate encrypted local persistence for sensitive roster content.
 - Google ID tokens are verified by the backend middleware; keep tokens and credentials out of logs and source control.
 
@@ -87,7 +88,7 @@ PR #149 changes validation order for two email inputs. It does **not** replace t
 7. Confirm whether day, week and year views are required product behavior; the current monthly roster view is the primary verified view.
 8. Complete organization member role-change/removal workflows if required by the product permission model.
 9. Add performance baselines for large workbooks, large event sets and long sync histories.
-10. Complete PR #151 to restrict shift-transaction metadata to bounded `note` and `schedule_id` fields; redact client diagnostic messages before logging.
+10. Complete PR #152 to keep untrusted client diagnostic message content out of server logs; verify its exact-head CI and post-merge behavior.
 11. Complete API and database documentation and maintain this status after each meaningful merge.
 
 ## Completion rules
