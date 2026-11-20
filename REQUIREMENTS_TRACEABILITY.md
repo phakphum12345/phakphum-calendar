@@ -1,7 +1,7 @@
 # Requirements Traceability
 
 **Review date:** 2026-11-20  
-**Repository snapshot:** `9397693422b28fdd29bb395cbe5cc61635609dc5`  
+**Repository snapshot:** `e3c248480ebc55aa4b552cafb2291be9d00c0ecc`  
 **Status:** Partial inventory; rows marked PARTIAL, MISSING or NEEDS REVIEW remain open work.
 
 | Requirement | Primary implementation | Test / evidence | Status and gap |
@@ -10,13 +10,13 @@
 | Frontend UI / UX | `lib/ui/app_shell.dart`, feature presentation widgets | Widget tests in `test/` | NEEDS REVIEW — targeted mobile/tablet/desktop usability audit remains |
 | Backend / API | `backend/routes/api.php`, `backend/app/Http/Controllers/Api/V1/` | `backend/tests/Feature/` | PARTIAL — API docs and broader contract coverage required |
 | Database / migrations | `backend/database/migrations/` | Laravel feature tests | IMPLEMENTED — schema document added; migration and backup/restore audit remains |
-| Calendar engine | `lib/features/calendar_engine/` | `test/sce_*`, Google Calendar gateway tests | POST-MERGE VERIFICATION — idempotent inserts and selected-period preservation are merged; exact-head regression passed, main post-merge CI is pending |
+| Calendar engine | `lib/features/calendar_engine/` | `test/sce_*`, Google Calendar gateway tests | POST-MERGE VERIFICATION — idempotent inserts and selected-period preservation are merged; exact-head regressions passed, but main post-merge CI evidence remains UNKNOWN |
 | Scheduling engine | `lib/features/schedule_generation/`, `lib/features/schedule/` | schedule generation and validation tests | PARTIAL — complete large-roster and edge-case coverage still required |
 | Timeline management | `lib/services/roster_timeline_generator.dart`, `lib/services/timeline_archive_service.dart` | roster timeline and archive tests | PARTIAL — revision history exists; restoration and blank-slot semantics need work |
 | Historical timeline | `lib/services/roster_revision_service.dart`, `lib/models/roster_assignment_timeline.dart` | revision reader and timeline generator tests | PARTIAL — read/history display exists; complete restore workflow not found |
 | Shift / duty management | `lib/features/shift_parser/`, `lib/features/shift_exchange/`, `backend/app/Services/ShiftTransactions/` | parser, schedule and transaction tests | PARTIAL — broader end-to-end personnel and cancellation scenarios remain |
 | Shift exchange / replacement | `lib/features/shift_exchange/`, `ShiftTransactionService.php` | `backend/tests/Feature/ShiftTransactionApiTest.php`, Flutter API-client tests | IMPLEMENTED FOUNDATION — full live multi-account workflow still requires environment verification |
-| Synchronization engine | `CalendarSyncCoordinator`, `ResilientCalendarSyncExecutor`, `ResumeSyncService`, Google Calendar gateway | sync executor, resume and gateway tests | POST-MERGE VERIFICATION — PR #148 idempotency and PR #144 selected-month preservation are merged; exact-head tests passed, main post-merge CI is pending |
+| Synchronization engine | `CalendarSyncCoordinator`, `ResilientCalendarSyncExecutor`, `ResumeSyncService`, Google Calendar gateway | sync executor, resume and gateway tests | POST-MERGE VERIFICATION — PR #148 idempotency and PR #144 selected-month preservation are merged; exact-head tests passed, but main post-merge CI evidence remains UNKNOWN |
 | Monthly / yearly calendar | monthly roster and `RosterSyncPeriodFilter` | month boundary and leap-year tests | PARTIAL — monthly flow exists; dedicated yearly/day/week views not confirmed |
 | Date / time / timezone | `RosterSyncPeriodFilter`, `GoogleCalendarSyncGateway` | date parsing and Calendar gateway tests | PARTIAL — Bangkok wall-time conversion exists; cross-device timezone matrix needs verification |
 | User management / permissions | `OrganizationController.php`, organization membership and policy tables | organization API feature tests | PARTIAL — join and approval flows exist; role-change/removal endpoints not found |
@@ -29,8 +29,8 @@
 | Responsive design / mobile UI | Flutter presentation layer | existing widget tests | NEEDS REVIEW — verify compact widths, table visibility and navigation on real target sizes |
 | Automated testing | `test/`, `integration_test/`, `backend/tests/` | 157 Dart test files plus Laravel feature tests | PARTIAL — count is not proof of requirement coverage; map critical flows to E2E tests |
 | CI/CD / build / deployment | `.github/workflows/` | exact-head platform checks and deployment workflows | IN_PROGRESS — require exact-head and post-merge evidence; unsigned iOS output is not install-ready |
-| Security / privacy | Google token middleware, Laravel authorization, `SECURITY.md` | security and feature tests | FAIL / IN_PROGRESS — Composer advisories remain; PR #151 merged bounded metadata validation and PR #152 merged client diagnostic log redaction; local data protection needs review |
-| Documentation | root docs, `docs/`, `backend/` | this index and traceability map | IN_PROGRESS — keep docs synchronized with migrations and source code |
+| Security / privacy | Google token middleware, Laravel authorization, `SECURITY.md` | security and feature tests | PARTIAL / POST-MERGE VERIFICATION — PR #154 merged the refreshed lockfile; exact-head `composer audit --locked` reports zero advisories and CI runs this gate; PR #151 metadata bounds and PR #152 diagnostic log redaction are merged; local data protection still needs review |
+| Documentation | root docs, `docs/`, `backend/` | this index and traceability map | IN_PROGRESS — repository index and API/database guides are merged; keep docs synchronized with future implementation changes |
 
 ## Explicitly unverified behaviors
 
