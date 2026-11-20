@@ -80,7 +80,7 @@ This document summarizes the current Laravel migrations. The migration files, no
 
 ## Laravel infrastructure tables
 
-The migrations also define standard framework tables for cache, cache locks, jobs, failed jobs, sessions and password reset tokens. Their presence does not imply that every configured queue/cache driver is enabled in production.
+The migrations also define standard framework tables for cache, cache locks, jobs, job batches, failed jobs, sessions and password reset tokens. Their presence does not imply that every configured queue/cache driver is enabled in production.
 
 ## Relationship overview
 
