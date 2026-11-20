@@ -26,7 +26,7 @@ This document describes the current routes. Request validation and service autho
 | POST | `/organization-join-requests` | Request membership by organization slug |
 | GET | `/organizations/{organizationId}/members` | List active members |
 | POST | `/organizations/{organizationId}/members` | Add a registered Google account |
-| GET | `/organizations/{organizationId}/join-requests` | Manager review queue |
+| GET | `/organizations/{organizationId}/join-requests` | Owner/admin review queue |
 | POST | `/organizations/{organizationId}/join-requests/{requestId}/approve` | Approve join request |
 | POST | `/organizations/{organizationId}/join-requests/{requestId}/reject` | Reject join request |
 | GET | `/organizations/{organizationId}/shift-policies` | Read organization policies |
@@ -35,8 +35,8 @@ This document describes the current routes. Request validation and service autho
 | GET | `/shift-transactions/{transactionId}` | Read transaction |
 | POST | `/shift-transactions/{transactionId}/confirm` | Recipient confirmation |
 | POST | `/shift-transactions/{transactionId}/reject` | Recipient rejection |
-| POST | `/shift-transactions/{transactionId}/approve` | Organization approval |
-| POST | `/shift-transactions/{transactionId}/reject-by-approver` | Manager rejection |
+| POST | `/shift-transactions/{transactionId}/approve` | Owner/admin organization approval |
+| POST | `/shift-transactions/{transactionId}/reject-by-approver` | Owner/admin rejection |
 | POST | `/shift-transactions/{transactionId}/cancel` | Cancel transaction |
 | POST | `/shift-transactions/{transactionId}/calendar-sync/start` | Start confirmed calendar sync |
 | POST | `/shift-transactions/{transactionId}/calendar-sync/complete` | Record completed calendar sync |
@@ -66,7 +66,7 @@ Supported values:
 - `participants`: exactly two entries, one `requester` and one `recipient`; account and employee identities must be distinct.
 - `transfers`: one or two transfer entries, each with a unique transfer ID, shift ID, source/destination employee IDs, shift code, start/end timestamps and purpose. Allowed purposes are `give_up`, `exchange`, `primary` and `return_shift`.
 - `organization_id`: required for organization mode and prohibited for personal mode.
-- `metadata`: optional array. On the snapshot base for this document, the backend accepts an arbitrary array; PR #151 proposes limiting it to bounded `note` and `schedule_id` fields. Do not send tokens, secrets, full rosters or unnecessary personal data.
+- `metadata`: optional object/array restricted to the `note` and `schedule_id` keys. `note` is nullable text up to 1,000 characters; `schedule_id` is a nullable string up to 128 characters. Unknown keys are rejected. Do not send tokens, secrets, full rosters or unnecessary personal data.
 
 Example shape:
 
@@ -93,7 +93,7 @@ Example shape:
 }
 ```
 
-The authenticated user is authoritative for the requester. A recipient must resolve to a registered account with verified identity. In organization mode both participants must be active members and their employee IDs must match their membership records. The organization member-add endpoint accepts the `admin` or `staff` role; authorization remains manager-only. Transfer shape is type-specific: `give_up` requires one `give_up` transfer; `exchange` requires two reciprocal `exchange` transfers; `exchange_and_return` requires one `primary` and one reciprocal `return_shift` transfer.
+The authenticated user is authoritative for the requester. A recipient must resolve to a registered account with verified identity. In organization mode both participants must be active members and their employee IDs must match their membership records. The organization member-add endpoint accepts `staff`, `incharge`, `manager` or `admin` as the new member role. Only an existing organization `owner` or `admin` may add members, review join requests or update shift policies; a member whose role is `manager` does not receive these owner/admin permissions. Transfer shape is type-specific: `give_up` requires one `give_up` transfer; `exchange` requires two reciprocal `exchange` transfers; `exchange_and_return` requires one `primary` and one reciprocal `return_shift` transfer.
 
 A successful create returns HTTP 201 with a `data` transaction snapshot.
 
@@ -106,7 +106,7 @@ Calendar writes remain behind a preview-and-confirm flow:
 3. Organization manager approves or rejects when the organization policy requires it.
 4. Client displays the calendar preview and obtains explicit confirmation.
 5. Call `calendar-sync/start` with `preview_confirmed: true`.
-6. On success call `calendar-sync/complete` with `calendar_event_ids` containing 1–10 provider event IDs.
+6. On success call `calendar-sync/complete` with `calendar_event_ids` containing exactly one distinct provider event ID per transfer leg (1–10 IDs total; a two-leg exchange requires two distinct IDs).
 7. On failure call `calendar-sync/fail` with an optional bounded reason.
 8. Fulfill a transfer with `transfer_id` when the workflow conditions are met.
 
@@ -146,7 +146,7 @@ Validation errors use Laravel's standard JSON validation response. The API may a
 ## Privacy and operational notes
 
 - Do not log or transmit Google ID tokens, access tokens, refresh tokens, OAuth secrets or full roster files.
-- Client diagnostic messages are currently logged by the backend; callers must not place secrets or personal roster data in those messages. Message redaction is a follow-up hardening item.
-- The `metadata` field is intentionally optional but currently broad. Keep it minimal and non-sensitive.
+- Client diagnostic messages are accepted but are not included in server log context; the backend records only the message character length. Never place secrets or personal roster data in diagnostic messages.
+- The optional `metadata` field is restricted to bounded `note` and `schedule_id` values. Keep both minimal and non-sensitive.
 - Organization membership and transaction reads are authorized server-side; client-side role visibility is not an authorization boundary.
 - The route list is not a promise that every workflow is production-enabled. Verify exact-head CI and live integration configuration before release.
