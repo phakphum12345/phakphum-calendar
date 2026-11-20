@@ -1,6 +1,8 @@
 name: DISKPATH Manifest Regeneration Evidence
 
 on:
+  push:
+    branches: [fix/diskpath-manifest-refresh]
   pull_request:
     paths:
       - "DISKPATH.json"
