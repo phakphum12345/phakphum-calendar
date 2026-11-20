@@ -70,6 +70,7 @@ PR #149 changes validation order for two email inputs. It does **not** replace t
 ### Logging and local persistence
 
 - `ClientErrorController` logs the client-provided `message` field. Request validation blocks separate token/roster fields, but does not redact secrets or personal data embedded inside the message. Add message redaction or log a safe error code only.
+- `ShiftTransactionController` currently validates `metadata` as an array without a nested key allowlist or field-size bounds. The Flutter caller currently sends only `note` and `schedule_id`; enforce that bounded contract server-side.
 - Timeline/revision snapshots are cached locally through SharedPreferences. Review the privacy implications and evaluate encrypted local persistence for sensitive roster content.
 - Google ID tokens are verified by the backend middleware; keep tokens and credentials out of logs and source control.
 
@@ -84,7 +85,8 @@ PR #149 changes validation order for two email inputs. It does **not** replace t
 7. Confirm whether day, week and year views are required product behavior; the current monthly roster view is the primary verified view.
 8. Complete organization member role-change/removal workflows if required by the product permission model.
 9. Add performance baselines for large workbooks, large event sets and long sync histories.
-10. Complete API and database documentation and maintain this status after each meaningful merge.
+10. Restrict shift-transaction metadata to the actual `note` and `schedule_id` fields with server-side size limits; redact client diagnostic messages before logging.
+11. Complete API and database documentation and maintain this status after each meaningful merge.
 
 ## Completion rules
 
