@@ -1,0 +1,105 @@
+name: Composer Security Refresh (temporary automation)
+
+on:
+  push:
+    branches:
+      - automation/composer-security-refresh-20261120
+    paths:
+      - ".github/workflows/composer-security-refresh.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: composer-security-refresh-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set up PHP and Composer
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          tools: composer:v2.10.2
+          extensions: ctype, curl, dom, fileinfo, filter, hash, mbstring, openssl, pdo, pdo_sqlite, session, tokenizer, xml
+          coverage: none
+
+      - name: Capture pre-update advisory report
+        working-directory: backend
+        run: |
+          set +e
+          composer audit --locked --format=json > composer-audit-before.json
+          echo $? > composer-audit-before.exit
+          exit 0
+
+      - name: Update vulnerable runtime dependency graph
+        id: update
+        working-directory: backend
+        run: |
+          set +e
+          composer update laravel/framework league/commonmark guzzlehttp/guzzle --with-all-dependencies --no-interaction --prefer-dist --no-progress
+          echo $? > composer-update.exit
+          exit 0
+
+      - name: Audit the updated lockfile
+        working-directory: backend
+        run: |
+          set +e
+          composer audit --locked --format=json > composer-audit-after.json
+          echo $? > composer-audit-after.exit
+          exit 0
+
+      - name: Validate Composer manifest and lock
+        id: validate
+        working-directory: backend
+        continue-on-error: true
+        run: composer validate --strict
+
+      - name: Check PHP formatting
+        id: pint
+        working-directory: backend
+        continue-on-error: true
+        run: vendor/bin/pint --test app config database routes tests
+
+      - name: Run Laravel tests
+        id: tests
+        working-directory: backend
+        continue-on-error: true
+        run: php artisan test
+
+      - name: Commit lockfile and audit evidence to this temporary branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backend/composer.lock backend/composer-audit-before.json backend/composer-audit-before.exit backend/composer-update.exit backend/composer-audit-after.json backend/composer-audit-after.exit
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(security): refresh Composer lockfile and capture audit"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
+
+      - name: Report final outcome
+        if: always()
+        working-directory: backend
+        run: |
+          UPDATE_EXIT=$(cat composer-update.exit 2>/dev/null || echo 127)
+          AUDIT_EXIT=$(cat composer-audit-after.exit 2>/dev/null || echo 127)
+          echo "composer_update_exit=${UPDATE_EXIT}"
+          echo "composer_audit_exit=${AUDIT_EXIT}"
+          echo "composer_validate_outcome=${{ steps.validate.outcome }}"
+          echo "pint_outcome=${{ steps.pint.outcome }}"
+          echo "laravel_tests_outcome=${{ steps.tests.outcome }}"
+          test "${UPDATE_EXIT}" = "0"
+          test "${AUDIT_EXIT}" = "0"
+          test "${{ steps.validate.outcome }}" = "success"
+          test "${{ steps.pint.outcome }}" = "success"
+          test "${{ steps.tests.outcome }}" = "success"
