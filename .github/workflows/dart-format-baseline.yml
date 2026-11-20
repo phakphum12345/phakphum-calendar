@@ -1,0 +1,108 @@
+name: Dart Format Baseline Audit
+
+on:
+  push:
+    branches: [main, chore/dependency-quality-baseline]
+    paths:
+      - "lib/**/*.dart"
+      - "test/**/*.dart"
+      - "integration_test/**/*.dart"
+      - ".github/workflows/dart-format-baseline.yml"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+  pull_request:
+    paths:
+      - "lib/**/*.dart"
+      - "test/**/*.dart"
+      - "integration_test/**/*.dart"
+      - ".github/workflows/dart-format-baseline.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dart-format-baseline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Audit Dart formatting without rewriting files
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+
+      - name: Resolve Flutter dependencies and detect lockfile drift
+        id: dependencies
+        shell: bash
+        run: |
+          flutter pub get
+          : > "$RUNNER_TEMP/pubspec-lock-drift.diff"
+          if git diff --quiet -- pubspec.lock; then
+            echo "lockfile_drift=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "lockfile_drift=yes" >> "$GITHUB_OUTPUT"
+            git diff -- pubspec.lock > "$RUNNER_TEMP/pubspec-lock-drift.diff"
+          fi
+
+      - name: Run non-mutating formatting baseline
+        shell: bash
+        run: |
+          set +e
+          dart format --output=none --set-exit-if-changed lib test integration_test > "$RUNNER_TEMP/dart-format-audit.log" 2>&1
+          status=$?
+          set -e
+          cat "$RUNNER_TEMP/dart-format-audit.log"
+          if [ "$status" -eq 0 ]; then
+            result="PASS"
+          elif [ "$status" -eq 1 ]; then
+            result="NEEDS_FORMAT"
+          else
+            echo "Dart formatter failed unexpectedly with exit code $status"
+            exit "$status"
+          fi
+          echo "## Dart format baseline: $result" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Exact SHA: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          changed_count="$(sed -n 's/^Formatted [0-9][0-9]* files (\([0-9][0-9]*\) changed).*/\1/p' "$RUNNER_TEMP/dart-format-audit.log" | tail -n 1)"
+          echo "- Formatter exit code: $status" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Files needing formatting: ${changed_count:-unknown}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Scope: lib, test, integration_test" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Files were not rewritten." >> "$GITHUB_STEP_SUMMARY"
+          git diff --name-only -- lib test integration_test > "$RUNNER_TEMP/formatter-worktree-changes.txt"
+          if [ -s "$RUNNER_TEMP/formatter-worktree-changes.txt" ]; then
+            echo "Formatter wrote changes in the disposable CI checkout; reverting only these formatter outputs."
+            cat "$RUNNER_TEMP/formatter-worktree-changes.txt"
+            git restore --worktree -- lib test integration_test
+          fi
+          if ! git diff --quiet -- lib test integration_test; then
+            echo "Formatter audit could not restore its disposable worktree."
+            exit 1
+          fi
+          echo "- Pubspec lockfile drift: ${{ steps.dependencies.outputs.lockfile_drift }}" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload formatter report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dart-format-baseline-report
+          path: |
+            ${{ runner.temp }}/dart-format-audit.log
+            ${{ runner.temp }}/pubspec-lock-drift.diff
+            ${{ runner.temp }}/formatter-worktree-changes.txt
+          if-no-files-found: error
+          retention-days: 7
+
+# Push-triggered audit is intentionally informational until the baseline is reviewed.
