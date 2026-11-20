@@ -1,6 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phakphum_calendar/controller/app_controller.dart';
 import 'package:phakphum_calendar/core/di/app_dependencies.dart';
+import 'package:phakphum_calendar/core/result/result.dart';
+import 'package:phakphum_calendar/domain/entities/schedule.dart';
+import 'package:phakphum_calendar/domain/entities/schedule_month.dart';
+import 'package:phakphum_calendar/domain/repositories/schedule_repository.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_command.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_gateway.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/failed_sync_operation.dart';
@@ -26,6 +30,7 @@ void main() {
       final dependencies = AppDependencies(
         syncHistoryRepository: InMemorySyncHistoryRepository(),
         failedSyncRepository: _MemoryFailedSyncRepository(),
+        scheduleRepository: _MemoryScheduleRepository(),
       );
       final gateway = _MemoryCalendarSyncGateway();
       final controller = AppController.demo(
@@ -147,6 +152,35 @@ void main() {
       );
     },
   );
+}
+
+class _MemoryScheduleRepository implements ScheduleRepository {
+  final schedules = <String, Schedule>{};
+
+  @override
+  Future<Result<void>> delete(String id) async {
+    schedules.remove(id);
+    return const Success<void>(null);
+  }
+
+  @override
+  Future<Result<Schedule?>> findById(String id) async {
+    return Success<Schedule?>(schedules[id]);
+  }
+
+  @override
+  Future<Result<ScheduleMonth?>> loadMonth(
+    String scheduleId,
+    DateTime month,
+  ) async {
+    return Success<ScheduleMonth?>(schedules[scheduleId]?.month(month));
+  }
+
+  @override
+  Future<Result<Schedule>> save(Schedule schedule) async {
+    schedules[schedule.id] = schedule;
+    return Success<Schedule>(schedule);
+  }
 }
 
 class _MemoryFailedSyncRepository implements FailedSyncRepository {
