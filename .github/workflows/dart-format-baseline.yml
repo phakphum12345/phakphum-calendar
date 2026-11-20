@@ -39,6 +39,9 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Resolve locked Flutter dependencies
+        run: flutter pub get --enforce-lockfile
+
       - name: Run non-mutating formatting baseline
         shell: bash
         run: |
@@ -57,7 +60,9 @@ jobs:
           fi
           echo "## Dart format baseline: $result" >> "$GITHUB_STEP_SUMMARY"
           echo "- Exact SHA: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          changed_count="$(sed -n 's/^Formatted [0-9][0-9]* files (\([0-9][0-9]*\) changed).*/\1/p' "$RUNNER_TEMP/dart-format-audit.log" | tail -n 1)"
           echo "- Formatter exit code: $status" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Files needing formatting: ${changed_count:-unknown}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Scope: lib, test, integration_test" >> "$GITHUB_STEP_SUMMARY"
           echo "- Files were not rewritten." >> "$GITHUB_STEP_SUMMARY"
           if ! git diff --quiet; then
