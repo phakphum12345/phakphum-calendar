@@ -107,3 +107,5 @@ A module is complete only when its source implementation, relevant tests, integr
 - **MISSING** — no implementation was found.
 - **PARTIAL** — some implementation exists, but the full requirement is not met.
 - **NEEDS REVIEW** — implementation exists but has not received sufficient targeted verification.
+
+<!-- status refresh in progress -->
