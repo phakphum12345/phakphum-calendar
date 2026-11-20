@@ -43,7 +43,7 @@ This document describes the current routes. Request validation and service autho
 | POST | `/shift-transactions/{transactionId}/calendar-sync/fail` | Record failed calendar sync |
 | POST | `/shift-transactions/{transactionId}/fulfill` | Fulfill a transfer |
 
-All paths above are relative to the API base URL.
+The full URL shape is `{APP_URL}/api/v1/{path}`; paths in the table are relative to `/api/v1`.
 
 ## Create a shift transaction
 
@@ -64,7 +64,7 @@ Supported values:
 - `mode`: `personal` or `organization`.
 - `type`: `give_up`, `exchange` or `exchange_and_return`.
 - `participants`: exactly two entries, one `requester` and one `recipient`; account and employee identities must be distinct.
-- `transfers`: one or two transfer entries, each with a unique transfer ID, shift ID, source/destination employee IDs, shift code, start/end timestamps and purpose.
+- `transfers`: one or two transfer entries, each with a unique transfer ID, shift ID, source/destination employee IDs, shift code, start/end timestamps and purpose. Allowed purposes are `give_up`, `exchange`, `primary` and `return_shift`.
 - `organization_id`: required for organization mode and prohibited for personal mode.
 - `metadata`: optional array. Do not send tokens, secrets, full rosters or unnecessary personal data.
 
@@ -93,7 +93,7 @@ Example shape:
 }
 ```
 
-The authenticated user is authoritative for the requester. A recipient must resolve to a registered account with verified identity. In organization mode both participants must be active members and their employee IDs must match their membership records.
+The authenticated user is authoritative for the requester. A recipient must resolve to a registered account with verified identity. In organization mode both participants must be active members and their employee IDs must match their membership records. The organization member-add endpoint accepts the `admin` or `staff` role; authorization remains manager-only.
 
 A successful create returns HTTP 201 with a `data` transaction snapshot.
 
@@ -106,9 +106,9 @@ Calendar writes remain behind a preview-and-confirm flow:
 3. Organization manager approves or rejects when the organization policy requires it.
 4. Client displays the calendar preview and obtains explicit confirmation.
 5. Call `calendar-sync/start` with `preview_confirmed: true`.
-6. On success call `calendar-sync/complete` with 1–10 provider event IDs.
+6. On success call `calendar-sync/complete` with `calendar_event_ids` containing 1–10 provider event IDs.
 7. On failure call `calendar-sync/fail` with an optional bounded reason.
-8. Fulfill a transfer with its transfer ID when the workflow conditions are met.
+8. Fulfill a transfer with `transfer_id` when the workflow conditions are met.
 
 The service uses database transactions, row locking, a transaction version, idempotency keys and an append-only event sequence by service convention. Do not bypass the service with direct production database writes.
 
