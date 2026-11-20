@@ -1,0 +1,79 @@
+name: Dart Format Baseline Audit
+
+on:
+  push:
+    branches:
+      - chore/dart-format-baseline
+  pull_request:
+    paths:
+      - "lib/**/*.dart"
+      - "test/**/*.dart"
+      - "integration_test/**/*.dart"
+      - ".github/workflows/dart-format-baseline.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dart-format-baseline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Audit Dart formatting without rewriting files
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+
+      - name: Run non-mutating formatting baseline
+        shell: bash
+        run: |
+          set +e
+          dart format --output=none --set-exit-if-changed --verbose lib test integration_test > "$RUNNER_TEMP/dart-format-audit.log" 2>&1
+          status=$?
+          set -e
+          cat "$RUNNER_TEMP/dart-format-audit.log"
+          if [ "$status" -eq 0 ]; then
+            result="PASS"
+          elif [ "$status" -eq 1 ]; then
+            result="NEEDS_FORMAT"
+          else
+            echo "Dart formatter failed unexpectedly with exit code $status"
+            exit "$status"
+          fi
+          echo "## Dart format baseline: $result" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Exact SHA: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Formatter exit code: $status" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Scope: lib, test, integration_test" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Files were not rewritten." >> "$GITHUB_STEP_SUMMARY"
+          if ! git diff --quiet; then
+            echo "Formatting audit unexpectedly modified tracked files."
+            exit 1
+          fi
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "Formatting audit left unexpected worktree changes."
+            git status --short
+            exit 1
+          fi
+
+      - name: Upload formatter report
+        uses: actions/upload-artifact@v4
+        with:
+          name: dart-format-baseline-report
+          path: ${{ runner.temp }}/dart-format-audit.log
+          if-no-files-found: error
+          retention-days: 7
