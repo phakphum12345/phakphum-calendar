@@ -183,7 +183,7 @@ class ShiftTransactionApiTest extends TestCase
             'Idempotency-Key' => 'oversized-unicode-email',
         ])->assertUnprocessable();
 
-        $errors = $response->json('errors.participants.1.email');
+        $errors = $response->json('errors')['participants.1.email'] ?? null;
         $this->assertCount(1, $errors);
         $this->assertStringContainsString('254', $errors[0]);
     }
