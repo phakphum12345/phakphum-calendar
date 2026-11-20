@@ -55,3 +55,5 @@ jobs:
         run: |
           python3 tools/diskpath/generate_diskpath.py --check
           python3 tools/diskpath/validate_diskpath.py
+
+# Manifest refresh is restricted to the dedicated maintenance branches above.
