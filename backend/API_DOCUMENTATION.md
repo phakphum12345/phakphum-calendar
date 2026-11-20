@@ -75,7 +75,7 @@ Example shape:
   "mode": "personal",
   "type": "give_up",
   "participants": [
-    {"account_subject": "verified-requester-subject", "employee_id": "EMP-A", "role": "requester"},
+    {"employee_id": "EMP-A", "role": "requester"},
     {"email": "verified-recipient@example.test", "employee_id": "EMP-B", "role": "recipient"}
   ],
   "transfers": [
@@ -93,7 +93,7 @@ Example shape:
 }
 ```
 
-The authenticated user is authoritative for the requester. A recipient must resolve to a registered account with verified identity. In organization mode both participants must be active members and their employee IDs must match their membership records. The organization member-add endpoint accepts the `admin` or `staff` role; authorization remains manager-only.
+The authenticated user is authoritative for the requester. A recipient must resolve to a registered account with verified identity. In organization mode both participants must be active members and their employee IDs must match their membership records. The organization member-add endpoint accepts the `admin` or `staff` role; authorization remains manager-only. Transfer shape is type-specific: `give_up` requires one `give_up` transfer; `exchange` requires two reciprocal `exchange` transfers; `exchange_and_return` requires one `primary` and one reciprocal `return_shift` transfer.
 
 A successful create returns HTTP 201 with a `data` transaction snapshot.
 
