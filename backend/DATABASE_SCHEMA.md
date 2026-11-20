@@ -56,27 +56,27 @@ This document summarizes the current Laravel migrations. The migration files, no
 ### `shift_transaction_participants`
 
 - Auto-incrementing primary key.
-- Transaction foreign key cascades on delete.
+- Transaction foreign key uses `RESTRICT` on delete.
 - User foreign key restricts deletion.
 - Employee ID and participant role.
-- Unique transaction/user pair and unique transaction/role pair.
+- Unique transaction/user pair; no database unique constraint is defined for participant role.
 
 ### `shift_transaction_transfers`
 
 - Auto-incrementing primary key.
-- Transaction foreign key cascades on delete.
+- Transaction foreign key uses `RESTRICT` on delete.
 - Transfer key, shift ID, from/to employee IDs, shift code, start/end timestamps, purpose, fulfillment timestamp and timestamps.
-- Unique transaction/transfer-key pair.
+- Unique transaction/transfer-key pair and unique transaction/shift-ID pair.
 - Employee IDs are domain identifiers, not foreign keys to a separate employee table.
 
 ### `shift_transaction_events`
 
 - Auto-incrementing primary key.
-- Transaction foreign key cascades on delete.
+- Transaction foreign key uses `RESTRICT` on delete.
 - Nullable actor user foreign key restricts deletion.
-- Event sequence, event type, transaction version, JSON event data and occurrence timestamp.
-- Unique transaction/sequence pair.
-- The service appends events during state transitions; append-only behavior is enforced by application flow, not a database trigger.
+- Event type, transaction version, JSON event data and occurrence timestamp. There is no sequence column.
+- Indexes cover transaction/ID, organization/occurrence time and actor/occurrence time; no unique transaction/sequence constraint is defined.
+- The service appends event rows during state transitions; append-only behavior is enforced by application flow, not a database trigger. The migration does not define an event sequence column or a uniqueness constraint for event sequence.
 
 ## Laravel infrastructure tables
 
@@ -105,7 +105,7 @@ erDiagram
 - Transaction creation and state transitions use database transactions.
 - The service locks transaction rows during transitions and increments a version to prevent stale concurrent updates.
 - Idempotency keys are unique per creator; a repeated key with a different request hash is rejected.
-- Foreign-key cascade/restrict behavior is defined in migrations. Do not change it without reviewing historical data and authorization implications.
+- Foreign-key delete behavior is `RESTRICT` for transaction, participant, transfer and event relationships in the shift-transaction migration. Do not change it without reviewing historical data and authorization implications.
 - No production database reset or destructive migration was performed as part of the 2026-11-20 repository work.
 - Do not delete user, membership, transaction or event data to make a migration or test pass.
 
