@@ -46,7 +46,7 @@ The timeline services and shift documents above are the current implementation r
 ## Backend API and database
 
 - [Backend README](backend/README.md)
-- [Backend security notes](backend/SECURITY.md)
+- [Backend security notes](SECURITY.md)
 - [API documentation](backend/API_DOCUMENTATION.md)
 - [Database schema](backend/DATABASE_SCHEMA.md)
 - [API routes](backend/routes/api.php)
@@ -57,7 +57,7 @@ The Laravel migrations are the source of truth for schema structure; update the 
 ## Security and privacy
 
 - [Security and privacy guide](docs/wiki/SECURITY_AND_PRIVACY.md)
-- [Backend security notes](backend/SECURITY.md)
+- [Backend security notes](SECURITY.md)
 - [Composer dependency lockfile](backend/composer.lock)
 - [Authentication middleware](backend/app/Http/Middleware/AuthenticateGoogleAccount.php)
 
