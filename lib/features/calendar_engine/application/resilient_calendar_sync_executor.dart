@@ -5,6 +5,7 @@ import '../domain/calendar_sync_operation_result.dart';
 import '../domain/failed_sync_operation.dart';
 import '../domain/failed_sync_repository.dart';
 import '../domain/managed_calendar_event.dart';
+import 'calendar_sync_insert_reconciler.dart';
 import 'calendar_sync_plan.dart';
 
 class ResilientCalendarSyncResult {
@@ -25,7 +26,7 @@ class ResilientCalendarSyncExecutor {
     required this._historyRepository,
     this.failedRepository,
     this.maxAttempts = 2,
-  });
+  }) : assert(maxAttempts > 0);
 
   final CalendarSyncGateway _gateway;
   final SyncHistoryRepository _historyRepository;
@@ -87,12 +88,10 @@ class ResilientCalendarSyncExecutor {
       await executeDelete(operation);
     }
 
+    final insertReconciler = CalendarSyncInsertReconciler(_gateway);
     for (final command in plan.inserts) {
-      final result = await _retry(
-        type: CalendarSyncOperationType.insert,
-        referenceId: command.syncId,
-        operation: () => _gateway.insert(command),
-      );
+      final attempt = await _retryInsert(command, insertReconciler);
+      final result = attempt.result;
       operations.add(result);
       if (!result.success) {
         failedOperations.add(
@@ -100,7 +99,7 @@ class ResilientCalendarSyncExecutor {
             historyId: historyId,
             type: CalendarSyncOperationType.insert,
             referenceId: command.syncId,
-            attempts: maxAttempts,
+            attempts: attempt.attempts,
             command: command,
             message: result.message,
           ),
@@ -168,6 +167,71 @@ class ResilientCalendarSyncExecutor {
     );
   }
 
+  Future<_RetryInsertResult> _retryInsert(
+    CalendarSyncCommand command,
+    CalendarSyncInsertReconciler reconciler,
+  ) async {
+    Object? lastError;
+
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        final created = await _gateway.insert(command);
+        return _RetryInsertResult(
+          result: CalendarSyncOperationResult(
+            type: CalendarSyncOperationType.insert,
+            referenceId: command.syncId,
+            success: true,
+            providerEventId: created.eventId.isEmpty ? null : created.eventId,
+          ),
+          attempts: attempt,
+        );
+      } catch (error) {
+        lastError = error;
+        try {
+          final existing = await reconciler.findExisting(command);
+          if (existing != null) {
+            return _RetryInsertResult(
+              result: CalendarSyncOperationResult(
+                type: CalendarSyncOperationType.insert,
+                referenceId: command.syncId,
+                success: true,
+                providerEventId:
+                    existing.eventId.isEmpty ? null : existing.eventId,
+              ),
+              attempts: attempt,
+            );
+          }
+        } catch (verificationError) {
+          return _RetryInsertResult(
+            result: CalendarSyncOperationResult(
+              type: CalendarSyncOperationType.insert,
+              referenceId: command.syncId,
+              success: false,
+              message:
+                  'Insert failed and its provider outcome could not be verified: '
+                  '$error; verification failed: $verificationError',
+            ),
+            attempts: attempt,
+          );
+        }
+
+        if (attempt < maxAttempts) {
+          await Future<void>.delayed(Duration(milliseconds: 250 * attempt));
+        }
+      }
+    }
+
+    return _RetryInsertResult(
+      result: CalendarSyncOperationResult(
+        type: CalendarSyncOperationType.insert,
+        referenceId: command.syncId,
+        success: false,
+        message: lastError?.toString(),
+      ),
+      attempts: maxAttempts,
+    );
+  }
+
   Future<CalendarSyncOperationResult> _retry({
     required CalendarSyncOperationType type,
     required String referenceId,
@@ -201,4 +265,14 @@ class ResilientCalendarSyncExecutor {
       message: lastError?.toString(),
     );
   }
+}
+
+class _RetryInsertResult {
+  const _RetryInsertResult({
+    required this.result,
+    required this.attempts,
+  });
+
+  final CalendarSyncOperationResult result;
+  final int attempts;
 }
