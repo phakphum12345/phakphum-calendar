@@ -43,7 +43,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          dart format --output=none --set-exit-if-changed --verbose lib test integration_test > "$RUNNER_TEMP/dart-format-audit.log" 2>&1
+          dart format --output=none --set-exit-if-changed lib test integration_test > "$RUNNER_TEMP/dart-format-audit.log" 2>&1
           status=$?
           set -e
           cat "$RUNNER_TEMP/dart-format-audit.log"
