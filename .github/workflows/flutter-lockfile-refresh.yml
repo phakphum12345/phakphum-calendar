@@ -1,0 +1,66 @@
+name: Flutter Lockfile Refresh
+
+on:
+  push:
+    branches:
+      - chore/dependency-quality-baseline
+
+permissions:
+  contents: write
+
+concurrency:
+  group: flutter-lockfile-refresh
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Refresh lockfile and DISKPATH from pinned SDK
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout maintenance branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Resolve dependencies and regenerate repository manifest
+        run: |
+          flutter pub get
+          python3 tools/diskpath/generate_diskpath.py
+          python3 tools/diskpath/generate_diskpath.py --check
+          python3 tools/diskpath/validate_diskpath.py
+          git diff --check
+
+      - name: Commit lockfile and canonical manifests only
+        run: |
+          if git diff --quiet -- pubspec.lock DISKPATH.json DISKPATH.md; then
+            echo "Lockfile and DISKPATH manifests are already current."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -- pubspec.lock DISKPATH.json DISKPATH.md
+            git commit -m "chore(deps): sync Flutter lockfile and manifests"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
+
+      - name: Enforce committed dependency lockfile
+        run: flutter pub get --enforce-lockfile
+
+      - name: Verify committed DISKPATH manifests
+        run: |
+          python3 tools/diskpath/generate_diskpath.py --check
+          python3 tools/diskpath/validate_diskpath.py
+          git diff --check
