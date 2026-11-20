@@ -1,6 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phakphum_calendar/controller/app_controller.dart';
 import 'package:phakphum_calendar/core/di/app_dependencies.dart';
+import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_command.dart';
+import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_gateway.dart';
+import 'package:phakphum_calendar/features/calendar_engine/domain/managed_calendar_event.dart';
 import 'package:phakphum_calendar/models/app_settings.dart';
 import 'package:phakphum_calendar/models/roster_period.dart';
 import 'package:phakphum_calendar/models/shift.dart';
@@ -18,6 +21,7 @@ void main() {
     'AppController keeps the full import and switches November/December filters',
     () async {
       final dependencies = AppDependencies.production();
+      final gateway = _MemoryCalendarSyncGateway();
       final controller = AppController.demo(
         auth: dependencies.googleAuthService,
         settingsService: dependencies.legacySettingsService,
@@ -36,8 +40,8 @@ void main() {
         scheduleRepository: dependencies.scheduleRepository,
         shiftTemplateRepository: dependencies.shiftTemplateRepository,
         legacyScheduleAdapter: dependencies.legacyScheduleAdapter,
-        calendarWorkflowControllerFactory:
-            dependencies.createAuthorizedCalendarWorkflowController,
+        calendarWorkflowControllerFactory: () async =>
+            dependencies.createShiftCalendarWorkflowController(gateway),
       );
       addTearDown(controller.dispose);
 
@@ -60,6 +64,15 @@ void main() {
       expect(controller.syncRangeStart, DateTime(2026, 11, 1));
       expect(controller.syncRangeEnd, DateTime(2026, 12, 31));
 
+      await controller.prepareCalendarSync();
+      await controller.syncCalendar(userConfirmed: true);
+      expect(gateway.insertAttempts, 61);
+      expect(gateway.events, hasLength(61));
+      expect(
+        gateway.events.where((event) => event.start.month == 12),
+        hasLength(31),
+      );
+
       await controller.updateSettings(
         controller.settings.copyWith(periods: const [november]),
       );
@@ -73,6 +86,19 @@ void main() {
       expect(controller.shifts.last.start, DateTime(2026, 11, 30, 8));
       expect(controller.syncRangeStart, DateTime(2026, 11, 1));
       expect(controller.syncRangeEnd, DateTime(2026, 11, 30));
+
+      expect(controller.pendingAlertCount, 0);
+      await controller.prepareCalendarSync();
+      await controller.syncCalendar(userConfirmed: true);
+      expect(gateway.insertAttempts, 30);
+      expect(
+        gateway.events.where((event) => event.start.month == 11),
+        hasLength(30),
+      );
+      expect(
+        gateway.events.where((event) => event.start.month == 12),
+        isEmpty,
+      );
 
       await controller.updateSettings(
         controller.settings.copyWith(periods: const [december]),
@@ -99,8 +125,83 @@ void main() {
       expect(controller.shifts, hasLength(61));
       expect(controller.shifts.first.start, DateTime(2026, 11, 1, 8));
       expect(controller.shifts.last.start, DateTime(2026, 12, 31, 8));
+
+      await controller.prepareCalendarSync();
+      await controller.syncCalendar(userConfirmed: true);
+      expect(gateway.insertAttempts, 61);
+      expect(gateway.events, hasLength(61));
+      expect(
+        gateway.events.where((event) => event.start.month == 11),
+        hasLength(30),
+      );
+      expect(
+        gateway.events.where((event) => event.start.month == 12),
+        hasLength(31),
+      );
     },
   );
+}
+
+class _MemoryCalendarSyncGateway implements CalendarSyncGateway {
+  final events = <ManagedCalendarEvent>[];
+  int insertAttempts = 0;
+
+  @override
+  Future<void> delete({
+    required String eventId,
+    String calendarId = 'primary',
+  }) async {
+    events.removeWhere((event) => event.eventId == eventId);
+  }
+
+  @override
+  Future<ManagedCalendarEvent> insert(CalendarSyncCommand command) async {
+    insertAttempts++;
+    final event = ManagedCalendarEvent(
+      eventId: 'event-$insertAttempts',
+      syncId: command.syncId,
+      title: command.title,
+      start: command.start,
+      end: command.end,
+      description: command.description,
+      colorId: command.colorId,
+    );
+    events.add(event);
+    return event;
+  }
+
+  @override
+  Future<List<ManagedCalendarEvent>> listManagedEvents({
+    required DateTime timeMin,
+    required DateTime timeMax,
+    String calendarId = 'primary',
+  }) async {
+    return events
+        .where(
+          (event) =>
+              event.start.isBefore(timeMax) && event.end.isAfter(timeMin),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  Future<ManagedCalendarEvent> update({
+    required String eventId,
+    required CalendarSyncCommand command,
+  }) async {
+    final event = ManagedCalendarEvent(
+      eventId: eventId,
+      syncId: command.syncId,
+      title: command.title,
+      start: command.start,
+      end: command.end,
+      description: command.description,
+      colorId: command.colorId,
+    );
+    final index = events.indexWhere((item) => item.eventId == eventId);
+    if (index >= 0) events[index] = event;
+    return event;
+  }
 }
 
 class _FixtureLocalRosterSource implements LocalRosterSource {
