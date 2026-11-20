@@ -20,3 +20,12 @@
 - แยก Domain Logic ออกจาก Flutter UI และบริการภายนอก
 - การเปลี่ยนกฎสำคัญต้องมี Unit Test และบันทึกใน CHANGELOG
 - ห้าม commit token, OAuth secret, ลิงก์ชีตส่วนตัว หรือข้อมูลผู้ป่วย
+
+
+## Repository-wide engineering status
+
+- [Central documentation index](../../DOCUMENTATION_INDEX.md)
+- [Implementation status](../../IMPLEMENTATION_STATUS.md)
+- [Requirements traceability](../../REQUIREMENTS_TRACEABILITY.md)
+- [Backend API documentation](../../backend/API_DOCUMENTATION.md)
+- [Backend database schema](../../backend/DATABASE_SCHEMA.md)
