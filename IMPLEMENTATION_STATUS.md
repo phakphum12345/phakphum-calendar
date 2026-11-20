@@ -1,7 +1,7 @@
 # Repository Implementation Status
 
 **Snapshot date:** 2026-11-20  
-**Snapshot base:** `main` at `f275518b3dec97c77e525b036bd1c8c1eca55426`  
+**Snapshot base:** `main` at `8ef620213ef8629d64bf0d916ee0688e298bfd3b`  
 **Scope:** Whole repository, Flutter client, Laravel API, persistence, synchronization, CI/CD, security and documentation.
 
 > This is a point-in-time engineering inventory, not a declaration that the repository is complete or production-ready. Source code, migrations, exact-head CI and observed runtime behavior take precedence over this document. `SKIPPED` and `UNKNOWN` are never treated as `PASS`.
@@ -11,9 +11,9 @@
 | Item | Observed state |
 |---|---|
 | Default branch | `main` |
-| Main SHA | `f275518b3dec97c77e525b036bd1c8c1eca55426` |
+| Main SHA | `8ef620213ef8629d64bf0d916ee0688e298bfd3b` |
 | Open issues | 0 at snapshot time |
-| Open PRs | PR #150 (superseded legacy documentation branch) and PR #153 (current mainline documentation refresh) at snapshot time |
+| Open PRs | PR #154 (Composer dependency remediation) at snapshot time |
 | Test files | 157 Dart test files |
 | GitHub workflow files | 13 |
 | Markdown files | 118 |
@@ -33,6 +33,7 @@ The branch protection observation is informational only. Repository settings and
 | #149 | MERGED | Bounds user-supplied email before Laravel email validation | PHP/Laravel suite: 42 tests, 278 assertions; defense-in-depth only |
 | #151 | MERGED | Restricts shift transaction metadata to bounded `note` and `schedule_id` keys | Merge commit `9397693422b28fdd29bb395cbe5cc61635609dc5`; exact-head Laravel CI passed |
 | #152 | MERGED | Removes untrusted client diagnostic message text from server log context | Merge commit `f275518b3dec97c77e525b036bd1c8c1eca55426`; exact-head Laravel and Flutter quality CI passed |
+| #153 | MERGED | Adds repository completion index, requirements traceability and API/database guides | Merge commit `8ef620213ef8629d64bf0d916ee0688e298bfd3b`; exact-head CI passed and 35 documentation links verified |
 | #147 | Previously merged | Google ID-token verification hardening | Retain regression coverage |
 | #144 | MERGED | Preserve managed events outside selected roster months; November/December E2E regression | Exact-head CI: 10 PASS, 1 SKIPPED (Pages); post-merge main CI is still running |
 
@@ -44,7 +45,7 @@ The branch protection observation is informational only. Repository settings and
 | Calendar insert idempotency | IMPLEMENTED, POST-MERGE VERIFICATION | PR #148 is merged; monitor main CI and provider reconciliation |
 | Backend email validation guard | MERGED | PR #149 PHP/Laravel suite: 42 tests, 278 assertions |
 | Shift transaction metadata bounds | MERGED | PR #151; metadata is restricted to bounded `note` and `schedule_id`; exact-head Laravel CI passed |
-| Composer dependency remediation | FAIL / BLOCKED ON UPDATES | Composer audit reported 27 advisories across 8 packages; Dependabot configuration is merged, but lockfile remediation is not |
+| Composer dependency remediation | IN_PROGRESS | PR #154 refreshes the lockfile; isolated Composer audit after update returned exit 0 with zero advisories; exact-head CI pending |
 | Historical roster timeline | PARTIAL | Revision archive and ownership-history display exist; a complete restore workflow was not found |
 | Notifications and reminders | MISSING | `NotificationService` is an interface only; no concrete implementation or notification package was found |
 | Daily / weekly / yearly calendar views | NEEDS VERIFICATION | Monthly roster is the primary identified view; dedicated day/week/year views were not confirmed |
@@ -57,7 +58,7 @@ The branch protection observation is informational only. Repository settings and
 
 ### Composer dependencies
 
-The locked backend dependency set was reported by Composer audit as having **27 advisories across 8 packages**. The following locked versions were independently identified as needing updates:
+The baseline backend lockfile was reported by Composer audit as having **27 advisories across 8 packages**. A temporary isolated runner updated the dependency graph; the post-update `composer audit --locked` returned exit code 0 with an empty advisory list. The following locked versions were independently identified as needing updates:
 
 | Locked package | Locked version | Patched version identified |
 |---|---:|---:|
@@ -67,7 +68,7 @@ The locked backend dependency set was reported by Composer audit as having **27 
 | `symfony/http-foundation` | 8.1.1 | 8.1.11 or later |
 | `symfony/routing` | 8.1.0 | 8.1.11 or later |
 
-This is not a complete enumeration of all eight affected packages. Do not mark Security PASS until the lockfile is updated, `composer audit --locked` is clean (or every remaining advisory has a documented, accepted exception), and backend CI passes.
+This is the baseline report before the current remediation branch. Do not mark Security PASS until the refreshed lockfile is merged, the new CI `composer audit --locked` gate passes on the exact PR head, and post-merge verification is recorded.
 
 PR #149 changes validation order for two email inputs. It does **not** replace the required framework and transitive dependency upgrades.
 
@@ -81,7 +82,7 @@ PR #149 changes validation order for two email inputs. It does **not** replace t
 ## Functional gaps requiring follow-up
 
 1. Verify post-merge main CI for PR #144 and retain the November/December regression proving that syncing one selected month never deletes another unselected month.
-2. Upgrade all vulnerable Composer packages and add `composer audit --locked` to CI.
+2. Complete PR #154: merge the refreshed Composer lockfile only after exact-head `composer audit --locked`, PHP formatting and Laravel tests pass.
 3. Add concrete notification/reminder implementation with permission handling and platform-specific behavior.
 4. Define and implement historical restoration semantics; current revision timeline is primarily read-only.
 5. Review timeline generation for blank/unassigned cells and removed roster positions.
