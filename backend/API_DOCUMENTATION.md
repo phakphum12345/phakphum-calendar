@@ -110,7 +110,7 @@ Calendar writes remain behind a preview-and-confirm flow:
 7. On failure call `calendar-sync/fail` with an optional bounded reason.
 8. Fulfill a transfer with `transfer_id` when the workflow conditions are met.
 
-The service uses database transactions, row locking, a transaction version, idempotency keys and an append-only event sequence by service convention. Do not bypass the service with direct production database writes.
+The service uses database transactions, row locking, a transaction version, idempotency keys and append-only event records by service convention. Event records have an auto-incrementing ID and transaction version; the current schema does not define a separate event-sequence column. Do not bypass the service with direct production database writes.
 
 ## List filters
 
