@@ -141,14 +141,26 @@ class GoogleCertificateIdentityTokenVerifier implements GoogleIdentityTokenVerif
             throw new RuntimeException('No Google server client ID is configured.');
         }
 
-        $audiences = $claims['aud'] ?? [];
-        $audiences = is_array($audiences) ? $audiences : [$audiences];
-        if (array_intersect($allowedAudiences, $audiences) === []) {
+        $audienceClaim = $claims['aud'] ?? [];
+        $audiences = is_array($audienceClaim) ? $audienceClaim : [$audienceClaim];
+        $hasInvalidAudienceShape = $audiences === [] || ! array_is_list($audiences);
+        $hasUntrustedAudience = array_filter(
+            $audiences,
+            static fn ($audience): bool => ! is_string($audience) ||
+                ! in_array($audience, $allowedAudiences, true),
+        ) !== [];
+        if ($hasInvalidAudienceShape || $hasUntrustedAudience) {
             throw new InvalidArgumentException('Google identity token audience is invalid.');
         }
 
-        if (isset($claims['azp']) &&
-            ! in_array($claims['azp'], $allowedAudiences, true)) {
+        $hasAuthorizedParty = array_key_exists('azp', $claims);
+        $authorizedParty = $claims['azp'] ?? null;
+        if (count($audiences) > 1 && ! $hasAuthorizedParty) {
+            throw new InvalidArgumentException('Google identity token authorized party is invalid.');
+        }
+        if ($hasAuthorizedParty &&
+            (! is_string($authorizedParty) ||
+                ! in_array($authorizedParty, $allowedAudiences, true))) {
             throw new InvalidArgumentException('Google identity token authorized party is invalid.');
         }
 

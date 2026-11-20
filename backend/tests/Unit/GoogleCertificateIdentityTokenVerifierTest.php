@@ -74,6 +74,68 @@ class GoogleCertificateIdentityTokenVerifierTest extends TestCase
         );
     }
 
+    public function test_it_rejects_an_untrusted_additional_audience(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        app(GoogleCertificateIdentityTokenVerifier::class)->verify(
+            $this->token(['aud' => ['server-client-id', 'untrusted-client']]),
+        );
+    }
+
+    public function test_it_rejects_an_object_shaped_audience_claim(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        app(GoogleCertificateIdentityTokenVerifier::class)->verify(
+            $this->token(['aud' => ['client' => 'server-client-id']]),
+        );
+    }
+
+    public function test_it_requires_an_authorized_party_for_multiple_audiences(): void
+    {
+        config([
+            'services.google.allowed_client_ids' => [
+                'server-client-id',
+                'trusted-client',
+            ],
+        ]);
+
+        $this->expectException(InvalidArgumentException::class);
+
+        app(GoogleCertificateIdentityTokenVerifier::class)->verify(
+            $this->token(['aud' => ['server-client-id', 'trusted-client']]),
+        );
+    }
+
+    public function test_it_accepts_multiple_trusted_audiences_with_a_trusted_authorized_party(): void
+    {
+        config([
+            'services.google.allowed_client_ids' => [
+                'server-client-id',
+                'trusted-client',
+            ],
+        ]);
+
+        $claims = app(GoogleCertificateIdentityTokenVerifier::class)->verify(
+            $this->token([
+                'aud' => ['server-client-id', 'trusted-client'],
+                'azp' => 'server-client-id',
+            ]),
+        );
+
+        $this->assertSame('google-subject', $claims['sub']);
+    }
+
+    public function test_it_rejects_a_non_string_authorized_party(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        app(GoogleCertificateIdentityTokenVerifier::class)->verify(
+            $this->token(['azp' => null]),
+        );
+    }
+
     public function test_it_rejects_an_expired_token(): void
     {
         $this->expectException(InvalidArgumentException::class);
