@@ -2,22 +2,8 @@ name: Cross-platform Runtime
 
 on:
   pull_request:
-    paths:
-      - "scripts/runtime/**"
-      - ".github/workflows/cross-platform-runtime.yml"
-      - "pubspec.yaml"
-      - "pubspec.lock"
-      - "lib/**"
-      - "test/**"
   push:
     branches: [main]
-    paths:
-      - "scripts/runtime/**"
-      - ".github/workflows/cross-platform-runtime.yml"
-      - "pubspec.yaml"
-      - "pubspec.lock"
-      - "lib/**"
-      - "test/**"
   workflow_dispatch:
 
 permissions:
