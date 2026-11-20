@@ -1,9 +1,14 @@
-name: DISKPATH Manifest Regeneration Evidence
+name: DISKPATH Manifest Validation
 
 on:
-  push:
-    branches: [fix/diskpath-manifest-refresh]
   pull_request:
+    paths:
+      - "DISKPATH.json"
+      - "DISKPATH.md"
+      - "tools/diskpath/**"
+      - ".github/workflows/diskpath-manifest-evidence.yml"
+  push:
+    branches: [main]
     paths:
       - "DISKPATH.json"
       - "DISKPATH.md"
@@ -15,12 +20,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: diskpath-manifest-evidence-${{ github.workflow }}-${{ github.ref }}
+  group: diskpath-validation-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  regenerate-and-validate:
-    name: Regenerate manifest and validate exact checkout
+  validate:
+    name: Validate committed manifest against exact checkout
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -36,29 +41,24 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Regenerate canonical manifests
-        run: python3 tools/diskpath/generate_diskpath.py
-
-      - name: Validate regenerated manifests
+      - name: Validate committed manifests without rewriting
         run: |
           python3 tools/diskpath/generate_diskpath.py --check
           python3 tools/diskpath/validate_diskpath.py
           git diff --check
 
-      - name: Upload regenerated manifests as review evidence
+      - name: Upload validated manifests
         uses: actions/upload-artifact@v4
         with:
-          name: diskpath-regenerated-manifests
+          name: diskpath-validated-manifests
           path: |
             DISKPATH.json
             DISKPATH.md
           if-no-files-found: error
           retention-days: 7
 
-      - name: Write exact-SHA summary
+      - name: Record exact-SHA evidence
         run: |
-          echo "## DISKPATH regeneration" >> "$GITHUB_STEP_SUMMARY"
-          echo "- SHA: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Generator: PASS" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Validator: PASS" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Manifest write-back: intentionally not performed by CI" >> "$GITHUB_STEP_SUMMARY"
+          echo "## DISKPATH validation: PASS" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Exact SHA: $(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Manifest file count: $(python3 -c 'import json; print(json.load(open(\"DISKPATH.json\", encoding=\"utf-8\"))[\"file_count\"])')" >> "$GITHUB_STEP_SUMMARY"
