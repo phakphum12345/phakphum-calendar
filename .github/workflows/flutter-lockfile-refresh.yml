@@ -64,3 +64,5 @@ jobs:
           python3 tools/diskpath/generate_diskpath.py --check
           python3 tools/diskpath/validate_diskpath.py
           git diff --check
+
+# This workflow is limited to the dedicated dependency maintenance branch.
