@@ -24,7 +24,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: cross-platform-runtime-$\u007b{ github.workflow }}-$\u007b{ github.ref }}
+  group: cross-platform-runtime-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
