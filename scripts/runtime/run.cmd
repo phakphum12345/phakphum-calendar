@@ -5,10 +5,10 @@ if /I "%~1"=="--preflight" set "MODE=preflight"
 if /I "%~1"=="--full" set "MODE=full"
 git rev-parse --show-toplevel >nul 2>&1
 if errorlevel 1 (echo RUNTIME FAIL: not inside a Git repository.& exit /b 2)
-for /f "usebackq delims=" %%R in (\`git rev-parse --show-toplevel\`) do set "ROOT=%%R"
+for /f "delims=" %%R in ('git rev-parse --show-toplevel') do set "ROOT=%%R"
 cd /d "%ROOT%"
 if errorlevel 1 exit /b 2
-for /f "usebackq delims=" %%S in (\`git rev-parse HEAD\`) do set "HEAD_SHA=%%S"
+for /f "delims=" %%S in ('git rev-parse HEAD') do set "HEAD_SHA=%%S"
 if errorlevel 1 exit /b 3
 if defined GITHUB_SHA if /I not "%HEAD_SHA%"=="%GITHUB_SHA%" (
   echo RUNTIME FAIL: checkout SHA mismatch.
