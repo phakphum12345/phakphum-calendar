@@ -1,7 +1,7 @@
 # Requirements Traceability
 
 **Review date:** 2026-11-20  
-**Repository snapshot:** `5a8f2a6fe900b55237b5aa72db80f02dc1db339b`  
+**Repository snapshot:** `9397693422b28fdd29bb395cbe5cc61635609dc5`  
 **Status:** Partial inventory; rows marked PARTIAL, MISSING or NEEDS REVIEW remain open work.
 
 | Requirement | Primary implementation | Test / evidence | Status and gap |
@@ -29,7 +29,7 @@
 | Responsive design / mobile UI | Flutter presentation layer | existing widget tests | NEEDS REVIEW — verify compact widths, table visibility and navigation on real target sizes |
 | Automated testing | `test/`, `integration_test/`, `backend/tests/` | 157 Dart test files plus Laravel feature tests | PARTIAL — count is not proof of requirement coverage; map critical flows to E2E tests |
 | CI/CD / build / deployment | `.github/workflows/` | exact-head platform checks and deployment workflows | IN_PROGRESS — require exact-head and post-merge evidence; unsigned iOS output is not install-ready |
-| Security / privacy | Google token middleware, Laravel authorization, `SECURITY.md` | security and feature tests | FAIL / IN_PROGRESS — Composer advisories remain; PR #151 proposes bounded metadata; client error message redaction and local data protection need review |
+| Security / privacy | Google token middleware, Laravel authorization, `SECURITY.md` | security and feature tests | FAIL / IN_PROGRESS — Composer advisories remain; PR #151 merged bounded metadata validation; PR #152 removes free-form client diagnostic text from logs but is not yet merged; local data protection needs review |
 | Documentation | root docs, `docs/`, `backend/` | this index and traceability map | IN_PROGRESS — keep docs synchronized with migrations and source code |
 
 ## Explicitly unverified behaviors
