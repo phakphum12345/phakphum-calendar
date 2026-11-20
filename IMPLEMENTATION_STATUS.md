@@ -20,7 +20,7 @@
 | Main Flutter shell | `lib/ui/app_shell.dart` — 5,717 lines |
 | Main application controller | `lib/controller/app_controller.dart` — 3,162 lines |
 | Main branch protection | Not enabled; no repository rulesets were returned |
-| Current main CI | 5 checks PASS, 0 FAIL, 1 SKIPPED (Pages), 4 checks IN_PROGRESS after PR #144 merge |
+| Current main CI | 7 checks PASS, 0 FAIL, 1 SKIPPED (Pages), 2 checks IN_PROGRESS after PR #144 merge |
 
 The branch protection observation is informational only. Repository settings and security rules were not changed.
 
