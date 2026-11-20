@@ -64,6 +64,7 @@ void main() {
       expect(controller.syncRangeStart, DateTime(2026, 11, 1));
       expect(controller.syncRangeEnd, DateTime(2026, 12, 31));
 
+      expect(controller.pendingAlertCount, 0);
       await controller.prepareCalendarSync();
       await controller.syncCalendar(userConfirmed: true);
       expect(gateway.insertAttempts, 61);
