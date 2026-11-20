@@ -1,7 +1,7 @@
 # Requirements Traceability
 
 **Review date:** 2026-11-20  
-**Repository snapshot:** `01b4a97394eb9ca2ee20e7820695d2ee5ed1759a`  
+**Repository snapshot:** `5a8f2a6fe900b55237b5aa72db80f02dc1db339b`  
 **Status:** Partial inventory; rows marked PARTIAL, MISSING or NEEDS REVIEW remain open work.
 
 | Requirement | Primary implementation | Test / evidence | Status and gap |
@@ -10,13 +10,13 @@
 | Frontend UI / UX | `lib/ui/app_shell.dart`, feature presentation widgets | Widget tests in `test/` | NEEDS REVIEW — targeted mobile/tablet/desktop usability audit remains |
 | Backend / API | `backend/routes/api.php`, `backend/app/Http/Controllers/Api/V1/` | `backend/tests/Feature/` | PARTIAL — API docs and broader contract coverage required |
 | Database / migrations | `backend/database/migrations/` | Laravel feature tests | IMPLEMENTED — schema document added; migration and backup/restore audit remains |
-| Calendar engine | `lib/features/calendar_engine/` | `test/sce_*`, Google Calendar gateway tests | IN_PROGRESS — idempotent inserts merged; selected-period preservation PR #144 remains open |
+| Calendar engine | `lib/features/calendar_engine/` | `test/sce_*`, Google Calendar gateway tests | POST-MERGE VERIFICATION — idempotent inserts and selected-period preservation are merged; exact-head regression passed, main post-merge CI is pending |
 | Scheduling engine | `lib/features/schedule_generation/`, `lib/features/schedule/` | schedule generation and validation tests | PARTIAL — complete large-roster and edge-case coverage still required |
 | Timeline management | `lib/services/roster_timeline_generator.dart`, `lib/services/timeline_archive_service.dart` | roster timeline and archive tests | PARTIAL — revision history exists; restoration and blank-slot semantics need work |
 | Historical timeline | `lib/services/roster_revision_service.dart`, `lib/models/roster_assignment_timeline.dart` | revision reader and timeline generator tests | PARTIAL — read/history display exists; complete restore workflow not found |
 | Shift / duty management | `lib/features/shift_parser/`, `lib/features/shift_exchange/`, `backend/app/Services/ShiftTransactions/` | parser, schedule and transaction tests | PARTIAL — broader end-to-end personnel and cancellation scenarios remain |
 | Shift exchange / replacement | `lib/features/shift_exchange/`, `ShiftTransactionService.php` | `backend/tests/Feature/ShiftTransactionApiTest.php`, Flutter API-client tests | IMPLEMENTED FOUNDATION — full live multi-account workflow still requires environment verification |
-| Synchronization engine | `CalendarSyncCoordinator`, `ResilientCalendarSyncExecutor`, `ResumeSyncService`, Google Calendar gateway | sync executor, resume and gateway tests | IN_PROGRESS — unselected-month deletion regression is being fixed in PR #144 |
+| Synchronization engine | `CalendarSyncCoordinator`, `ResilientCalendarSyncExecutor`, `ResumeSyncService`, Google Calendar gateway | sync executor, resume and gateway tests | POST-MERGE VERIFICATION — PR #148 idempotency and PR #144 selected-month preservation are merged; exact-head tests passed, main post-merge CI is pending |
 | Monthly / yearly calendar | monthly roster and `RosterSyncPeriodFilter` | month boundary and leap-year tests | PARTIAL — monthly flow exists; dedicated yearly/day/week views not confirmed |
 | Date / time / timezone | `RosterSyncPeriodFilter`, `GoogleCalendarSyncGateway` | date parsing and Calendar gateway tests | PARTIAL — Bangkok wall-time conversion exists; cross-device timezone matrix needs verification |
 | User management / permissions | `OrganizationController.php`, organization membership and policy tables | organization API feature tests | PARTIAL — join and approval flows exist; role-change/removal endpoints not found |
