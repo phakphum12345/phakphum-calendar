@@ -19,8 +19,9 @@ class RosterRevisionDocument {
 abstract interface class RosterRevisionGateway {
   Future<List<RosterRevisionDocument>> readHistory(
     http.Client client,
-    String fileId,
-  );
+    String fileId, {
+    void Function(String revisionId, Object error)? onRevisionSkipped,
+  });
 }
 
 /// Reads Google Drive revision exports only. This service never writes to Drive
@@ -41,8 +42,9 @@ class RosterRevisionService implements RosterRevisionGateway {
   @override
   Future<List<RosterRevisionDocument>> readHistory(
     http.Client client,
-    String fileId,
-  ) async {
+    String fileId, {
+    void Function(String revisionId, Object error)? onRevisionSkipped,
+  }) async {
     final api = drive.DriveApi(client);
     final revisions = <drive.Revision>[];
     final effectivePageSize = pageSize < 1
@@ -83,7 +85,12 @@ class RosterRevisionService implements RosterRevisionGateway {
       final batch = revisions.sublist(offset, end);
       final loaded = await Future.wait([
         for (final revision in batch)
-          _readRevision(client, fileId: fileId, revision: revision),
+          _readRevision(
+            client,
+            fileId: fileId,
+            revision: revision,
+            onRevisionSkipped: onRevisionSkipped,
+          ),
       ]);
       documents.addAll(loaded.whereType<RosterRevisionDocument>());
     }
@@ -211,6 +218,7 @@ class RosterRevisionService implements RosterRevisionGateway {
     http.Client client, {
     required String fileId,
     required drive.Revision revision,
+    void Function(String revisionId, Object error)? onRevisionSkipped,
   }) async {
     final revisionId = revision.id;
     final modifiedAt = revision.modifiedTime;
@@ -220,6 +228,12 @@ class RosterRevisionService implements RosterRevisionGateway {
         modifiedAt == null ||
         exportUrl == null ||
         exportUrl.isEmpty) {
+      onRevisionSkipped?.call(
+        revisionId?.isNotEmpty == true ? revisionId! : 'unknown',
+        const FormatException(
+          'Revision metadata or XLSX export link is missing.',
+        ),
+      );
       return null;
     }
     final cacheKey = '$fileId|$revisionId';
@@ -245,8 +259,10 @@ class RosterRevisionService implements RosterRevisionGateway {
       );
       _memoryCache[cacheKey] = result;
       return result;
-    } catch (_) {
-      // One bad/oversized historical export must not block the live roster.
+    } on Object catch (error) {
+      // Keep other readable revisions available, but make every omission
+      // observable so callers cannot mistake a partial history for a complete one.
+      onRevisionSkipped?.call(revisionId, error);
       return null;
     }
   }
