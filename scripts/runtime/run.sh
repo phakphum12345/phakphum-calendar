@@ -26,7 +26,7 @@ echo "HEAD: $HEAD_SHA"
 flutter --version
 python3 --version
 if [ "$MODE" = full ]; then
-  flutter pub get
+  flutter pub get --enforce-lockfile
   flutter analyze
   flutter test
 fi
