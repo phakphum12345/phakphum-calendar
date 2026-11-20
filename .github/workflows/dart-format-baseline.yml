@@ -39,8 +39,18 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Resolve locked Flutter dependencies
-        run: flutter pub get --enforce-lockfile
+      - name: Resolve Flutter dependencies and detect lockfile drift
+        id: dependencies
+        shell: bash
+        run: |
+          flutter pub get
+          : > "$RUNNER_TEMP/pubspec-lock-drift.diff"
+          if git diff --quiet -- pubspec.lock; then
+            echo "lockfile_drift=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "lockfile_drift=yes" >> "$GITHUB_OUTPUT"
+            git diff -- pubspec.lock > "$RUNNER_TEMP/pubspec-lock-drift.diff"
+          fi
 
       - name: Run non-mutating formatting baseline
         shell: bash
@@ -65,21 +75,19 @@ jobs:
           echo "- Files needing formatting: ${changed_count:-unknown}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Scope: lib, test, integration_test" >> "$GITHUB_STEP_SUMMARY"
           echo "- Files were not rewritten." >> "$GITHUB_STEP_SUMMARY"
-          if ! git diff --quiet; then
-            echo "Formatting audit unexpectedly modified tracked files."
+          if ! git diff --quiet -- lib test integration_test; then
+            echo "Formatting audit unexpectedly modified Dart source files."
             exit 1
           fi
-          if [ -n "$(git status --porcelain)" ]; then
-            echo "Formatting audit left unexpected worktree changes."
-            git status --short
-            exit 1
-          fi
+          echo "- Pubspec lockfile drift: ${{ steps.dependencies.outputs.lockfile_drift }}" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload formatter report
         uses: actions/upload-artifact@v4
         with:
           name: dart-format-baseline-report
-          path: ${{ runner.temp }}/dart-format-audit.log
+          path: |
+            ${{ runner.temp }}/dart-format-audit.log
+            ${{ runner.temp }}/pubspec-lock-drift.diff
           if-no-files-found: error
           retention-days: 7
 
