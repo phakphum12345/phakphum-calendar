@@ -33,7 +33,7 @@ class ClientErrorApiTest extends TestCase
         $message = 'Authorization: Bearer secret-token user@example.com';
         Log::shouldReceive('warning')
             ->once()
-            ->with('Shift Tools client error', \\Mockery::on(
+            ->with('Shift Tools client error', \Mockery::on(
                 static function (array $context) use ($message): bool {
                     $encoded = json_encode($context);
 
