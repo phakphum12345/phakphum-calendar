@@ -56,6 +56,7 @@ class FlakyCalendarGateway implements CalendarSyncGateway {
 class AmbiguousInsertCalendarGateway implements CalendarSyncGateway {
   final events = <ManagedCalendarEvent>[];
   int insertAttempts = 0;
+  bool failLookup = false;
 
   @override
   Future<void> delete({
@@ -86,6 +87,7 @@ class AmbiguousInsertCalendarGateway implements CalendarSyncGateway {
     required DateTime timeMax,
     String calendarId = 'primary',
   }) async {
+    if (failLookup) throw StateError('Calendar lookup unavailable');
     return events
         .where(
           (event) =>
@@ -177,6 +179,45 @@ void main() {
       expect(result.historyEntry.status, SyncHistoryStatus.success);
       expect(result.historyEntry.inserted, 1);
       expect(result.operations.single.providerEventId, 'event-1');
+    },
+  );
+  test(
+    'does not retry an insert when its provider outcome cannot be verified',
+    () async {
+      final gateway = AmbiguousInsertCalendarGateway()..failLookup = true;
+      final historyRepository = InMemorySyncHistoryRepository();
+      final executor = ResilientCalendarSyncExecutor(
+        gateway: gateway,
+        historyRepository: historyRepository,
+        maxAttempts: 2,
+      );
+      final start = DateTime(2026, 11, 20, 8);
+      final end = DateTime(2026, 11, 20, 16);
+
+      final result = await executor.execute(
+        CalendarSyncPlan(
+          inserts: [
+            CalendarSyncCommand(
+              syncId: 'sync-ambiguous-unknown',
+              title: 'ER เช้า',
+              start: start,
+              end: end,
+            ),
+          ],
+          updates: const [],
+          deletes: const [],
+        ),
+      );
+
+      expect(gateway.insertAttempts, 1);
+      expect(gateway.events, hasLength(1));
+      expect(result.hasFailures, isTrue);
+      expect(result.historyEntry.status, SyncHistoryStatus.failure);
+      expect(result.historyEntry.failed, 1);
+      expect(
+        result.operations.single.message,
+        contains('provider outcome could not be verified'),
+      );
     },
   );
 }
