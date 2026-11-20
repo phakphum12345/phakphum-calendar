@@ -48,7 +48,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `.github/workflows/android.yml` | 4807 | `c2ea5063e2c924ff06de89697c8f8c662a47fc8f4c276233a2b2b46cd85ef98c` |
 | `.github/workflows/ci-auto-detect.yml` | 4749 | `a9b20067628809215e3a578bc7a2739fd536aff7eb904a6a8e0f0be29e26dc56` |
 | `.github/workflows/diskpath-maintainer-refresh.yml` | 1627 | `d97236778d3a0b54eb2b80f07a87a28c0757cc49c9fe57dc5b142ff4830cc0e1` |
-| `.github/workflows/diskpath-manifest-evidence.yml` | 1907 | `d97d0b23081a9b338f8f2d3037e2a0ebffdb240696e5a82e04ea2261021e864b` |
+| `.github/workflows/diskpath-manifest-evidence.yml` | 1849 | `0a4c900340f8ba7a49e87336d88336461dee8403b4ea724b865f84c55521e317` |
 | `.github/workflows/final-gate.yml` | 6405 | `c160ae7913364bc15af46a2dfc281ec909127925d78f9a92f072fb4cbf70f69b` |
 | `.github/workflows/generate-diskpath-md.yml` | 1274 | `be0882feacd3c13314b538938cb6c7f3f0215bf01a705e405fde29921280d1a8` |
 | `.github/workflows/ios-evidence-gate.yml` | 4365 | `cb2a5de38bf22f50a1a26e654a5431a9597fbe86975d92ff0174a9d4852418fe` |

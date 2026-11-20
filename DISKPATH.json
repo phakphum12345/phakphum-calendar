@@ -103,8 +103,8 @@
     },
     {
       "path": ".github/workflows/diskpath-manifest-evidence.yml",
-      "size": 1907,
-      "sha256": "d97d0b23081a9b338f8f2d3037e2a0ebffdb240696e5a82e04ea2261021e864b"
+      "size": 1849,
+      "sha256": "0a4c900340f8ba7a49e87336d88336461dee8403b4ea724b865f84c55521e317"
     },
     {
       "path": ".github/workflows/final-gate.yml",
