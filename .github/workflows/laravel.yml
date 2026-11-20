@@ -44,6 +44,12 @@ jobs:
           extensions: ctype, curl, dom, fileinfo, filter, hash, mbstring, openssl, pdo, pdo_sqlite, session, tokenizer, xml
           coverage: none
 
+      # Laravel's test bootstrap expects an environment file to exist.
+      # All test values are supplied by the job environment above; keep this
+      # file empty so no developer or production secrets enter CI.
+      - name: Prepare empty Laravel test environment file
+        run: touch .env
+
       - name: Validate Composer manifest
         run: composer validate --strict
 
@@ -58,3 +64,4 @@ jobs:
 
       - name: Run Laravel tests
         run: php artisan test
+
