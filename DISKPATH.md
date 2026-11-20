@@ -52,7 +52,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `.github/workflows/diskpath-maintainer-refresh.yml` | 1747 | `8446f33e87dccb54fd3f1ca34bd64ea2e8eae2aa76294b101c7abf49ce0e332f` |
 | `.github/workflows/diskpath-manifest-evidence.yml` | 1849 | `0a4c900340f8ba7a49e87336d88336461dee8403b4ea724b865f84c55521e317` |
 | `.github/workflows/final-gate.yml` | 6405 | `c160ae7913364bc15af46a2dfc281ec909127925d78f9a92f072fb4cbf70f69b` |
-| `.github/workflows/flutter-lockfile-refresh.yml` | 2314 | `5e9a1b035eaa78ac971bb99d5f56d3c5d5fcdc572f1ad10c52c7fec29d28c698` |
+| `.github/workflows/flutter-lockfile-refresh.yml` | 2921 | `7b1438537ca1b9164119a64ad27d21deb2c9c7bb0582dfd2293c9e54e80c5aff` |
 | `.github/workflows/generate-diskpath-md.yml` | 1274 | `be0882feacd3c13314b538938cb6c7f3f0215bf01a705e405fde29921280d1a8` |
 | `.github/workflows/ios-evidence-gate.yml` | 4365 | `cb2a5de38bf22f50a1a26e654a5431a9597fbe86975d92ff0174a9d4852418fe` |
 | `.github/workflows/ios.yml` | 4019 | `90db7448f021b56889ea403b930f79d717d202f682e31450ac3f1e3639d1c294` |
@@ -730,7 +730,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `macos/Runner/MainFlutterWindow.swift` | 388 | `65c9613c11bcedfa51416b16c975d8ba6ff12b405fc19d60db8755d92e86d9fe` |
 | `macos/Runner/Release.entitlements` | 411 | `faf7e45c3d6f2ee9c7ef5fc0bd2b0a933a1cd7e172e72bdd9c2ad2712e6390a0` |
 | `macos/RunnerTests/RunnerTests.swift` | 290 | `6bc180bc77c7def7a21d197233e25dff42cc493ab9d294632edafc18fdf0ac44` |
-| `pubspec.lock` | 29804 | `9f3eea1efe36d3fe07e56eaf760bd1f78b985a5f432e5d80268725c7317673fc` |
+| `pubspec.lock` | 30716 | `f174876473393f914d3b996f6ac3345c0a71d39a107f539c04ea26f3da340da3` |
 | `pubspec.yaml` | 5055 | `40e86d56d286d24708c26703d053762720af124136da1754148ffa4847bb617e` |
 | `schemas/roster-knowledge-entry.schema.json` | 3636 | `88bbff8191f09a5d3074fb30f1538266d193e8f1595ba4871b4c18a0f84ed3ab` |
 | `scripts/detect-ci-targets.sh` | 1625 | `e1ca37b123ef9ca5df126977bc7d04142105cf409da0e982c51716f733fcaf55` |

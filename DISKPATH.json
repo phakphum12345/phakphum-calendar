@@ -123,8 +123,8 @@
     },
     {
       "path": ".github/workflows/flutter-lockfile-refresh.yml",
-      "size": 2314,
-      "sha256": "5e9a1b035eaa78ac971bb99d5f56d3c5d5fcdc572f1ad10c52c7fec29d28c698"
+      "size": 2921,
+      "sha256": "7b1438537ca1b9164119a64ad27d21deb2c9c7bb0582dfd2293c9e54e80c5aff"
     },
     {
       "path": ".github/workflows/generate-diskpath-md.yml",
@@ -3513,8 +3513,8 @@
     },
     {
       "path": "pubspec.lock",
-      "size": 29804,
-      "sha256": "9f3eea1efe36d3fe07e56eaf760bd1f78b985a5f432e5d80268725c7317673fc"
+      "size": 30716,
+      "sha256": "f174876473393f914d3b996f6ac3345c0a71d39a107f539c04ea26f3da340da3"
     },
     {
       "path": "pubspec.yaml",
