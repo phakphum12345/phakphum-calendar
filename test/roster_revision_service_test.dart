@@ -53,6 +53,43 @@ void main() {
     client.close();
   });
 
+  test('reports skipped revisions when a Drive export fails', () async {
+    final client = MockClient((request) async {
+      if (request.url.path.endsWith('/revisions')) {
+        return http.Response(
+          jsonEncode({
+            'revisions': [
+              {
+                'id': 'revision-unavailable-read-history',
+                'modifiedTime': '2026-10-03T00:00:00.000Z',
+                'exportLinks': {
+                  RosterRevisionService.xlsxMimeType:
+                      'https://unavailable-history.test/revision.xlsx',
+                },
+              },
+            ],
+          }),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('unavailable', 404);
+    });
+    addTearDown(client.close);
+
+    final skipped = <String>[];
+    final documents = await const RosterRevisionService().readHistory(
+      client,
+      'unique-sheet-for-read-history-diagnostics',
+      onRevisionSkipped: (revisionId, error) {
+        skipped.add('$revisionId:${error.runtimeType}');
+      },
+    );
+
+    expect(documents, isEmpty);
+    expect(skipped, ['revision-unavailable-read-history:StateError']);
+  });
+
   test('keeps readable revisions when another revision export fails', () async {
     final skippedRevisionIds = <String>[];
     final client = MockClient((request) async {
