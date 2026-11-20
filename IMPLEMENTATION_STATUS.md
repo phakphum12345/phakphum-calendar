@@ -13,7 +13,7 @@
 | Default branch | `main` |
 | Main SHA | `f275518b3dec97c77e525b036bd1c8c1eca55426` |
 | Open issues | 0 at snapshot time |
-| Open PRs | PR #150 (legacy documentation branch; mainline refresh is being prepared) at snapshot time |
+| Open PRs | PR #150 (superseded legacy documentation branch) and PR #153 (current mainline documentation refresh) at snapshot time |
 | Test files | 157 Dart test files |
 | GitHub workflow files | 13 |
 | Markdown files | 118 |
