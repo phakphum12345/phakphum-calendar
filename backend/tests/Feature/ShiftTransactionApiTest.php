@@ -165,6 +165,29 @@ class ShiftTransactionApiTest extends TestCase
         ])->assertUnprocessable();
     }
 
+    public function test_transaction_rejects_oversized_unicode_participant_email_before_email_validation(): void
+    {
+        $this->signIn('alice-token');
+        $payload = $this->giveUp();
+        $payload['participants'] = [
+            ['employee_id' => 'A', 'role' => 'requester'],
+            [
+                'email' => str_repeat('é', 300).'@example.com',
+                'employee_id' => 'B',
+                'role' => 'recipient',
+            ],
+        ];
+
+        $response = $this->postJson('/api/v1/shift-transactions', $payload, [
+            'Authorization' => 'Bearer alice-token',
+            'Idempotency-Key' => 'oversized-unicode-email',
+        ])->assertUnprocessable();
+
+        $errors = $response->json('errors.participants.1.email');
+        $this->assertCount(1, $errors);
+        $this->assertStringContainsString('254', $errors[0]);
+    }
+
     public function test_idempotency_replays_same_payload_and_rejects_key_reuse(): void
     {
         $this->signIn('alice-token');
