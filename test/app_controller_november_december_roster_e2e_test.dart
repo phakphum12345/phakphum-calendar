@@ -3,7 +3,10 @@ import 'package:phakphum_calendar/controller/app_controller.dart';
 import 'package:phakphum_calendar/core/di/app_dependencies.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_command.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_gateway.dart';
+import 'package:phakphum_calendar/features/calendar_engine/domain/failed_sync_operation.dart';
+import 'package:phakphum_calendar/features/calendar_engine/domain/failed_sync_repository.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/managed_calendar_event.dart';
+import 'package:phakphum_calendar/features/history/infrastructure/in_memory_sync_history_repository.dart';
 import 'package:phakphum_calendar/models/app_settings.dart';
 import 'package:phakphum_calendar/models/roster_period.dart';
 import 'package:phakphum_calendar/models/shift.dart';
@@ -20,7 +23,10 @@ void main() {
   test(
     'AppController keeps the full import and switches November/December filters',
     () async {
-      final dependencies = AppDependencies.production();
+      final dependencies = AppDependencies(
+        syncHistoryRepository: InMemorySyncHistoryRepository(),
+        failedSyncRepository: _MemoryFailedSyncRepository(),
+      );
       final gateway = _MemoryCalendarSyncGateway();
       final controller = AppController.demo(
         auth: dependencies.googleAuthService,
@@ -141,6 +147,32 @@ void main() {
       );
     },
   );
+}
+
+class _MemoryFailedSyncRepository implements FailedSyncRepository {
+  final Map<String, List<FailedSyncOperation>> records = {};
+
+  @override
+  Future<void> clearHistory(String historyId) async {
+    records.remove(historyId);
+  }
+
+  @override
+  Future<List<FailedSyncOperation>> listForHistory(String historyId) async {
+    return List.unmodifiable(records[historyId] ?? const []);
+  }
+
+  @override
+  Future<void> replaceForHistory(
+    String historyId,
+    List<FailedSyncOperation> operations,
+  ) async {
+    if (operations.isEmpty) {
+      records.remove(historyId);
+    } else {
+      records[historyId] = List.unmodifiable(operations);
+    }
+  }
 }
 
 class _MemoryCalendarSyncGateway implements CalendarSyncGateway {
