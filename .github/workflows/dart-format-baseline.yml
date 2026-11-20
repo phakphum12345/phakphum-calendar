@@ -75,8 +75,14 @@ jobs:
           echo "- Files needing formatting: ${changed_count:-unknown}" >> "$GITHUB_STEP_SUMMARY"
           echo "- Scope: lib, test, integration_test" >> "$GITHUB_STEP_SUMMARY"
           echo "- Files were not rewritten." >> "$GITHUB_STEP_SUMMARY"
+          git diff --name-only -- lib test integration_test > "$RUNNER_TEMP/formatter-worktree-changes.txt"
+          if [ -s "$RUNNER_TEMP/formatter-worktree-changes.txt" ]; then
+            echo "Formatter wrote changes in the disposable CI checkout; reverting only these formatter outputs."
+            cat "$RUNNER_TEMP/formatter-worktree-changes.txt"
+            git restore --worktree -- lib test integration_test
+          fi
           if ! git diff --quiet -- lib test integration_test; then
-            echo "Formatting audit unexpectedly modified Dart source files."
+            echo "Formatter audit could not restore its disposable worktree."
             exit 1
           fi
           echo "- Pubspec lockfile drift: ${{ steps.dependencies.outputs.lockfile_drift }}" >> "$GITHUB_STEP_SUMMARY"
@@ -88,6 +94,8 @@ jobs:
           path: |
             ${{ runner.temp }}/dart-format-audit.log
             ${{ runner.temp }}/pubspec-lock-drift.diff
+            ${{ runner.temp }}/formatter-worktree-changes.txt
+          if: always()
           if-no-files-found: error
           retention-days: 7
 
