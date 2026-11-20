@@ -1,7 +1,7 @@
 # Repository Implementation Status
 
 **Snapshot date:** 2026-11-20  
-**Snapshot base:** `main` at `01b4a97394eb9ca2ee20e7820695d2ee5ed1759a`  
+**Snapshot base:** `main` at `5a8f2a6fe900b55237b5aa72db80f02dc1db339b`  
 **Scope:** Whole repository, Flutter client, Laravel API, persistence, synchronization, CI/CD, security and documentation.
 
 > This is a point-in-time engineering inventory, not a declaration that the repository is complete or production-ready. Source code, migrations, exact-head CI and observed runtime behavior take precedence over this document. `SKIPPED` and `UNKNOWN` are never treated as `PASS`.
@@ -11,16 +11,16 @@
 | Item | Observed state |
 |---|---|
 | Default branch | `main` |
-| Main SHA | `01b4a97394eb9ca2ee20e7820695d2ee5ed1759a` |
+| Main SHA | `5a8f2a6fe900b55237b5aa72db80f02dc1db339b` |
 | Open issues | 0 at snapshot time |
-| Open PRs | PR #144 only at snapshot time |
+| Open PRs | PR #150 only at snapshot time |
 | Test files | 157 Dart test files |
 | GitHub workflow files | 13 |
 | Markdown files | 118 |
 | Main Flutter shell | `lib/ui/app_shell.dart` — 5,717 lines |
 | Main application controller | `lib/controller/app_controller.dart` — 3,162 lines |
 | Main branch protection | Not enabled; no repository rulesets were returned |
-| Current main CI | PHP/Laravel PASS; Flutter quality still IN_PROGRESS at snapshot time |
+| Current main CI | 2 checks PASS, 0 FAIL, 7 checks IN_PROGRESS after PR #144 merge |
 
 The branch protection observation is informational only. Repository settings and security rules were not changed.
 
@@ -30,14 +30,15 @@ The branch protection observation is informational only. Repository settings and
 |---|---|---|---|
 | #145 | MERGED | Dependabot version-update configuration | Does not itself remediate Composer advisories |
 | #148 | MERGED | Deterministic Calendar event IDs and reconciliation after ambiguous insert outcomes | Post-merge CI must remain green |
-| #149 | MERGED | Bounds user-supplied email before Laravel email validation | Defense-in-depth only; Composer upgrades remain required |
+| #149 | MERGED | Bounds user-supplied email before Laravel email validation | PHP/Laravel suite: 42 tests, 278 assertions; defense-in-depth only |
 | #147 | Previously merged | Google ID-token verification hardening | Retain regression coverage |
+| #144 | MERGED | Preserve managed events outside selected roster months; November/December E2E regression | Exact-head CI: 10 PASS, 1 SKIPPED (Pages); post-merge main CI is still running |
 
 ## Current work
 
 | Area | Status | Evidence / next gate |
 |---|---|---|
-| November/December selected-month synchronization | IN_PROGRESS | PR #144; exact-head CI is required before merge |
+| November/December selected-month synchronization | MERGED, POST-MERGE VERIFICATION | PR #144 merged as `5a8f2a6f…`; exact-head CI passed and regression verifies that December sync preserves November events |
 | Calendar insert idempotency | IMPLEMENTED, POST-MERGE VERIFICATION | PR #148 is merged; monitor main CI and provider reconciliation |
 | Backend email validation guard | MERGED | PR #149 PHP/Laravel suite: 42 tests, 278 assertions |
 | Composer dependency remediation | FAIL / BLOCKED ON UPDATES | Composer audit reported 27 advisories across 8 packages; Dependabot configuration is merged, but lockfile remediation is not |
@@ -76,7 +77,7 @@ PR #149 changes validation order for two email inputs. It does **not** replace t
 
 ## Functional gaps requiring follow-up
 
-1. Complete PR #144 and verify that syncing one selected month never deletes events in another unselected month.
+1. Verify post-merge main CI for PR #144 and retain the November/December regression proving that syncing one selected month never deletes another unselected month.
 2. Upgrade all vulnerable Composer packages and add `composer audit --locked` to CI.
 3. Add concrete notification/reminder implementation with permission handling and platform-specific behavior.
 4. Define and implement historical restoration semantics; current revision timeline is primarily read-only.
