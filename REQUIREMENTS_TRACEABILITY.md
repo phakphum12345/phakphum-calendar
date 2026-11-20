@@ -29,7 +29,7 @@
 | Responsive design / mobile UI | Flutter presentation layer | existing widget tests | NEEDS REVIEW — verify compact widths, table visibility and navigation on real target sizes |
 | Automated testing | `test/`, `integration_test/`, `backend/tests/` | 157 Dart test files plus Laravel feature tests | PARTIAL — count is not proof of requirement coverage; map critical flows to E2E tests |
 | CI/CD / build / deployment | `.github/workflows/` | exact-head platform checks and deployment workflows | IN_PROGRESS — require exact-head and post-merge evidence; unsigned iOS output is not install-ready |
-| Security / privacy | Google token middleware, Laravel authorization, `backend/SECURITY.md` | security and feature tests | FAIL / IN_PROGRESS — Composer advisories remain; client error message redaction and local data protection need review |
+| Security / privacy | Google token middleware, Laravel authorization, `SECURITY.md` | security and feature tests | FAIL / IN_PROGRESS — Composer advisories remain; client error message redaction and local data protection need review |
 | Documentation | root docs, `docs/`, `backend/` | this index and traceability map | IN_PROGRESS — keep docs synchronized with migrations and source code |
 
 ## Explicitly unverified behaviors
