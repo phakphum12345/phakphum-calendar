@@ -1,0 +1,124 @@
+name: Cross-platform Runtime
+
+on:
+  pull_request:
+    paths:
+      - "scripts/runtime/**"
+      - ".github/workflows/cross-platform-runtime.yml"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "lib/**"
+      - "test/**"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/runtime/**"
+      - ".github/workflows/cross-platform-runtime.yml"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "lib/**"
+      - "test/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cross-platform-runtime-$\u007b{ github.workflow }}-$\u007b{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-sh:
+    name: Linux / POSIX sh / Full quality suite
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+      - name: Run POSIX runtime
+        shell: sh
+        run: sh scripts/runtime/run.sh --full
+      - name: Record exact SHA
+        shell: sh
+        run: |
+          printf '## Linux / POSIX sh\n\n- SHA: %s\n- Runtime: PASS\n- Commands: flutter pub get, flutter analyze, flutter test\n' "$(git rev-parse HEAD)" >> "$GITHUB_STEP_SUMMARY"
+
+  linux-pwsh:
+    name: Linux / PowerShell / Launcher smoke test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+      - name: Run PowerShell runtime preflight
+        shell: pwsh
+        run: ./scripts/runtime/run.ps1 -Preflight
+
+  windows-pwsh:
+    name: Windows / PowerShell / Full quality suite
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+      - name: Run PowerShell runtime
+        shell: pwsh
+        run: ./scripts/runtime/run.ps1 -Full
+      - name: Record exact SHA
+        shell: pwsh
+        run: |
+          Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value ("Windows PowerShell runtime PASS; SHA " + (git rev-parse HEAD))
+
+  windows-cmd:
+    name: Windows / CMD / Launcher smoke test
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+      - name: Run CMD runtime preflight
+        shell: cmd
+        run: scripts\runtime\run.cmd --preflight
