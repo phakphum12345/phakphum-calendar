@@ -72,12 +72,12 @@ class CalendarSyncCoordinator {
     final today = DateTime.now();
     final desiredIds = desired.map((candidate) => candidate.syncId).toSet();
     final selectedRanges = schedule.months
-        .map(
-          (month) => (
-            DateTime(month.year, month.month, 1),
-            DateTime(month.year, month.month + 1, 1),
-          ),
-        )
+        .map((scheduleMonth) {
+          final month = scheduleMonth.month;
+          final start = DateTime(month.year, month.month, 1);
+          final end = DateTime(month.year, month.month + 1, 1);
+          return (start, end);
+        })
         .toList(growable: false);
     final preservedOutsideSelection = deduplicatedManaged.where((event) {
       if (desiredIds.contains(event.syncId) ||
