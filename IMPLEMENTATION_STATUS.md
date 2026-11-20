@@ -13,7 +13,7 @@
 | Default branch | `main` |
 | Main SHA | `5a8f2a6fe900b55237b5aa72db80f02dc1db339b` |
 | Open issues | 0 at snapshot time |
-| Open PRs | PR #150 only at snapshot time |
+| Open PRs | PR #150 (documentation) and PR #151 (metadata validation) at snapshot time |
 | Test files | 157 Dart test files |
 | GitHub workflow files | 13 |
 | Markdown files | 118 |
@@ -41,6 +41,7 @@ The branch protection observation is informational only. Repository settings and
 | November/December selected-month synchronization | MERGED, POST-MERGE VERIFICATION | PR #144 merged as `5a8f2a6f…`; exact-head CI passed and regression verifies that December sync preserves November events |
 | Calendar insert idempotency | IMPLEMENTED, POST-MERGE VERIFICATION | PR #148 is merged; monitor main CI and provider reconciliation |
 | Backend email validation guard | MERGED | PR #149 PHP/Laravel suite: 42 tests, 278 assertions |
+| Shift transaction metadata bounds | IN_PROGRESS | PR #151; restricts metadata to bounded `note` and `schedule_id`; PHP CI pending |
 | Composer dependency remediation | FAIL / BLOCKED ON UPDATES | Composer audit reported 27 advisories across 8 packages; Dependabot configuration is merged, but lockfile remediation is not |
 | Historical roster timeline | PARTIAL | Revision archive and ownership-history display exist; a complete restore workflow was not found |
 | Notifications and reminders | MISSING | `NotificationService` is an interface only; no concrete implementation or notification package was found |
@@ -86,7 +87,7 @@ PR #149 changes validation order for two email inputs. It does **not** replace t
 7. Confirm whether day, week and year views are required product behavior; the current monthly roster view is the primary verified view.
 8. Complete organization member role-change/removal workflows if required by the product permission model.
 9. Add performance baselines for large workbooks, large event sets and long sync histories.
-10. Restrict shift-transaction metadata to the actual `note` and `schedule_id` fields with server-side size limits; redact client diagnostic messages before logging.
+10. Complete PR #151 to restrict shift-transaction metadata to bounded `note` and `schedule_id` fields; redact client diagnostic messages before logging.
 11. Complete API and database documentation and maintain this status after each meaningful merge.
 
 ## Completion rules
