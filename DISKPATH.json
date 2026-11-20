@@ -9,7 +9,7 @@
     "DISKPATH.json",
     "DISKPATH.md"
   ],
-  "file_count": 895,
+  "file_count": 897,
   "files": [
     {
       "path": ".ai/memory/architecture.md",
@@ -93,13 +93,18 @@
     },
     {
       "path": ".github/workflows/ci-auto-detect.yml",
-      "size": 4749,
-      "sha256": "a9b20067628809215e3a578bc7a2739fd536aff7eb904a6a8e0f0be29e26dc56"
+      "size": 4708,
+      "sha256": "caf46794cc2ad20d980bd5f5558c9260d4662bfa71566ae0b38bffa9bb2ae0ad"
     },
     {
       "path": ".github/workflows/cross-platform-runtime.yml",
       "size": 3000,
       "sha256": "9a8982206bf571a970c97cb108f36246e547f169ae173ddfbca74888362e4ce1"
+    },
+    {
+      "path": ".github/workflows/dart-format-baseline.yml",
+      "size": 4011,
+      "sha256": "745fdc08f423be5a8c9c65246f4de52d0a65e1d589edbe8ac848d97ec7e89f97"
     },
     {
       "path": ".github/workflows/diskpath-maintainer-refresh.yml",
@@ -115,6 +120,11 @@
       "path": ".github/workflows/final-gate.yml",
       "size": 6405,
       "sha256": "c160ae7913364bc15af46a2dfc281ec909127925d78f9a92f072fb4cbf70f69b"
+    },
+    {
+      "path": ".github/workflows/flutter-lockfile-refresh.yml",
+      "size": 2314,
+      "sha256": "5e9a1b035eaa78ac971bb99d5f56d3c5d5fcdc572f1ad10c52c7fec29d28c698"
     },
     {
       "path": ".github/workflows/generate-diskpath-md.yml",
@@ -3523,23 +3533,23 @@
     },
     {
       "path": "scripts/runtime/README.md",
-      "size": 1448,
-      "sha256": "65a33fb20f6600b044c423e468ae64cdc99b5a78318f83fa84ba8ef8e4e32e60"
+      "size": 1467,
+      "sha256": "9ce1271b900a0b7ee5149e36026dd2da1043312305f44d7c3070c420d6d4d645"
     },
     {
       "path": "scripts/runtime/run.cmd",
-      "size": 1293,
-      "sha256": "a340e504357e6a58f8f983d8141a6cc79907d6c79c93229aac1903a78d219e9c"
+      "size": 1312,
+      "sha256": "daf8be2a66e106802bcc2329a6794cd55e2b4abf1a3cc72772bdf67e15a47f75"
     },
     {
       "path": "scripts/runtime/run.ps1",
-      "size": 1532,
-      "sha256": "ec0af0f01812ba49ce0bfd2a4c8125a4701eee5235698968dfe8a999b64cd052"
+      "size": 1554,
+      "sha256": "897c2fff69691564972cb706b229b462c0f02b9de4399609bcc70b75fd5951c5"
     },
     {
       "path": "scripts/runtime/run.sh",
-      "size": 1087,
-      "sha256": "64ee2bea369488a741ebcb4cc09af84ab027bf20d07652c940c8041b821eb0b0"
+      "size": 1106,
+      "sha256": "119f9c10902f703f6f6ea92b23094fe2e1dd77a032cda5e63bedaa38fb503142"
     },
     {
       "path": "test/admin_access_config_test.dart",
