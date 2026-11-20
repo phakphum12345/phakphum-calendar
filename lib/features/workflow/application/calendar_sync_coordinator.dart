@@ -71,18 +71,35 @@ class CalendarSyncCoordinator {
     // excluded so legitimate updates to past-dated assignments still work.
     final today = DateTime.now();
     final desiredIds = desired.map((candidate) => candidate.syncId).toSet();
-    final historical = deduplicatedManaged.where(
-      (event) =>
-          !desiredIds.contains(event.syncId) &&
-          // Duplicate managed copies are cleanup candidates, not historical
-          // records. Preserve genuine historical events only.
-          !event.syncId.startsWith('legacy:duplicate-managed:') &&
-          !event.start.isBefore(range.$1) &&
-          event.start.isBefore(today),
-    );
+    final selectedRanges = schedule.months
+        .map(
+          (month) => (
+            DateTime(month.year, month.month, 1),
+            DateTime(month.year, month.month + 1, 1),
+          ),
+        )
+        .toList(growable: false);
+    final preservedOutsideSelection = deduplicatedManaged.where((event) {
+      if (desiredIds.contains(event.syncId) ||
+          event.syncId.startsWith('legacy:duplicate-managed:')) {
+        return false;
+      }
+
+      final belongsToSelectedPeriod = selectedRanges.any(
+        (selectedRange) =>
+            !event.start.isBefore(selectedRange.$1) &&
+            event.start.isBefore(selectedRange.$2),
+      );
+
+      // Keep every managed event outside the selected months, including
+      // future events. Within selected months, keep past events as history.
+      // This prevents a December-only sync from deleting unselected future
+      // November events merely because the provider query includes lookback.
+      return !belongsToSelectedPeriod || event.start.isBefore(today);
+    });
     final effectiveDesired = <CalendarEventCandidate>[
       ...desired,
-      ...historical.map(_candidateFromManaged),
+      ...preservedOutsideSelection.map(_candidateFromManaged),
     ];
     final adopted = _adoptEquivalentLegacy(
       effectiveDesired,
