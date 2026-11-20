@@ -126,7 +126,6 @@ void main() {
         hasLength(31),
       );
 
-
       await controller.updateSettings(
         controller.settings.copyWith(periods: const [november, december]),
       );
