@@ -11,7 +11,7 @@
 | Item | Observed state |
 |---|---|
 | Default branch | `main` |
-| Main SHA | `5a8f2a6fe900b55237b5aa72db80f02dc1db339b` |
+| Main SHA | `9397693422b28fdd29bb395cbe5cc61635609dc5` |
 | Open issues | 0 at snapshot time |
 | Open PRs | PR #150 (documentation) and PR #152 (client diagnostic log privacy) at snapshot time |
 | Test files | 157 Dart test files |
@@ -20,7 +20,7 @@
 | Main Flutter shell | `lib/ui/app_shell.dart` — 5,717 lines |
 | Main application controller | `lib/controller/app_controller.dart` — 3,162 lines |
 | Main branch protection | Not enabled; no repository rulesets were returned |
-| Current main CI | 7 checks PASS, 0 FAIL, 1 SKIPPED (Pages), 2 checks IN_PROGRESS after PR #144 merge |
+| Current main CI | 2 workflow runs IN_PROGRESS after PR #151 merge; post-merge result not yet verified |
 
 The branch protection observation is informational only. Repository settings and security rules were not changed.
 
