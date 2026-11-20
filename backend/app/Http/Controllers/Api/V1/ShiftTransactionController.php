@@ -34,7 +34,7 @@ class ShiftTransactionController
             'participants' => ['required', 'array', 'size:2'],
             'participants.*.account_subject' => ['nullable', 'string', 'max:255'],
             'participants.*.user_id' => ['nullable', 'integer', 'min:1'],
-            'participants.*.email' => ['nullable', 'email', 'max:255'],
+            'participants.*.email' => ['nullable', 'bail', 'max:254', 'email'],
             'participants.*.employee_id' => ['required', 'string', 'max:128'],
             'participants.*.role' => ['required', Rule::in(['requester', 'recipient'])],
             'transfers' => ['required', 'array', 'min:1', 'max:2'],

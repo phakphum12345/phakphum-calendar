@@ -127,7 +127,7 @@ class OrganizationController
     {
         $this->requireManager($request, $organizationId);
         $validated = $request->validate([
-            'email' => ['required', 'email', 'max:255'],
+            'email' => ['required', 'bail', 'max:254', 'email'],
             'employee_id' => ['required', 'string', 'max:128'],
             'role' => ['required', 'in:staff,incharge,manager,admin'],
         ]);

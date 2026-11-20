@@ -97,6 +97,29 @@ class OrganizationApiTest extends TestCase
         )->assertOk()->assertJsonCount(2, 'data');
     }
 
+    public function test_add_member_rejects_oversized_unicode_email_before_email_validation(): void
+    {
+        $this->getJson('/api/v1/me', $this->auth('owner-token'))->assertOk();
+        $organization = $this->postJson('/api/v1/organizations', [
+            'name' => 'Radiology',
+            'employee_id' => 'EMP-OWNER',
+        ], $this->auth('owner-token'))->assertCreated()->json('data');
+
+        $response = $this->postJson(
+            "/api/v1/organizations/{$organization['id']}/members",
+            [
+                'email' => str_repeat('é', 300).'@example.com',
+                'employee_id' => 'EMP-LONG-EMAIL',
+                'role' => 'staff',
+            ],
+            $this->auth('owner-token'),
+        )->assertUnprocessable();
+
+        $errors = $response->json('errors.email');
+        $this->assertCount(1, $errors);
+        $this->assertStringContainsString('254', $errors[0]);
+    }
+
     public function test_non_admin_member_cannot_change_organization_policy(): void
     {
         $this->getJson('/api/v1/me', $this->auth('owner-token'))->assertOk();
