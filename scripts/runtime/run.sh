@@ -11,8 +11,9 @@ for arg in "$@"; do
   esac
 done
 HEAD_SHA="$(git rev-parse HEAD)"
-if [ -n "$GITHUB_SHA" ] && [ "$HEAD_SHA" != "$GITHUB_SHA" ]; then
-  echo "RUNTIME FAIL: checkout SHA mismatch (expected $GITHUB_SHA, got $HEAD_SHA)" >&2
+EXPECTED_SHA="$(printenv GITHUB_SHA 2>/dev/null || true)"
+if [ -n "$EXPECTED_SHA" ] && [ "$HEAD_SHA" != "$EXPECTED_SHA" ]; then
+  echo "RUNTIME FAIL: checkout SHA mismatch (expected $EXPECTED_SHA, got $HEAD_SHA)" >&2
   exit 3
 fi
 for tool in git python3 flutter; do
