@@ -177,4 +177,37 @@ void main() {
     expect(result.historyEntry.inserted, 1);
     expect(result.historyEntry.failed, 0);
   });
+  test('resume blocks when more than one event has the same sync ID', () async {
+    final gateway = _MemoryCalendarGateway()
+      ..events.addAll([
+        ManagedCalendarEvent(
+          eventId: 'duplicate-1',
+          syncId: command.syncId,
+          title: command.title,
+          start: command.start,
+          end: command.end,
+        ),
+        ManagedCalendarEvent(
+          eventId: 'duplicate-2',
+          syncId: command.syncId,
+          title: command.title,
+          start: command.start,
+          end: command.end,
+        ),
+      ]);
+    final service = ResumeSyncService(
+      gateway: gateway,
+      historyRepository: historyRepository,
+      failedRepository: failedRepository,
+    );
+
+    final result = await service.resume('history-1');
+
+    expect(gateway.insertAttempts, 0);
+    expect(gateway.events, hasLength(2));
+    expect(result.completed, isFalse);
+    expect(result.historyEntry.status, SyncHistoryStatus.partialSuccess);
+    expect(result.historyEntry.failed, 1);
+    expect(await failedRepository.listForHistory('history-1'), hasLength(1));
+  });
 }
