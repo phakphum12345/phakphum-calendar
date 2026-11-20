@@ -237,3 +237,12 @@ flutter run -d chrome --web-port=8080 \
 ## License
 
 Copyright 2026 Phakphum. Licensed under the [Apache License 2.0](LICENSE).
+
+
+## Repository engineering documentation
+
+- [Documentation index](DOCUMENTATION_INDEX.md)
+- [Implementation status](IMPLEMENTATION_STATUS.md)
+- [Requirements traceability](REQUIREMENTS_TRACEABILITY.md)
+- [Backend API](backend/API_DOCUMENTATION.md)
+- [Backend database schema](backend/DATABASE_SCHEMA.md)
