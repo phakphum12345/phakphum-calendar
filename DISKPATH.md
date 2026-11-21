@@ -23,7 +23,7 @@ This manifest is documentation/evidence only. It does not define runtime authori
 ## Scope
 
 - Manifest scope: `git-tracked-regular-files`
-- Tracked files: `895`
+- Tracked files: `897`
 - Excluded paths: `DISKPATH.json`, `DISKPATH.md`
 
 ## Repository Paths
@@ -46,11 +46,13 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `.github/dependabot.yml` | 756 | `c8ebb606d90cbdbd170d4476c685a980606584b587c6f393fa8b425275637de4` |
 | `.github/workflows/README.md` | 8061 | `299de9c289152a3553a243cfd7dc1a84e79dc4c6b6888709bcdf524afc41745f` |
 | `.github/workflows/android.yml` | 4807 | `c2ea5063e2c924ff06de89697c8f8c662a47fc8f4c276233a2b2b46cd85ef98c` |
-| `.github/workflows/ci-auto-detect.yml` | 4749 | `a9b20067628809215e3a578bc7a2739fd536aff7eb904a6a8e0f0be29e26dc56` |
+| `.github/workflows/ci-auto-detect.yml` | 4708 | `caf46794cc2ad20d980bd5f5558c9260d4662bfa71566ae0b38bffa9bb2ae0ad` |
 | `.github/workflows/cross-platform-runtime.yml` | 3000 | `9a8982206bf571a970c97cb108f36246e547f169ae173ddfbca74888362e4ce1` |
+| `.github/workflows/dart-format-baseline.yml` | 4011 | `745fdc08f423be5a8c9c65246f4de52d0a65e1d589edbe8ac848d97ec7e89f97` |
 | `.github/workflows/diskpath-maintainer-refresh.yml` | 1747 | `8446f33e87dccb54fd3f1ca34bd64ea2e8eae2aa76294b101c7abf49ce0e332f` |
 | `.github/workflows/diskpath-manifest-evidence.yml` | 1849 | `0a4c900340f8ba7a49e87336d88336461dee8403b4ea724b865f84c55521e317` |
 | `.github/workflows/final-gate.yml` | 6405 | `c160ae7913364bc15af46a2dfc281ec909127925d78f9a92f072fb4cbf70f69b` |
+| `.github/workflows/flutter-lockfile-refresh.yml` | 2921 | `7b1438537ca1b9164119a64ad27d21deb2c9c7bb0582dfd2293c9e54e80c5aff` |
 | `.github/workflows/generate-diskpath-md.yml` | 1274 | `be0882feacd3c13314b538938cb6c7f3f0215bf01a705e405fde29921280d1a8` |
 | `.github/workflows/ios-evidence-gate.yml` | 4365 | `cb2a5de38bf22f50a1a26e654a5431a9597fbe86975d92ff0174a9d4852418fe` |
 | `.github/workflows/ios.yml` | 4019 | `90db7448f021b56889ea403b930f79d717d202f682e31450ac3f1e3639d1c294` |
@@ -728,14 +730,14 @@ This manifest is documentation/evidence only. It does not define runtime authori
 | `macos/Runner/MainFlutterWindow.swift` | 388 | `65c9613c11bcedfa51416b16c975d8ba6ff12b405fc19d60db8755d92e86d9fe` |
 | `macos/Runner/Release.entitlements` | 411 | `faf7e45c3d6f2ee9c7ef5fc0bd2b0a933a1cd7e172e72bdd9c2ad2712e6390a0` |
 | `macos/RunnerTests/RunnerTests.swift` | 290 | `6bc180bc77c7def7a21d197233e25dff42cc493ab9d294632edafc18fdf0ac44` |
-| `pubspec.lock` | 29804 | `9f3eea1efe36d3fe07e56eaf760bd1f78b985a5f432e5d80268725c7317673fc` |
+| `pubspec.lock` | 30716 | `f174876473393f914d3b996f6ac3345c0a71d39a107f539c04ea26f3da340da3` |
 | `pubspec.yaml` | 5055 | `40e86d56d286d24708c26703d053762720af124136da1754148ffa4847bb617e` |
 | `schemas/roster-knowledge-entry.schema.json` | 3636 | `88bbff8191f09a5d3074fb30f1538266d193e8f1595ba4871b4c18a0f84ed3ab` |
 | `scripts/detect-ci-targets.sh` | 1625 | `e1ca37b123ef9ca5df126977bc7d04142105cf409da0e982c51716f733fcaf55` |
-| `scripts/runtime/README.md` | 1448 | `65a33fb20f6600b044c423e468ae64cdc99b5a78318f83fa84ba8ef8e4e32e60` |
-| `scripts/runtime/run.cmd` | 1293 | `a340e504357e6a58f8f983d8141a6cc79907d6c79c93229aac1903a78d219e9c` |
-| `scripts/runtime/run.ps1` | 1532 | `ec0af0f01812ba49ce0bfd2a4c8125a4701eee5235698968dfe8a999b64cd052` |
-| `scripts/runtime/run.sh` | 1087 | `64ee2bea369488a741ebcb4cc09af84ab027bf20d07652c940c8041b821eb0b0` |
+| `scripts/runtime/README.md` | 1467 | `9ce1271b900a0b7ee5149e36026dd2da1043312305f44d7c3070c420d6d4d645` |
+| `scripts/runtime/run.cmd` | 1312 | `daf8be2a66e106802bcc2329a6794cd55e2b4abf1a3cc72772bdf67e15a47f75` |
+| `scripts/runtime/run.ps1` | 1554 | `897c2fff69691564972cb706b229b462c0f02b9de4399609bcc70b75fd5951c5` |
+| `scripts/runtime/run.sh` | 1106 | `119f9c10902f703f6f6ea92b23094fe2e1dd77a032cda5e63bedaa38fb503142` |
 | `test/admin_access_config_test.dart` | 1524 | `49f26ea088215c2f7c82d3ebd38099e6d8d5653ca1a4773b2ca9902e5435c0d2` |
 | `test/admin_dashboard_service_test.dart` | 962 | `63bd741c39abc644abaadbffd3f095ef49f8afcb854e1a44585acae6a6f4994b` |
 | `test/ai_support_chat_page_test.dart` | 2592 | `57eb2df2bcd3b63e0714026946ed07c6ce4a8fa16e64f9cbdaa20fb5c51a4372` |

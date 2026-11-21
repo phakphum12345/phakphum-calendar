@@ -26,7 +26,7 @@ if errorlevel 1 exit /b 10
 python --version
 if errorlevel 1 exit /b 10
 if "%MODE%"=="full" (
-  flutter pub get
+  flutter pub get --enforce-lockfile
   if errorlevel 1 exit /b 20
   flutter analyze
   if errorlevel 1 exit /b 21
