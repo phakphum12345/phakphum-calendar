@@ -78,14 +78,13 @@ jobs:
         shell: bash
         run: |
           if [[ "${{ needs.detect.outputs.is_flutter }}" == "true" ]]; then
-            flutter pub get
+            flutter pub get --enforce-lockfile
           else
             dart pub get
           fi
 
-      # Formatting is deliberately not a release gate. The authoritative
-      # Flutter validation path is analyze + tests; this avoids false
-      # negatives caused by formatter-only drift in generated/legacy code.
+      # Formatting is measured by the separate non-blocking Dart Format Baseline
+      # workflow until the existing 124-file formatting backlog is reviewed.
       - name: Static analysis
         shell: bash
         run: |

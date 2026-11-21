@@ -23,7 +23,7 @@ try {
     Invoke-Checked "flutter" @("--version")
     Invoke-Checked "python" @("--version")
     if ($Full) {
-        Invoke-Checked "flutter" @("pub", "get")
+        Invoke-Checked "flutter" @("pub", "get", "--enforce-lockfile")
         Invoke-Checked "flutter" @("analyze")
         Invoke-Checked "flutter" @("test")
     }

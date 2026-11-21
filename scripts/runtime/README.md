@@ -15,7 +15,7 @@ Usage:
 - scripts\runtime\run.cmd --preflight
 - scripts\runtime\run.cmd --full
 
-Preflight verifies the Git checkout, the expected CI SHA when GITHUB_SHA is set, and required executables. Full mode runs flutter pub get, flutter analyze, and the complete flutter test suite.
+Preflight verifies the Git checkout, the expected CI SHA when GITHUB_SHA is set, and required executables. Full mode runs flutter pub get --enforce-lockfile, flutter analyze, and the complete flutter test suite.
 
 The runtime does not commit, push, merge, deploy, delete project data, reset a database, or change repository settings. Required command failures return non-zero exit codes. Skipped or unavailable checks are not treated as passes.
 
