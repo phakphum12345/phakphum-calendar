@@ -1,7 +1,7 @@
 # Repository Implementation Status
 
-**Snapshot date:** 2026-11-20  
-**Snapshot base:** `main` at `e3c248480ebc55aa4b552cafb2291be9d00c0ecc`  
+**Snapshot date:** 2026-11-22  
+**Snapshot base:** `main` at `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5`  
 **Scope:** Whole repository, Flutter client, Laravel API, persistence, synchronization, CI/CD, security and documentation.
 
 > This is a point-in-time engineering inventory, not a declaration that the repository is complete or production-ready. Source code, migrations, exact-head CI and observed runtime behavior take precedence over this document. `SKIPPED` and `UNKNOWN` are never treated as `PASS`.
@@ -11,7 +11,7 @@
 | Item | Observed state |
 |---|---|
 | Default branch | `main` |
-| Main SHA | `e3c248480ebc55aa4b552cafb2291be9d00c0ecc` |
+| Main SHA | `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5` |
 | Open issues | 0 at snapshot time |
 | Open PRs | 0 at snapshot time |
 | Test files | 157 Dart test files |
@@ -20,7 +20,7 @@
 | Main Flutter shell | `lib/ui/app_shell.dart` — 5,717 lines |
 | Main application controller | `lib/controller/app_controller.dart` — 3,162 lines |
 | Main branch protection | Not enabled; no repository rulesets were returned |
-| Current main CI | UNKNOWN — no completed main-branch workflow evidence confirmed after PR #154; exact-head PR checks are recorded below |
+| Current main CI | UNKNOWN — PR #159 exact-head checks completed successfully, but post-merge `main` workflow evidence and combined commit status are not available in this audit |
 
 The branch protection observation is informational only. Repository settings and security rules were not changed.
 
@@ -35,6 +35,9 @@ The branch protection observation is informational only. Repository settings and
 | #152 | MERGED | Removes untrusted client diagnostic message text from server log context | Merge commit `f275518b3dec97c77e525b036bd1c8c1eca55426`; exact-head Laravel and Flutter quality CI passed |
 | #153 | MERGED | Adds repository completion index, requirements traceability and API/database guides | Merge commit `8ef620213ef8629d64bf0d916ee0688e298bfd3b`; exact-head CI passed and 35 documentation links verified |
 | #154 | MERGED | Updates vulnerable Composer dependency graph and adds `composer audit --locked` CI gate | Merge commit `e3c248480ebc55aa4b552cafb2291be9d00c0ecc`; exact-head Laravel, Flutter, Windows, Android, iOS, Linux, Web and PR Gate checks passed; Pages deployment skipped |
+| #157 | MERGED | Adds exact-SHA DISKPATH manifest regeneration and validation workflow | Merge commit `a88e69cd167ea4a8d565dd55ee64fc7a38b78d73`; PR review and inline threads returned empty; exact PR-head workflow evidence not rechecked in this snapshot |
+| #158 | MERGED | Enforces Flutter lockfile and adds informational Dart formatting baseline audit | Merge commit `df7dfe694d23695e62cc1798589323e8d4f4e65f`; maintenance-branch PR; exact-head evidence was promoted and revalidated by #159 |
+| #159 | MERGED | Promotes lockfile enforcement, formatting baseline and DISKPATH manifests to `main` | Merge commit `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5`; exact PR head `df7dfe694d23695e62cc1798589323e8d4f4e65f`; 11 workflows completed successfully; nested Pages deployment job was SKIPPED; post-merge main checks remain UNKNOWN |
 | #147 | Previously merged | Google ID-token verification hardening | Retain regression coverage |
 | #144 | MERGED | Preserve managed events outside selected roster months; November/December E2E regression | Exact-head CI: 10 PASS, 1 SKIPPED (Pages); post-merge main CI evidence remains UNKNOWN |
 
@@ -46,7 +49,8 @@ The branch protection observation is informational only. Repository settings and
 | Calendar insert idempotency | IMPLEMENTED, POST-MERGE VERIFICATION | PR #148 is merged; monitor main CI and provider reconciliation |
 | Backend email validation guard | MERGED | PR #149 PHP/Laravel suite: 42 tests, 278 assertions |
 | Shift transaction metadata bounds | MERGED | PR #151; metadata is restricted to bounded `note` and `schedule_id`; exact-head Laravel CI passed |
-| Composer dependency remediation | MERGED, POST-MERGE VERIFICATION | PR #154 merged; updated lockfile audit returned zero advisories and exact-head CI passed; main post-merge CI status remains UNKNOWN |
+| Composer dependency remediation | MERGED, POST-MERGE VERIFICATION | PR #154 merged; updated lockfile audit returned zero advisories and exact-head CI passed; #158/#159 enforce the committed Flutter lockfile; main post-merge CI status remains UNKNOWN |
+| Flutter dependency reproducibility / formatting baseline | MERGED, POST-MERGE VERIFICATION | PR #159 merged; exact-head Auto Detect CI, static analysis, unit and integration tests passed; 124 of 524 Dart files remain in the informational formatting backlog; Pages deployment job was SKIPPED |
 | Historical roster timeline | PARTIAL | Revision archive and ownership-history display exist; a complete restore workflow was not found |
 | Notifications and reminders | MISSING | `NotificationService` is an interface only; no concrete implementation or notification package was found |
 | Daily / weekly / yearly calendar views | NEEDS VERIFICATION | Monthly roster is the primary identified view; dedicated day/week/year views were not confirmed |
@@ -92,7 +96,8 @@ PR #149 hardened email validation. PR #154 separately upgraded the framework and
 8. Complete organization member role-change/removal workflows if required by the product permission model.
 9. Add performance baselines for large workbooks, large event sets and long sync histories.
 10. Verify post-merge behavior for client diagnostic log redaction from PR #152.
-11. Keep API and database documentation synchronized with implementation and update this status after each meaningful merge.
+11. Verify post-merge `main` CI and Pages deployment independently; exact PR-head success does not prove deployment or post-merge execution.
+12. Keep API and database documentation synchronized with implementation and update this status after each meaningful merge.
 
 ## Completion rules
 
