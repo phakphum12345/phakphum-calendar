@@ -66,6 +66,45 @@ void main() {
     gateway.close();
   });
 
+
+  test('member management uses authenticated PATCH and DELETE requests', () async {
+    final calls = <http.Request>[];
+    final client = MockClient((request) async {
+      calls.add(request);
+      return http.Response(
+        jsonEncode({'data': {'user_id': '42', 'role': 'manager', 'status': 'active'}}),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    final gateway = HttpOrganizationAdminGateway(
+      baseUrl: 'https://api.example.com',
+      idToken: () async => 'test-id-token',
+      client: client,
+    );
+
+    await gateway.updateMemberRole(
+      organizationId: 'organization-id',
+      userId: '42',
+      role: 'manager',
+    );
+    await gateway.removeMember(
+      organizationId: 'organization-id',
+      userId: '42',
+    );
+    gateway.close();
+
+    expect(calls.map((request) => request.method), ['PATCH', 'DELETE']);
+    expect(calls.first.url.path, '/api/v1/organizations/organization-id/members/42');
+    expect(jsonDecode(calls.first.body), {'role': 'manager'});
+    expect(calls.last.url.path, '/api/v1/organizations/organization-id/members/42');
+    expect(
+      calls.every((request) =>
+          request.headers['Authorization'] == 'Bearer test-id-token'),
+      isTrue,
+    );
+  });
+
   test('remote organization API URLs must use HTTPS', () async {
     final gateway = HttpOrganizationAdminGateway(
       baseUrl: 'http://api.example.com',
