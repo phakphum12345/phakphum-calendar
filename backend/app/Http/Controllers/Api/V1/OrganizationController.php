@@ -221,7 +221,6 @@ class OrganizationController
         ], $reactivated ? 200 : 201);
     }
 
-
     public function updateMemberRole(
         Request $request,
         string $organizationId,
