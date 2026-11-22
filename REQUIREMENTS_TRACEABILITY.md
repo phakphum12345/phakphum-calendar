@@ -17,11 +17,11 @@
 | Shift / duty management | `lib/features/shift_parser/`, `lib/features/shift_exchange/`, `backend/app/Services/ShiftTransactions/` | parser, schedule and transaction tests | PARTIAL — broader end-to-end personnel and cancellation scenarios remain |
 | Shift exchange / replacement | `lib/features/shift_exchange/`, `ShiftTransactionService.php` | `backend/tests/Feature/ShiftTransactionApiTest.php`, Flutter API-client tests | IMPLEMENTED FOUNDATION — full live multi-account workflow still requires environment verification |
 | Synchronization engine | `CalendarSyncCoordinator`, `ResilientCalendarSyncExecutor`, `ResumeSyncService`, Google Calendar gateway | sync executor, resume and gateway tests | POST-MERGE VERIFICATION — PR #148 idempotency and PR #144 selected-month preservation are merged; exact-head tests passed, but main post-merge CI evidence remains UNKNOWN |
-| Monthly / yearly calendar | monthly roster and `RosterSyncPeriodFilter` | month boundary and leap-year tests | PARTIAL — monthly flow exists; dedicated yearly/day/week views not confirmed |
+| Day / week / month / year calendar | daily, weekly and monthly schedule pages; `ScheduleWorkspacePage` | schedule page and month-boundary tests | IN_PROGRESS — Day/Week/Month views exist; PR #162 fixes weeks crossing month boundaries; PR #163 adds a 12-month year overview and is stacked on #162 |
 | Date / time / timezone | `RosterSyncPeriodFilter`, `GoogleCalendarSyncGateway` | date parsing and Calendar gateway tests | PARTIAL — Bangkok wall-time conversion exists; cross-device timezone matrix needs verification |
-| User management / permissions | `OrganizationController.php`, organization membership and policy tables | organization API feature tests | PARTIAL — join and approval flows exist; role-change/removal endpoints not found |
+| Organization member management | `OrganizationController.php`, `OrganizationAdminGateway`, membership panel | Laravel API and Flutter gateway/widget tests | IN_PROGRESS — PR #164 adds owner/admin role changes and soft removal, protects owner membership, and supports reactivation without deleting membership rows |
 | Authentication / authorization | `AuthenticateGoogleAccount.php`, Google identity-token verifier | Google token and middleware tests | IMPLEMENTED FOUNDATION — continue issuer/audience/expiry and authorization regression tests |
-| Notifications / reminders | `lib/domain/services/notification_service.dart` | No concrete implementation or targeted tests found | MISSING — interface only; implement permission-aware platform service |
+| Notifications / reminders | `lib/domain/services/notification_service.dart`, `ShiftAlertService` | shift alert tests; no concrete scheduled delivery tests | PARTIAL — in-app shift/conflict alerts exist, but scheduled platform notifications are not wired to a concrete implementation |
 | Import / export | `lib/features/shift_parser/`, Excel import, Drive archive and PDF/report services | parser, import and report tests | PARTIAL — import paths exist; export format and recovery matrix needs inventory |
 | Data validation | parser diagnostics and Laravel request validation | parser and API validation tests | IMPLEMENTED FOUNDATION — add property/fuzz tests for malformed large workbooks and API payloads |
 | Error handling / recovery | `ResilientCalendarSyncExecutor`, `ResumeSyncService`, failed-operation repository | sync recovery tests | IMPLEMENTED FOUNDATION — verify network ambiguity and process restart on every platform |
@@ -36,15 +36,15 @@
 
 - A complete restore workflow for a historical roster assignment.
 - Whether blank/unassigned cells and removed roster positions are represented as timeline versions.
-- Dedicated daily, weekly and yearly calendar views.
-- Concrete notification scheduling and cancellation on supported platforms.
-- Member role changes and member removal with audit history.
+- A year overview is proposed in PR #163; it remains unmerged. PR #162's cross-month weekly view fix also remains unmerged.
+- Concrete notification scheduling and cancellation on supported platforms; the current notification interface is not a delivery implementation.
+- Member role changes and soft removal are proposed in PR #164; detailed membership audit history remains unimplemented.
 - Encrypted local storage for cached roster revisions and failed sync payloads.
 - Performance under large multi-sheet workbooks and long calendar histories.
 - Production deployment and live Google integration behavior after the current code changes. The audited main Web build passed, but the Pages deployment job was SKIPPED; live URL and deployed SHA remain UNKNOWN.
 - Branch protection is UNKNOWN because the connected GitHub integration could not read the protection endpoint (HTTP 403); the rulesets endpoint returned an empty list.
-- PR #160 head `a79af5dab3a5a619fd37138b1764811ba8118626` had 2 successful workflow runs and 7 successful check runs; no reviews or inline review threads were returned.
-- Post-merge `main` workflow execution for merge commit `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5`; the combined commit-status endpoint returned no status entries.
+- PR #160's previously audited head `a79af5dab3a5a619fd37138b1764811ba8118626` passed 2 workflow runs and 7 checks; subsequent documentation commits moved the branch to `06a9bc7bcf5a0b8b2d2a508c6bd52fa4efadc92e`, whose checks were also reverified successful before this refresh.
+- The legacy combined commit-status endpoint returned no status entries, but GitHub Actions check-runs show 10 successful workflow runs for main SHA `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5`; the Pages deployment job was SKIPPED.
 
 ## Evidence rules
 
