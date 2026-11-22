@@ -230,6 +230,10 @@ class OrganizationApiTest extends TestCase
             "/api/v1/organizations/{$organizationId}/members",
             $this->auth('owner-token'),
         )->assertOk()->assertJsonCount(1, 'data');
+        $this->getJson(
+            "/api/v1/organizations/{$organizationId}/members",
+            $this->auth('member-token'),
+        )->assertForbidden();
 
         $this->postJson("/api/v1/organizations/{$organizationId}/members", [
             'email' => 'member@example.com',
@@ -244,6 +248,10 @@ class OrganizationApiTest extends TestCase
             'role' => 'admin',
             'status' => 'active',
         ]);
+        $this->getJson(
+            "/api/v1/organizations/{$organizationId}/members",
+            $this->auth('member-token'),
+        )->assertOk()->assertJsonCount(2, 'data');
     }
 
     public function test_only_owner_or_admin_can_manage_members_and_owner_membership_is_protected(): void
