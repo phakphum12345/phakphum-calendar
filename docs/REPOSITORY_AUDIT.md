@@ -103,5 +103,5 @@ Existing implementation and traceability documents identify outstanding work in 
 - Branch-protection settings could not be read because the connected integration returned HTTP 403.
 - GitHub Pages settings could not be retrieved through the available integration endpoint.
 - The public site could not be independently opened with the available browser fetch.
-- No source code, workflow, deployment setting, or production data was changed during this audit.
+- No source code, workflow, deployment setting, or production data was changed during the initial read-only audit; all subsequent implementation changes are isolated in separate open PRs.
 - No files were deleted.
