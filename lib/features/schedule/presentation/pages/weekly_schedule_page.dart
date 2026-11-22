@@ -42,7 +42,6 @@ class WeeklySchedulePage extends StatelessWidget {
         controller.selectedDate ??
         controller.schedule.days.first.date;
     final start = anchor.subtract(Duration(days: anchor.weekday - 1));
-    final end = start.add(const Duration(days: 6));
     return [
       for (var offset = 0; offset < 7; offset++)
         _dayForDate(controller, start.add(Duration(days: offset))),
