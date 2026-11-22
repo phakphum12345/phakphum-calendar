@@ -63,7 +63,7 @@ Consequences:
 
 - Base SHA: `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5`
 - Head branch: `docs/post-merge-status-20261122`
-- Initial audited head SHA: `a79af5dab3a5a619fd37138b1764811ba8118626`; after audit-document updates, the branch advanced to `06a9bc7bcf5a0b8b2d2a508c6bd52fa4efadc92e`
+- Initial audited head SHA: `a79af5dab3a5a619fd37138b1764811ba8118626`; later documentation updates advanced the branch further, so the live PR #160 page is the source of truth for its current exact head SHA.
 - State: OPEN; mergeable: true
 - Reviews and review threads: none returned
 - Exact-head workflow runs: Auto Detect CI and Cross-platform Runtime succeeded; 7 individual check runs succeeded.
