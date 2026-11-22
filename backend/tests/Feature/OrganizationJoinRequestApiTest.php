@@ -255,6 +255,56 @@ class OrganizationJoinRequestApiTest extends TestCase
     }
 
 
+
+    public function test_approval_reactivates_an_inactive_membership_without_duplicate_rows(): void
+    {
+        $organization = $this->createOrganization();
+
+        $this->postJson('/api/v1/organization-join-requests', [
+            'organization_slug' => $organization['slug'],
+            'employee_id' => 'EMP-PENDING',
+        ], $this->auth('applicant-token'))->assertCreated();
+
+        $this->postJson("/api/v1/organizations/{$organization['id']}/members", [
+            'email' => 'applicant@example.com',
+            'employee_id' => 'EMP-ADMIN-ADD',
+            'role' => 'staff',
+        ], $this->auth('owner-token'))->assertCreated();
+
+        $applicantId = (string) $this->userId('applicant@example.com');
+        $this->deleteJson(
+            "/api/v1/organizations/{$organization['id']}/members/{$applicantId}",
+            [],
+            $this->auth('owner-token'),
+        )->assertOk();
+
+        $request = $this->getJson(
+            "/api/v1/organizations/{$organization['id']}/join-requests",
+            $this->auth('owner-token'),
+        )->assertOk()->json('data.0');
+
+        $this->postJson(
+            "/api/v1/organizations/{$organization['id']}/join-requests/{$request['id']}/approve",
+            ['role' => 'incharge'],
+            $this->auth('owner-token'),
+        )->assertOk()->assertJsonPath('data.role', 'incharge');
+
+        $this->assertDatabaseHas('organization_memberships', [
+            'organization_id' => $organization['id'],
+            'user_id' => $applicantId,
+            'employee_id' => 'EMP-PENDING',
+            'role' => 'incharge',
+            'status' => 'active',
+        ]);
+        $this->assertSame(
+            1,
+            DB::table('organization_memberships')
+                ->where('organization_id', $organization['id'])
+                ->where('user_id', $applicantId)
+                ->count(),
+        );
+    }
+
     private function createOrganization(): array
     {
         $this->getJson('/api/v1/me', $this->auth('owner-token'))->assertOk();
