@@ -25,12 +25,23 @@ class WeeklySchedulePage extends StatelessWidget {
             assignmentsFor: controller.assignmentsFor,
             showMonthPadding: false,
             selectedDate: controller.selectedDay,
-            onDaySelected: (day) => controller.selectDay(day.date),
+            onDaySelected: (day) {
+              final date = day.date;
+              if (controller.currentMonth.year != date.year ||
+                  controller.currentMonth.month != date.month) {
+                controller.loadMonth(date);
+              }
+              controller.selectDay(date);
+            },
           ),
         );
       },
     );
   }
+
+  ScheduleDay _dayForDate(ScheduleController controller, DateTime date) =>
+      controller.canonicalSchedule.month(date)?.day(date) ??
+      ScheduleDay(date: date);
 
   List<ScheduleDay> _weekDays(ScheduleController controller) {
     final anchor =
@@ -38,15 +49,9 @@ class WeeklySchedulePage extends StatelessWidget {
         controller.selectedDate ??
         controller.schedule.days.first.date;
     final start = anchor.subtract(Duration(days: anchor.weekday - 1));
-    final end = start.add(const Duration(days: 6));
-    return controller.schedule.days
-        .where(
-          (day) =>
-              !day.date.isBefore(start) &&
-              !day.date.isAfter(
-                DateTime(end.year, end.month, end.day, 23, 59, 59),
-              ),
-        )
-        .toList(growable: false);
+    return [
+      for (var offset = 0; offset < 7; offset++)
+        _dayForDate(controller, start.add(Duration(days: offset))),
+    ];
   }
 }
