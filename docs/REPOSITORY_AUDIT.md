@@ -16,7 +16,7 @@ The Pages settings endpoint was not accessible through the connected GitHub inte
 |---|---|
 | Repository | Public; default branch `main` |
 | Main SHA | `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5` |
-| Open PRs | 1 — [PR #160](https://github.com/phakphum12345/phakphum-calendar/pull/160) |
+| Open PRs | 5 — [#160](https://github.com/phakphum12345/phakphum-calendar/pull/160), [#161](https://github.com/phakphum12345/phakphum-calendar/pull/161), [#162](https://github.com/phakphum12345/phakphum-calendar/pull/162), [#163](https://github.com/phakphum12345/phakphum-calendar/pull/163), [#164](https://github.com/phakphum12345/phakphum-calendar/pull/164) |
 | Open issues | 0 |
 | Workflow files | 19 under `.github/workflows/` |
 | Repository rulesets | Empty list returned |
@@ -62,7 +62,7 @@ Consequences:
 
 - Base SHA: `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5`
 - Head branch: `docs/post-merge-status-20261122`
-- Audited head SHA: `a79af5dab3a5a619fd37138b1764811ba8118626`
+- Initial audited head SHA: `a79af5dab3a5a619fd37138b1764811ba8118626`; after audit-document updates, the branch advanced to `06a9bc7bcf5a0b8b2d2a508c6bd52fa4efadc92e`
 - State: OPEN; mergeable: true
 - Reviews and review threads: none returned
 - Exact-head workflow runs: Auto Detect CI and Cross-platform Runtime succeeded; 7 individual check runs succeeded.
@@ -75,12 +75,19 @@ Do not merge until the updated head is rechecked and required approval policy is
 
 These are source-level observations, not end-to-end behavior claims:
 
-- `lib/domain/services/notification_service.dart` declares an abstract `NotificationService` interface with schedule/cancel methods; it does not itself provide a concrete platform delivery implementation.
+- `lib/domain/services/notification_service.dart` declares an abstract `NotificationService` interface with schedule/cancel methods; the inspected app controller does not wire it to a concrete scheduled delivery implementation. `ShiftAlertService` provides in-app shift/conflict alerts, which are not equivalent to scheduled platform notifications.
 - `lib/services/roster_revision_service.dart` reads Google Drive revisions and XLSX exports. Its documentation describes read-only Drive access; the inspected service exposes history reading, not a restore/write operation.
 - `lib/services/roster_timeline_generator.dart` converts revision documents into assignment timelines. Timeline generation alone does not establish a user-facing restore workflow.
-- `lib/ui/app_shell.dart` exposes dashboard, schedule, monthly roster, roster names, employees, shift exchange, reports, admin, and settings navigation. Dedicated day/week/year calendar views require further targeted source and UI verification.
+- The schedule feature has dedicated daily, weekly and monthly pages. The weekly pages currently derive days from the selected month, so weeks crossing month boundaries can be incomplete; PR #162 adds canonical cross-month day lookup and regression tests. A 12-month year overview is proposed in PR #163.
 
-Existing implementation and traceability documents also identify outstanding work in notifications, historical restore, daily/weekly/yearly views, organization member role changes/removal, responsive UI, performance baselines, and production integration verification.
+Existing implementation and traceability documents identify outstanding work in scheduled notifications, historical restore, the year overview (PR #163), organization member role changes/removal (PR #164), responsive UI, performance baselines, and production integration verification.
+
+## Active follow-up PRs
+
+- [PR #161](https://github.com/phakphum12345/phakphum-calendar/pull/161) — automatic Pages deployment on main pushes, deployed-SHA metadata, HTTP smoke tests, and deployment-aware Final Gate. OPEN; not merged.
+- [PR #162](https://github.com/phakphum12345/phakphum-calendar/pull/162) — complete seven-day weekly views across month boundaries. OPEN; not merged.
+- [PR #163](https://github.com/phakphum12345/phakphum-calendar/pull/163) — responsive 12-month year overview, stacked on PR #162. OPEN; not merged.
+- [PR #164](https://github.com/phakphum12345/phakphum-calendar/pull/164) — owner/admin member role changes, soft removal, and reactivation. OPEN; not merged.
 
 ## Required remediation
 
