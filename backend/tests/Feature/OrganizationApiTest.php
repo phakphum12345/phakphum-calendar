@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Contracts\GoogleIdentityTokenVerifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\Fakes\FakeGoogleIdentityTokenVerifier;
 use Tests\TestCase;
 
@@ -173,6 +174,134 @@ class OrganizationApiTest extends TestCase
             'role' => 'staff',
         ], $this->auth('owner-token'))->assertNotFound()
             ->assertJsonPath('error.code', 'account_not_registered');
+    }
+
+
+    public function test_owner_can_change_member_role_remove_and_reactivate_without_deleting_membership(): void
+    {
+        $this->getJson('/api/v1/me', $this->auth('owner-token'))->assertOk();
+        $this->getJson('/api/v1/me', $this->auth('member-token'))->assertOk();
+
+        $organization = $this->postJson('/api/v1/organizations', [
+            'name' => 'Emergency',
+            'employee_id' => 'EMP-OWNER',
+        ], $this->auth('owner-token'))->assertCreated()->json('data');
+        $organizationId = $organization['id'];
+
+        $this->postJson("/api/v1/organizations/{$organizationId}/members", [
+            'email' => 'member@example.com',
+            'employee_id' => 'EMP-MEMBER',
+            'role' => 'staff',
+        ], $this->auth('owner-token'))->assertCreated();
+
+        $memberId = (string) DB::table('users')
+            ->where('email', 'member@example.com')
+            ->value('id');
+
+        $this->patchJson(
+            "/api/v1/organizations/{$organizationId}/members/{$memberId}",
+            ['role' => 'manager'],
+            $this->auth('owner-token'),
+        )->assertOk()
+            ->assertJsonPath('data.user_id', $memberId)
+            ->assertJsonPath('data.role', 'manager');
+
+        $this->assertDatabaseHas('organization_memberships', [
+            'organization_id' => $organizationId,
+            'user_id' => $memberId,
+            'role' => 'manager',
+            'status' => 'active',
+        ]);
+
+        $this->deleteJson(
+            "/api/v1/organizations/{$organizationId}/members/{$memberId}",
+            [],
+            $this->auth('owner-token'),
+        )->assertOk()->assertJsonPath('data.status', 'inactive');
+
+        $this->assertDatabaseHas('organization_memberships', [
+            'organization_id' => $organizationId,
+            'user_id' => $memberId,
+            'role' => 'manager',
+            'status' => 'inactive',
+        ]);
+
+        $this->getJson(
+            "/api/v1/organizations/{$organizationId}/members",
+            $this->auth('owner-token'),
+        )->assertOk()->assertJsonCount(1, 'data');
+
+        $this->postJson("/api/v1/organizations/{$organizationId}/members", [
+            'email' => 'member@example.com',
+            'employee_id' => 'EMP-MEMBER-2',
+            'role' => 'admin',
+        ], $this->auth('owner-token'))->assertOk();
+
+        $this->assertDatabaseHas('organization_memberships', [
+            'organization_id' => $organizationId,
+            'user_id' => $memberId,
+            'employee_id' => 'EMP-MEMBER-2',
+            'role' => 'admin',
+            'status' => 'active',
+        ]);
+    }
+
+    public function test_only_owner_or_admin_can_manage_members_and_owner_membership_is_protected(): void
+    {
+        $this->getJson('/api/v1/me', $this->auth('owner-token'))->assertOk();
+        $this->getJson('/api/v1/me', $this->auth('member-token'))->assertOk();
+
+        $organization = $this->postJson('/api/v1/organizations', [
+            'name' => 'Outpatient',
+            'employee_id' => 'EMP-OWNER',
+        ], $this->auth('owner-token'))->assertCreated()->json('data');
+        $organizationId = $organization['id'];
+
+        $this->postJson("/api/v1/organizations/{$organizationId}/members", [
+            'email' => 'member@example.com',
+            'employee_id' => 'EMP-MEMBER',
+            'role' => 'staff',
+        ], $this->auth('owner-token'))->assertCreated();
+
+        $memberId = (string) DB::table('users')
+            ->where('email', 'member@example.com')
+            ->value('id');
+        $ownerId = (string) DB::table('users')
+            ->where('email', 'owner@example.com')
+            ->value('id');
+
+        $this->patchJson(
+            "/api/v1/organizations/{$organizationId}/members/{$memberId}",
+            ['role' => 'manager'],
+            $this->auth('member-token'),
+        )->assertForbidden();
+
+        $this->deleteJson(
+            "/api/v1/organizations/{$organizationId}/members/{$memberId}",
+            [],
+            $this->auth('member-token'),
+        )->assertForbidden();
+
+        $this->patchJson(
+            "/api/v1/organizations/{$organizationId}/members/{$ownerId}",
+            ['role' => 'admin'],
+            $this->auth('owner-token'),
+        )->assertConflict()
+            ->assertJsonPath('error.code', 'owner_membership_protected');
+
+        $this->deleteJson(
+            "/api/v1/organizations/{$organizationId}/members/{$ownerId}",
+            [],
+            $this->auth('owner-token'),
+        )->assertConflict()
+            ->assertJsonPath('error.code', 'owner_membership_protected');
+
+        $this->assertDatabaseHas('organization_memberships', [
+            'organization_id' => $organizationId,
+            'user_id' => $ownerId,
+            'role' => 'owner',
+            'status' => 'active',
+        ]);
     }
 
     private function auth(string $token): array
