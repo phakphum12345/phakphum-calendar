@@ -89,6 +89,13 @@ jobs:
           test -d build/web/assets
           echo "WEB BUILD PASS"
 
+      - name: Write exact deployment metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '{"repository":"%s","commit_sha":"%s"}\n' \
+            "$GITHUB_REPOSITORY" "$GITHUB_SHA" > build/web/deployment.json
+
       - name: Upload downloadable web build
         uses: actions/upload-artifact@v7
         with:
@@ -104,7 +111,7 @@ jobs:
 
   deploy-pages:
     name: Deploy GitHub Pages
-    if: github.ref == 'refs/heads/main' && github.event_name == 'workflow_dispatch'
+    if: github.ref == 'refs/heads/main'
     needs: build-web
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -120,3 +127,23 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify published site and deployed commit
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          EXPECTED_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$PAGE_URL"
+          BASE_URL="${PAGE_URL%/}"
+          curl --fail --silent --show-error --location \
+            --retry 10 --retry-delay 5 --retry-all-errors \
+            "$BASE_URL/" -o /tmp/phakphum-calendar-index.html
+          curl --fail --silent --show-error --location \
+            --retry 10 --retry-delay 5 --retry-all-errors \
+            "$BASE_URL/deployment.json" -o /tmp/phakphum-calendar-deployment.json
+          grep -Fq "\"commit_sha\":\"$EXPECTED_SHA\"" \
+            /tmp/phakphum-calendar-deployment.json
+          echo "PAGES HTTP SMOKE TEST: PASS"
+          echo "DEPLOYED COMMIT SHA: $EXPECTED_SHA"
