@@ -76,8 +76,8 @@ Do not merge until the updated head is rechecked and required approval policy is
 
 These are source-level observations, not end-to-end behavior claims:
 
-- `lib/domain/services/notification_service.dart` declares an abstract `NotificationService` interface with schedule/cancel methods; the inspected app controller does not wire it to a concrete scheduled delivery implementation. `ShiftAlertService` provides in-app shift/conflict alerts, which are not equivalent to scheduled platform notifications.
-- `lib/services/roster_revision_service.dart` reads Google Drive revisions and XLSX exports. Its documentation describes read-only Drive access; the inspected service exposes history reading, not a restore/write operation.
+- `lib/domain/services/notification_service.dart` declares an abstract `NotificationService` interface with schedule/cancel methods; the inspected app controller does not wire it to a concrete scheduled delivery implementation. `ShiftAlertService` provides in-app shift/conflict alerts, which are not equivalent to scheduled platform notifications. Supported delivery platforms and whether reminders must fire while the app is closed remain product decisions.
+- `lib/services/roster_revision_service.dart` reads Google Drive revisions and XLSX exports. Its documentation describes read-only Drive access; the inspected service exposes history reading, not a restore/write operation. `GoogleAuthService.readAccessScopes` includes Drive metadata/read-only scopes only, so restoring back to Drive requires explicit approval for additional write scope and user consent.
 - `lib/services/roster_timeline_generator.dart` converts revision documents into assignment timelines. Timeline generation alone does not establish a user-facing restore workflow.
 - The schedule feature has dedicated daily, weekly and monthly pages. The weekly pages currently derive days from the selected month, so weeks crossing month boundaries can be incomplete; PR #162 adds canonical cross-month day lookup and regression tests. A 12-month year overview is proposed in PR #163.
 
