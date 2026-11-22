@@ -55,7 +55,12 @@ class _ScheduleWorkspacePageState extends State<ScheduleWorkspacePage> {
               showMonthPadding: mode == ScheduleViewMode.month,
               selectedDate: controller.selectedDay,
               onDaySelected: (day) {
-                controller.selectDay(day.date);
+                final date = day.date;
+                if (controller.currentMonth.year != date.year ||
+                    controller.currentMonth.month != date.month) {
+                  controller.loadMonth(date);
+                }
+                controller.selectDay(date);
                 if (mode != ScheduleViewMode.day) {
                   setState(() => mode = ScheduleViewMode.day);
                 }
