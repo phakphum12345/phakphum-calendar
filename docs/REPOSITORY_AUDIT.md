@@ -8,13 +8,14 @@ Audited main SHA: `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5`
 
 Observed main-branch CI runs are successful, but Production deployment is not verified. The Web build and Pages artifact upload succeeded for the audited main SHA; the nested `Deploy GitHub Pages` job was skipped. The current deployment workflow condition explains why a normal push to main does not deploy.
 
-The Pages settings endpoint was not accessible through the connected GitHub integration, and the public URL could not be verified with the available browser fetch. Therefore, do not claim the live Pages site is healthy or deployed at the audited SHA.
+The README declares the production URL as [Phakphum Calendar on GitHub Pages](https://phakphum12345.github.io/phakphum-calendar/). The Pages settings endpoint was not accessible through the connected GitHub integration, and the URL could not be independently opened with the available browser fetch. Therefore, accessibility and the deployed SHA remain UNKNOWN; do not claim the live site is healthy or deployed at the audited SHA.
 
 ## Repository state
 
 | Item | Evidence |
 |---|---|
 | Repository | Public; default branch `main` |
+| README-declared production URL | `https://phakphum12345.github.io/phakphum-calendar/` (accessibility and deployed SHA UNKNOWN) |
 | Main SHA | `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5` |
 | Open PRs | 5 — [#160](https://github.com/phakphum12345/phakphum-calendar/pull/160), [#161](https://github.com/phakphum12345/phakphum-calendar/pull/161), [#162](https://github.com/phakphum12345/phakphum-calendar/pull/162), [#163](https://github.com/phakphum12345/phakphum-calendar/pull/163), [#164](https://github.com/phakphum12345/phakphum-calendar/pull/164) |
 | Open issues | 0 |
