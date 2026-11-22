@@ -15,14 +15,14 @@
 | Open issues | 0 (verified 2026-11-22) |
 | Open PRs | 1 — PR #160, the documentation status refresh (verified 2026-11-22) |
 | Test files | 157 Dart test files |
-| GitHub workflow files | 13 |
+| GitHub workflow files | 19 |
 | Markdown files | 118 |
 | Main Flutter shell | `lib/ui/app_shell.dart` — 5,717 lines |
 | Main application controller | `lib/controller/app_controller.dart` — 3,162 lines |
-| Main branch protection | Not enabled; no repository rulesets were returned |
-| Current main CI | UNKNOWN — PR #159 exact-head checks completed successfully, but post-merge `main` workflow evidence and combined commit status are not available in this audit |
+| Main branch protection | UNKNOWN — branch-protection endpoint returned HTTP 403; repository rulesets endpoint returned an empty list |
+| Current main CI | PASS for 10 observed workflow runs on `e9ed13f`; Web build succeeded but its nested GitHub Pages deployment job was SKIPPED |
 
-The branch protection observation is informational only. Repository settings and security rules were not changed.
+The branch-protection state remains UNKNOWN because the connected integration could not read that endpoint. Repository settings and security rules were not changed.
 
 ## Recent merged work
 
@@ -96,7 +96,7 @@ PR #149 hardened email validation. PR #154 separately upgraded the framework and
 8. Complete organization member role-change/removal workflows if required by the product permission model.
 9. Add performance baselines for large workbooks, large event sets and long sync histories.
 10. Verify post-merge behavior for client diagnostic log redaction from PR #152.
-11. Verify post-merge `main` CI and Pages deployment independently; exact PR-head success does not prove deployment or post-merge execution.
+11. Current `main` CI was observed successful for 10 workflow runs at `e9ed13f`; GitHub Pages deployment is still SKIPPED because `deploy-pages` only permits `workflow_dispatch`. Fix the trigger and require deployment evidence before declaring release complete.
 12. Keep API and database documentation synchronized with implementation and update this status after each meaningful merge.
 
 ## Completion rules
