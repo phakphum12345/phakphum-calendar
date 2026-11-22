@@ -200,6 +200,61 @@ class OrganizationJoinRequestApiTest extends TestCase
         ]);
     }
 
+
+    public function test_removed_member_can_request_and_be_approved_again(): void
+    {
+        $organization = $this->createOrganization();
+
+        $this->postJson('/api/v1/organization-join-requests', [
+            'organization_slug' => $organization['slug'],
+            'employee_id' => 'EMP-NEW',
+        ], $this->auth('applicant-token'))->assertCreated();
+
+        $request = $this->getJson(
+            "/api/v1/organizations/{$organization['id']}/join-requests",
+            $this->auth('owner-token'),
+        )->assertOk()->json('data.0');
+
+        $this->postJson(
+            "/api/v1/organizations/{$organization['id']}/join-requests/{$request['id']}/approve",
+            ['role' => 'staff'],
+            $this->auth('owner-token'),
+        )->assertOk();
+
+        $applicantId = (string) $this->userId('applicant@example.com');
+        $this->deleteJson(
+            "/api/v1/organizations/{$organization['id']}/members/{$applicantId}",
+            [],
+            $this->auth('owner-token'),
+        )->assertOk()->assertJsonPath('data.status', 'inactive');
+
+        $this->postJson('/api/v1/organization-join-requests', [
+            'organization_slug' => $organization['slug'],
+            'employee_id' => 'EMP-REJOINED',
+        ], $this->auth('applicant-token'))
+            ->assertCreated()
+            ->assertJsonPath('data.status', 'pending');
+
+        $request = $this->getJson(
+            "/api/v1/organizations/{$organization['id']}/join-requests",
+            $this->auth('owner-token'),
+        )->assertOk()->json('data.0');
+
+        $this->postJson(
+            "/api/v1/organizations/{$organization['id']}/join-requests/{$request['id']}/approve",
+            ['role' => 'incharge'],
+            $this->auth('owner-token'),
+        )->assertOk()->assertJsonPath('data.role', 'incharge');
+
+        $this->assertDatabaseHas('organization_memberships', [
+            'organization_id' => $organization['id'],
+            'user_id' => $applicantId,
+            'employee_id' => 'EMP-REJOINED',
+            'role' => 'incharge',
+            'status' => 'active',
+        ]);
+    }
+
     private function createOrganization(): array
     {
         $this->getJson('/api/v1/me', $this->auth('owner-token'))->assertOk();
