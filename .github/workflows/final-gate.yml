@@ -67,6 +67,19 @@ jobs:
                  | select(.event == "push")]
                 | sort_by(.run_number, .run_attempt)
                 | last // {}
+                | [(.status // "missing"), (.conclusion // ""), (.html_url // ""), ((.id // 0) | tostring)]
+                | @tsv
+              ' 2>/dev/null
+          }
+
+          get_deploy_job_state() {
+            local run_id="$1"
+            gh api \
+              -H 'Accept: application/vnd.github+json' \
+              "/repos/${REPOSITORY}/actions/runs/${run_id}/jobs?per_page=100" \
+              --jq '
+                [.jobs[] | select(.name == "Deploy GitHub Pages")]
+                | last // {}
                 | [(.status // "missing"), (.conclusion // ""), (.html_url // "")]
                 | @tsv
               ' 2>/dev/null
@@ -100,10 +113,75 @@ jobs:
               workflow="${entry#*:}"
               state="$(get_run_state "$workflow" || true)"
               if [[ -z "$state" ]]; then
-                status="missing"; conclusion=""; url=""
+                status="missing"; conclusion=""; url=""; run_id=""
               else
-                IFS=$'\t' read -r status conclusion url <<< "$state"
-                status="${status:-missing}"; conclusion="${conclusion:-}"; url="${url:-}"
+                IFS=
+
+            for entry in "${optional_workflows[@]}"; do
+              label="${entry%%:*}"
+              workflow="${entry#*:}"
+              state="$(get_run_state "$workflow" || true)"
+              if [[ -z "$state" ]]; then
+                status="missing"; conclusion=""; url=""; run_id=""
+              else
+                IFS=
+                echo "OPTIONAL $label: PASS"
+                [[ -z "$url" ]] || echo "  $url"
+              elif [[ "$attempt" -lt "$optional_grace_attempt" && "$status" != "completed" ]]; then
+                echo "OPTIONAL $label: WAITING (status=$status)"
+                optional_pending=1
+              else
+                reason="${conclusion:-no successful run within grace period}"
+                echo "OPTIONAL $label: SKIPPED (status=$status; reason=$reason)"
+                [[ -z "$url" ]] || echo "  $url"
+              fi
+            done
+
+            if [[ "$required_failed" -eq 1 ]]; then
+              echo ""
+              echo "FINAL FAIL: one or more required workflows failed for $SHA."
+              exit 1
+            fi
+
+            if [[ "$required_pending" -eq 0 && "$optional_pending" -eq 0 ]]; then
+              echo ""
+              echo "Required evidence complete for $SHA."
+              echo "Android/iOS/Linux are best-effort; see per-target PASS/SKIPPED lines above."
+              exit 0
+            fi
+
+            if [[ "$attempt" -lt 80 ]]; then
+              sleep 30
+            fi
+          done
+
+          echo "FINAL FAIL: required evidence incomplete after 40 minutes for $SHA."
+          exit 1
+
+      - name: Verify required structure and report optional targets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f pubspec.yaml
+          test -d windows
+          test -d web
+          test -f .github/workflows/ci-auto-detect.yml
+          test -f .github/workflows/windows.yml
+          test -f .github/workflows/web.yml
+          test -f .github/workflows/final-gate.yml
+          test -f scripts/detect-ci-targets.sh
+
+          echo "REQUIRED TARGETS: Windows + Web"
+          for target in android ios linux; do
+            if [[ -d "$target" && -f ".github/workflows/$target.yml" ]]; then
+              echo "OPTIONAL TARGET $target: available; build evidence is best-effort"
+            else
+              echo "OPTIONAL TARGET $target: SKIPPED (platform source or workflow missing)"
+            fi
+          done
+          echo "Capability-aware Final Gate structure check: PASS"
+\t' read -r status conclusion url run_id <<< "$state"
+                status="${status:-missing}"; conclusion="${conclusion:-}"; url="${url:-}"; run_id="${run_id:-}"
               fi
 
               echo "REQUIRED $label: status=$status conclusion=${conclusion:-PENDING}"
@@ -112,6 +190,327 @@ jobs:
                 if [[ "$conclusion" != "success" ]]; then
                   echo "REQUIRED FAILURE: $label concluded ${conclusion:-unknown} for $SHA."
                   required_failed=1
+                elif [[ "$label" == "Web" ]]; then
+                  deploy_state="$(get_deploy_job_state "$run_id" || true)"
+                  if [[ -z "$deploy_state" ]]; then
+                    deploy_status="missing"; deploy_conclusion=""; deploy_url=""
+                  else
+                    IFS=
+
+            for entry in "${optional_workflows[@]}"; do
+              label="${entry%%:*}"
+              workflow="${entry#*:}"
+              state="$(get_run_state "$workflow" || true)"
+              if [[ -z "$state" ]]; then
+                status="missing"; conclusion=""; url=""
+              else
+                IFS=$'\t' read -r status conclusion url <<< "$state"
+                status="${status:-missing}"; conclusion="${conclusion:-}"; url="${url:-}"
+              fi
+
+              if [[ "$status" == "completed" && "$conclusion" == "success" ]]; then
+                echo "OPTIONAL $label: PASS"
+                [[ -z "$url" ]] || echo "  $url"
+              elif [[ "$attempt" -lt "$optional_grace_attempt" && "$status" != "completed" ]]; then
+                echo "OPTIONAL $label: WAITING (status=$status)"
+                optional_pending=1
+              else
+                reason="${conclusion:-no successful run within grace period}"
+                echo "OPTIONAL $label: SKIPPED (status=$status; reason=$reason)"
+                [[ -z "$url" ]] || echo "  $url"
+              fi
+            done
+
+            if [[ "$required_failed" -eq 1 ]]; then
+              echo ""
+              echo "FINAL FAIL: one or more required workflows failed for $SHA."
+              exit 1
+            fi
+
+            if [[ "$required_pending" -eq 0 && "$optional_pending" -eq 0 ]]; then
+              echo ""
+              echo "Required evidence complete for $SHA."
+              echo "Android/iOS/Linux are best-effort; see per-target PASS/SKIPPED lines above."
+              exit 0
+            fi
+
+            if [[ "$attempt" -lt 80 ]]; then
+              sleep 30
+            fi
+          done
+
+          echo "FINAL FAIL: required evidence incomplete after 40 minutes for $SHA."
+          exit 1
+
+      - name: Verify required structure and report optional targets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f pubspec.yaml
+          test -d windows
+          test -d web
+          test -f .github/workflows/ci-auto-detect.yml
+          test -f .github/workflows/windows.yml
+          test -f .github/workflows/web.yml
+          test -f .github/workflows/final-gate.yml
+          test -f scripts/detect-ci-targets.sh
+
+          echo "REQUIRED TARGETS: Windows + Web"
+          for target in android ios linux; do
+            if [[ -d "$target" && -f ".github/workflows/$target.yml" ]]; then
+              echo "OPTIONAL TARGET $target: available; build evidence is best-effort"
+            else
+              echo "OPTIONAL TARGET $target: SKIPPED (platform source or workflow missing)"
+            fi
+          done
+          echo "Capability-aware Final Gate structure check: PASS"
+\t' read -r deploy_status deploy_conclusion deploy_url <<< "$deploy_state"
+                    deploy_status="${deploy_status:-missing}"
+                    deploy_conclusion="${deploy_conclusion:-}"
+                    deploy_url="${deploy_url:-}"
+                  fi
+                  echo "REQUIRED Web deployment: status=$deploy_status conclusion=${deploy_conclusion:-PENDING}"
+                  [[ -z "$deploy_url" ]] || echo "  $deploy_url"
+                  if [[ "$deploy_status" == "completed" && "$deploy_conclusion" == "success" ]]; then
+                    echo "REQUIRED Web deployment: PASS"
+                  elif [[ "$deploy_status" == "completed" || "$deploy_status" == "missing" ]]; then
+                    echo "REQUIRED FAILURE: GitHub Pages deployment did not succeed for $SHA."
+                    required_failed=1
+                  else
+                    required_pending=1
+                  fi
+                fi
+              else
+                required_pending=1
+              fi
+            done
+
+            for entry in "${optional_workflows[@]}"; do
+              label="${entry%%:*}"
+              workflow="${entry#*:}"
+              state="$(get_run_state "$workflow" || true)"
+              if [[ -z "$state" ]]; then
+                status="missing"; conclusion=""; url=""
+              else
+                IFS=$'\t' read -r status conclusion url <<< "$state"
+                status="${status:-missing}"; conclusion="${conclusion:-}"; url="${url:-}"
+              fi
+
+              if [[ "$status" == "completed" && "$conclusion" == "success" ]]; then
+                echo "OPTIONAL $label: PASS"
+                [[ -z "$url" ]] || echo "  $url"
+              elif [[ "$attempt" -lt "$optional_grace_attempt" && "$status" != "completed" ]]; then
+                echo "OPTIONAL $label: WAITING (status=$status)"
+                optional_pending=1
+              else
+                reason="${conclusion:-no successful run within grace period}"
+                echo "OPTIONAL $label: SKIPPED (status=$status; reason=$reason)"
+                [[ -z "$url" ]] || echo "  $url"
+              fi
+            done
+
+            if [[ "$required_failed" -eq 1 ]]; then
+              echo ""
+              echo "FINAL FAIL: one or more required workflows failed for $SHA."
+              exit 1
+            fi
+
+            if [[ "$required_pending" -eq 0 && "$optional_pending" -eq 0 ]]; then
+              echo ""
+              echo "Required evidence complete for $SHA."
+              echo "Android/iOS/Linux are best-effort; see per-target PASS/SKIPPED lines above."
+              exit 0
+            fi
+
+            if [[ "$attempt" -lt 80 ]]; then
+              sleep 30
+            fi
+          done
+
+          echo "FINAL FAIL: required evidence incomplete after 40 minutes for $SHA."
+          exit 1
+
+      - name: Verify required structure and report optional targets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f pubspec.yaml
+          test -d windows
+          test -d web
+          test -f .github/workflows/ci-auto-detect.yml
+          test -f .github/workflows/windows.yml
+          test -f .github/workflows/web.yml
+          test -f .github/workflows/final-gate.yml
+          test -f scripts/detect-ci-targets.sh
+
+          echo "REQUIRED TARGETS: Windows + Web"
+          for target in android ios linux; do
+            if [[ -d "$target" && -f ".github/workflows/$target.yml" ]]; then
+              echo "OPTIONAL TARGET $target: available; build evidence is best-effort"
+            else
+              echo "OPTIONAL TARGET $target: SKIPPED (platform source or workflow missing)"
+            fi
+          done
+          echo "Capability-aware Final Gate structure check: PASS"
+\t' read -r status conclusion url run_id <<< "$state"
+                status="${status:-missing}"; conclusion="${conclusion:-}"; url="${url:-}"
+              fi
+
+              if [[ "$status" == "completed" && "$conclusion" == "success" ]]; then
+                echo "OPTIONAL $label: PASS"
+                [[ -z "$url" ]] || echo "  $url"
+              elif [[ "$attempt" -lt "$optional_grace_attempt" && "$status" != "completed" ]]; then
+                echo "OPTIONAL $label: WAITING (status=$status)"
+                optional_pending=1
+              else
+                reason="${conclusion:-no successful run within grace period}"
+                echo "OPTIONAL $label: SKIPPED (status=$status; reason=$reason)"
+                [[ -z "$url" ]] || echo "  $url"
+              fi
+            done
+
+            if [[ "$required_failed" -eq 1 ]]; then
+              echo ""
+              echo "FINAL FAIL: one or more required workflows failed for $SHA."
+              exit 1
+            fi
+
+            if [[ "$required_pending" -eq 0 && "$optional_pending" -eq 0 ]]; then
+              echo ""
+              echo "Required evidence complete for $SHA."
+              echo "Android/iOS/Linux are best-effort; see per-target PASS/SKIPPED lines above."
+              exit 0
+            fi
+
+            if [[ "$attempt" -lt 80 ]]; then
+              sleep 30
+            fi
+          done
+
+          echo "FINAL FAIL: required evidence incomplete after 40 minutes for $SHA."
+          exit 1
+
+      - name: Verify required structure and report optional targets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f pubspec.yaml
+          test -d windows
+          test -d web
+          test -f .github/workflows/ci-auto-detect.yml
+          test -f .github/workflows/windows.yml
+          test -f .github/workflows/web.yml
+          test -f .github/workflows/final-gate.yml
+          test -f scripts/detect-ci-targets.sh
+
+          echo "REQUIRED TARGETS: Windows + Web"
+          for target in android ios linux; do
+            if [[ -d "$target" && -f ".github/workflows/$target.yml" ]]; then
+              echo "OPTIONAL TARGET $target: available; build evidence is best-effort"
+            else
+              echo "OPTIONAL TARGET $target: SKIPPED (platform source or workflow missing)"
+            fi
+          done
+          echo "Capability-aware Final Gate structure check: PASS"
+\t' read -r status conclusion url run_id <<< "$state"
+                status="${status:-missing}"; conclusion="${conclusion:-}"; url="${url:-}"; run_id="${run_id:-}"
+              fi
+
+              echo "REQUIRED $label: status=$status conclusion=${conclusion:-PENDING}"
+              [[ -z "$url" ]] || echo "  $url"
+              if [[ "$status" == "completed" ]]; then
+                if [[ "$conclusion" != "success" ]]; then
+                  echo "REQUIRED FAILURE: $label concluded ${conclusion:-unknown} for $SHA."
+                  required_failed=1
+                elif [[ "$label" == "Web" ]]; then
+                  deploy_state="$(get_deploy_job_state "$run_id" || true)"
+                  if [[ -z "$deploy_state" ]]; then
+                    deploy_status="missing"; deploy_conclusion=""; deploy_url=""
+                  else
+                    IFS=
+
+            for entry in "${optional_workflows[@]}"; do
+              label="${entry%%:*}"
+              workflow="${entry#*:}"
+              state="$(get_run_state "$workflow" || true)"
+              if [[ -z "$state" ]]; then
+                status="missing"; conclusion=""; url=""
+              else
+                IFS=$'\t' read -r status conclusion url <<< "$state"
+                status="${status:-missing}"; conclusion="${conclusion:-}"; url="${url:-}"
+              fi
+
+              if [[ "$status" == "completed" && "$conclusion" == "success" ]]; then
+                echo "OPTIONAL $label: PASS"
+                [[ -z "$url" ]] || echo "  $url"
+              elif [[ "$attempt" -lt "$optional_grace_attempt" && "$status" != "completed" ]]; then
+                echo "OPTIONAL $label: WAITING (status=$status)"
+                optional_pending=1
+              else
+                reason="${conclusion:-no successful run within grace period}"
+                echo "OPTIONAL $label: SKIPPED (status=$status; reason=$reason)"
+                [[ -z "$url" ]] || echo "  $url"
+              fi
+            done
+
+            if [[ "$required_failed" -eq 1 ]]; then
+              echo ""
+              echo "FINAL FAIL: one or more required workflows failed for $SHA."
+              exit 1
+            fi
+
+            if [[ "$required_pending" -eq 0 && "$optional_pending" -eq 0 ]]; then
+              echo ""
+              echo "Required evidence complete for $SHA."
+              echo "Android/iOS/Linux are best-effort; see per-target PASS/SKIPPED lines above."
+              exit 0
+            fi
+
+            if [[ "$attempt" -lt 80 ]]; then
+              sleep 30
+            fi
+          done
+
+          echo "FINAL FAIL: required evidence incomplete after 40 minutes for $SHA."
+          exit 1
+
+      - name: Verify required structure and report optional targets
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f pubspec.yaml
+          test -d windows
+          test -d web
+          test -f .github/workflows/ci-auto-detect.yml
+          test -f .github/workflows/windows.yml
+          test -f .github/workflows/web.yml
+          test -f .github/workflows/final-gate.yml
+          test -f scripts/detect-ci-targets.sh
+
+          echo "REQUIRED TARGETS: Windows + Web"
+          for target in android ios linux; do
+            if [[ -d "$target" && -f ".github/workflows/$target.yml" ]]; then
+              echo "OPTIONAL TARGET $target: available; build evidence is best-effort"
+            else
+              echo "OPTIONAL TARGET $target: SKIPPED (platform source or workflow missing)"
+            fi
+          done
+          echo "Capability-aware Final Gate structure check: PASS"
+\t' read -r deploy_status deploy_conclusion deploy_url <<< "$deploy_state"
+                    deploy_status="${deploy_status:-missing}"
+                    deploy_conclusion="${deploy_conclusion:-}"
+                    deploy_url="${deploy_url:-}"
+                  fi
+                  echo "REQUIRED Web deployment: status=$deploy_status conclusion=${deploy_conclusion:-PENDING}"
+                  [[ -z "$deploy_url" ]] || echo "  $deploy_url"
+                  if [[ "$deploy_status" == "completed" && "$deploy_conclusion" == "success" ]]; then
+                    echo "REQUIRED Web deployment: PASS"
+                  elif [[ "$deploy_status" == "completed" || "$deploy_status" == "missing" ]]; then
+                    echo "REQUIRED FAILURE: GitHub Pages deployment did not succeed for $SHA."
+                    required_failed=1
+                  else
+                    required_pending=1
+                  fi
                 fi
               else
                 required_pending=1
