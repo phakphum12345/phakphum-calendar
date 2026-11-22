@@ -13,7 +13,7 @@
 | Default branch | `main` |
 | Main SHA | `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5` |
 | Open issues | 0 (verified 2026-11-22) |
-| Open PRs | 1 — PR #160, the documentation status refresh (verified 2026-11-22) |
+| Open PRs | 5 — PRs #160–#164 are open and not merged; #163 is stacked on #162 |
 | Test files | 157 Dart test files |
 | GitHub workflow files | 19 |
 | Markdown files | 118 |
@@ -52,9 +52,9 @@ The branch-protection state remains UNKNOWN because the connected integration co
 | Composer dependency remediation | MERGED, POST-MERGE VERIFICATION | PR #154 merged; updated lockfile audit returned zero advisories and exact-head CI passed; #158/#159 enforce the committed Flutter lockfile; main post-merge CI status remains UNKNOWN |
 | Flutter dependency reproducibility / formatting baseline | MERGED, POST-MERGE VERIFICATION | PR #159 merged; exact-head Auto Detect CI, static analysis, unit and integration tests passed; 124 of 524 Dart files remain in the informational formatting backlog; Pages deployment job was SKIPPED |
 | Historical roster timeline | PARTIAL | Revision archive and ownership-history display exist; a complete restore workflow was not found |
-| Notifications and reminders | MISSING | `NotificationService` is an interface only; no concrete implementation or notification package was found |
-| Daily / weekly / yearly calendar views | NEEDS VERIFICATION | Monthly roster is the primary identified view; dedicated day/week/year views were not confirmed |
-| Organization membership administration | PARTIAL | Create, join-request and approval flows exist; member role-change/removal endpoints were not found |
+| Notifications and reminders | PARTIAL | In-app shift/conflict alerts exist; `NotificationService` is an interface and is not wired to a concrete scheduled platform-delivery implementation |
+| Day / week / month / year calendar views | IN_PROGRESS | Day, week and month pages exist; a week-crossing-month defect is addressed in PR #162; the responsive 12-month year overview is proposed in stacked PR #163 |
+| Organization membership administration | IN_PROGRESS | Create, member listing, join-request and approval flows exist; role-change and soft-removal API/UI work is proposed in PR #164 with owner protection and reactivation tests |
 | Responsive UI | NEEDS REVIEW | Large app shell; mobile/tablet/desktop behavior needs a dedicated screen-by-screen audit |
 | Performance | UNKNOWN | No repository-wide performance baseline or benchmark suite was identified |
 | Documentation | MERGED, ONGOING MAINTENANCE | Central index, implementation status, requirements traceability and API/database guides are merged; continue keeping them synchronized |
@@ -88,15 +88,15 @@ PR #149 hardened email validation. PR #154 separately upgraded the framework and
 
 1. Verify post-merge main CI for PR #144 and retain the November/December regression proving that syncing one selected month never deletes another unselected month.
 2. Verify post-merge `main` CI for PR #154 and retain the Composer audit gate.
-3. Add concrete notification/reminder implementation with permission handling and platform-specific behavior.
+3. Implement and wire concrete scheduled notification delivery for the supported platforms; current in-app shift alerts are not proof of scheduled delivery.
 4. Define and implement historical restoration semantics; current revision timeline is primarily read-only.
 5. Review timeline generation for blank/unassigned cells and removed roster positions.
 6. Complete a dedicated mobile/tablet/desktop UI audit and reduce the oversized app shell through incremental, tested extraction.
-7. Confirm whether day, week and year views are required product behavior; the current monthly roster view is the primary verified view.
-8. Complete organization member role-change/removal workflows if required by the product permission model.
+7. Verify PR #162's complete seven-day week behavior and PR #163's 12-month year overview; both remain unmerged.
+8. Verify PR #164's owner/admin role-change and soft-removal workflows, reactivation path, and access revocation tests.
 9. Add performance baselines for large workbooks, large event sets and long sync histories.
 10. Verify post-merge behavior for client diagnostic log redaction from PR #152.
-11. Current `main` CI was observed successful for 10 workflow runs at `e9ed13f`; GitHub Pages deployment is still SKIPPED because `deploy-pages` only permits `workflow_dispatch`. Fix the trigger and require deployment evidence before declaring release complete.
+11. PR #161 proposes automatic Pages deployment on `main` pushes, exact-SHA deployment metadata, HTTP smoke tests, and a Final Gate that requires the deploy job itself to succeed. The fix remains unmerged.
 12. Keep API and database documentation synchronized with implementation and update this status after each meaningful merge.
 
 ## Completion rules
