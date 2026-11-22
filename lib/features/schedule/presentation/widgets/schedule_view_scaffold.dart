@@ -13,6 +13,8 @@ class ScheduleViewScaffold extends StatelessWidget {
     required this.child,
     super.key,
     this.viewSelector,
+    this.periodHeader,
+    this.showStatistics = true,
     this.appBarActions = const [],
   });
 
@@ -20,6 +22,8 @@ class ScheduleViewScaffold extends StatelessWidget {
   final ScheduleController controller;
   final Widget child;
   final Widget? viewSelector;
+  final Widget? periodHeader;
+  final bool showStatistics;
   final List<Widget> appBarActions;
 
   @override
@@ -55,11 +59,12 @@ class ScheduleViewScaffold extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      MonthHeader(
-                        month: controller.currentMonth,
-                        onPrevious: controller.previousMonth,
-                        onNext: controller.nextMonth,
-                      ),
+                      periodHeader ??
+                          MonthHeader(
+                            month: controller.currentMonth,
+                            onPrevious: controller.previousMonth,
+                            onNext: controller.nextMonth,
+                          ),
                       if (viewSelector != null) ...[
                         const SizedBox(height: 6),
                         Align(
@@ -77,13 +82,14 @@ class ScheduleViewScaffold extends StatelessWidget {
                 icon: Icons.filter_list_rounded,
                 child: ScheduleFilters(controller: controller),
               ),
-              _CollapsibleSection(
-                title: 'Statistics',
-                icon: Icons.analytics_outlined,
-                child: ScheduleStatisticsPanel(
-                  statistics: controller.statistics,
+              if (showStatistics)
+                _CollapsibleSection(
+                  title: 'Statistics',
+                  icon: Icons.analytics_outlined,
+                  child: ScheduleStatisticsPanel(
+                    statistics: controller.statistics,
+                  ),
                 ),
-              ),
               const SizedBox(height: 6),
               Card(
                 clipBehavior: Clip.antiAlias,
