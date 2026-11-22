@@ -38,7 +38,9 @@ class ImportStagingApplier {
       if (entry.action == ImportRowAction.skip) continue;
 
       final date = entry.record.date;
-      if (date == null) {\n        throw StateError('Rows without dates cannot be applied.');\n      }
+      if (date == null) {
+        throw StateError('Rows without dates cannot be applied.');
+      }
       final month = result.month(date) ?? ScheduleMonth.empty(date);
       final day = month.day(date) ?? ScheduleDay(date: date);
       final matches = day.assignments
