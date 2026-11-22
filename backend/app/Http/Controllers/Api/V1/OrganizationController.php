@@ -415,14 +415,19 @@ class OrganizationController
                         ->where('organization_id', $organization->id)
                         ->where('user_id', $userId)
                         ->first(['status']);
-                    if ($membership === null || $membership->status === 'active') {
-                        return response()->json([
-                            'error' => [
-                                'code' => 'already_a_member',
-                                'message' => 'This account already has an approved organization membership.',
-                            ],
-                        ], 409);
-                    }
+                    $inactive = $membership !== null &&
+                        $membership->status !== 'active';
+
+                    return response()->json([
+                        'error' => [
+                            'code' => $inactive
+                                ? 'membership_inactive'
+                                : 'already_a_member',
+                            'message' => $inactive
+                                ? 'An administrator must reactivate this existing membership.'
+                                : 'This account already has an approved organization membership.',
+                        ],
+                    ], 409);
                 }
 
                 $timestamp = now();
