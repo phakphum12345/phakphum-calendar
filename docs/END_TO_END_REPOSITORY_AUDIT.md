@@ -76,7 +76,7 @@ The deployment job receives `github.sha` as its expected SHA and the verificatio
 
 ### PR #165
 
-Ten workflow runs were created for exact head SHA `912b1537c4a3286a3c02b5fe1b0907143581e17d`. At the checkpoint, nine were queued and one (Linux build) was in progress. No PR #165 check is counted as PASS until it completes.
+Ten workflow runs were observed for exact head SHA `912b1537c4a3286a3c02b5fe1b0907143581e17d`. At the latest checkpoint, Build Linux had concluded SUCCESS, three workflows were IN_PROGRESS, and six were QUEUED. No other PR #165 check is counted as PASS until it completes.
 
 ### Historical main SHA
 
