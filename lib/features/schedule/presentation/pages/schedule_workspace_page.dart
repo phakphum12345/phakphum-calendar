@@ -76,6 +76,10 @@ class _ScheduleWorkspacePageState extends State<ScheduleWorkspacePage> {
     );
   }
 
+  ScheduleDay _dayForDate(ScheduleController controller, DateTime date) =>
+      controller.canonicalSchedule.month(date)?.day(date) ??
+      ScheduleDay(date: date);
+
   List<ScheduleDay> _days(ScheduleController controller) {
     if (mode == ScheduleViewMode.month) {
       return controller.schedule.days;
@@ -88,15 +92,15 @@ class _ScheduleWorkspacePageState extends State<ScheduleWorkspacePage> {
         controller.schedule.days.firstOrNull?.date;
     if (anchor == null) return const [];
     if (mode == ScheduleViewMode.day) {
-      final day = controller.schedule.day(anchor);
-      return day == null ? const [] : [day];
+      final day = _dayForDate(controller, anchor);
+      return [day];
     }
 
     final start = anchor.subtract(Duration(days: anchor.weekday - 1));
-    final end = start.add(const Duration(days: 6));
-    return controller.schedule.days
-        .where((day) => !day.date.isBefore(start) && !day.date.isAfter(end))
-        .toList(growable: false);
+    return [
+      for (var offset = 0; offset < 7; offset++)
+        _dayForDate(controller, start.add(Duration(days: offset))),
+    ];
   }
 
   DateTime? _todayInMonth(ScheduleController controller) {
