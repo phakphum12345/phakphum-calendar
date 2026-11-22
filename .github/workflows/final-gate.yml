@@ -64,7 +64,7 @@ jobs:
                 [.workflow_runs[]
                  | select(.head_sha == env.SHA)
                  | select(.head_branch == "main")
-                 | select(.event == "push")]
+                 | select(.event == "push" or .event == "workflow_dispatch")]
                 | sort_by(.run_number, .run_attempt)
                 | last // {}
                 | [(.status // "missing"), (.conclusion // ""), (.html_url // ""), ((.id // 0) | tostring)]
