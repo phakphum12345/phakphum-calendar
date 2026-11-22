@@ -49,8 +49,11 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(home: ScheduleWorkspacePage(controller: controller)),
     );
+    await tester.ensureVisible(find.text('Year'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Year'));
     await tester.pumpAndSettle();
+    expect(find.byType(ScheduleYearOverview), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     tester.view.physicalSize = const Size(1440, 1000);
@@ -78,6 +81,7 @@ void main() {
     await tester.tap(find.byTooltip('Previous year'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('August'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('August'));
     await tester.pumpAndSettle();
 
