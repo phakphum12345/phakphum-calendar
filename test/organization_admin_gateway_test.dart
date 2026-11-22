@@ -88,6 +88,14 @@ void main() {
       userId: '42',
       role: 'manager',
     );
+    await expectLater(
+      gateway.updateMemberRole(
+        organizationId: 'organization-id',
+        userId: '42',
+        role: 'owner',
+      ),
+      throwsArgumentError,
+    );
     await gateway.removeMember(
       organizationId: 'organization-id',
       userId: '42',
