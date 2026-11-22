@@ -232,7 +232,7 @@ class OrganizationJoinRequestApiTest extends TestCase
             'organization_slug' => $organization['slug'],
             'employee_id' => 'EMP-REJOINED',
         ], $this->auth('applicant-token'))
-            ->assertCreated()
+            ->assertOk()
             ->assertJsonPath('data.status', 'pending');
 
         $request = $this->getJson(
