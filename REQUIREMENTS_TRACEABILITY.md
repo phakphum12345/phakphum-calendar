@@ -28,7 +28,7 @@
 | Performance / reliability | sync batching, caching and retry services | No repository-wide benchmark suite identified | UNKNOWN — establish large-workbook, event-volume and memory baselines |
 | Responsive design / mobile UI | Flutter presentation layer | existing widget tests | NEEDS REVIEW — verify compact widths, table visibility and navigation on real target sizes |
 | Automated testing | `test/`, `integration_test/`, `backend/tests/` | 157 Dart test files plus Laravel feature tests | PARTIAL — count is not proof of requirement coverage; map critical flows to E2E tests |
-| CI/CD / build / deployment | `.github/workflows/` | exact-head platform checks and deployment workflows | IN_PROGRESS — PR #159 exact-head: 11 workflows completed successfully; the nested GitHub Pages deploy job was SKIPPED and post-merge `main` evidence remains UNKNOWN; unsigned iOS output is not install-ready |
+| CI/CD / build / deployment | `.github/workflows/` | main SHA `e9ed13f`: 10 workflow runs succeeded; Web build succeeded but nested GitHub Pages deploy job was SKIPPED | IN_PROGRESS — `.github/workflows/web.yml` restricts deployment to `workflow_dispatch`, so normal main pushes do not deploy. Final Gate currently accepts the successful parent Web workflow even when its deployment job is skipped. Production URL and deployed SHA remain unverified; unsigned iOS output is not install-ready |
 | Security / privacy | Google token middleware, Laravel authorization, `SECURITY.md` | security and feature tests | PARTIAL / POST-MERGE VERIFICATION — PR #154 merged the refreshed lockfile; exact-head `composer audit --locked` reports zero advisories and CI runs this gate; PR #151 metadata bounds and PR #152 diagnostic log redaction are merged; local data protection still needs review |
 | Documentation | root docs, `docs/`, `backend/` | this index and traceability map | IN_PROGRESS — repository index and API/database guides are merged; keep docs synchronized with future implementation changes |
 
@@ -41,7 +41,9 @@
 - Member role changes and member removal with audit history.
 - Encrypted local storage for cached roster revisions and failed sync payloads.
 - Performance under large multi-sheet workbooks and long calendar histories.
-- Production deployment and live Google integration behavior after the current code changes.
+- Production deployment and live Google integration behavior after the current code changes. The audited main Web build passed, but the Pages deployment job was SKIPPED; live URL and deployed SHA remain UNKNOWN.
+- Branch protection is UNKNOWN because the connected GitHub integration could not read the protection endpoint (HTTP 403); the rulesets endpoint returned an empty list.
+- PR #160 head `a79af5dab3a5a619fd37138b1764811ba8118626` had 2 successful workflow runs and 7 successful check runs; no reviews or inline review threads were returned.
 - Post-merge `main` workflow execution for merge commit `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5`; the combined commit-status endpoint returned no status entries.
 
 ## Evidence rules
