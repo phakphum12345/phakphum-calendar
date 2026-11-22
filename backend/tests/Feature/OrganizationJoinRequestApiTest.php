@@ -228,6 +228,11 @@ class OrganizationJoinRequestApiTest extends TestCase
             $this->auth('owner-token'),
         )->assertOk()->assertJsonPath('data.status', 'inactive');
 
+        $this->getJson(
+            "/api/v1/organizations/{$organization['id']}/members",
+            $this->auth('applicant-token'),
+        )->assertForbidden();
+
         $this->postJson('/api/v1/organization-join-requests', [
             'organization_slug' => $organization['slug'],
             'employee_id' => 'EMP-REJOINED',
