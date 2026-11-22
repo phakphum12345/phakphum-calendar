@@ -200,7 +200,6 @@ class OrganizationJoinRequestApiTest extends TestCase
         ]);
     }
 
-
     public function test_removed_member_reapplication_preserves_the_approved_request_history(): void
     {
         $organization = $this->createOrganization();
@@ -253,8 +252,6 @@ class OrganizationJoinRequestApiTest extends TestCase
             'status' => 'inactive',
         ]);
     }
-
-
 
     public function test_approval_reactivates_an_inactive_membership_without_duplicate_rows(): void
     {
