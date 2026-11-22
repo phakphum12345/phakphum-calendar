@@ -311,6 +311,90 @@ class _OrganizationMembershipPanelState
     return null;
   }
 
+
+  Future<void> _changeMemberRole(OrganizationMember member) async {
+    final organizationId = _selectedOrganizationId;
+    if (organizationId == null) return;
+    final currentRole = StaffRole.values.firstWhere(
+      (role) => role.name == member.role,
+      orElse: () => StaffRole.staff,
+    );
+    var selectedRole = currentRole;
+    final role = await showDialog<StaffRole>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('เปลี่ยนบทบาทสมาชิก'),
+          content: DropdownButtonFormField<StaffRole>(
+            initialValue: selectedRole,
+            decoration: const InputDecoration(labelText: 'บทบาทใหม่'),
+            items: [
+              for (final value in StaffRole.values)
+                DropdownMenuItem(
+                  value: value,
+                  child: Text(_roleLabel(value)),
+                ),
+            ],
+            onChanged: (value) {
+              if (value != null) {
+                setDialogState(() => selectedRole = value);
+              }
+            },
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('ยกเลิก'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, selectedRole),
+              child: const Text('บันทึกบทบาท'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (role == null || role == currentRole) return;
+    await _run(() async {
+      await widget.gateway.updateMemberRole(
+        organizationId: organizationId,
+        userId: member.userId,
+        role: role.name,
+      );
+      await _refresh();
+    });
+  }
+
+  Future<void> _removeMember(OrganizationMember member) async {
+    final organizationId = _selectedOrganizationId;
+    if (organizationId == null || member.role == 'owner') return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('นำสมาชิกออกจากองค์กร'),
+        content: Text('นำ ${member.name} ออกจากองค์กรหรือไม่?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('ยกเลิก'),
+          ),
+          FilledButton.tonal(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('นำออก'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await _run(() async {
+      await widget.gateway.removeMember(
+        organizationId: organizationId,
+        userId: member.userId,
+      );
+      await _refresh();
+    });
+  }
+
   Widget _buildMembers(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
@@ -328,8 +412,34 @@ class _OrganizationMembershipPanelState
               ),
             ),
             title: Text(member.name),
-            subtitle: Text('${member.email} · ${member.employeeId}'),
-            trailing: Text(_roleLabelForName(member.role)),
+            subtitle: Text(
+              '${member.email} · ${member.employeeId} · '
+              '${_roleLabelForName(member.role)}',
+            ),
+            trailing: _selectedOrganization?.canReviewRequests == true &&
+                    member.role != 'owner'
+                ? PopupMenuButton<String>(
+                    enabled: !_busy && !_loading,
+                    tooltip: 'จัดการสมาชิก',
+                    onSelected: (action) {
+                      if (action == 'role') {
+                        unawaited(_changeMemberRole(member));
+                      } else if (action == 'remove') {
+                        unawaited(_removeMember(member));
+                      }
+                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(
+                        value: 'role',
+                        child: Text('เปลี่ยนบทบาท'),
+                      ),
+                      PopupMenuItem(
+                        value: 'remove',
+                        child: Text('นำออกจากองค์กร'),
+                      ),
+                    ],
+                  )
+                : null,
           ),
     ],
   );
