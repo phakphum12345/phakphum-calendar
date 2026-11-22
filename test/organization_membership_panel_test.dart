@@ -78,9 +78,16 @@ void main() {
     await tester.tap(find.text('Manager').last);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(FilledButton, 'อนุมัติ'));
+    final approveButton = find.widgetWithText(FilledButton, 'อนุมัติ').first;
+    await tester.ensureVisible(approveButton);
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'อนุมัติ').last);
+    await tester.tap(approveButton);
+    await tester.pumpAndSettle();
+
+    final confirmButton = find.widgetWithText(FilledButton, 'อนุมัติ').last;
+    await tester.ensureVisible(confirmButton);
+    await tester.pumpAndSettle();
+    await tester.tap(confirmButton);
     await tester.pumpAndSettle();
 
     expect(gateway.approvedRole, 'manager');
