@@ -12,8 +12,8 @@
 |---|---|
 | Default branch | `main` |
 | Main SHA | `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5` |
-| Open issues | 0 at snapshot time |
-| Open PRs | 0 at snapshot time |
+| Open issues | 0 (verified 2026-11-22) |
+| Open PRs | 1 — PR #160, the documentation status refresh (verified 2026-11-22) |
 | Test files | 157 Dart test files |
 | GitHub workflow files | 13 |
 | Markdown files | 118 |
