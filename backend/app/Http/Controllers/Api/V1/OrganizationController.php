@@ -148,11 +148,11 @@ class OrganizationController
         }
 
         try {
-            $reactivated = DB::transaction(function () use (
+            $result = DB::transaction(function () use (
                 $organizationId,
                 $user,
                 $validated,
-            ): bool {
+            ): array {
                 $existing = DB::table('organization_memberships')
                     ->where('organization_id', $organizationId)
                     ->where('user_id', $user->id)
@@ -161,7 +161,7 @@ class OrganizationController
 
                 if ($existing !== null) {
                     if ($existing->status === 'active') {
-                        return false;
+                        return ['conflict' => true, 'reactivated' => false];
                     }
 
                     DB::table('organization_memberships')
@@ -173,7 +173,7 @@ class OrganizationController
                             'updated_at' => now(),
                         ]);
 
-                    return true;
+                    return ['conflict' => false, 'reactivated' => true];
                 }
 
                 DB::table('organization_memberships')->insert([
@@ -186,34 +186,17 @@ class OrganizationController
                     'updated_at' => now(),
                 ]);
 
-                return false;
+                return ['conflict' => false, 'reactivated' => false];
             });
-            if (! $reactivated) {
-                $existing = DB::table('organization_memberships')
-                    ->where('organization_id', $organizationId)
-                    ->where('user_id', $user->id)
-                    ->first(['status']);
-                if ($existing?->status === 'active') {
-                    $createdAt = DB::table('organization_memberships')
-                        ->where('organization_id', $organizationId)
-                        ->where('user_id', $user->id)
-                        ->value('created_at');
-                    if ($createdAt !== null) {
-                        // Existing active memberships are conflicts; newly inserted rows are not.
-                        $createdAtValue = $createdAt instanceof DateTimeInterface
-                            ? $createdAt->format('Y-m-d H:i:s')
-                            : (string) $createdAt;
-                        if ($createdAtValue !== now()->format('Y-m-d H:i:s')) {
-                            return response()->json([
-                                'error' => [
-                                    'code' => 'membership_conflict',
-                                    'message' => 'This account or employee identity is already assigned in the organization.',
-                                ],
-                            ], 409);
-                        }
-                    }
-                }
+            if ($result['conflict']) {
+                return response()->json([
+                    'error' => [
+                        'code' => 'membership_conflict',
+                        'message' => 'This account or employee identity is already assigned in the organization.',
+                    ],
+                ], 409);
             }
+            $reactivated = $result['reactivated'];
         } catch (QueryException $exception) {
             if (! $this->isUniqueConstraintViolation($exception)) {
                 throw $exception;
