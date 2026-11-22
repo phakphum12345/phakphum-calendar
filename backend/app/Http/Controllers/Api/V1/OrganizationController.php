@@ -148,15 +148,72 @@ class OrganizationController
         }
 
         try {
-            DB::table('organization_memberships')->insert([
-                'organization_id' => $organizationId,
-                'user_id' => $user->id,
-                'employee_id' => $validated['employee_id'],
-                'role' => $validated['role'],
-                'status' => 'active',
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]);
+            $reactivated = DB::transaction(function () use (
+                $organizationId,
+                $user,
+                $validated,
+            ): bool {
+                $existing = DB::table('organization_memberships')
+                    ->where('organization_id', $organizationId)
+                    ->where('user_id', $user->id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($existing !== null) {
+                    if ($existing->status === 'active') {
+                        return false;
+                    }
+
+                    DB::table('organization_memberships')
+                        ->where('id', $existing->id)
+                        ->update([
+                            'employee_id' => $validated['employee_id'],
+                            'role' => $validated['role'],
+                            'status' => 'active',
+                            'updated_at' => now(),
+                        ]);
+
+                    return true;
+                }
+
+                DB::table('organization_memberships')->insert([
+                    'organization_id' => $organizationId,
+                    'user_id' => $user->id,
+                    'employee_id' => $validated['employee_id'],
+                    'role' => $validated['role'],
+                    'status' => 'active',
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                return false;
+            });
+            if (! $reactivated) {
+                $existing = DB::table('organization_memberships')
+                    ->where('organization_id', $organizationId)
+                    ->where('user_id', $user->id)
+                    ->first(['status']);
+                if ($existing?->status === 'active') {
+                    $createdAt = DB::table('organization_memberships')
+                        ->where('organization_id', $organizationId)
+                        ->where('user_id', $user->id)
+                        ->value('created_at');
+                    if ($createdAt !== null) {
+                        // Existing active memberships are conflicts; newly inserted rows are not.
+                        $createdAtValue = $createdAt instanceof DateTimeInterface
+                            ? $createdAt->format('Y-m-d H:i:s')
+                            : (string) $createdAt;
+                        if ($createdAtValue !== now()->format('Y-m-d H:i:s')) {
+                            return response()->json([
+                                'error' => [
+                                    'code' => 'membership_conflict',
+                                    'message' => 'This account or employee identity is already assigned in the organization.',
+                                ],
+                            ], 409);
+                        }
+                    }
+                }
+            }
         } catch (QueryException $exception) {
             if (! $this->isUniqueConstraintViolation($exception)) {
                 throw $exception;
@@ -178,7 +235,121 @@ class OrganizationController
                 'role' => $validated['role'],
                 'status' => 'active',
             ],
-        ], 201);
+        ], $reactivated ? 200 : 201);
+    }
+
+
+    public function updateMemberRole(
+        Request $request,
+        string $organizationId,
+        string $userId,
+    ): JsonResponse {
+        $this->requireManager($request, $organizationId);
+        $validated = $request->validate([
+            'role' => ['required', 'in:staff,incharge,manager,admin'],
+        ]);
+
+        $result = DB::transaction(function () use (
+            $organizationId,
+            $userId,
+            $validated,
+        ): array {
+            $member = DB::table('organization_memberships')
+                ->where('organization_id', $organizationId)
+                ->where('user_id', $userId)
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->first();
+
+            if ($member === null) {
+                return ['error' => 'member_not_found'];
+            }
+            if ($member->role === 'owner') {
+                return ['error' => 'owner_membership_protected'];
+            }
+
+            DB::table('organization_memberships')
+                ->where('id', $member->id)
+                ->update([
+                    'role' => $validated['role'],
+                    'updated_at' => now(),
+                ]);
+
+            return [
+                'user_id' => (string) $member->user_id,
+                'role' => $validated['role'],
+                'status' => 'active',
+            ];
+        });
+
+        if (isset($result['error'])) {
+            $notFound = $result['error'] === 'member_not_found';
+
+            return response()->json([
+                'error' => [
+                    'code' => $result['error'],
+                    'message' => $notFound
+                        ? 'The active organization member was not found.'
+                        : 'The organization owner role cannot be changed.',
+                ],
+            ], $notFound ? 404 : 409);
+        }
+
+        return response()->json(['data' => $result]);
+    }
+
+    public function removeMember(
+        Request $request,
+        string $organizationId,
+        string $userId,
+    ): JsonResponse {
+        $this->requireManager($request, $organizationId);
+
+        $result = DB::transaction(function () use (
+            $organizationId,
+            $userId,
+        ): array {
+            $member = DB::table('organization_memberships')
+                ->where('organization_id', $organizationId)
+                ->where('user_id', $userId)
+                ->where('status', 'active')
+                ->lockForUpdate()
+                ->first();
+
+            if ($member === null) {
+                return ['error' => 'member_not_found'];
+            }
+            if ($member->role === 'owner') {
+                return ['error' => 'owner_membership_protected'];
+            }
+
+            DB::table('organization_memberships')
+                ->where('id', $member->id)
+                ->update([
+                    'status' => 'inactive',
+                    'updated_at' => now(),
+                ]);
+
+            return [
+                'user_id' => (string) $member->user_id,
+                'status' => 'inactive',
+            ];
+        });
+
+        if (isset($result['error'])) {
+            $notFound = $result['error'] === 'member_not_found';
+
+            return response()->json([
+                'error' => [
+                    'code' => $result['error'],
+                    'message' => $notFound
+                        ? 'The active organization member was not found.'
+                        : 'The organization owner membership cannot be removed.',
+                ],
+            ], $notFound ? 404 : 409);
+        }
+
+        return response()->json(['data' => $result]);
     }
 
     public function myJoinRequests(Request $request): JsonResponse
@@ -257,12 +428,18 @@ class OrganizationController
                 }
 
                 if ($existing !== null && $existing->status === 'approved') {
-                    return response()->json([
-                        'error' => [
-                            'code' => 'already_a_member',
-                            'message' => 'This account already has an approved organization membership.',
-                        ],
-                    ], 409);
+                    $membership = DB::table('organization_memberships')
+                        ->where('organization_id', $organization->id)
+                        ->where('user_id', $userId)
+                        ->first(['status']);
+                    if ($membership === null || $membership->status === 'active') {
+                        return response()->json([
+                            'error' => [
+                                'code' => 'already_a_member',
+                                'message' => 'This account already has an approved organization membership.',
+                            ],
+                        ], 409);
+                    }
                 }
 
                 $timestamp = now();
@@ -366,15 +543,36 @@ class OrganizationController
                 }
 
                 $timestamp = now();
-                DB::table('organization_memberships')->insert([
-                    'organization_id' => $organizationId,
-                    'user_id' => $application->user_id,
-                    'employee_id' => $application->employee_id,
-                    'role' => $validated['role'],
-                    'status' => 'active',
-                    'created_at' => $timestamp,
-                    'updated_at' => $timestamp,
-                ]);
+                $membership = DB::table('organization_memberships')
+                    ->where('organization_id', $organizationId)
+                    ->where('user_id', $application->user_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($membership !== null && $membership->status === 'active') {
+                    abort(409, 'This account already has an active organization membership.');
+                }
+
+                if ($membership === null) {
+                    DB::table('organization_memberships')->insert([
+                        'organization_id' => $organizationId,
+                        'user_id' => $application->user_id,
+                        'employee_id' => $application->employee_id,
+                        'role' => $validated['role'],
+                        'status' => 'active',
+                        'created_at' => $timestamp,
+                        'updated_at' => $timestamp,
+                    ]);
+                } else {
+                    DB::table('organization_memberships')
+                        ->where('id', $membership->id)
+                        ->update([
+                            'employee_id' => $application->employee_id,
+                            'role' => $validated['role'],
+                            'status' => 'active',
+                            'updated_at' => $timestamp,
+                        ]);
+                }
 
                 DB::table('organization_join_requests')
                     ->where('id', $requestId)
