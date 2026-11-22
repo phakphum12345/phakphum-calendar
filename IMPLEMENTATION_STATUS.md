@@ -88,8 +88,8 @@ PR #149 hardened email validation. PR #154 separately upgraded the framework and
 
 1. Verify post-merge main CI for PR #144 and retain the November/December regression proving that syncing one selected month never deletes another unselected month.
 2. Verify post-merge `main` CI for PR #154 and retain the Composer audit gate.
-3. Implement and wire concrete scheduled notification delivery for the supported platforms; current in-app shift alerts are not proof of scheduled delivery.
-4. Define and implement historical restoration semantics; current revision timeline is primarily read-only.
+3. Decide supported notification platforms and whether reminders must fire while the app is closed, then implement and wire concrete delivery with permission handling; current in-app shift alerts are not scheduled delivery.
+4. Define and implement historical restoration semantics. `GoogleAuthService.readAccessScopes` currently requests Drive read-only scopes; restoring to Drive requires an explicitly approved OAuth write-scope expansion and a safe preview/confirmation flow.
 5. Review timeline generation for blank/unassigned cells and removed roster positions.
 6. Complete a dedicated mobile/tablet/desktop UI audit and reduce the oversized app shell through incremental, tested extraction.
 7. Verify PR #162's complete seven-day week behavior and PR #163's 12-month year overview; both remain unmerged.
