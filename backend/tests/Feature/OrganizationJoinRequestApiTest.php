@@ -201,7 +201,7 @@ class OrganizationJoinRequestApiTest extends TestCase
     }
 
 
-    public function test_removed_member_can_request_and_be_approved_again(): void
+    public function test_removed_member_reapplication_preserves_the_approved_request_history(): void
     {
         $organization = $this->createOrganization();
 
@@ -237,28 +237,23 @@ class OrganizationJoinRequestApiTest extends TestCase
             'organization_slug' => $organization['slug'],
             'employee_id' => 'EMP-REJOINED',
         ], $this->auth('applicant-token'))
-            ->assertOk()
-            ->assertJsonPath('data.status', 'pending');
+            ->assertConflict()
+            ->assertJsonPath('error.code', 'membership_inactive');
 
-        $request = $this->getJson(
-            "/api/v1/organizations/{$organization['id']}/join-requests",
-            $this->auth('owner-token'),
-        )->assertOk()->json('data.0');
-
-        $this->postJson(
-            "/api/v1/organizations/{$organization['id']}/join-requests/{$request['id']}/approve",
-            ['role' => 'incharge'],
-            $this->auth('owner-token'),
-        )->assertOk()->assertJsonPath('data.role', 'incharge');
-
+        $this->assertDatabaseHas('organization_join_requests', [
+            'id' => $request['id'],
+            'status' => 'approved',
+            'approved_role' => 'staff',
+        ]);
         $this->assertDatabaseHas('organization_memberships', [
             'organization_id' => $organization['id'],
             'user_id' => $applicantId,
-            'employee_id' => 'EMP-REJOINED',
-            'role' => 'incharge',
-            'status' => 'active',
+            'employee_id' => 'EMP-NEW',
+            'role' => 'staff',
+            'status' => 'inactive',
         ]);
     }
+
 
     private function createOrganization(): array
     {
