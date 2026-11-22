@@ -18,7 +18,7 @@ The Pages settings endpoint was not accessible through the connected GitHub inte
 | Main SHA | `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5` |
 | Open PRs | 5 — [#160](https://github.com/phakphum12345/phakphum-calendar/pull/160), [#161](https://github.com/phakphum12345/phakphum-calendar/pull/161), [#162](https://github.com/phakphum12345/phakphum-calendar/pull/162), [#163](https://github.com/phakphum12345/phakphum-calendar/pull/163), [#164](https://github.com/phakphum12345/phakphum-calendar/pull/164) |
 | Open issues | 0 |
-| Workflow files | 19 under `.github/workflows/` |
+| Workflow inventory | 18 YAML workflow files plus `README.md` under `.github/workflows/` |
 | Repository rulesets | Empty list returned |
 | Branch protection | UNKNOWN — branch-protection API returned HTTP 403 (resource not accessible by integration) |
 
