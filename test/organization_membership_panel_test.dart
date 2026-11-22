@@ -23,6 +23,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('Owner'), findsOneWidget);
+    expect(find.byTooltip('จัดการสมาชิก'), findsOneWidget);
     await tester.tap(find.byTooltip('จัดการสมาชิก'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('เปลี่ยนบทบาท'));
@@ -45,6 +47,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(gateway.removedMemberId, 'member-id');
+    expect(find.text('Owner'), findsOneWidget);
+    expect(find.byTooltip('จัดการสมาชิก'), findsNothing);
   });
 
   testWidgets('admin reviews profile and approves with selected role', (
@@ -96,6 +100,14 @@ class _FakeOrganizationAdminGateway implements OrganizationAdminGateway {
       email: 'member@example.com',
       employeeId: 'EMP-MEMBER',
       role: 'staff',
+      status: 'active',
+    ),
+    OrganizationMember(
+      userId: 'owner-id',
+      name: 'Owner',
+      email: 'owner@example.com',
+      employeeId: 'EMP-OWNER',
+      role: 'owner',
       status: 'active',
     ),
   ];
