@@ -25,27 +25,28 @@ class ScheduleYearOverview extends StatelessWidget {
             : constraints.maxWidth >= 600
                 ? 2
                 : 1;
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: columns,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-            childAspectRatio: columns == 1 ? 1.05 : 0.95,
-          ),
-          itemCount: 12,
-          itemBuilder: (context, index) {
+        const spacing = 8.0;
+        final cardWidth =
+            (constraints.maxWidth - spacing * (columns - 1)) / columns;
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: List<Widget>.generate(12, (index) {
             final monthDate = DateTime(year, index + 1);
             final month =
                 controller.canonicalSchedule.month(monthDate) ??
                 ScheduleMonth.empty(monthDate);
-            return _YearMonthCard(
-              month: month,
-              controller: controller,
-              onTap: () => onMonthSelected(monthDate),
+            return SizedBox(
+              width: cardWidth,
+              height: 390,
+              child: _YearMonthCard(
+                month: month,
+                controller: controller,
+                onTap: () => onMonthSelected(monthDate),
+              ),
             );
-          },
+          }),
         );
       },
     );
