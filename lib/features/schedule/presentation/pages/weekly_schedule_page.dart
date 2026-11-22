@@ -25,7 +25,14 @@ class WeeklySchedulePage extends StatelessWidget {
             assignmentsFor: controller.assignmentsFor,
             showMonthPadding: false,
             selectedDate: controller.selectedDay,
-            onDaySelected: (day) => controller.selectDay(day.date),
+            onDaySelected: (day) {
+              final date = day.date;
+              if (controller.currentMonth.year != date.year ||
+                  controller.currentMonth.month != date.month) {
+                controller.loadMonth(date);
+              }
+              controller.selectDay(date);
+            },
           ),
         );
       },
