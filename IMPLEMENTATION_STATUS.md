@@ -15,7 +15,7 @@
 | Open issues | 0 (verified 2026-11-22) |
 | Open PRs | 5 — PRs #160–#164 are open and not merged; #163 is stacked on #162 |
 | Test files | 157 Dart test files |
-| GitHub workflow files | 19 |
+| GitHub workflow YAML files | 18 (plus `README.md` in the directory) |
 | Markdown files | 118 |
 | Main Flutter shell | `lib/ui/app_shell.dart` — 5,717 lines |
 | Main application controller | `lib/controller/app_controller.dart` — 3,162 lines |
