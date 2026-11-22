@@ -45,6 +45,7 @@ The timeline services and shift documents above are the current implementation r
 
 ## Backend API and database
 
+- [Organization member management](docs/ORGANIZATION_MEMBER_MANAGEMENT.md)
 - [Backend README](backend/README.md)
 - [Backend security notes](SECURITY.md)
 - [API documentation](backend/API_DOCUMENTATION.md)

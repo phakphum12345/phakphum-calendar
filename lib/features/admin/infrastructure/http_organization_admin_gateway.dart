@@ -35,6 +35,33 @@ class HttpOrganizationAdminGateway implements OrganizationAdminGateway {
   }
 
   @override
+  Future<void> updateMemberRole({
+    required String organizationId,
+    required String userId,
+    required String role,
+  }) async {
+    if (!_roles.contains(role)) {
+      throw ArgumentError.value(role, 'role', 'Unsupported organization role');
+    }
+    await _request(
+      'PATCH',
+      ['organizations', organizationId, 'members', userId],
+      body: {'role': role},
+    );
+  }
+
+  @override
+  Future<void> removeMember({
+    required String organizationId,
+    required String userId,
+  }) async {
+    await _request(
+      'DELETE',
+      ['organizations', organizationId, 'members', userId],
+    );
+  }
+
+  @override
   Future<List<OrganizationJoinRequest>> pendingRequests(
     String organizationId,
   ) async {

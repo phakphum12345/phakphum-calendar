@@ -33,6 +33,14 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/organizations/{organizationId}/members', [OrganizationController::class, 'addMember'])
             ->whereUuid('organizationId')
             ->name('api.v1.organizations.members.store');
+        Route::patch('/organizations/{organizationId}/members/{userId}', [OrganizationController::class, 'updateMemberRole'])
+            ->whereUuid('organizationId')
+            ->whereNumber('userId')
+            ->name('api.v1.organizations.members.update');
+        Route::delete('/organizations/{organizationId}/members/{userId}', [OrganizationController::class, 'removeMember'])
+            ->whereUuid('organizationId')
+            ->whereNumber('userId')
+            ->name('api.v1.organizations.members.destroy');
         Route::get('/organizations/{organizationId}/join-requests', [OrganizationController::class, 'joinRequests'])
             ->whereUuid('organizationId')
             ->name('api.v1.organizations.join-requests.index');

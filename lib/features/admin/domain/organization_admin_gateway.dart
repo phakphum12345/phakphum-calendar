@@ -70,6 +70,17 @@ abstract interface class OrganizationAdminGateway {
 
   Future<List<OrganizationMember>> members(String organizationId);
 
+  Future<void> updateMemberRole({
+    required String organizationId,
+    required String userId,
+    required String role,
+  });
+
+  Future<void> removeMember({
+    required String organizationId,
+    required String userId,
+  });
+
   Future<List<OrganizationJoinRequest>> pendingRequests(
     String organizationId,
   );
