@@ -48,6 +48,51 @@ void main() {
     expect(days[1].assignments, hasLength(1));
   });
 
+
+  testWidgets('selecting an adjacent-month day updates the workspace month', (
+    tester,
+  ) async {
+    final controller = _controller();
+    addTearDown(controller.dispose);
+    controller
+      ..loadMonth(DateTime(2026, 7))
+      ..selectDay(DateTime(2026, 7, 31));
+
+    await tester.pumpWidget(
+      MaterialApp(home: ScheduleWorkspacePage(controller: controller)),
+    );
+    await tester.tap(find.text('Week'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('1'));
+    await tester.pumpAndSettle();
+
+    final days = tester.widget<ScheduleGrid>(find.byType(ScheduleGrid)).days;
+    expect(controller.currentMonth, DateTime(2026, 8));
+    expect(controller.selectedDay, DateTime(2026, 8, 1));
+    expect(days, hasLength(1));
+    expect(days.single.date, DateTime(2026, 8, 1));
+  });
+
+  testWidgets('selecting an adjacent-month day in weekly page changes month', (
+    tester,
+  ) async {
+    final controller = _controller();
+    addTearDown(controller.dispose);
+    controller
+      ..loadMonth(DateTime(2026, 7))
+      ..selectDay(DateTime(2026, 7, 31));
+
+    await tester.pumpWidget(
+      MaterialApp(home: WeeklySchedulePage(controller: controller)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('1'));
+    await tester.pumpAndSettle();
+
+    expect(controller.currentMonth, DateTime(2026, 8));
+    expect(controller.selectedDay, DateTime(2026, 8, 1));
+  });
+
   testWidgets('workspace week mode includes next-month assignments', (
     tester,
   ) async {
