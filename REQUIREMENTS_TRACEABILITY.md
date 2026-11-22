@@ -34,10 +34,10 @@
 
 ## Explicitly unverified behaviors
 
-- A complete restore workflow for a historical roster assignment.
+- A complete restore workflow for a historical roster assignment. Google OAuth currently uses Drive read-only scopes; a restore that writes back to Drive requires explicit approval to expand OAuth scopes.
 - Whether blank/unassigned cells and removed roster positions are represented as timeline versions.
 - A year overview is proposed in PR #163; it remains unmerged. PR #162's cross-month weekly view fix also remains unmerged.
-- Concrete notification scheduling and cancellation on supported platforms; the current notification interface is not a delivery implementation.
+- Concrete notification scheduling and cancellation on supported platforms; the current notification interface is not a delivery implementation. The target platforms and background-delivery requirement still need to be decided.
 - Member role changes and soft removal are proposed in PR #164; detailed membership audit history remains unimplemented.
 - Encrypted local storage for cached roster revisions and failed sync payloads.
 - Performance under large multi-sheet workbooks and long calendar histories.
