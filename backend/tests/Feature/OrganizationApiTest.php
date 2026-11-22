@@ -176,7 +176,6 @@ class OrganizationApiTest extends TestCase
             ->assertJsonPath('error.code', 'account_not_registered');
     }
 
-
     public function test_owner_can_change_member_role_remove_and_reactivate_without_deleting_membership(): void
     {
         $this->getJson('/api/v1/me', $this->auth('owner-token'))->assertOk();
