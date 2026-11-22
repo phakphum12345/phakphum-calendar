@@ -1129,7 +1129,9 @@ class AppController extends ChangeNotifier implements ControllerState {
                 final message =
                     'ย้ายคลัง Timeline จากอีเมลไปยังรหัสบัญชี Google ไม่สำเร็จ: '
                     '$migrationError';
-                if (generation == _timelineLoadGeneration) {\n                  timelineWarning = message;\n                }
+                if (generation == _timelineLoadGeneration) {
+                  timelineWarning = message;
+                }
                 unawaited(_addAudit(
                   'sheet.timeline.archive.migration.failed',
                   message,
@@ -1140,7 +1142,9 @@ class AppController extends ChangeNotifier implements ControllerState {
           } on Object catch (archiveReadError) {
             final archiveWarning =
                 'อ่านคลัง Timeline ในเครื่องไม่สำเร็จ: $archiveReadError';
-            if (generation == _timelineLoadGeneration) {\n              timelineWarning = archiveWarning;\n            }
+            if (generation == _timelineLoadGeneration) {
+              timelineWarning = archiveWarning;
+            }
             await _addAudit(
               'sheet.timeline.archive.read.failed',
               archiveWarning,
@@ -1865,7 +1869,9 @@ class AppController extends ChangeNotifier implements ControllerState {
               .map((item) => item.message).join('\n') ?? 'ตารางเวรไม่ผ่านการตรวจสอบ');
         }
         final preparation = workflow.schedulePreparation;
-        if (preparation == null) {\n          throw StateError('ไม่พบแผน Calendar ที่ผ่านการตรวจสอบ');\n        }
+        if (preparation == null) {
+          throw StateError('ไม่พบแผน Calendar ที่ผ่านการตรวจสอบ');
+        }
         final plannedIds = {
           ...preparation.existingEventIdsBySyncId.keys,
           ...preparation.plan.inserts.map((item) => item.syncId),
@@ -1912,7 +1918,9 @@ class AppController extends ChangeNotifier implements ControllerState {
     required bool userConfirmed,
   }) {
     return _run('ยืนยันและซิงก์ Calendar สำหรับธุรกรรมเวร', () async {
-      if (!userConfirmed) {\n        throw StateError('ต้องยืนยันจากหน้าตัวอย่างก่อนบันทึก Calendar');\n      }
+      if (!userConfirmed) {
+        throw StateError('ต้องยืนยันจากหน้าตัวอย่างก่อนบันทึก Calendar');
+      }
       final pending = _pendingShiftTransactionCalendarSync;
       final currentTransactions = _shiftTransactions.where(
         (item) => item.id == transaction.id,
@@ -2739,7 +2747,9 @@ class AppController extends ChangeNotifier implements ControllerState {
     final source = snapshots.where((snapshot) => snapshot.title == shift.sheetTitle).firstOrNull;
     final sheetId = source?.sheetId;
     final spreadsheetId = source?.spreadsheetId;
-    if (sheetId == null || spreadsheetId == null || shift.cell.isEmpty) {\n      return shift;\n    }
+    if (sheetId == null || spreadsheetId == null || shift.cell.isEmpty) {
+      return shift;
+    }
     return shift.withSourceIdentity(
       spreadsheetId: spreadsheetId,
       sheetId: sheetId,
