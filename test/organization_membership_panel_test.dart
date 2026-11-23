@@ -36,6 +36,12 @@ void main() {
       required String currentOrganizationId,
       required String name,
     }) async {
+      // ListView lazily disposes children that are far outside the viewport.
+      // The audit heading is below the selector, so return to the top before
+      // trying to find and interact with the organization dropdown.
+      await tester.drag(find.byType(ListView), const Offset(0, 1000));
+      await tester.pumpAndSettle();
+
       final organizationField = find.byWidgetPredicate(
         (widget) =>
             widget is DropdownButtonFormField<String> &&
