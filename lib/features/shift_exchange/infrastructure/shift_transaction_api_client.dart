@@ -182,9 +182,17 @@ class ShiftTransactionApiClient {
     final trimmed = value.trim();
     if (trimmed.isEmpty) return null;
     final parsed = Uri.tryParse(trimmed);
-    if (parsed == null || !parsed.hasScheme || parsed.host.isEmpty ||
-        (parsed.scheme != 'https' && parsed.scheme != 'http')) {
+    if (parsed == null || !parsed.hasScheme || parsed.host.isEmpty) {
       throw ArgumentError.value(value, 'baseUrl', 'Must be an absolute HTTP(S) URL.');
+    }
+    final localHttp = parsed.scheme == 'http' &&
+        {'localhost', '127.0.0.1', '::1'}.contains(parsed.host);
+    if (parsed.scheme != 'https' && !localHttp) {
+      throw ArgumentError.value(
+        value,
+        'baseUrl',
+        'Must use HTTPS except for loopback local development.',
+      );
     }
     return parsed.replace(path: parsed.path.endsWith('/') ? parsed.path : '${parsed.path}/');
   }
