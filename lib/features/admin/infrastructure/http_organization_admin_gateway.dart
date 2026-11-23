@@ -310,86 +310,11 @@ class HttpOrganizationAdminGateway implements OrganizationAdminGateway {
     final actor = _map(item['actor']);
     final subject = _map(item['subject']);
     final rawCreatedAt = _string(item, 'created_at').trim();
-    final hasTimezone = RegExp(
-      r'(?:Z|[+-]\\d{2}:\\d{2})
-    return OrganizationMembershipAuditEvent(
-      id: _integer(item, 'id'),
-      action: _string(item, 'action'),
-      actorUserId: _string(actor, 'user_id'),
-      actorName: _optionalString(actor, 'name') ?? 'ไม่ทราบชื่อ',
-      subjectUserId: _string(subject, 'user_id'),
-      subjectName: _optionalString(subject, 'name') ?? 'ไม่ทราบชื่อ',
-      before: _optionalMap(item, 'before'),
-      after: _optionalMap(item, 'after'),
-      createdAt: createdAt,
-    );
-  }
-
-  OrganizationJoinRequest _joinRequest(Object? value) {
-    final item = _map(value);
-    final createdAt = item['created_at'];
-    return OrganizationJoinRequest(
-      id: _integer(item, 'id'),
-      name: _optionalString(item, 'name'),
-      email: _optionalString(item, 'email'),
-      employeeId: _string(item, 'employee_id'),
-      status: _string(item, 'status'),
-      organizationId: _optionalString(item, 'organization_id'),
-      organizationName: _optionalString(item, 'organization_name'),
-      organizationSlug: _optionalString(item, 'organization_slug'),
-      approvedRole: _optionalString(item, 'approved_role'),
-      createdAt: createdAt is String ? DateTime.tryParse(createdAt) : null,
-    );
-  }
-
-  String _string(Map<String, dynamic> item, String key) {
-    final value = item[key];
-    if (value is! String || value.isEmpty) {
-      throw FormatException('Organization API field "$key" is invalid.');
-    }
-    return value;
-  }
-
-  String? _optionalString(Map<String, dynamic> item, String key) {
-    final value = item[key];
-    if (value == null) return null;
-    if (value is! String) {
-      throw FormatException('Organization API field "$key" is invalid.');
-    }
-    return value;
-  }
-
-  Map<String, Object?>? _optionalMap(
-    Map<String, dynamic> item,
-    String key,
-  ) {
-    final value = item[key];
-    if (value == null) return null;
-    if (value is! Map) {
-      throw FormatException('Organization API field "$key" is invalid.');
-    }
-    return Map<String, Object?>.from(value);
-  }
-
-  int _integer(Map<String, dynamic> item, String key) {
-    final value = item[key];
-    if (value is int) return value;
-    if (value is String) {
-      final parsed = int.tryParse(value);
-      if (parsed != null) return parsed;
-    }
-    throw FormatException('Organization API field "$key" is invalid.');
-  }
-
-  @override
-  void close() => _client.close();
-}
-,
-      caseSensitive: false,
-    ).hasMatch(rawCreatedAt);
-    final createdAt = DateTime.tryParse(
-      hasTimezone ? rawCreatedAt : '${rawCreatedAt}Z',
-    );
+    final hasTimezone = rawCreatedAt.endsWith('Z') ||
+        rawCreatedAt.endsWith('z') ||
+        RegExp(r'[+-]\\d{2}:\\d{2}$').hasMatch(rawCreatedAt);
+    final createdAtInput = hasTimezone ? rawCreatedAt : rawCreatedAt + 'Z';
+    final createdAt = DateTime.tryParse(createdAtInput);
     if (createdAt == null) {
       throw const FormatException(
         'Organization membership audit timestamp is invalid.',
