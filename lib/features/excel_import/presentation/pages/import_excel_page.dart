@@ -6,6 +6,7 @@ import '../../../../core/google/authorized_google_client_factory.dart';
 import '../../../../core/result/result.dart';
 import '../../../../core/utils/excel_column_name.dart';
 import '../../../../domain/entities/schedule.dart';
+import '../../../../domain/repositories/employee_repository.dart';
 import '../../../../l10n/l10n.dart';
 import '../../../../services/google_auth_service.dart';
 import '../../../../services/drive_ownership_service.dart';
@@ -13,6 +14,8 @@ import '../../../../services/sheets_service.dart';
 import '../../../google_sheets/infrastructure/google_sheets_gateway.dart';
 import '../../../schedule/data/imported_schedule_adapter.dart';
 import '../../../schedule/presentation/controllers/schedule_controller.dart';
+import '../../../shift_templates/application/shift_template_controller.dart';
+import '../../../workflow/application/shift_calendar_workflow_controller.dart';
 import '../../data/excel_reader_service.dart';
 import '../../data/google_sheets_import_data_source.dart';
 import '../../data/spreadsheet_ownership_verifier.dart';
@@ -44,7 +47,11 @@ class ImportExcelPage extends StatefulWidget {
     this.googleSheetsImportDataSourceFactory,
     this.importedScheduleFactory,
     this.scheduleControllerFactory,
+    this.workflowControllerFactory,
     this.scheduleSaver,
+    this.existingScheduleLoader,
+    this.employeeRepository,
+    this.shiftTemplateControllerFactory,
     super.key,
   });
 
@@ -61,7 +68,12 @@ class ImportExcelPage extends StatefulWidget {
   googleSheetsImportDataSourceFactory;
   final Schedule Function(Iterable<ShiftRecord>)? importedScheduleFactory;
   final ScheduleController Function(Schedule)? scheduleControllerFactory;
+  final Future<ShiftCalendarWorkflowController> Function()?
+  workflowControllerFactory;
   final Future<Result<Schedule>> Function(Schedule)? scheduleSaver;
+  final Future<Result<Schedule?>> Function()? existingScheduleLoader;
+  final EmployeeRepository? employeeRepository;
+  final ShiftTemplateController Function()? shiftTemplateControllerFactory;
 
   @override
   State<ImportExcelPage> createState() => _ImportExcelPageState();
@@ -157,6 +169,21 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
                           worksheet: controller.selectedWorksheet!,
                           rows: controller.rows,
                         ),
+                        const SizedBox(height: 12),
+                        if (controller.completed &&
+                            controller.importSummary != null)
+                          Card(
+                            child: ListTile(
+                              leading: const Icon(Icons.auto_awesome),
+                              title: const Text('วิเคราะห์และสร้างข้อมูลอัตโนมัติแล้ว'),
+                              subtitle: Text(
+                                'สร้างได้ ${controller.importSummary!.importedRows} รายการ'
+                                ' • ข้าม ${controller.importSummary!.skippedRows}'
+                                ' • ข้อผิดพลาด ${controller.importSummary!.errorCount}'
+                                ' • คำเตือน ${controller.importSummary!.warningCount}',
+                              ),
+                            ),
+                          ),
                         const SizedBox(height: 16),
                         FilledButton.icon(
                           onPressed: _openColumnMapping,
@@ -285,6 +312,10 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
         growable: false,
       ),
     );
+    mappingController.applySuggestedMapping(controller.suggestMapping());
+    if (mappingController.isValid) {
+      await controller.importRows(mappingController.mapping);
+    }
   }
 
   Future<void> _openColumnMapping() async {
@@ -306,7 +337,6 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
     final schedule =
         widget.importedScheduleFactory?.call(records) ??
         const ImportedScheduleAdapter().createSchedule(records);
-    final persistenceResult = await widget.scheduleSaver?.call(schedule);
     if (!mounted) return;
     await Navigator.of(context).push<void>(
       MaterialPageRoute(
@@ -315,7 +345,13 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
           records: records,
           schedule: schedule,
           scheduleControllerFactory: widget.scheduleControllerFactory,
-          persistenceResult: persistenceResult,
+          workflowControllerFactory: widget.workflowControllerFactory,
+          scheduleSaver: widget.scheduleSaver,
+          existingScheduleLoader: widget.existingScheduleLoader,
+          scheduleFactory: widget.importedScheduleFactory,
+          controller: controller,
+          employeeRepository: widget.employeeRepository,
+          shiftTemplateControllerFactory: widget.shiftTemplateControllerFactory,
         ),
       ),
     );

@@ -11,6 +11,12 @@ void main() {
     ]).values.single;
 
     expect(timeline.workerChain, ['A', 'B', 'A']);
+    expect(timeline.start, DateTime(2026, 8, 18, 8));
+    expect(timeline.end, DateTime(2026, 8, 18, 16));
+    expect(timeline.shiftCode, 'UP3');
+    expect(timeline.sheetTitle, '16 สค - 15 กย 69');
+    expect(timeline.rowLabel, 'P3 เช้า');
+    expect(timeline.column, 'D');
   });
 
   test('keeps onward transfer A to B to C', () {
@@ -42,6 +48,33 @@ void main() {
     ]);
 
     expect(timelines, isEmpty);
+  });
+
+  test('does not merge identical shift positions from different tabs', () {
+    final timelines = buildRosterAssignmentTimelines([
+      RosterRevisionShifts(
+        revisionId: '1',
+        modifiedAt: DateTime(2026, 8, 1, 9),
+        shifts: [
+          _sourceShift('A', 'Tab A', 11),
+          _sourceShift('B', 'Tab B', 22),
+        ],
+      ),
+      RosterRevisionShifts(
+        revisionId: '2',
+        modifiedAt: DateTime(2026, 8, 1, 10),
+        shifts: [
+          _sourceShift('C', 'Tab A', 11),
+          _sourceShift('D', 'Tab B', 22),
+        ],
+      ),
+    ]);
+
+    expect(timelines, hasLength(2));
+    expect(timelines.values.map((item) => item.workerChain).toSet(), {
+      ['A', 'C'],
+      ['B', 'D'],
+    });
   });
 
   test('keeps timeline semantics across month, year, and century dates', () {
@@ -99,3 +132,16 @@ RosterRevisionShifts _revision(
     ],
   );
 }
+
+Shift _sourceShift(String worker, String tab, int sheetId) => Shift(
+  code: 'UP1',
+  rowLabel: 'P1 เช้า',
+  assignedName: worker,
+  start: DateTime(2026, 8, 18, 8),
+  end: DateTime(2026, 8, 18, 16),
+  sheetTitle: tab,
+  cell: 'D11',
+  category: ShiftCategory.own,
+  sourceSpreadsheetId: 'spreadsheet-1',
+  sourceSheetId: sheetId,
+);

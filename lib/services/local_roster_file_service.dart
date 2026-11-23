@@ -79,7 +79,6 @@ class LocalRosterFileService implements LocalRosterSource {
     final workbook = Excel.decodeBytes(bytes);
     return [
       for (final entry in workbook.tables.entries)
-        if (entry.value.rows.isNotEmpty)
           SheetSnapshot(
             title: entry.key,
             rows: [

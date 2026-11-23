@@ -71,7 +71,7 @@ class RosterRevisionService implements RosterRevisionGateway {
     });
 
     final documents = <RosterRevisionDocument>[];
-    const parallelDownloads = 4;
+    const parallelDownloads = 2;
     for (
       var offset = 0;
       offset < revisions.length;
@@ -98,8 +98,10 @@ class RosterRevisionService implements RosterRevisionGateway {
   /// snapshot objects across the application lifetime.
   Future<List<RosterRevisionDocument>> readHistoryTransient(
     http.Client client,
-    String fileId,
-  ) async {
+    String fileId, {
+    Set<String> knownRevisionIds = const <String>{},
+    void Function(String revisionId, Object error)? onRevisionSkipped,
+  }) async {
     final api = drive.DriveApi(client);
     final revisions = <drive.Revision>[];
     final effectivePageSize = pageSize < 1
@@ -119,28 +121,38 @@ class RosterRevisionService implements RosterRevisionGateway {
       pageToken = response.nextPageToken;
     } while (pageToken != null && pageToken.isNotEmpty);
 
-    revisions.sort((left, right) {
-      final leftTime =
-          left.modifiedTime ?? DateTime.fromMillisecondsSinceEpoch(0);
-      final rightTime =
-          right.modifiedTime ?? DateTime.fromMillisecondsSinceEpoch(0);
-      return leftTime.compareTo(rightTime);
-    });
+    // Filter known IDs before issuing export downloads.
+    final missingRevisions = revisions
+        .where((revision) =>
+            revision.id == null || !knownRevisionIds.contains(revision.id))
+        .toList(growable: false)
+      ..sort((left, right) {
+        final leftTime =
+            left.modifiedTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final rightTime =
+            right.modifiedTime ?? DateTime.fromMillisecondsSinceEpoch(0);
+        return leftTime.compareTo(rightTime);
+      });
 
     final documents = <RosterRevisionDocument>[];
-    const parallelDownloads = 4;
+    const parallelDownloads = 2;
     for (
       var offset = 0;
-      offset < revisions.length;
+      offset < missingRevisions.length;
       offset += parallelDownloads
     ) {
-      final end = offset + parallelDownloads < revisions.length
+      final end = offset + parallelDownloads < missingRevisions.length
           ? offset + parallelDownloads
-          : revisions.length;
-      final batch = revisions.sublist(offset, end);
+          : missingRevisions.length;
+      final batch = missingRevisions.sublist(offset, end);
       final loaded = await Future.wait([
         for (final revision in batch)
-          _readRevisionTransient(client, fileId: fileId, revision: revision),
+          _readRevisionTransient(
+            client,
+            fileId: fileId,
+            revision: revision,
+            onRevisionSkipped: onRevisionSkipped,
+          ),
       ]);
       documents.addAll(loaded.whereType<RosterRevisionDocument>());
     }
@@ -148,6 +160,51 @@ class RosterRevisionService implements RosterRevisionGateway {
       (left, right) => left.modifiedAt.compareTo(right.modifiedAt),
     );
     return documents;
+  }
+
+  /// Retries transient Drive export throttling without re-listing history.
+  /// Keep concurrency low because each revision export is a separate request.
+  Future<http.Response> _downloadRevisionExport(
+    http.Client client,
+    String exportUrl,
+  ) async {
+    const maxAttempts = 4;
+    const retryableStatuses = <int>{429, 500, 502, 503, 504};
+    Object? lastError;
+
+    for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        final response = await client.get(Uri.parse(exportUrl));
+        if (!retryableStatuses.contains(response.statusCode) ||
+            attempt == maxAttempts) {
+          return response;
+        }
+        final retryAfter = response.headers['retry-after'];
+        final retryAfterSeconds = int.tryParse(retryAfter ?? '');
+        final retryAfterDate = retryAfter == null
+            ? null
+            : DateTime.tryParse(retryAfter);
+        final dateDelay = retryAfterDate?.difference(DateTime.now());
+        final backoff = Duration(milliseconds: 500 * (1 << (attempt - 1)));
+        final requestedDelay = retryAfterSeconds != null
+            ? Duration(seconds: retryAfterSeconds)
+            : dateDelay != null && !dateDelay.isNegative
+            ? dateDelay
+            : backoff;
+        // Avoid a server-supplied Retry-After making the UI wait indefinitely.
+        final delay = requestedDelay > const Duration(seconds: 8)
+            ? const Duration(seconds: 8)
+            : requestedDelay;
+        await Future<void>.delayed(delay);
+      } on Object catch (error) {
+        lastError = error;
+        if (attempt == maxAttempts) rethrow;
+        await Future<void>.delayed(
+          Duration(milliseconds: 500 * (1 << (attempt - 1))),
+        );
+      }
+    }
+    throw StateError('Could not download revision export: $lastError');
   }
 
   Future<RosterRevisionDocument?> _readRevision(
@@ -170,7 +227,7 @@ class RosterRevisionService implements RosterRevisionGateway {
     if (cached != null) return cached;
 
     try {
-      final response = await client.get(Uri.parse(exportUrl));
+      final response = await _downloadRevisionExport(client, exportUrl);
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw StateError(
           'Could not download revision $revisionId '
@@ -198,6 +255,7 @@ class RosterRevisionService implements RosterRevisionGateway {
     http.Client client, {
     required String fileId,
     required drive.Revision revision,
+    void Function(String revisionId, Object error)? onRevisionSkipped,
   }) async {
     final revisionId = revision.id;
     final modifiedAt = revision.modifiedTime;
@@ -207,11 +265,17 @@ class RosterRevisionService implements RosterRevisionGateway {
         modifiedAt == null ||
         exportUrl == null ||
         exportUrl.isEmpty) {
+      onRevisionSkipped?.call(
+        revisionId?.isNotEmpty == true ? revisionId! : 'unknown',
+        const FormatException(
+          'Revision metadata or XLSX export link is missing.',
+        ),
+      );
       return null;
     }
 
     try {
-      final response = await client.get(Uri.parse(exportUrl));
+      final response = await _downloadRevisionExport(client, exportUrl);
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw StateError(
           'Could not download revision $revisionId '
@@ -222,17 +286,15 @@ class RosterRevisionService implements RosterRevisionGateway {
         name: 'revision-$revisionId.xlsx',
         bytes: response.bodyBytes,
       );
-      final result = RosterRevisionDocument(
+      return RosterRevisionDocument(
         revisionId: revisionId,
         modifiedAt: modifiedAt,
         snapshots: document.snapshots,
       );
-      return result;
-    } on Object catch (error, stackTrace) {
-      Error.throwWithStackTrace(
-        StateError('Could not read Google Sheets revision $revisionId: $error'),
-        stackTrace,
-      );
+    } on Object catch (error) {
+      // A single unavailable revision must not discard other readable history.
+      onRevisionSkipped?.call(revisionId, error);
+      return null;
     }
   }
 }

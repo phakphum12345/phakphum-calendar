@@ -19,6 +19,9 @@ class ImportedScheduleAdapter {
   );
 
   /// Converts imported records into the canonical schedule aggregate.
+  ///
+  /// A reviewed employee identity is preserved exactly. Records without an
+  /// explicit review selection retain the legacy provisional identity.
   Schedule createSchedule(
     Iterable<ShiftRecord> records, {
     String id = 'imported',
@@ -39,11 +42,14 @@ class ImportedScheduleAdapter {
     final shifts = <String, Shift>{};
 
     for (final record in datedRecords) {
-      final department = _department(record.department);
+      final department = record.resolvedEmployee?.department ??
+          _department(record.department);
       departments[department.id] = department;
-      final employee = _employee(record.employee, department);
+      final employee = record.resolvedEmployee ??
+          _employee(record.employee, department);
       employees[employee.id] = employee;
-      final shift = _shift(record.shift);
+      final shift = record.resolvedShiftTemplate?.toShiftType() ??
+          _shift(record.shift);
       shifts[shift.id] = shift;
     }
 
@@ -57,9 +63,14 @@ class ImportedScheduleAdapter {
       shifts: shifts.values.toList(growable: false),
     );
     for (final record in datedRecords) {
-      final department = _department(record.department);
-      final employee = employees[_employeeId(record.employee, department)]!;
-      final shift = shifts[_identifier(record.shift)]!;
+      final department = record.resolvedEmployee?.department ??
+          _department(record.department);
+      final employee = employees[
+        record.resolvedEmployee?.id ?? _employeeId(record.employee, department)
+      ]!;
+      final shift = shifts[
+        record.resolvedShiftTemplate?.id ?? _identifier(record.shift)
+      ]!;
       service.updateAssignment(
         date: record.date!,
         assignment: ShiftAssignment(
@@ -123,7 +134,6 @@ class ImportedScheduleAdapter {
   Shift _shift(String name) {
     final normalized = name.trim();
     final id = _identifier(normalized);
-    // Attempt to derive start/end times from the label.
     final durations =
         ShiftTimeService.parseDurations(normalized) ?? [Duration.zero, Duration.zero];
     return Shift(

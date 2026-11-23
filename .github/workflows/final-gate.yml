@@ -64,8 +64,21 @@ jobs:
                 [.workflow_runs[]
                  | select(.head_sha == env.SHA)
                  | select(.head_branch == "main")
-                 | select(.event == "push")]
+                 | select(.event == "push" or .event == "workflow_dispatch")]
                 | sort_by(.run_number, .run_attempt)
+                | last // {}
+                | [(.status // "missing"), (.conclusion // ""), (.html_url // ""), ((.id // 0) | tostring)]
+                | @tsv
+              ' 2>/dev/null
+          }
+
+          get_deploy_job_state() {
+            local run_id="$1"
+            gh api \
+              -H 'Accept: application/vnd.github+json' \
+              "/repos/${REPOSITORY}/actions/runs/${run_id}/jobs?per_page=100" \
+              --jq '
+                [.jobs[] | select(.name == "Deploy GitHub Pages")]
                 | last // {}
                 | [(.status // "missing"), (.conclusion // ""), (.html_url // "")]
                 | @tsv
@@ -100,10 +113,10 @@ jobs:
               workflow="${entry#*:}"
               state="$(get_run_state "$workflow" || true)"
               if [[ -z "$state" ]]; then
-                status="missing"; conclusion=""; url=""
+                status="missing"; conclusion=""; url=""; run_id=""
               else
-                IFS=$'\t' read -r status conclusion url <<< "$state"
-                status="${status:-missing}"; conclusion="${conclusion:-}"; url="${url:-}"
+                IFS=$'\t' read -r status conclusion url run_id <<< "$state"
+                status="${status:-missing}"; conclusion="${conclusion:-}"; url="${url:-}"; run_id="${run_id:-}"
               fi
 
               echo "REQUIRED $label: status=$status conclusion=${conclusion:-PENDING}"
@@ -112,6 +125,26 @@ jobs:
                 if [[ "$conclusion" != "success" ]]; then
                   echo "REQUIRED FAILURE: $label concluded ${conclusion:-unknown} for $SHA."
                   required_failed=1
+                elif [[ "$label" == "Web" ]]; then
+                  deploy_state="$(get_deploy_job_state "$run_id" || true)"
+                  if [[ -z "$deploy_state" ]]; then
+                    deploy_status="missing"; deploy_conclusion=""; deploy_url=""
+                  else
+                    IFS=$'\t' read -r deploy_status deploy_conclusion deploy_url <<< "$deploy_state"
+                    deploy_status="${deploy_status:-missing}"
+                    deploy_conclusion="${deploy_conclusion:-}"
+                    deploy_url="${deploy_url:-}"
+                  fi
+                  echo "REQUIRED Web deployment: status=$deploy_status conclusion=${deploy_conclusion:-PENDING}"
+                  [[ -z "$deploy_url" ]] || echo "  $deploy_url"
+                  if [[ "$deploy_status" == "completed" && "$deploy_conclusion" == "success" ]]; then
+                    echo "REQUIRED Web deployment: PASS"
+                  elif [[ "$deploy_status" == "completed" || "$deploy_status" == "missing" ]]; then
+                    echo "REQUIRED FAILURE: GitHub Pages deployment did not succeed for $SHA."
+                    required_failed=1
+                  else
+                    required_pending=1
+                  fi
                 fi
               else
                 required_pending=1
@@ -123,9 +156,9 @@ jobs:
               workflow="${entry#*:}"
               state="$(get_run_state "$workflow" || true)"
               if [[ -z "$state" ]]; then
-                status="missing"; conclusion=""; url=""
+                status="missing"; conclusion=""; url=""; run_id=""
               else
-                IFS=$'\t' read -r status conclusion url <<< "$state"
+                IFS=$'\t' read -r status conclusion url run_id <<< "$state"
                 status="${status:-missing}"; conclusion="${conclusion:-}"; url="${url:-}"
               fi
 

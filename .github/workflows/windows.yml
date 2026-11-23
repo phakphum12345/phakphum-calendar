@@ -76,7 +76,11 @@ jobs:
       - name: Build Windows release
         env:
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
-        run: flutter build windows --release --dart-define=GOOGLE_SERVER_CLIENT_ID="$env:GOOGLE_SERVER_CLIENT_ID"
+          ORGANIZATION_API_BASE_URL: ${{ vars.ORGANIZATION_API_BASE_URL }}
+        run: >-
+          flutter build windows --release
+          --dart-define=GOOGLE_SERVER_CLIENT_ID="$env:GOOGLE_SERVER_CLIENT_ID"
+          --dart-define=ORGANIZATION_API_BASE_URL="$env:ORGANIZATION_API_BASE_URL"
 
       - name: Verify Windows executable
         shell: pwsh

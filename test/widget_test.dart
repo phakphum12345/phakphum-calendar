@@ -295,11 +295,13 @@ void main() {
     expect(find.text('Shift Tools'), findsOneWidget);
     expect(find.text('แหล่งข้อมูลเวร'), findsOneWidget);
     expect(find.byType(NavigationRail), findsOneWidget);
-    expect(find.text('เข้าสู่ระบบด้วย Google'), findsOneWidget);
+    expect(find.text('Sync Google Account'), findsNothing);
     expect(find.text('รีเฟรช/อ่านใหม่ตอนนี้'), findsOneWidget);
     expect(find.text('ชื่อที่ต้องค้นหา'), findsOneWidget);
     expect(find.text('กรอกชื่อให้ตรงกับชื่อในตารางเวร'), findsOneWidget);
     expect(find.text('เลือกไฟล์จาก Google Sheets'), findsOneWidget);
+    expect(find.text('ยกเลิกการเลือกตาราง'), findsOneWidget);
+    expect(find.text('นำเข้าตารางเวรจากไฟล์'), findsOneWidget);
     expect(find.text('เปิดกล้อง'), findsOneWidget);
     expect(find.text('วาง URL จากเบราว์เซอร์'), findsNothing);
     expect(find.text('แนบไฟล์ต้นฉบับเพื่อเปรียบเทียบ'), findsOneWidget);
@@ -508,7 +510,10 @@ void main() {
       await tester.pumpWidget(ShiftToolsApp(controller: demoController()));
       await tester.pumpAndSettle();
 
-      expect(find.text('Google Login ใช้ผ่าน Web'), findsOneWidget);
+      expect(
+        find.textContaining('กรุณาใช้แอปเวอร์ชันเว็บสำหรับการเชื่อมต่อ Google'),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
     } finally {
       debugDefaultTargetPlatformOverride = null;
