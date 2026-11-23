@@ -32,6 +32,11 @@ class _OrganizationMembershipPanelState
   List<OrganizationMember> _members = const [];
   List<OrganizationJoinRequest> _pendingRequests = const [];
   List<OrganizationJoinRequest> _myRequests = const [];
+  List<OrganizationMembershipAuditEvent> _membershipAuditEvents = const [];
+  int? _membershipAuditNextBeforeId;
+  String? _membershipAuditOrganizationId;
+  String? _membershipAuditError;
+  bool _membershipAuditLoading = false;
   String? _selectedOrganizationId;
   String? _error;
   bool _loading = true;
@@ -79,6 +84,7 @@ class _OrganizationMembershipPanelState
         _members = const [];
         _pendingRequests = const [];
         _myRequests = const [];
+        _clearMembershipAudit();
         _selectedOrganizationId = null;
       });
       return;
@@ -89,6 +95,7 @@ class _OrganizationMembershipPanelState
       _error = null;
     });
     try {
+      final previousOrganizationId = _selectedOrganizationId;
       final organizations = await widget.gateway.organizations();
       final selected = organizations.where(
         (item) => item.id == _selectedOrganizationId,
@@ -111,6 +118,9 @@ class _OrganizationMembershipPanelState
         _members = members;
         _pendingRequests = pendingRequests;
         _myRequests = myRequests;
+        if (previousOrganizationId != organization?.id) {
+          _clearMembershipAudit();
+        }
       });
     } catch (exception) {
       if (mounted) setState(() => _error = '$exception');
@@ -121,8 +131,62 @@ class _OrganizationMembershipPanelState
 
   Future<void> _selectOrganization(String? organizationId) async {
     if (organizationId == null) return;
-    setState(() => _selectedOrganizationId = organizationId);
+    if (organizationId != _selectedOrganizationId) {
+      setState(() {
+        _selectedOrganizationId = organizationId;
+        _clearMembershipAudit();
+      });
+    }
     await _refresh();
+  }
+
+  void _clearMembershipAudit() {
+    _membershipAuditEvents = const [];
+    _membershipAuditNextBeforeId = null;
+    _membershipAuditOrganizationId = null;
+    _membershipAuditError = null;
+    _membershipAuditLoading = false;
+  }
+
+  Future<void> _loadMembershipAudit({bool loadMore = false}) async {
+    final organizationId = _selectedOrganizationId;
+    if (organizationId == null || _membershipAuditLoading) return;
+    final beforeId = loadMore ? _membershipAuditNextBeforeId : null;
+    if (loadMore && beforeId == null) return;
+
+    setState(() {
+      _membershipAuditLoading = true;
+      _membershipAuditError = null;
+      _membershipAuditOrganizationId = organizationId;
+    });
+    try {
+      final page = await widget.gateway.membershipAudit(
+        organizationId,
+        limit: 50,
+        beforeId: beforeId,
+      );
+      if (!mounted || organizationId != _selectedOrganizationId) return;
+      setState(() {
+        if (loadMore) {
+          final knownIds = _membershipAuditEvents.map((event) => event.id).toSet();
+          _membershipAuditEvents = [
+            ..._membershipAuditEvents,
+            ...page.events.where((event) => !knownIds.contains(event.id)),
+          ];
+        } else {
+          _membershipAuditEvents = page.events;
+        }
+        _membershipAuditNextBeforeId = page.nextBeforeId;
+      });
+    } catch (exception) {
+      if (mounted && organizationId == _selectedOrganizationId) {
+        setState(() => _membershipAuditError = '$exception');
+      }
+    } finally {
+      if (mounted && organizationId == _selectedOrganizationId) {
+        setState(() => _membershipAuditLoading = false);
+      }
+    }
   }
 
   Future<void> _submitJoinRequest() async {
@@ -179,6 +243,7 @@ class _OrganizationMembershipPanelState
         role: role.name,
       );
       await _refresh();
+      await _loadMembershipAudit();
     });
   }
 
@@ -293,8 +358,10 @@ class _OrganizationMembershipPanelState
           ),
           const SizedBox(height: 16),
           _buildMembers(context),
-          if (_selectedOrganization?.canReviewRequests == true)
+          if (_selectedOrganization?.canReviewRequests == true) ...[
+            _buildMembershipAudit(context),
             _buildPendingRequests(context),
+          ],
         ],
         const SizedBox(height: 24),
         _buildJoinRequestForm(context),
@@ -362,6 +429,7 @@ class _OrganizationMembershipPanelState
         role: role.name,
       );
       await _refresh();
+      await _loadMembershipAudit();
     });
   }
 
@@ -392,6 +460,7 @@ class _OrganizationMembershipPanelState
         userId: member.userId,
       );
       await _refresh();
+      await _loadMembershipAudit();
     });
   }
 
@@ -443,6 +512,82 @@ class _OrganizationMembershipPanelState
           ),
     ],
   );
+
+  Widget _buildMembershipAudit(BuildContext context) => ExpansionTile(
+    tilePadding: EdgeInsets.zero,
+    title: const Text('ประวัติการเปลี่ยนแปลงสมาชิก'),
+    subtitle: const Text('ประวัติจากระบบขององค์กร'),
+    onExpansionChanged: (expanded) {
+      if (expanded &&
+          _membershipAuditOrganizationId != _selectedOrganizationId) {
+        unawaited(_loadMembershipAudit());
+      }
+    },
+    children: [
+      if (_membershipAuditLoading) const LinearProgressIndicator(),
+      if (_membershipAuditError case final error?)
+        ListTile(
+          title: Text(error),
+          trailing: IconButton(
+            tooltip: 'ลองโหลดประวัติอีกครั้ง',
+            onPressed: _membershipAuditLoading
+                ? null
+                : () => _loadMembershipAudit(),
+            icon: const Icon(Icons.refresh),
+          ),
+        ),
+      if (!_membershipAuditLoading &&
+          _membershipAuditError == null &&
+          _membershipAuditEvents.isEmpty)
+        const Padding(
+          padding: EdgeInsets.all(12),
+          child: Text('ยังไม่มีประวัติการเปลี่ยนแปลงสมาชิก'),
+        ),
+      for (final event in _membershipAuditEvents)
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          title: Text(_membershipAuditActionLabel(event.action)),
+          subtitle: Text(
+            'ผู้ดำเนินการ: ${event.actorName}\n'
+            'สมาชิก: ${event.subjectName}\n'
+            'ก่อน: ${_membershipStateSummary(event.before)}\n'
+            'หลัง: ${_membershipStateSummary(event.after)}',
+          ),
+          trailing: Text(
+            event.createdAt.toLocal().toString(),
+            textAlign: TextAlign.end,
+          ),
+          isThreeLine: true,
+        ),
+      if (_membershipAuditNextBeforeId != null)
+        TextButton(
+          onPressed: _membershipAuditLoading
+              ? null
+              : () => _loadMembershipAudit(loadMore: true),
+          child: const Text('โหลดประวัติก่อนหน้า'),
+        ),
+    ],
+  );
+
+  String _membershipAuditActionLabel(String action) => switch (action) {
+    'created' => 'สร้างองค์กร',
+    'added' => 'เพิ่มสมาชิก',
+    'reactivated' => 'เปิดใช้งานสมาชิกอีกครั้ง',
+    'role_changed' => 'เปลี่ยนบทบาทสมาชิก',
+    'removed' => 'นำสมาชิกออกจากองค์กร',
+    'join_request_approved' => 'อนุมัติคำขอเข้าร่วม',
+    _ => action,
+  };
+
+  String _membershipStateSummary(Map<String, Object?>? state) {
+    if (state == null) return '—';
+    final values = <String>[
+      if (state['employee_id'] is String) 'รหัส: ${state['employee_id']}',
+      if (state['role'] is String) 'บทบาท: ${_roleLabelForName(state['role'] as String)}',
+      if (state['status'] is String) 'สถานะ: ${state['status']}',
+    ];
+    return values.isEmpty ? '—' : values.join(' · ');
+  }
 
   Widget _buildPendingRequests(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
