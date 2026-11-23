@@ -33,11 +33,24 @@
       if (permission !== 'granted') {
         throw new Error('Notification permission was not granted.');
       }
-      const registration = await navigator.serviceWorker.register(
+      const workerUrl = new URL(
         'push-scope/service-worker.js',
-        { scope: 'push-scope/' },
+        document.baseURI,
       );
-      await navigator.serviceWorker.ready;
+      const scopeUrl = new URL('push-scope/', document.baseURI);
+      const registration = await navigator.serviceWorker.register(
+        workerUrl,
+        { scope: scopeUrl.pathname },
+      );
+      const worker = registration.installing || registration.waiting || registration.active;
+      if (worker && worker.state !== 'activated') {
+        await new Promise((resolve, reject) => {
+          worker.addEventListener('statechange', () => {
+            if (worker.state === 'activated') resolve();
+            if (worker.state === 'redundant') reject(new Error('Push worker activation failed.'));
+          });
+        });
+      }
       let subscription = await registration.pushManager.getSubscription();
       if (!subscription) {
         subscription = await registration.pushManager.subscribe({
