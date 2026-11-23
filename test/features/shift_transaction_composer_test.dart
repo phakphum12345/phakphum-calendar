@@ -102,7 +102,6 @@ void main() {
     await tester.tap(find.text('New shift transaction'));
     await tester.pumpAndSettle();
 
-    final dropdowns = find.byType(DropdownButtonFormField<String>);
     await _tapDropdown(tester, 1);
     await tester.pumpAndSettle();
     await tester.tap(find.text('B · Bob').last);
@@ -234,8 +233,7 @@ void main() {
       await tester.tap(find.text('New shift transaction'));
       await tester.pumpAndSettle();
 
-      final dropdowns = find.byType(DropdownButtonFormField<String>);
-      await _tapDropdown(tester, 0);
+        await _tapDropdown(tester, 0);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Exchange and return shifts').last);
       await tester.pumpAndSettle();
