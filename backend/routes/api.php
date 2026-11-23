@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\GoogleAccountController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\OrganizationController;
 use App\Http\Controllers\Api\V1\ShiftTransactionController;
+use App\Http\Controllers\Api\V1\WebPushSubscriptionController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -30,6 +31,13 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/organizations/{organizationId}/members', [OrganizationController::class, 'members'])
             ->whereUuid('organizationId')
             ->name('api.v1.organizations.members');
+        Route::get('/organizations/{organizationId}/membership-audit', [OrganizationController::class, 'membershipAudit'])
+            ->whereUuid('organizationId')
+            ->name('api.v1.organizations.membership-audit');
+        Route::post('/push-subscriptions', [WebPushSubscriptionController::class, 'store'])
+            ->name('api.v1.push-subscriptions.store');
+        Route::delete('/push-subscriptions', [WebPushSubscriptionController::class, 'destroy'])
+            ->name('api.v1.push-subscriptions.destroy');
         Route::post('/organizations/{organizationId}/members', [OrganizationController::class, 'addMember'])
             ->whereUuid('organizationId')
             ->name('api.v1.organizations.members.store');
