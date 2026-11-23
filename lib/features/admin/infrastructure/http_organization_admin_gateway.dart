@@ -312,7 +312,10 @@ class HttpOrganizationAdminGateway implements OrganizationAdminGateway {
     final rawCreatedAt = _string(item, 'created_at').trim();
     final hasTimezone = rawCreatedAt.endsWith('Z') ||
         rawCreatedAt.endsWith('z') ||
-        RegExp(r'[+-]\\d{2}:\\d{2}$').hasMatch(rawCreatedAt);
+        (rawCreatedAt.length >= 6 &&
+            (rawCreatedAt[rawCreatedAt.length - 6] == '+' ||
+                rawCreatedAt[rawCreatedAt.length - 6] == '-') &&
+            rawCreatedAt[rawCreatedAt.length - 3] == ':');
     final createdAtInput = hasTimezone ? rawCreatedAt : rawCreatedAt + 'Z';
     final createdAt = DateTime.tryParse(createdAtInput);
     if (createdAt == null) {
