@@ -21,6 +21,7 @@ This document describes the current routes. Request validation and service autho
 - API responses echo the effective value in the `X-Request-ID` response header.
 - Health and client-diagnostics responses also include `request_id` in the JSON body; other endpoint bodies retain their existing domain-specific shape.
 - The Flutter shift-transaction client generates a distinct opaque ID for each request and sends it in this header.
+- Clients must use HTTPS for non-loopback API origins; HTTP is permitted only for loopback local development.
 - Request IDs are diagnostic metadata, not authentication credentials or authorization claims.
 
 ## Route inventory
