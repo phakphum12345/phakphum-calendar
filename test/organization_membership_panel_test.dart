@@ -5,6 +5,52 @@ import 'package:phakphum_calendar/features/admin/domain/organization_admin_gatew
 import 'package:phakphum_calendar/features/admin/presentation/organization_membership_panel.dart';
 
 void main() {
+
+  testWidgets('admin can change a member role and remove that member', (
+    tester,
+  ) async {
+    final gateway = _FakeOrganizationAdminGateway();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: OrganizationMembershipPanel(
+            apiBaseUrl: 'https://api.example.com',
+            currentEmail: 'admin@example.com',
+            gateway: gateway,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Owner'), findsOneWidget);
+    expect(find.byTooltip('จัดการสมาชิก'), findsOneWidget);
+    await tester.tap(find.byTooltip('จัดการสมาชิก'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('เปลี่ยนบทบาท'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(DropdownButtonFormField<StaffRole>).last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Manager').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('บันทึกบทบาท'));
+    await tester.pumpAndSettle();
+
+    expect(gateway.updatedRole, 'manager');
+
+    await tester.tap(find.byTooltip('จัดการสมาชิก'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('นำออกจากองค์กร'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('นำออก'));
+    await tester.pumpAndSettle();
+
+    expect(gateway.removedMemberId, 'member-id');
+    expect(find.text('Owner'), findsOneWidget);
+    expect(find.byTooltip('จัดการสมาชิก'), findsNothing);
+  });
+
   testWidgets('admin reviews profile and approves with selected role', (
     tester,
   ) async {
@@ -22,6 +68,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('Member'), findsOneWidget);
     expect(find.text('New Nurse'), findsOneWidget);
     expect(find.text('new.nurse@example.com'), findsOneWidget);
     expect(find.text('รหัสพนักงาน: EMP-001'), findsOneWidget);
@@ -31,9 +78,16 @@ void main() {
     await tester.tap(find.text('Manager').last);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.widgetWithText(FilledButton, 'อนุมัติ'));
+    final approveButton = find.widgetWithText(FilledButton, 'อนุมัติ').first;
+    await tester.ensureVisible(approveButton);
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FilledButton, 'อนุมัติ').last);
+    await tester.tap(approveButton);
+    await tester.pumpAndSettle();
+
+    final confirmButton = find.widgetWithText(FilledButton, 'อนุมัติ').last;
+    await tester.ensureVisible(confirmButton);
+    await tester.pumpAndSettle();
+    await tester.tap(confirmButton);
     await tester.pumpAndSettle();
 
     expect(gateway.approvedRole, 'manager');
@@ -44,6 +98,26 @@ void main() {
 class _FakeOrganizationAdminGateway implements OrganizationAdminGateway {
   bool _hasPendingRequest = true;
   String? approvedRole;
+  String? updatedRole;
+  String? removedMemberId;
+  List<OrganizationMember> _members = const [
+    OrganizationMember(
+      userId: 'member-id',
+      name: 'Member',
+      email: 'member@example.com',
+      employeeId: 'EMP-MEMBER',
+      role: 'staff',
+      status: 'active',
+    ),
+    OrganizationMember(
+      userId: 'owner-id',
+      name: 'Owner',
+      email: 'owner@example.com',
+      employeeId: 'EMP-OWNER',
+      role: 'owner',
+      status: 'active',
+    ),
+  ];
 
   @override
   Future<List<OrganizationMembership>> organizations() async => const [
@@ -58,7 +132,39 @@ class _FakeOrganizationAdminGateway implements OrganizationAdminGateway {
 
   @override
   Future<List<OrganizationMember>> members(String organizationId) async =>
-      const [];
+      _members;
+
+  @override
+  Future<void> updateMemberRole({
+    required String organizationId,
+    required String userId,
+    required String role,
+  }) async {
+    updatedRole = role;
+    _members = [
+      for (final member in _members)
+        if (member.userId == userId)
+          OrganizationMember(
+            userId: member.userId,
+            name: member.name,
+            email: member.email,
+            employeeId: member.employeeId,
+            role: role,
+            status: member.status,
+          )
+        else
+          member,
+    ];
+  }
+
+  @override
+  Future<void> removeMember({
+    required String organizationId,
+    required String userId,
+  }) async {
+    removedMemberId = userId;
+    _members = _members.where((member) => member.userId != userId).toList();
+  }
 
   @override
   Future<List<OrganizationJoinRequest>> pendingRequests(
