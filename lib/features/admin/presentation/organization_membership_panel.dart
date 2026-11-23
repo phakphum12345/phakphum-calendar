@@ -37,6 +37,8 @@ class _OrganizationMembershipPanelState
   String? _membershipAuditOrganizationId;
   String? _membershipAuditError;
   bool _membershipAuditLoading = false;
+  bool _membershipAuditRefreshQueued = false;
+  String? _membershipAuditQueuedOrganizationId;
   String? _selectedOrganizationId;
   String? _error;
   bool _loading = true;
@@ -146,11 +148,20 @@ class _OrganizationMembershipPanelState
     _membershipAuditOrganizationId = null;
     _membershipAuditError = null;
     _membershipAuditLoading = false;
+    _membershipAuditRefreshQueued = false;
+    _membershipAuditQueuedOrganizationId = null;
   }
 
   Future<void> _loadMembershipAudit({bool loadMore = false}) async {
     final organizationId = _selectedOrganizationId;
-    if (organizationId == null || _membershipAuditLoading) return;
+    if (organizationId == null) return;
+    if (_membershipAuditLoading) {
+      if (!loadMore) {
+        _membershipAuditRefreshQueued = true;
+        _membershipAuditQueuedOrganizationId = organizationId;
+      }
+      return;
+    }
     final beforeId = loadMore ? _membershipAuditNextBeforeId : null;
     if (loadMore && beforeId == null) return;
 
@@ -184,7 +195,16 @@ class _OrganizationMembershipPanelState
       }
     } finally {
       if (mounted && organizationId == _selectedOrganizationId) {
-        setState(() => _membershipAuditLoading = false);
+        final refreshQueued = _membershipAuditRefreshQueued &&
+            _membershipAuditQueuedOrganizationId == organizationId;
+        setState(() {
+          _membershipAuditLoading = false;
+          _membershipAuditRefreshQueued = false;
+          _membershipAuditQueuedOrganizationId = null;
+        });
+        if (refreshQueued) {
+          unawaited(_loadMembershipAudit());
+        }
       }
     }
   }
