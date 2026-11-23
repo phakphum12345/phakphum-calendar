@@ -83,7 +83,7 @@ class WebPushSubscriptionController
         if (
             $decodedPublicKey === false
             || strlen($decodedPublicKey) !== 65
-            || $decodedPublicKey[0] !== "\\x04"
+            || $decodedPublicKey[0] !== "\x04"
             || $decodedAuthToken === false
             || strlen($decodedAuthToken) !== 16
         ) {
