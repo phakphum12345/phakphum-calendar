@@ -1,5 +1,7 @@
 # Shift Tools Roadmap
 
+> **Roster workflow delivery track:** the focused import/review/preview/Calendar-confirmation implementation is tracked in [Roster Configuration & Intelligent Sync Roadmap](../docs/ROSTER_CONFIGURATION_AND_SYNC_ROADMAP.md), with evidence in [Roster Traceability Matrix](../docs/flexible-workforce/TRACEABILITY_MATRIX.md). PRs #97–#108 include merged slices through 2026-11-18. This sub-track does not mean the broader Shift Tools Sprints or enterprise workforce roadmap are complete.
+
 ## Sprint 0 — Foundation
 
 Status: Completed

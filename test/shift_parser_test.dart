@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:phakphum_calendar/domain/entities/shift_template.dart';
 import 'package:phakphum_calendar/models/shift.dart';
 import 'package:phakphum_calendar/services/shift_parser.dart';
 
@@ -25,6 +26,63 @@ void main() {
     );
 
     expect(shifts.map((shift) => shift.assignedName), ['สมชาย', 'ภาคภูมิ']);
+  });
+
+  test('does not truncate fractional numeric values in legacy date headers', () {
+    final days = <Object?>[
+      'วันที่',
+      1.5,
+      ...List<int>.generate(29, (index) => index + 2),
+    ];
+    final row = _row('P1 เช้า');
+    row[1] = 'ผู้ใช้งานทดสอบ';
+
+    final shifts = parser.parse(
+      snapshots: [
+        SheetSnapshot(
+          title: 'พฤศจิกายน 2569',
+          rows: [
+            ['ประจำเดือน พฤศจิกายน 2569'],
+            days,
+            row,
+          ],
+        ),
+      ],
+      targetName: 'ผู้ใช้งานทดสอบ',
+      year: 2026,
+      month: 11,
+    );
+
+    expect(shifts, isEmpty);
+  });
+
+  test('accepts integer-valued doubles in legacy date headers', () {
+    final days = <Object?>[
+      'วันที่',
+      1.0,
+      ...List<int>.generate(29, (index) => index + 2),
+    ];
+    final row = _row('P1 เช้า');
+    row[1] = 'ผู้ใช้งานทดสอบ';
+
+    final shifts = parser.parse(
+      snapshots: [
+        SheetSnapshot(
+          title: 'พฤศจิกายน 2569',
+          rows: [
+            ['ประจำเดือน พฤศจิกายน 2569'],
+            days,
+            row,
+          ],
+        ),
+      ],
+      targetName: 'ผู้ใช้งานทดสอบ',
+      year: 2026,
+      month: 11,
+    );
+
+    expect(shifts, hasLength(1));
+    expect(shifts.single.start, DateTime(2026, 11, 1, 8));
   });
 
   test('maps rollover dates and overnight shift times', () {
@@ -252,6 +310,260 @@ void main() {
     expect(shifts[0].start, DateTime(2026, 7, 1, 8));
     expect(shifts[1].start, DateTime(2026, 8, 2));
   });
+
+  test('prefers the monthly section heading over a conflicting worksheet title', () {
+    final days = <Object?>['วันที่', ...List.generate(30, (i) => i + 1)];
+    final gen = _row('GEN');
+    final genAfternoon = _row('');
+    genAfternoon[26] = 'ภาคภูมิ';
+
+    final shifts = parser.parseAllPeriods(
+      snapshots: [
+        SheetSnapshot(
+          title: 'ธันวาคม 2569',
+          rows: [
+            ...List.generate(12, (_) => <Object?>['']),
+            ['ตารางเวรประจำเดือน พฤศจิกายน พ.ศ. 2569'],
+            days,
+            gen,
+            genAfternoon,
+          ],
+        ),
+      ],
+      targetName: 'ภาคภูมิ',
+    );
+
+    expect(shifts, hasLength(1));
+    expect(shifts.single.code, 'AG');
+    expect(shifts.single.start, DateTime(2026, 11, 26, 16, 30));
+    expect(shifts.single.end, DateTime(2026, 11, 26, 20));
+  });
+
+  test('uses the nearest month heading for each monthly block in one tab', () {
+    final novemberDays = <Object?>['วันที่', ...List.generate(30, (i) => i + 1)];
+    final decemberDays = <Object?>['วันที่', ...List.generate(31, (i) => i + 1)];
+    final novemberGen = _row('GEN');
+    final novemberAfternoon = _row('');
+    novemberAfternoon[26] = 'ภาคภูมิ';
+    final decemberGen = _row('GEN');
+    final decemberAfternoon = _row('');
+    decemberAfternoon[3] = 'ภาคภูมิ';
+
+    final shifts = parser.parseAllPeriods(
+      snapshots: [
+        SheetSnapshot(
+          title: 'ธันวาคม 2569',
+          rows: [
+            ['เวรประจำเดือน พฤศจิกายน พ.ศ. 2569'],
+            novemberDays,
+            novemberGen,
+            novemberAfternoon,
+            ['เวรประจำเดือน ธันวาคม พ.ศ. 2569'],
+            decemberDays,
+            decemberGen,
+            decemberAfternoon,
+          ],
+        ),
+      ],
+      targetName: 'ภาคภูมิ',
+    );
+
+    expect(shifts, hasLength(2));
+    expect(shifts.map((shift) => shift.start), [
+      DateTime(2026, 11, 26, 16, 30),
+      DateTime(2026, 12, 3, 16, 30),
+    ]);
+  });
+
+
+  test('does not reuse a previous section month for an undated roster block', () {
+    final days = <Object?>['วันที่', ...List.generate(31, (i) => i + 1)];
+    final datedShift = _row('P1 เช้า')..[1] = 'ภาคภูมิ';
+    final undatedShift = _row('P1 เช้า')..[2] = 'ภาคภูมิ';
+
+    final shifts = parser.parseAllPeriods(
+      snapshots: [
+        SheetSnapshot(
+          title: 'พฤศจิกายน 2569',
+          rows: [
+            ['เวรประจำเดือน ธันวาคม พ.ศ. 2569'],
+            days,
+            datedShift,
+            ['MRI ตารางเวรเฉพาะกิจ'],
+            days,
+            undatedShift,
+          ],
+        ),
+      ],
+      targetName: 'ภาคภูมิ',
+    );
+
+    expect(shifts, hasLength(1));
+    expect(shifts.single.start, DateTime(2026, 12, 1, 8));
+    expect(shifts.single.cell, 'B3');
+  });
+
+  test('reads all twelve Thai full month names without a fixed month setting', () {
+    const monthNames = [
+      'มกราคม',
+      'กุมภาพันธ์',
+      'มีนาคม',
+      'เมษายน',
+      'พฤษภาคม',
+      'มิถุนายน',
+      'กรกฎาคม',
+      'สิงหาคม',
+      'กันยายน',
+      'ตุลาคม',
+      'พฤศจิกายน',
+      'ธันวาคม',
+    ];
+    final snapshots = [
+      for (var month = 1; month <= 12; month++)
+        () {
+          final dayCount = DateTime(2026, month + 1, 0).day;
+          final row = _row('P1 เช้า')..[15] = 'ผู้ใช้งานทดสอบ';
+          return SheetSnapshot(
+            title: 'ข้อมูลเวร',
+            rows: [
+              ['ตารางเวรเดือน ${monthNames[month - 1]} พ.ศ. 2569'],
+              ['วันที่', ...List.generate(dayCount, (index) => index + 1)],
+              row,
+            ],
+          );
+        }(),
+    ];
+
+    final shifts = parser.parseAllPeriods(
+      snapshots: snapshots,
+      targetName: 'ผู้ใช้งานทดสอบ',
+    );
+
+    expect(shifts, hasLength(12));
+    for (var month = 1; month <= 12; month++) {
+      expect(
+        shifts.any((shift) => shift.start == DateTime(2026, month, 15, 8)),
+        isTrue,
+        reason: 'Expected parser to detect month $month',
+      );
+    }
+  });
+
+  test('reads all twelve Thai month abbreviations and two-digit Buddhist years', () {
+    const monthAbbreviations = [
+      'ม.ค.',
+      'ก.พ.',
+      'มี.ค.',
+      'เม.ย.',
+      'พ.ค.',
+      'มิ.ย.',
+      'ก.ค.',
+      'ส.ค.',
+      'ก.ย.',
+      'ต.ค.',
+      'พ.ย.',
+      'ธ.ค.',
+    ];
+    final snapshots = [
+      for (var month = 1; month <= 12; month++)
+        () {
+          final dayCount = DateTime(2026, month + 1, 0).day;
+          final row = _row('P1 เช้า')..[15] = 'ผู้ใช้งานทดสอบ';
+          return SheetSnapshot(
+            title: 'sheet-$month',
+            rows: [
+              ['เวรเดือน ${monthAbbreviations[month - 1]} 69'],
+              ['วันที่', ...List.generate(dayCount, (index) => index + 1)],
+              row,
+            ],
+          );
+        }(),
+    ];
+
+    final shifts = parser.parseAllPeriods(
+      snapshots: snapshots,
+      targetName: 'ผู้ใช้งานทดสอบ',
+    );
+
+    expect(shifts, hasLength(12));
+    for (var month = 1; month <= 12; month++) {
+      expect(
+        shifts.any((shift) => shift.start == DateTime(2026, month, 15, 8)),
+        isTrue,
+        reason: 'Expected parser to detect abbreviation for month $month',
+      );
+    }
+  });
+
+  test('uses active configured shift templates for custom legacy-parser rows', () {
+    const template = ShiftTemplate(
+      id: 'custom-support-night',
+      code: 'XN',
+      name: 'เวรสนับสนุนกลางคืน',
+      shortName: 'สนับสนุนดึก',
+      startTime: Duration(hours: 19, minutes: 30),
+      endTime: Duration(hours: 7, minutes: 30),
+      workingHours: 12,
+      color: 0xFF4527A0,
+    );
+    final row = _row('สนับสนุนดึก')..[1] = 'ผู้ใช้งานทดสอบ';
+    final shifts = ShiftParser(shiftTemplates: const [template]).parse(
+      snapshots: [
+        SheetSnapshot(
+          title: 'พฤศจิกายน 2569',
+          rows: [
+            ['วันที่', ...List.generate(30, (index) => index + 1)],
+            row,
+          ],
+        ),
+      ],
+      targetName: 'ผู้ใช้งานทดสอบ',
+      year: 2026,
+      month: 11,
+    );
+    expect(shifts, hasLength(1));
+    expect(shifts.single.code, 'XN');
+    expect(shifts.single.start, DateTime(2026, 11, 1, 19, 30));
+    expect(shifts.single.end, DateTime(2026, 11, 2, 7, 30));
+  });
+
+  test('does not convert inactive or ambiguous configured aliases', () {
+    const template = ShiftTemplate(
+      id: 'custom-night',
+      code: 'XN',
+      name: 'เวรสนับสนุนกลางคืน',
+      shortName: 'สนับสนุนดึก',
+      startTime: Duration(hours: 19),
+      endTime: Duration(hours: 7),
+      workingHours: 12,
+      color: 0xFF4527A0,
+    );
+    final row = _row('สนับสนุนดึก')..[1] = 'ผู้ใช้งานทดสอบ';
+    List<Shift> parse(List<ShiftTemplate> templates) =>
+        ShiftParser(shiftTemplates: templates).parse(
+          snapshots: [
+            SheetSnapshot(
+              title: 'พฤศจิกายน 2569',
+              rows: [
+                ['วันที่', ...List.generate(30, (index) => index + 1)],
+                row,
+              ],
+            ),
+          ],
+          targetName: 'ผู้ใช้งานทดสอบ',
+          year: 2026,
+          month: 11,
+        );
+    expect(parse([template.copyWith(active: false)]), isEmpty);
+    expect(
+      parse([
+        template,
+        template.copyWith(id: 'duplicate', startTime: const Duration(hours: 20)),
+      ]),
+      isEmpty,
+    );
+  });
+
 }
 
 List<Object?> _row(String label) => <Object?>[label, ...List.filled(31, '')];

@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use Illuminate\Support\Facades\Log;
 use Tests\TestCase;
 
 class ClientErrorApiTest extends TestCase
@@ -25,6 +26,32 @@ class ClientErrorApiTest extends TestCase
                 'status' => 'accepted',
                 'request_id' => 'diagnostic-request-123',
             ]);
+    }
+
+    public function test_client_message_content_is_not_written_to_server_logs(): void
+    {
+        $message = 'Authorization: Bearer secret-token user@example.com';
+        Log::shouldReceive('warning')
+            ->once()
+            ->with('Shift Tools client error', \Mockery::on(
+                static function (array $context) use ($message): bool {
+                    $encoded = json_encode($context);
+
+                    return ! array_key_exists('message', $context)
+                        && $context['message_length'] === mb_strlen($message)
+                        && ! str_contains((string) $encoded, 'secret-token')
+                        && ! str_contains((string) $encoded, 'user@example.com');
+                },
+            ));
+
+        $this->postJson('/api/v1/diagnostics/client-errors', [
+            'error_code' => 'calendar.sync.failed',
+            'category' => 'calendar',
+            'message' => $message,
+            'platform' => 'android',
+            'app_version' => '4.1.0',
+            'occurred_at' => '2026-07-26T10:00:00+07:00',
+        ])->assertAccepted();
     }
 
     public function test_sensitive_or_unstructured_fields_are_rejected(): void

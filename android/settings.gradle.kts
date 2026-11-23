@@ -12,6 +12,11 @@ pluginManagement {
 
     repositories {
         google()
+        // Prefer Google's Maven Central mirror to reduce transient HTTP 429s
+        // from repo.maven.apache.org on hosted Android build runners.
+        maven {
+            url = uri("https://maven-central.storage-download.googleapis.com/maven2")
+        }
         mavenCentral()
         gradlePluginPortal()
     }

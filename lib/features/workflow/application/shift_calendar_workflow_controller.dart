@@ -20,13 +20,32 @@ class ShiftCalendarWorkflowController extends ChangeNotifier
     required this.validationService,
     this.resumeSyncService,
     this.onDispose,
-  });
+    String? Function(String key)? messageProvider,
+  }) : _messageProvider = messageProvider ?? _defaultMessageProvider;
 
   final WorkflowPreviewBuilder _previewBuilder;
   final CalendarSyncCoordinator _syncCoordinator;
   final ScheduleValidationService validationService;
   final ResumeSyncService? resumeSyncService;
   final VoidCallback? onDispose;
+  final String? Function(String key) _messageProvider;
+
+  static String? _defaultMessageProvider(String key) => const {
+    'workflowScheduleFailedValidation':
+        'ตารางเวรไม่ผ่านการตรวจสอบ จึงยังไม่สามารถซิงก์ได้',
+    'workflowReadyToConfirm': 'พร้อมยืนยันการซิงก์',
+    'workflowWarningsBeforeConfirm':
+        'พบคำเตือน กรุณาตรวจสอบก่อนยืนยันการซิงก์',
+    'workflowCalendarCheckFailed': 'ตรวจสอบ Google Calendar ไม่สำเร็จ',
+    'workflowNoValidatedPlan': 'ยังไม่มีแผนที่ผ่านการตรวจสอบสำหรับซิงก์',
+    'workflowNoValidationResult': 'ยังไม่มีผลการตรวจสอบสำหรับซิงก์',
+    'workflowItemsStillBlocked':
+        'ยังมีรายการที่ถูกบล็อก กรุณาตรวจสอบก่อนซิงก์',
+    'workflowSyncPartialSuccess': 'ซิงก์สำเร็จบางส่วน กรุณาตรวจสอบประวัติ',
+    'workflowSyncSuccessful': 'ซิงก์ Google Calendar สำเร็จ',
+    'workflowSyncFailed':
+        'ซิงก์ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตและสิทธิ์ Google',
+  }[key];
 
   WorkflowPreview? _preview;
   bool _isBusy = false;
@@ -107,7 +126,7 @@ class ShiftCalendarWorkflowController extends ChangeNotifier
     try {
       _validationResult = validationService.validateSchedule(schedule);
       if (hasBlockingFailures) {
-        _message = 'ตารางเวรไม่ผ่านการตรวจสอบ จึงยังไม่สามารถซิงก์ได้';
+        _message = _messageProvider('workflowScheduleFailedValidation');
         return;
       }
       _schedulePreparation = await _syncCoordinator.prepareSchedule(
@@ -115,10 +134,10 @@ class ShiftCalendarWorkflowController extends ChangeNotifier
         calendarId: calendarId,
       );
       _message = _validationResult!.warnings.isEmpty
-          ? 'พร้อมยืนยันการซิงก์'
-          : 'พบคำเตือน กรุณาตรวจสอบก่อนยืนยันการซิงก์';
+          ? _messageProvider('workflowReadyToConfirm')
+          : _messageProvider('workflowWarningsBeforeConfirm');
     } catch (_) {
-      _message = 'ตรวจสอบ Google Calendar ไม่สำเร็จ';
+      _message = _messageProvider('workflowCalendarCheckFailed');
       rethrow;
     } finally {
       _isBusy = false;
@@ -130,7 +149,7 @@ class ShiftCalendarWorkflowController extends ChangeNotifier
     final schedulePreparation = _schedulePreparation;
     if (_schedule != null) {
       if (hasBlockingFailures || schedulePreparation == null) {
-        _message = 'ยังไม่มีแผนที่ผ่านการตรวจสอบสำหรับซิงก์';
+        _message = _messageProvider('workflowNoValidatedPlan');
         notifyListeners();
         return;
       }
@@ -139,12 +158,12 @@ class ShiftCalendarWorkflowController extends ChangeNotifier
     }
     final current = _preview;
     if (current == null) {
-      _message = 'ยังไม่มีผลการตรวจสอบสำหรับซิงก์';
+      _message = _messageProvider('workflowNoValidationResult');
       notifyListeners();
       return;
     }
     if (!current.simulation.summary.canSynchronize) {
-      _message = 'ยังมีรายการที่ถูกบล็อก กรุณาตรวจสอบก่อนซิงก์';
+      _message = _messageProvider('workflowItemsStillBlocked');
       notifyListeners();
       return;
     }
@@ -161,10 +180,10 @@ class ShiftCalendarWorkflowController extends ChangeNotifier
         calendarId: calendarId,
       );
       _message = _lastResult!.hasFailures
-          ? 'ซิงก์สำเร็จบางส่วน กรุณาตรวจสอบประวัติ'
-          : 'ซิงก์ Google Calendar สำเร็จ';
+          ? _messageProvider('workflowSyncPartialSuccess')
+          : _messageProvider('workflowSyncSuccessful');
     } catch (_) {
-      _message = 'ซิงก์ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตและสิทธิ์ Google';
+      _message = _messageProvider('workflowSyncFailed');
     } finally {
       _isBusy = false;
       notifyListeners();
@@ -180,10 +199,10 @@ class ShiftCalendarWorkflowController extends ChangeNotifier
     try {
       _lastResult = await _syncCoordinator.execute(preparation);
       _message = _lastResult!.hasFailures
-          ? 'ซิงก์สำเร็จบางส่วน กรุณาตรวจสอบประวัติ'
-          : 'ซิงก์ Google Calendar สำเร็จ';
+          ? _messageProvider('workflowSyncPartialSuccess')
+          : _messageProvider('workflowSyncSuccessful');
     } catch (_) {
-      _message = 'ซิงก์ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตและสิทธิ์ Google';
+      _message = _messageProvider('workflowSyncFailed');
       rethrow;
     } finally {
       _isBusy = false;

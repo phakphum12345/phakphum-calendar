@@ -21,6 +21,7 @@ class CalendarWorkflowFactory {
     required auth.AuthClient client,
     SyncHistoryRepository? historyRepository,
     int maxAttempts = 2,
+    String? Function(String key)? messageProvider,
   }) {
     final repository = historyRepository ?? InMemorySyncHistoryRepository();
 
@@ -42,6 +43,7 @@ class CalendarWorkflowFactory {
       previewBuilder: const WorkflowPreviewBuilder(),
       syncCoordinator: coordinator,
       validationService: ScheduleValidationService(),
+      messageProvider: messageProvider,
     );
   }
 }

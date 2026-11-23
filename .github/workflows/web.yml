@@ -3,34 +3,42 @@ name: Build and Deploy Web
 on:
   workflow_dispatch:
   pull_request:
-    branches: [main]
     paths:
       - "lib/**"
       - "assets/**"
+      - "android/**"
+      - "ios/**"
+      - "linux/**"
       - "windows/**"
       - "web/**"
       - "test/**"
       - "integration_test/**"
       - "pubspec.yaml"
       - "pubspec.lock"
+      - "DISKPATH.json"
+      - "DISKPATH.md"
       - ".github/workflows/**"
   push:
     branches: [main]
     paths:
       - "lib/**"
       - "assets/**"
+      - "android/**"
+      - "ios/**"
+      - "linux/**"
       - "windows/**"
       - "web/**"
       - "test/**"
       - "integration_test/**"
       - "pubspec.yaml"
       - "pubspec.lock"
+      - "DISKPATH.json"
+      - "DISKPATH.md"
       - ".github/workflows/**"
 
+# Read-only by default. The deploy job grants only the permissions Pages needs.
 permissions:
   contents: read
-  pages: write
-  id-token: write
 
 concurrency:
   group: pages-${{ github.workflow }}-${{ github.ref }}
@@ -41,6 +49,8 @@ jobs:
     name: Build Flutter web
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout repository
@@ -49,6 +59,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: 3.47.2
           channel: stable
           cache: true
 
@@ -57,13 +68,18 @@ jobs:
 
       - name: Build web release
         env:
-          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+          # Web OAuth Client IDs are public identifiers, not client secrets.
+          # Prefer the repository secret when configured; otherwise use the
+          # owner's existing Google Web OAuth client for GitHub Pages.
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID || '667656026445-pffm0rtkaiunhfujgfv52dlfb6pbtnm2.apps.googleusercontent.com' }}
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
+          ORGANIZATION_API_BASE_URL: ${{ vars.ORGANIZATION_API_BASE_URL }}
         run: |
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
           flutter build web --release --base-href "/$REPO_NAME/" \
             --dart-define=GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID" \
-            --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID"
+            --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID" \
+            --dart-define=ORGANIZATION_API_BASE_URL="$ORGANIZATION_API_BASE_URL"
 
       - name: Verify web output
         shell: bash
@@ -72,6 +88,13 @@ jobs:
           test -f build/web/index.html
           test -d build/web/assets
           echo "WEB BUILD PASS"
+
+      - name: Write exact deployment metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '{"repository":"%s","commit_sha":"%s"}\n' \
+            "$GITHUB_REPOSITORY" "$GITHUB_SHA" > build/web/deployment.json
 
       - name: Upload downloadable web build
         uses: actions/upload-artifact@v7
@@ -82,22 +105,45 @@ jobs:
           retention-days: 14
 
       - name: Upload GitHub Pages artifact
-        if: github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v4
         with:
           path: build/web
 
   deploy-pages:
     name: Deploy GitHub Pages
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main'
     needs: build-web
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: Deploy
+      - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Verify published site and deployed commit
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          EXPECTED_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$PAGE_URL"
+          BASE_URL="${PAGE_URL%/}"
+          curl --fail --silent --show-error --location \
+            --retry 10 --retry-delay 5 --retry-all-errors \
+            "$BASE_URL/" -o /tmp/phakphum-calendar-index.html
+          curl --fail --silent --show-error --location \
+            --retry 10 --retry-delay 5 --retry-all-errors \
+            "$BASE_URL/deployment.json" -o /tmp/phakphum-calendar-deployment.json
+          grep -Fq "\"commit_sha\":\"$EXPECTED_SHA\"" \
+            /tmp/phakphum-calendar-deployment.json
+          echo "PAGES HTTP SMOKE TEST: PASS"
+          echo "DEPLOYED COMMIT SHA: $EXPECTED_SHA"

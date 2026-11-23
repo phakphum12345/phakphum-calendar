@@ -1,104 +1,220 @@
 name: Final Gate
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - "lib/**"
+      - "assets/**"
+      - "android/**"
+      - "ios/**"
+      - "linux/**"
+      - "windows/**"
+      - "web/**"
+      - "test/**"
+      - "integration_test/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "DISKPATH.json"
+      - "DISKPATH.md"
+      - ".github/workflows/**"
   workflow_dispatch:
-  workflow_run:
-    workflows:
-      - Auto Detect CI
-      - Build Windows
-      - Build and Deploy Web
-    types: [completed]
 
 permissions:
   contents: read
   actions: read
 
 concurrency:
-  group: final-gate-main
+  group: final-gate-${{ github.workflow }}-${{ github.sha }}
   cancel-in-progress: false
 
 jobs:
   final-gate:
-    name: Analyze + Test + Windows + Web verification
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.head_branch == 'main' &&
-       github.event.workflow_run.conclusion == 'success')
+    name: Required quality + core delivery / optional platform evidence
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 42
 
     steps:
-      - name: Checkout main
+      - name: Checkout exact target commit
         uses: actions/checkout@v6
         with:
-          ref: main
+          ref: ${{ github.sha }}
           fetch-depth: 1
 
-      - name: Wait for all required PASS evidence on the same commit
+      - name: Collect required and optional evidence for this commit
         env:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
-          EVENT_SHA: ${{ github.event.workflow_run.head_sha }}
+          EVENT_SHA: ${{ github.sha }}
         shell: bash
         run: |
           set -euo pipefail
 
           SHA="$EVENT_SHA"
-          if [[ -z "$SHA" ]]; then
-            SHA="$(git rev-parse HEAD)"
-          fi
+          export SHA
+          echo "Final Gate collector SHA: $SHA"
 
-          echo "Final-gate commit: $SHA"
-
-          get_successful_run() {
+          get_run_state() {
             local workflow="$1"
             gh api \
               -H 'Accept: application/vnd.github+json' \
-              "/repos/${REPOSITORY}/actions/workflows/${workflow}/runs?branch=main&head_sha=${SHA}&status=completed&per_page=20" \
-              --jq '.workflow_runs[] | select(.conclusion == "success") | .id' \
-              | head -n 1
+              "/repos/${REPOSITORY}/actions/workflows/${workflow}/runs?branch=main&head_sha=${SHA}&per_page=100" \
+              --jq '
+                [.workflow_runs[]
+                 | select(.head_sha == env.SHA)
+                 | select(.head_branch == "main")
+                 | select(.event == "push" or .event == "workflow_dispatch")]
+                | sort_by(.run_number, .run_attempt)
+                | last // {}
+                | [(.status // "missing"), (.conclusion // ""), (.html_url // ""), ((.id // 0) | tostring)]
+                | @tsv
+              ' 2>/dev/null
           }
 
-          for attempt in {1..20}; do
-            QUALITY_RUN="$(get_successful_run ci-auto-detect.yml || true)"
-            WINDOWS_RUN="$(get_successful_run windows.yml || true)"
-            WEB_RUN="$(get_successful_run web.yml || true)"
+          get_deploy_job_state() {
+            local run_id="$1"
+            gh api \
+              -H 'Accept: application/vnd.github+json' \
+              "/repos/${REPOSITORY}/actions/runs/${run_id}/jobs?per_page=100" \
+              --jq '
+                [.jobs[] | select(.name == "Deploy GitHub Pages")]
+                | last // {}
+                | [(.status // "missing"), (.conclusion // ""), (.html_url // "")]
+                | @tsv
+              ' 2>/dev/null
+          }
 
-            echo "Evidence check ${attempt}/20"
-            echo "Quality:  ${QUALITY_RUN:-PENDING}"
-            echo "Windows:  ${WINDOWS_RUN:-PENDING}"
-            echo "Website:  ${WEB_RUN:-PENDING}"
+          # These protect the user-facing application and its primary release paths.
+          required_workflows=(
+            "Auto Detect CI:ci-auto-detect.yml"
+            "Windows:windows.yml"
+            "Web:web.yml"
+          )
 
-            if [[ -n "$QUALITY_RUN" && -n "$WINDOWS_RUN" && -n "$WEB_RUN" ]]; then
-              echo "QUALITY PASS: $QUALITY_RUN"
-              echo "WINDOWS PASS: $WINDOWS_RUN"
-              echo "WEB PASS: $WEB_RUN"
-              echo "FINAL PASS"
+          # These are best-effort artifacts. Their queue/build failures must not
+          # block the core release; every skip is explicitly recorded below.
+          optional_workflows=(
+            "Android:android.yml"
+            "iOS:ios.yml"
+            "Linux:linux.yml"
+          )
+
+          optional_grace_attempt=20
+          for attempt in $(seq 1 80); do
+            required_pending=0
+            required_failed=0
+            optional_pending=0
+            echo ""
+            echo "===== EVIDENCE CHECK ${attempt}/80 ====="
+
+            for entry in "${required_workflows[@]}"; do
+              label="${entry%%:*}"
+              workflow="${entry#*:}"
+              state="$(get_run_state "$workflow" || true)"
+              if [[ -z "$state" ]]; then
+                status="missing"; conclusion=""; url=""; run_id=""
+              else
+                IFS=$'\t' read -r status conclusion url run_id <<< "$state"
+                status="${status:-missing}"; conclusion="${conclusion:-}"; url="${url:-}"; run_id="${run_id:-}"
+              fi
+
+              echo "REQUIRED $label: status=$status conclusion=${conclusion:-PENDING}"
+              [[ -z "$url" ]] || echo "  $url"
+              if [[ "$status" == "completed" ]]; then
+                if [[ "$conclusion" != "success" ]]; then
+                  echo "REQUIRED FAILURE: $label concluded ${conclusion:-unknown} for $SHA."
+                  required_failed=1
+                elif [[ "$label" == "Web" ]]; then
+                  deploy_state="$(get_deploy_job_state "$run_id" || true)"
+                  if [[ -z "$deploy_state" ]]; then
+                    deploy_status="missing"; deploy_conclusion=""; deploy_url=""
+                  else
+                    IFS=$'\t' read -r deploy_status deploy_conclusion deploy_url <<< "$deploy_state"
+                    deploy_status="${deploy_status:-missing}"
+                    deploy_conclusion="${deploy_conclusion:-}"
+                    deploy_url="${deploy_url:-}"
+                  fi
+                  echo "REQUIRED Web deployment: status=$deploy_status conclusion=${deploy_conclusion:-PENDING}"
+                  [[ -z "$deploy_url" ]] || echo "  $deploy_url"
+                  if [[ "$deploy_status" == "completed" && "$deploy_conclusion" == "success" ]]; then
+                    echo "REQUIRED Web deployment: PASS"
+                  elif [[ "$deploy_status" == "completed" || "$deploy_status" == "missing" ]]; then
+                    echo "REQUIRED FAILURE: GitHub Pages deployment did not succeed for $SHA."
+                    required_failed=1
+                  else
+                    required_pending=1
+                  fi
+                fi
+              else
+                required_pending=1
+              fi
+            done
+
+            for entry in "${optional_workflows[@]}"; do
+              label="${entry%%:*}"
+              workflow="${entry#*:}"
+              state="$(get_run_state "$workflow" || true)"
+              if [[ -z "$state" ]]; then
+                status="missing"; conclusion=""; url=""; run_id=""
+              else
+                IFS=$'\t' read -r status conclusion url run_id <<< "$state"
+                status="${status:-missing}"; conclusion="${conclusion:-}"; url="${url:-}"
+              fi
+
+              if [[ "$status" == "completed" && "$conclusion" == "success" ]]; then
+                echo "OPTIONAL $label: PASS"
+                [[ -z "$url" ]] || echo "  $url"
+              elif [[ "$attempt" -lt "$optional_grace_attempt" && "$status" != "completed" ]]; then
+                echo "OPTIONAL $label: WAITING (status=$status)"
+                optional_pending=1
+              else
+                reason="${conclusion:-no successful run within grace period}"
+                echo "OPTIONAL $label: SKIPPED (status=$status; reason=$reason)"
+                [[ -z "$url" ]] || echo "  $url"
+              fi
+            done
+
+            if [[ "$required_failed" -eq 1 ]]; then
+              echo ""
+              echo "FINAL FAIL: one or more required workflows failed for $SHA."
+              exit 1
+            fi
+
+            if [[ "$required_pending" -eq 0 && "$optional_pending" -eq 0 ]]; then
+              echo ""
+              echo "Required evidence complete for $SHA."
+              echo "Android/iOS/Linux are best-effort; see per-target PASS/SKIPPED lines above."
               exit 0
             fi
 
-            if [[ "$attempt" -lt 20 ]]; then
+            if [[ "$attempt" -lt 80 ]]; then
               sleep 30
             fi
           done
 
-          echo "ERROR: required PASS evidence was not available for commit $SHA within the Final Gate wait window."
-          echo "Required: Auto Detect CI + Windows + Web on the same commit."
+          echo "FINAL FAIL: required evidence incomplete after 40 minutes for $SHA."
           exit 1
 
-      - name: Verify supported delivery structure
+      - name: Verify required structure and report optional targets
         shell: bash
         run: |
           set -euo pipefail
+          test -f pubspec.yaml
           test -d windows
           test -d web
-          test -f pubspec.yaml
           test -f .github/workflows/ci-auto-detect.yml
           test -f .github/workflows/windows.yml
           test -f .github/workflows/web.yml
           test -f .github/workflows/final-gate.yml
-          test ! -f .github/workflows/android.yml
-          test ! -f .github/workflows/ios.yml
-          test ! -f .github/workflows/macos.yml
-          test ! -f .github/workflows/linux.yml
-          echo 'MAIN VERIFIED: Quality + Windows + Web active; Android/iOS/macOS/Linux paused.'
+          test -f scripts/detect-ci-targets.sh
+
+          echo "REQUIRED TARGETS: Windows + Web"
+          for target in android ios linux; do
+            if [[ -d "$target" && -f ".github/workflows/$target.yml" ]]; then
+              echo "OPTIONAL TARGET $target: available; build evidence is best-effort"
+            else
+              echo "OPTIONAL TARGET $target: SKIPPED (platform source or workflow missing)"
+            fi
+          done
+          echo "Capability-aware Final Gate structure check: PASS"

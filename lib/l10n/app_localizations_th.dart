@@ -489,4 +489,66 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get notes => 'หมายเหตุ';
+
+  @override
+  String workflowAddedCount(int count) => 'เพิ่ม $count';
+
+  @override
+  String workflowUpdatedCount(int count) => 'แก้ไข $count';
+
+  @override
+  String workflowDeletedCount(int count) => 'ลบ $count';
+
+  @override
+  String workflowUnchangedCount(int count) => 'ไม่เปลี่ยน $count';
+
+  @override
+  String workflowWarningCount(int count) => 'เตือน $count';
+
+  @override
+  String workflowBlockedCount(int count) => 'บล็อก $count';
+
+    @override
+    String get workflowScheduleFailedValidation =>
+      'ตารางเวรไม่ผ่านการตรวจสอบ จึงยังไม่สามารถซิงก์ได้';
+
+    @override
+    String get workflowReadyToConfirm => 'พร้อมยืนยันการซิงก์';
+
+    @override
+    String get workflowWarningsBeforeConfirm =>
+      'พบคำเตือน กรุณาตรวจสอบก่อนยืนยันการซิงก์';
+
+    @override
+    String get workflowCalendarCheckFailed => 'ตรวจสอบ Google Calendar ไม่สำเร็จ';
+
+    @override
+    String get workflowNoValidatedPlan =>
+      'ยังไม่มีแผนที่ผ่านการตรวจสอบสำหรับซิงก์';
+
+    @override
+    String get workflowNoValidationResult =>
+      'ยังไม่มีผลการตรวจสอบสำหรับซิงก์';
+
+    @override
+    String get workflowItemsStillBlocked =>
+      'ยังมีรายการที่ถูกบล็อก กรุณาตรวจสอบก่อนซิงก์';
+
+    @override
+    String get workflowSyncPartialSuccess =>
+      'ซิงก์สำเร็จบางส่วน กรุณาตรวจสอบประวัติ';
+
+    @override
+    String get workflowSyncSuccessful => 'ซิงก์ Google Calendar สำเร็จ';
+
+    @override
+    String get workflowSyncFailed =>
+      'ซิงก์ไม่สำเร็จ กรุณาตรวจสอบอินเทอร์เน็ตและสิทธิ์ Google';
+
+  @override
+  String get startupTimeout =>
+      'เริ่มต้นระบบช้าเกินไป กรุณาตรวจการตั้งค่า Google OAuth หรือรีโหลดหน้าเว็บ';
+
+  @override
+  String startupFailed(String error) => 'เริ่มต้นระบบไม่สำเร็จ: $error';
 }

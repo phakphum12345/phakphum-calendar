@@ -6,6 +6,7 @@ import '../../../../domain/entities/department.dart';
 import '../../../../domain/entities/employee.dart';
 import '../../../../domain/entities/schedule.dart';
 import '../../../../l10n/l10n.dart';
+import '../../application/employee_directory_service.dart';
 import '../controllers/employee_directory_controller.dart';
 
 /// Responsive employee directory backed by the canonical schedule.
@@ -76,6 +77,36 @@ class _EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
           ),
           const SizedBox(height: 6),
           Text(context.l10n.employeeDirectoryDescription),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                onPressed: controller.loading
+                    ? null
+                    : () => _syncDirectory(context),
+                icon: const Icon(Icons.cloud_sync_outlined),
+                label: const Text('ซิงค์ข้ามอุปกรณ์'),
+              ),
+              OutlinedButton.icon(
+                onPressed: controller.loading
+                    ? null
+                    : () => _importGoogleContacts(context),
+                icon: const Icon(Icons.contact_page_outlined),
+                label: const Text('นำเข้าจาก Google Contacts'),
+              ),
+              OutlinedButton.icon(
+                onPressed:
+                    controller.loading ||
+                        controller.contactExportCandidates.isEmpty
+                    ? null
+                    : () => _exportGoogleContacts(context),
+                icon: const Icon(Icons.upload_outlined),
+                label: const Text('ส่งออกไป Google Contacts'),
+              ),
+            ],
+          ),
           if (controller.error case final error?) ...[
             const SizedBox(height: 12),
             MaterialBanner(
@@ -147,7 +178,7 @@ class _EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
               child: Column(
                 children: [
                   for (var index = 0; index < employees.length; index++) ...[
-                    ListTile(
+                    ExpansionTile(
                       leading: CircleAvatar(
                         child: Text(
                           employees[index].displayName.characters.firstOrNull ??
@@ -193,6 +224,12 @@ class _EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
                               ],
                             )
                           : const Icon(Icons.block_outlined),
+                      children: [
+                        _EmployeeShiftHistory(
+                          shifts: controller.shiftsFor(employees[index].id),
+                          locale: Localizations.localeOf(context).languageCode,
+                        ),
+                      ],
                     ),
                     if (index != employees.length - 1) const Divider(height: 1),
                   ],
@@ -202,6 +239,183 @@ class _EmployeeDirectoryPageState extends State<EmployeeDirectoryPage> {
         ],
       );
     },
+  );
+
+  Future<void> _syncDirectory(BuildContext context) async {
+    final confirmed = await _confirmAction(
+      context,
+      title: 'ซิงค์รายชื่อข้ามอุปกรณ์?',
+      message:
+          'แอปจะรวมรายชื่อในอุปกรณ์นี้กับไฟล์ส่วนตัวใน Google Drive '
+          'และใช้ข้อมูลในอุปกรณ์นี้เมื่อพบรหัสบุคลากรซ้ำ',
+    );
+    if (confirmed != true) return;
+    try {
+      final result = await controller.syncWithGoogle();
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(result)));
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('ซิงค์ไม่สำเร็จ: $error')));
+      }
+    }
+  }
+
+  Future<void> _importGoogleContacts(BuildContext context) async {
+    try {
+      final contacts = await controller.previewGoogleContactsImport();
+      if (!context.mounted) return;
+      if (contacts.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Google Contacts ไม่มีรายชื่อที่นำเข้าได้'),
+          ),
+        );
+        return;
+      }
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('ตรวจสอบรายชื่อ (${contacts.length})'),
+          content: SizedBox(
+            width: 460,
+            height: 320,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'รายการต่อไปนี้จะเพิ่มหรือรวมเข้ากับรายชื่อบุคลากร:',
+                ),
+                const SizedBox(height: 8),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: contacts.length,
+                    itemBuilder: (context, index) => ListTile(
+                      dense: true,
+                      title: Text(contacts[index].displayName),
+                      subtitle: Text(contacts[index].employeeCode),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(context.l10n.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('ยืนยันนำเข้า'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+      final imported = await controller.importGoogleContacts(contacts);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('นำเข้ารายชื่อ $imported รายการแล้ว')),
+        );
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('นำเข้าไม่สำเร็จ: $error')));
+      }
+    }
+  }
+
+  Future<void> _exportGoogleContacts(BuildContext context) async {
+    final candidates = controller.contactExportCandidates;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('ส่งออก ${candidates.length} รายชื่อไป Google Contacts?'),
+        content: SizedBox(
+          width: 460,
+          height: 320,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'รายชื่อที่เคยส่งออกโดยแอปจะได้รับการปรับปรุง '
+                'รายชื่ออื่นจะถูกสร้างใหม่ ไม่มีการลบรายชื่อใน Google Contacts',
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: ListView.builder(
+                  itemCount: candidates.length,
+                  itemBuilder: (context, index) => ListTile(
+                    dense: true,
+                    title: Text(candidates[index].displayName),
+                    subtitle: Text(candidates[index].employeeCode),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(context.l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('ยืนยันส่งออก'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    try {
+      final result = await controller.exportGoogleContacts();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'ส่งออกสำเร็จ: เพิ่ม ${result.created} • ปรับปรุง ${result.updated}',
+            ),
+          ),
+        );
+      }
+    } catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('ส่งออกไม่สำเร็จ: $error')));
+      }
+    }
+  }
+
+  Future<bool?> _confirmAction(
+    BuildContext context, {
+    required String title,
+    required String message,
+  }) => showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text(title),
+      content: Text(message),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(context.l10n.cancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: Text(context.l10n.confirm),
+        ),
+      ],
+    ),
   );
 
   Future<void> _editEmployee(BuildContext context, {Employee? employee}) async {
@@ -409,4 +623,46 @@ class _EmployeeEmptyState extends StatelessWidget {
       ),
     ),
   );
+}
+
+class _EmployeeShiftHistory extends StatelessWidget {
+  const _EmployeeShiftHistory({required this.shifts, required this.locale});
+
+  final List<EmployeeShiftDate> shifts;
+  final String locale;
+
+  @override
+  Widget build(BuildContext context) {
+    if (shifts.isEmpty) {
+      return const ListTile(
+        dense: true,
+        leading: Icon(Icons.event_busy_outlined),
+        title: Text('ยังไม่มีวันที่เวรในตารางปัจจุบัน'),
+      );
+    }
+    return Column(
+      children: [
+        for (final shift in shifts)
+          ListTile(
+            dense: true,
+            leading: const Icon(Icons.event_available_outlined),
+            title: Text(_dateLabel(shift.date)),
+            subtitle: Text(
+              '${shift.shiftName} (${shift.shiftCode}) • '
+              '${_timeLabel(shift.start)}–${_timeLabel(shift.end)}',
+            ),
+          ),
+      ],
+    );
+  }
+
+  String _dateLabel(DateTime date) {
+    final year = locale == 'th' ? date.year + 543 : date.year;
+    return '${date.day.toString().padLeft(2, '0')}/'
+        '${date.month.toString().padLeft(2, '0')}/$year';
+  }
+
+  String _timeLabel(DateTime value) =>
+      '${value.hour.toString().padLeft(2, '0')}:'
+      '${value.minute.toString().padLeft(2, '0')}';
 }

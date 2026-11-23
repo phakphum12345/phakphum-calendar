@@ -1,0 +1,45 @@
+name: Validate DISKPATH
+
+on:
+  workflow_dispatch:
+
+# DISKPATH automation is retired; this workflow is manual-only.
+# It is not part of pull-request or push validation.
+# Never grant a pull-request workflow write access to repository contents.
+# PR code is untrusted input; manifest updates must be generated and committed
+# by the contributor in their branch, then verified here without mutation.
+permissions:
+  contents: read
+
+concurrency:
+  group: validate-diskpath-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate committed DISKPATH manifests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout exact event commit
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+
+      - name: Verify manifests are current
+        run: |
+          set -euo pipefail
+          python3 tools/diskpath/generate_diskpath.py --check
+          python3 tools/diskpath/validate_diskpath.py
+
+      - name: Verify patch formatting
+        run: |
+          set -euo pipefail
+          git diff --check
+          echo "DISKPATH VALIDATION: PASS"

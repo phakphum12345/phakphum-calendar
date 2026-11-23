@@ -26,8 +26,10 @@ class SettingsService implements AppSettingsStore {
   static const _nameKey = 'target_name';
   static const _archiveKey = 'archive_original';
   static const _autoRefreshKey = 'auto_refresh';
+  static const _autoSyncKey = 'auto_sync';
   static const _refreshSecondsKey = 'refresh_seconds';
   static const _googleWebClientIdKey = 'google_web_client_id';
+  static const _orgKey='setup_organization_name', _officerKey='setup_officer_name', _shiftNameKey='setup_shift_name', _shiftColorKey='setup_shift_color', _shiftStartKey='setup_shift_start', _shiftEndKey='setup_shift_end', _receiverKey='setup_shift_receiver', _exchangeKey='setup_shift_exchange_note', _cancelKey='setup_shift_cancellation_note', _setupKey='setup_complete';
   static const _auditKey = 'audit_log';
   static const _pinnedToolIdsKey = 'pinned_tool_ids';
   static const _savedSheetsKey = 'saved_sheets';
@@ -52,13 +54,18 @@ class SettingsService implements AppSettingsStore {
       periods: const [],
       archiveOriginal: prefs.getBool(_archiveKey) ?? defaults.archiveOriginal,
       autoRefresh: prefs.getBool(_autoRefreshKey) ?? defaults.autoRefresh,
+      autoSync: prefs.getBool(_autoSyncKey) ?? defaults.autoSync,
       refreshSeconds:
           (prefs.getInt(_refreshSecondsKey) ?? defaults.refreshSeconds).clamp(
             1,
             60,
           ),
-      googleWebClientId:
-          prefs.getString(_googleWebClientIdKey) ?? defaults.googleWebClientId,
+      googleWebClientId: prefs.getString(_googleWebClientIdKey) ?? defaults.googleWebClientId,
+      organizationName: prefs.getString(_orgKey) ?? '', officerName: prefs.getString(_officerKey) ?? '',
+      defaultShiftName: prefs.getString(_shiftNameKey) ?? '', defaultShiftColor: prefs.getString(_shiftColorKey) ?? '#616161',
+      defaultShiftStart: prefs.getString(_shiftStartKey) ?? '08:00', defaultShiftEnd: prefs.getString(_shiftEndKey) ?? '16:00',
+      defaultShiftReceiver: prefs.getString(_receiverKey) ?? '', shiftExchangeNote: prefs.getString(_exchangeKey) ?? '',
+      shiftCancellationNote: prefs.getString(_cancelKey) ?? '', setupComplete: prefs.getBool(_setupKey) ?? false,
     );
   }
 
@@ -71,8 +78,14 @@ class SettingsService implements AppSettingsStore {
       prefs.remove('target_month'),
       prefs.setBool(_archiveKey, settings.archiveOriginal),
       prefs.setBool(_autoRefreshKey, settings.autoRefresh),
+      prefs.setBool(_autoSyncKey, settings.autoSync),
       prefs.setInt(_refreshSecondsKey, settings.refreshSeconds.clamp(1, 60)),
       prefs.setString(_googleWebClientIdKey, settings.googleWebClientId),
+      prefs.setString(_orgKey, settings.organizationName), prefs.setString(_officerKey, settings.officerName),
+      prefs.setString(_shiftNameKey, settings.defaultShiftName), prefs.setString(_shiftColorKey, settings.defaultShiftColor),
+      prefs.setString(_shiftStartKey, settings.defaultShiftStart), prefs.setString(_shiftEndKey, settings.defaultShiftEnd),
+      prefs.setString(_receiverKey, settings.defaultShiftReceiver), prefs.setString(_exchangeKey, settings.shiftExchangeNote),
+      prefs.setString(_cancelKey, settings.shiftCancellationNote), prefs.setBool(_setupKey, settings.setupComplete),
     ]);
   }
 

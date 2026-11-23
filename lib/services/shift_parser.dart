@@ -1,3 +1,4 @@
+import '../domain/entities/shift_template.dart';
 import '../models/shift.dart';
 import 'shift_color_service.dart';
 
@@ -32,7 +33,10 @@ class ShiftParser
         RosterShiftParser,
         AllPeriodRosterShiftParser,
         FullRosterShiftParser {
-  const ShiftParser();
+  const ShiftParser({this.shiftTemplates = const []});
+
+  /// Optional user-configured catalog. Legacy callers remain source-compatible.
+  final Iterable<ShiftTemplate> shiftTemplates;
 
   static const _allWorkersSentinel = '__all_roster_workers__';
   static const _thaiMonths = <String, int>{
@@ -208,14 +212,18 @@ class ShiftParser
     required int fallbackMonth,
   }) {
     final row = snapshot.rows[headerIndex];
-    final headingParts = <String>[snapshot.title];
-    final first = (headerIndex - 5).clamp(0, snapshot.rows.length - 1);
-    final last = (headerIndex + 3).clamp(0, snapshot.rows.length - 1);
-    for (var i = first; i <= last; i++) {
-      if (i == headerIndex) continue;
-      headingParts.add(snapshot.rows[i].map((cell) => '$cell').join(' '));
+    // A dated section heading is more authoritative than the worksheet tab
+    // name. Tabs are often reused or renamed independently of the roster block.
+    final localContext = _periodContextForHeader(snapshot, headerIndex);
+    final hasMultipleDateHeaders =
+        snapshot.rows.where(_isDateHeader).length > 1;
+    final inferred = localContext.firstOrNull ??
+        (hasMultipleDateHeaders ? null : _firstThaiDate(snapshot.title));
+    if (hasMultipleDateHeaders && inferred == null) {
+      // A section without its own period must not inherit a preceding
+      // section's month or the worksheet tab's month.
+      return const {};
     }
-    final inferred = _firstThaiDate(headingParts.join(' '));
     final numeric = <MapEntry<int, int>>[];
     for (var column = 1; column < row.length; column++) {
       final day = _dayNumber(row[column]);
@@ -256,16 +264,46 @@ class ShiftParser
   }
 
   List<DateTime> _periodsForSnapshot(SheetSnapshot snapshot) {
-    final text = <String>[
-      snapshot.title,
-      for (final row in snapshot.rows.take(12))
-        row.map((cell) => '$cell').join(' '),
-    ].join(' ');
     final unique = <String, DateTime>{};
-    for (final date in _thaiDates(text)) {
-      unique['${date.year}-${date.month}'] = DateTime(date.year, date.month);
+    for (var rowIndex = 0; rowIndex < snapshot.rows.length; rowIndex++) {
+      if (!_isDateHeader(snapshot.rows[rowIndex])) continue;
+      for (final date in _periodContextForHeader(snapshot, rowIndex)) {
+        unique['${date.year}-${date.month}'] = DateTime(date.year, date.month);
+      }
     }
+
+    // A tab-title fallback is safe only for a single date grid. With
+    // multiple sections, every block must declare its own period.
+    final dateHeaderCount = snapshot.rows.where(_isDateHeader).length;
+    if (unique.isEmpty && dateHeaderCount == 1) {
+      final text = <String>[
+        snapshot.title,
+        for (final row in snapshot.rows.take(12))
+          row.map((cell) => '$cell').join(' '),
+      ].join(' ');
+      for (final date in _thaiDates(text)) {
+        unique['${date.year}-${date.month}'] = DateTime(date.year, date.month);
+      }
+    }
+
     return unique.values.toList()..sort((left, right) => left.compareTo(right));
+  }
+
+  /// Returns an explicit period heading within this block only.
+  /// Stop at the preceding date grid so a later block cannot inherit its
+  /// neighbour's month. Worksheet-title fallback is handled separately and
+  /// only when the worksheet contains one date grid.
+  List<DateTime> _periodContextForHeader(
+    SheetSnapshot snapshot,
+    int headerIndex,
+  ) {
+    for (var rowIndex = headerIndex - 1; rowIndex >= 0; rowIndex--) {
+      if (_isDateHeader(snapshot.rows[rowIndex])) break;
+      final text = snapshot.rows[rowIndex].map((cell) => '$cell').join(' ');
+      final dates = _thaiDates(text);
+      if (dates.isNotEmpty) return dates;
+    }
+    return const [];
   }
 
   List<DateTime> _thaiDates(String text) {
@@ -296,6 +334,24 @@ class ShiftParser
   }
 
   _ShiftRule? _ruleForLabel(String label) {
+    final normalized = _compactLabel(label);
+    final matching = shiftTemplates.where((template) {
+      if (!template.active) return false;
+      return [template.code, template.name, template.shortName].any(
+        (alias) => alias.trim().isNotEmpty && _compactLabel(alias) == normalized,
+      );
+    }).toList(growable: false);
+    if (matching.isNotEmpty) {
+      if (matching.length != 1) return null;
+      final template = matching.single;
+      return _ShiftRule(
+        code: template.code,
+        startHour: template.startTime.inHours.remainder(24),
+        startMinute: template.startTime.inMinutes.remainder(60),
+        endHour: template.endTime.inHours.remainder(24),
+        endMinute: template.endTime.inMinutes.remainder(60),
+      );
+    }
     final value = _normalizeLabel(label);
     if (value == 'ER' || value == 'CT') {
       return _ShiftRule(
@@ -401,7 +457,9 @@ class ShiftParser
 
   int? _dayNumber(Object? value) {
     final number = value is num
-        ? value.toInt()
+        ? (value.isFinite && value == value.roundToDouble()
+              ? value.toInt()
+              : null)
         : int.tryParse(value?.toString().trim() ?? '');
     return number != null && number >= 1 && number <= 31 ? number : null;
   }
@@ -414,6 +472,11 @@ class ShiftParser
 
   String _compact(String value) =>
       value.trim().replaceAll(RegExp(r'\s+'), '').toLowerCase();
+
+  String _compactLabel(String value) => value
+      .trim()
+      .toLowerCase()
+      .replaceAll(RegExp(r'[\s.\-_()/]+'), '');
 
   String _columnName(int column) {
     var current = column;

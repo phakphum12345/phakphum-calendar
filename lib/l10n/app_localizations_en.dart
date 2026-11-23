@@ -494,4 +494,65 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notes => 'Notes';
+
+    @override
+    String workflowAddedCount(int count) => 'Added $count';
+
+    @override
+    String workflowUpdatedCount(int count) => 'Updated $count';
+
+    @override
+    String workflowDeletedCount(int count) => 'Deleted $count';
+
+    @override
+    String workflowUnchangedCount(int count) => 'Unchanged $count';
+
+    @override
+    String workflowWarningCount(int count) => 'Warnings $count';
+
+    @override
+    String workflowBlockedCount(int count) => 'Blocked $count';
+
+      @override
+      String get workflowScheduleFailedValidation =>
+          'Schedule failed validation, cannot sync';
+
+      @override
+      String get workflowReadyToConfirm => 'Ready to confirm sync';
+
+      @override
+      String get workflowWarningsBeforeConfirm =>
+          'Warnings found, please review before confirming sync';
+
+      @override
+      String get workflowCalendarCheckFailed => 'Google Calendar check failed';
+
+      @override
+      String get workflowNoValidatedPlan => 'No validated plan available for sync';
+
+      @override
+      String get workflowNoValidationResult =>
+          'No validation result available for sync';
+
+      @override
+      String get workflowItemsStillBlocked =>
+          'Items still blocked, please review before sync';
+
+      @override
+      String get workflowSyncPartialSuccess =>
+          'Partial sync success, please check history';
+
+      @override
+      String get workflowSyncSuccessful => 'Google Calendar sync successful';
+
+      @override
+      String get workflowSyncFailed =>
+          'Sync failed, check internet and Google permissions';
+
+    @override
+    String get startupTimeout =>
+            'Startup took too long. Check Google OAuth settings or reload the page.';
+
+    @override
+    String startupFailed(String error) => 'Startup failed: $error';
 }

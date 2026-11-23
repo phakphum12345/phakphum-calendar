@@ -1,0 +1,81 @@
+name: Self-hosted Windows Validation
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: self-hosted-windows-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate-windows:
+    name: Calendar Windows / Self-hosted
+    # This workflow is deliberately manual-only and restricted to trusted main.
+    # Never add pull_request or pull_request_target triggers to a self-hosted job.
+    if: github.ref == 'refs/heads/main'
+    runs-on: [self-hosted, windows, x64, calendar-windows]
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout trusted main revision
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Verify runner toolchain
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Write-Host "Repository: ${{ github.repository }}"
+          Write-Host "Commit: ${{ github.sha }}"
+          Write-Host "Runner: $env:RUNNER_NAME"
+          Write-Host "OS: $env:RUNNER_OS / $env:RUNNER_ARCH"
+
+          foreach ($tool in @('git', 'flutter')) {
+            if (-not (Get-Command $tool -ErrorAction SilentlyContinue)) {
+              throw "Required tool is not on PATH: $tool"
+            }
+          }
+
+          git --version
+          flutter --version
+          flutter doctor -v
+
+      - name: Install locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Static analysis
+        run: flutter analyze
+
+      - name: Flutter tests
+        run: flutter test
+
+      - name: Build Windows release
+        env:
+          GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
+        run: flutter build windows --release --dart-define=GOOGLE_SERVER_CLIENT_ID="$env:GOOGLE_SERVER_CLIENT_ID"
+
+      - name: Verify and package Windows executable
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $exe = "build/windows/x64/runner/Release/phakphum_calendar.exe"
+          if (-not (Test-Path $exe)) {
+            throw "Windows executable was not produced: $exe"
+          }
+
+          New-Item -ItemType Directory -Path dist/windows -Force | Out-Null
+          Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath dist/windows/phakphum-calendar-windows.zip -Force
+          $hash = (Get-FileHash dist/windows/phakphum-calendar-windows.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  phakphum-calendar-windows.zip" | Set-Content dist/windows/SHA256SUMS.txt -Encoding ascii
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: phakphum-calendar-windows-self-hosted
+          path: dist/windows
+          if-no-files-found: error
+          retention-days: 14

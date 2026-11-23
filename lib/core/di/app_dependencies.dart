@@ -69,6 +69,8 @@ import '../../services/sheets_service.dart';
 import '../../services/shift_alert_service.dart';
 import '../../services/shift_parser.dart';
 import '../google/authorized_google_client_factory.dart';
+import '../../l10n/l10n.dart';
+import '../../l10n/app_localizations_th.dart';
 import '../result/result.dart';
 import '../validation/rule_evaluator.dart';
 
@@ -113,6 +115,7 @@ class AppDependencies {
     this.calendarSyncService,
     this.googleSheetsService,
     this.notificationService,
+    String? Function(String key)? workflowMessageProviderOverride,
   }) : googleAuthService = googleAuthService ?? GoogleAuthService(),
        legacySettingsService = legacySettingsService ?? SettingsService(),
        legacySheetsService = legacySheetsService ?? SheetsService(),
@@ -172,10 +175,16 @@ class AppDependencies {
            shiftTemplateRepository ??
            SharedPreferencesShiftTemplateRepository(),
        scheduleRepository =
-           scheduleRepository ?? SharedPreferencesScheduleRepository();
+           scheduleRepository ?? SharedPreferencesScheduleRepository(),
+       workflowMessageProvider =
+           workflowMessageProviderOverride ??
+           ((key) => workflowMessageFor(AppLocalizationsTh(), key));
 
   /// Creates the dependency graph used by the production application.
-  factory AppDependencies.production() => AppDependencies();
+  factory AppDependencies.production({
+    String? Function(String key)? workflowMessageProvider,
+  }) =>
+      AppDependencies(workflowMessageProviderOverride: workflowMessageProvider);
 
   final GoogleAuthGateway googleAuthService;
   final AppSettingsStore legacySettingsService;
@@ -207,6 +216,7 @@ class AppDependencies {
   final MonthlyScheduleReportService monthlyScheduleReportService;
   final ReportOutputGateway reportOutputGateway;
   final DateTime Function() reportClock;
+  final String? Function(String key) workflowMessageProvider;
 
   final EmployeeRepository employeeRepository;
   final ShiftTemplateRepository shiftTemplateRepository;
@@ -232,6 +242,7 @@ class AppDependencies {
       ownershipService: driveOwnershipService,
       localFileService: localRosterFileService,
       scheduleRepository: scheduleRepository,
+      shiftTemplateRepository: shiftTemplateRepository,
       legacyScheduleAdapter: legacyScheduleAdapter,
       calendarWorkflowControllerFactory:
           createAuthorizedCalendarWorkflowController,
@@ -251,6 +262,7 @@ class AppDependencies {
       ownershipService: driveOwnershipService,
       localFileService: localRosterFileService,
       scheduleRepository: scheduleRepository,
+      shiftTemplateRepository: shiftTemplateRepository,
       legacyScheduleAdapter: legacyScheduleAdapter,
       calendarWorkflowControllerFactory:
           createAuthorizedCalendarWorkflowController,
@@ -311,6 +323,7 @@ class AppDependencies {
     return EmployeeDirectoryController(
       schedule: schedule,
       repository: employeeRepository,
+      googleAuth: googleAuthService,
     );
   }
 
@@ -337,6 +350,11 @@ class AppDependencies {
       repository: scheduleRepository,
       initialMonth: schedule.months.firstOrNull?.month,
     );
+  }
+
+  /// Loads the current canonical imported schedule without mutating it.
+  Future<Result<Schedule?>> loadImportedSchedule() {
+    return scheduleRepository.findById('imported');
   }
 
   /// Persists a successfully converted canonical import aggregate.
@@ -388,6 +406,7 @@ class AppDependencies {
   ShiftCalendarWorkflowController createShiftCalendarWorkflowController(
     CalendarSyncGateway gateway, {
     void Function()? onDispose,
+    String? Function(String key)? messageProvider,
   }) {
     return ShiftCalendarWorkflowController(
       previewBuilder: const WorkflowPreviewBuilder(),
@@ -399,6 +418,7 @@ class AppDependencies {
         failedRepository: failedSyncRepository,
       ),
       onDispose: onDispose,
+      messageProvider: messageProvider ?? workflowMessageProvider,
     );
   }
 

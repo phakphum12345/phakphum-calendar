@@ -3,28 +3,37 @@ name: Build Windows
 on:
   workflow_dispatch:
   pull_request:
-    branches: [main]
     paths:
       - "lib/**"
       - "assets/**"
+      - "android/**"
+      - "ios/**"
+      - "linux/**"
       - "windows/**"
       - "web/**"
       - "test/**"
       - "integration_test/**"
       - "pubspec.yaml"
       - "pubspec.lock"
+      - "DISKPATH.json"
+      - "DISKPATH.md"
       - ".github/workflows/**"
   push:
     branches: [main]
     paths:
       - "lib/**"
       - "assets/**"
+      - "android/**"
+      - "ios/**"
+      - "linux/**"
       - "windows/**"
       - "web/**"
       - "test/**"
       - "integration_test/**"
       - "pubspec.yaml"
       - "pubspec.lock"
+      - "DISKPATH.json"
+      - "DISKPATH.md"
       - ".github/workflows/**"
 
 permissions:
@@ -47,6 +56,7 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: 3.47.2
           channel: stable
           cache: true
 
@@ -65,7 +75,11 @@ jobs:
       - name: Build Windows release
         env:
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
-        run: flutter build windows --release --dart-define=GOOGLE_SERVER_CLIENT_ID="$env:GOOGLE_SERVER_CLIENT_ID"
+          ORGANIZATION_API_BASE_URL: ${{ vars.ORGANIZATION_API_BASE_URL }}
+        run: >-
+          flutter build windows --release
+          --dart-define=GOOGLE_SERVER_CLIENT_ID="$env:GOOGLE_SERVER_CLIENT_ID"
+          --dart-define=ORGANIZATION_API_BASE_URL="$env:ORGANIZATION_API_BASE_URL"
 
       - name: Verify Windows executable
         shell: pwsh

@@ -171,9 +171,10 @@ class LegacyScheduleConversion {
   final List<_LegacyAssignmentMetadata> _metadata;
 
   /// Reconstructs legacy shifts from the canonical assignments.
-  List<legacy.Shift> toLegacyShifts() {
+  List<legacy.Shift> toLegacyShifts({Schedule? schedule}) {
+    final source = schedule ?? this.schedule;
     return List.unmodifiable([
-      for (final metadata in _metadata) metadata.toLegacy(schedule),
+      for (final metadata in _metadata) metadata.toLegacy(source),
     ]);
   }
 }

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../controller/app_controller.dart';
+import '../features/google_drive/application/multi_sheet_picker_selection.dart';
 import '../domain/entities/schedule.dart';
 import '../features/reports/presentation/controllers/monthly_schedule_report_controller.dart';
 import '../features/reports/presentation/pages/monthly_schedule_report_page.dart';
@@ -27,6 +28,9 @@ import '../services/calendar_color_service.dart';
 import '../services/drive_ownership_service.dart';
 import '../services/google_auth_service.dart';
 import '../services/shift_color_service.dart';
+import 'app_shell_navigation.dart';
+import 'empty_roster_sync_diagnostic.dart';
+import 'first_login_setup_dialog.dart';
 import 'google_sign_in_button.dart';
 
 enum _UtilityPage {
@@ -75,8 +79,16 @@ class _AppShellState extends State<AppShell> {
   int selectedIndex = 0;
   bool _permissionDialogOpen = false;
   String? _permissionDialogShownForEmail;
+  late final ShiftTransactionApiClient _shiftTransactionApiClient =
+      ShiftTransactionApiClient(
+        baseUrl: const String.fromEnvironment('ORGANIZATION_API_BASE_URL'),
+        idTokenProvider: () async =>
+            widget.controller.auth.account?.authentication.idToken,
+      );
+  bool _setupDialogOpen = false;
+  String? _setupDialogShownForEmail;
 
-  List<NavigationDestination> _destinations(
+  NavigationDestination _destination(
     BuildContext context,
     AppController controller,
   ) => [
@@ -84,7 +96,7 @@ class _AppShellState extends State<AppShell> {
       icon: const Icon(Icons.dashboard_outlined),
       label: context.l10n.dashboard,
     ),
-    NavigationDestination(
+    AppShellDestination.schedule => NavigationDestination(
       icon: const Icon(Icons.event_note_outlined),
       label: context.l10n.schedule,
     ),
@@ -104,7 +116,7 @@ class _AppShellState extends State<AppShell> {
       icon: const Icon(Icons.settings_outlined),
       label: context.l10n.settings,
     ),
-  ];
+  };
 
   @override
   void initState() {
@@ -114,6 +126,7 @@ class _AppShellState extends State<AppShell> {
 
   @override
   void dispose() {
+    _shiftTransactionApiClient.close();
     widget.controller.removeListener(_handleControllerChanged);
     super.dispose();
   }
@@ -123,14 +136,22 @@ class _AppShellState extends State<AppShell> {
     final account = auth.account;
     if (account == null) {
       _permissionDialogShownForEmail = null;
+      _setupDialogShownForEmail = null;
       return;
     }
-    if (_permissionDialogOpen ||
-        auth.checkingReadAccess ||
-        auth.readAccessGranted ||
-        _permissionDialogShownForEmail == account.email) {
+    if (_permissionDialogOpen || auth.checkingReadAccess) return;
+    if (auth.readAccessGranted) {
+      if (!widget.controller.settings.setupComplete &&
+          !_setupDialogOpen &&
+          _setupDialogShownForEmail != account.email) {
+        _setupDialogShownForEmail = account.email;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) unawaited(_showFirstLoginSetupDialog(account.email));
+        });
+      }
       return;
     }
+    if (_permissionDialogShownForEmail == account.email) return;
     _permissionDialogShownForEmail = account.email;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_showReadAccessDialog(account.email));
@@ -158,6 +179,7 @@ class _AppShellState extends State<AppShell> {
               openAlerts: () =>
                   unawaited(_openUtilityPage(_UtilityPage.notifications)),
               configureGoogleOAuth: _configureGoogleOAuth,
+              syncGoogleAccount: _startGoogleSync,
               dashboardSummaryService: widget.dashboardSummaryService,
             ),
             _PreviewPage(
@@ -174,7 +196,7 @@ class _AppShellState extends State<AppShell> {
               controllerFactory: widget.shiftExchangeControllerFactory,
             ),
             MonthlyScheduleReportPage(
-              schedule: controller.canonicalSchedule,
+              schedule: controller.effectiveSchedule,
               controllerFactory: widget.reportControllerFactory,
             ),
             _SettingsPage(
@@ -183,6 +205,10 @@ class _AppShellState extends State<AppShell> {
               openShiftTemplates: _openShiftTemplates,
             ),
           ];
+          assert(
+            pages.length == navigation.destinations.length,
+            'Navigation destinations and page routes must stay aligned.',
+          );
           final content = IndexedStack(index: selectedIndex, children: pages);
           final mainContent = wide
               ? Row(
@@ -243,6 +269,8 @@ class _AppShellState extends State<AppShell> {
                 ],
               ),
               actions: [
+                IconButton(tooltip: 'AI Support', icon: const Icon(Icons.support_agent_outlined), onPressed: _openAiSupport),
+                IconButton(tooltip: 'Timeline ย้อนหลัง', icon: const Icon(Icons.history_toggle_off_outlined), onPressed: () => unawaited(_openUtilityPage(_UtilityPage.history))),
                 IconButton(
                   key: const Key('locale-switch'),
                   tooltip: context.l10n.switchLanguage,
@@ -313,19 +341,125 @@ class _AppShellState extends State<AppShell> {
             ),
             bottomNavigationBar: wide
                 ? null
-                : NavigationBar(
-                    selectedIndex: selectedIndex,
-                    labelBehavior:
-                        NavigationDestinationLabelBehavior.onlyShowSelected,
-                    onDestinationSelected: (index) =>
-                        setState(() => selectedIndex = index),
-                    destinations: destinations,
+                : Builder(
+                    builder: (navigationContext) {
+                      final primaryIndexes = navigation.primaryIndexes;
+                      final selectedPrimaryIndex =
+                          primaryIndexes.indexOf(selectedIndex);
+                      return NavigationBar(
+                        selectedIndex: selectedPrimaryIndex >= 0
+                            ? selectedPrimaryIndex
+                            : primaryIndexes.length,
+                        labelBehavior:
+                            NavigationDestinationLabelBehavior.onlyShowSelected,
+                        onDestinationSelected: (index) {
+                          if (index < primaryIndexes.length) {
+                            setState(
+                              () => selectedIndex = primaryIndexes[index],
+                            );
+                          } else {
+                            unawaited(
+                              _openMobileWorkspaceMenu(
+                                navigationContext,
+                                destinations,
+                                navigation.secondaryIndexes,
+                              ),
+                            );
+                          }
+                        },
+                        destinations: [
+                          for (final index in primaryIndexes)
+                            destinations[index],
+                          NavigationDestination(
+                            icon: const Icon(Icons.menu_rounded),
+                            selectedIcon: const Icon(Icons.menu_open_rounded),
+                            label: context.l10n.more,
+                          ),
+                        ],
+                      );
+                    },
                   ),
           );
         },
       );
     },
   );
+
+  Future<void> _openMobileWorkspaceMenu(
+    BuildContext context,
+    List<NavigationDestination> destinations,
+    List<int> secondaryIndexes,
+  ) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(sheetContext).height * 0.78,
+          ),
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+                child: Text(
+                  'พื้นที่ทำงานและการตั้งค่า',
+                  style: Theme.of(sheetContext).textTheme.titleMedium,
+                ),
+              ),
+              for (final index in secondaryIndexes)
+                ListTile(
+                  leading: destinations[index].icon,
+                  title: Text(destinations[index].label),
+                  trailing: selectedIndex == index
+                      ? const Icon(Icons.check_rounded)
+                      : null,
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    if (mounted) setState(() => selectedIndex = index);
+                  },
+                ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.notifications_outlined),
+                title: Text(context.l10n.notifications),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  unawaited(_openUtilityPage(_UtilityPage.notifications));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.history_outlined),
+                title: Text(context.l10n.history),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  unawaited(_openUtilityPage(_UtilityPage.history));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.apps_outlined),
+                title: Text(context.l10n.tools),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  unawaited(_openUtilityPage(_UtilityPage.tools));
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.view_agenda_outlined),
+                title: const Text('แม่แบบและค่าเริ่มต้นเวร'),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  unawaited(_openShiftTemplates());
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
   Future<void> _openUtilityPage(_UtilityPage page) {
     final child = switch (page) {
@@ -355,6 +489,10 @@ class _AppShellState extends State<AppShell> {
       ),
     );
   }
+
+  Future<void> _openAiSupport() => Navigator.of(context).push<void>(
+    MaterialPageRoute<void>(builder: (_) => const AiSupportChatPage()),
+  );
 
   Future<void> _openShiftTemplates() {
     return Navigator.of(context).push<void>(
@@ -520,9 +658,110 @@ class _AppShellState extends State<AppShell> {
       widget.controller.cancelCalendarSyncPreparation();
       return;
     }
-    final synced = await _performWithResult(widget.controller.syncCalendar);
+    final synced = await _performWithResult(
+      () => widget.controller.syncCalendar(userConfirmed: true),
+    );
     if (!synced && widget.controller.pendingAlertCount > 0) {
       await _showConflictWarningDialog();
+    }
+  }
+
+  Future<void> _syncShiftTransactionCalendar(
+    ShiftTransactionSnapshot transaction,
+  ) async {
+    final controller = widget.controller;
+    ShiftTransactionCalendarSyncPreview preview;
+    try {
+      preview = await controller.previewShiftTransactionCalendarSync(transaction);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('เตรียม Preview ไม่สำเร็จ: $error')),
+        );
+      }
+      return;
+    }
+    if (!mounted) {
+      controller.cancelShiftTransactionCalendarSyncPreview();
+      return;
+    }
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('ตรวจสอบก่อนซิงก์ Google Calendar'),
+        content: SizedBox(
+          width: 520,
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'ตัวอย่างนี้ใช้ตารางเวรผลลัพธ์ทั้งช่วงที่เลือก ไม่ได้เขียนข้อมูลก่อนกดยืนยัน',
+                ),
+                const SizedBox(height: 12),
+                for (final line in preview.transferLines)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text('• $line'),
+                  ),
+                const Divider(),
+                Text('เพิ่ม ${preview.insertCount} รายการ'),
+                for (final title in preview.insertTitles)
+                  Text('  + $title'),
+                Text('แก้ไข ${preview.updateCount} รายการ'),
+                for (final title in preview.updateTitles)
+                  Text('  ↻ $title'),
+                Text('ลบ ${preview.deleteCount} รายการ'),
+                if (preview.deleteTitles.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  const Text('รายการที่จะลบจาก Calendar:'),
+                  for (final title in preview.deleteTitles)
+                    Text('• $title'),
+                ],
+                if (preview.warnings.isNotEmpty) ...[
+                  const Divider(),
+                  const Text('คำเตือนที่ควรตรวจสอบ:'),
+                  for (final warning in preview.warnings)
+                    Text('• $warning'),
+                ],
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('ยกเลิก'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('ยืนยันและซิงก์'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) {
+      controller.cancelShiftTransactionCalendarSyncPreview();
+      return;
+    }
+    try {
+      await controller.confirmShiftTransactionCalendarSync(
+        transaction: transaction,
+        apiClient: _shiftTransactionApiClient,
+        userConfirmed: true,
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ซิงก์ Calendar และบันทึก Event ID สำเร็จ')),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('ซิงก์ Calendar ไม่สำเร็จ: $error')),
+        );
+      }
     }
   }
 
@@ -596,6 +835,30 @@ class _AppShellState extends State<AppShell> {
     }
   }
 
+  Future<void> _startGoogleSync() async {
+    final auth = widget.controller.auth;
+    if (auth.oauthConfigured) {
+      await _perform(() => widget.controller.signIn());
+      return;
+    }
+    if (auth.canConfigureWebOAuth) {
+      await _configureGoogleOAuth();
+      // Continue directly into Google sign-in after successful setup. If the
+      // dialog was cancelled or initialization failed, leave the user in place.
+      final configured = widget.controller.auth.oauthConfigured &&
+          widget.controller.auth.signInReady;
+      if (configured) {
+        await _perform(() => widget.controller.signIn());
+      }
+      return;
+    }
+    final message = auth.oauthUnavailableMessage ?? 'Google OAuth ยังไม่พร้อมใช้งาน';
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   Future<void> _configureGoogleOAuth() async {
     final value = TextEditingController(
       text: widget.controller.auth.webClientId,
@@ -613,8 +876,11 @@ class _AppShellState extends State<AppShell> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'วาง Web OAuth Client ID จาก Google Cloud เพื่อเปิดปุ่มล็อกอิน '
-                  'Client ID เปิดเผยได้และไม่ใช่ Client Secret',
+                  'ใส่ Web OAuth Client ID จาก Google Cloud เท่านั้น '
+                  '(รหัสลงท้ายด้วย .apps.googleusercontent.com) ไม่ใช่ URL ของเว็บไซต์ '
+                  'และไม่ใช่ Client Secret. หลังบันทึก แอปจะจำ Client ID นี้ไว้ในเบราว์เซอร์ '
+                  'จากนั้นกด Sync Google Account เพื่อเข้าสู่ระบบและอนุญาตสิทธิ์ '
+                  'Token จะถูกจัดการโดยแอปอัตโนมัติ ไม่ต้องคัดลอก Token',
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -646,7 +912,8 @@ class _AppShellState extends State<AppShell> {
                 final text = value.text.trim();
                 if (!GoogleAuthService.isValidWebClientId(text)) {
                   setDialogState(
-                    () => validationError = 'รูปแบบ Client ID ไม่ถูกต้อง',
+                    () => validationError =
+                        'ใส่ Client ID จาก Google Cloud ที่ลงท้ายด้วย .apps.googleusercontent.com — อย่าใส่ URL origin หรือ Client Secret',
                   );
                   return;
                 }
@@ -1042,6 +1309,7 @@ class _DashboardPage extends StatefulWidget {
     required this.sync,
     required this.openAlerts,
     required this.configureGoogleOAuth,
+    required this.syncGoogleAccount,
     required this.dashboardSummaryService,
   });
 
@@ -1051,6 +1319,7 @@ class _DashboardPage extends StatefulWidget {
   final Future<void> Function() sync;
   final VoidCallback openAlerts;
   final Future<void> Function() configureGoogleOAuth;
+  final Future<void> Function() syncGoogleAccount;
   final DashboardSummaryService dashboardSummaryService;
 
   @override
@@ -1107,6 +1376,125 @@ class _DashboardPageState extends State<_DashboardPage> {
         ),
       );
 
+  Future<void> _showAiRosterSupport() async {
+    final controller = widget.controller;
+    const issueOptions = <String>[
+      'เวรบางรายการหายไป',
+      'อ่านวันที่หรือเดือนผิด',
+      'อ่านชื่อหรือแถวเวรผิด',
+      'อ่านเวรซ้ำ',
+      'ไม่พบตารางรายเดือน',
+      'ไม่แน่ใจว่าข้อมูลใดถูกข้าม',
+    ];
+    var selectedIssue = issueOptions.first;
+    final report = StringBuffer()
+      ..writeln('ขอให้ช่วยวิเคราะห์ปัญหาการนำเข้าตารางเวร')
+      ..writeln('ปัญหาที่พบ: $selectedIssue')
+      ..writeln('จำนวนเวรที่แสดงหลังอ่าน: ${controller.shifts.length}')
+      ..writeln('จำนวนส่วนตารางรายเดือนที่ตรวจพบ: ${controller.monthlyRoster.sections.length}')
+      ..writeln('จำนวนรายการในรายงานรายเดือน: ${controller.monthlyRoster.assignments.length}')
+      ..writeln('คำเตือนจากตัวอ่านตาราง:');
+    if (controller.monthlyRoster.warnings.isEmpty) {
+      report.writeln('- ไม่มีคำเตือนจากตัวอ่านรายเดือน');
+    } else {
+      for (final warning in controller.monthlyRoster.warnings.take(30)) {
+        report.writeln('- $warning');
+      }
+    }
+    report
+      ..writeln()
+      ..writeln('ช่วยเสนอขั้นตอนตรวจสอบที่เจาะจง และแยกข้อเท็จจริงออกจากข้อสันนิษฐาน')
+      ..writeln('ห้ามเดาข้อมูลเวรหรือสร้างชื่อ/วัน/กะขึ้นเอง')
+      ..writeln('หากข้อมูลไม่พอ ให้ระบุว่าต้องตรวจแถวหรือคอลัมน์ใด')
+      ..writeln('ห้ามแก้ไข Google Sheets หรือ Google Calendar โดยอัตโนมัติ');
+
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.auto_awesome_outlined),
+              SizedBox(width: 10),
+              Expanded(child: Text('AI ซัพพอร์ต: ตรวจตารางเวร')),
+            ],
+          ),
+          content: SizedBox(
+            width: 520,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'เลือกอาการเพื่อเตรียมรายงานวิเคราะห์ ระบบจะไม่ส่งข้อมูลออกไปเอง '
+                    'และจะไม่แก้ไขชีตหรือ Calendar',
+                  ),
+                  const SizedBox(height: 14),
+                  DropdownButtonFormField<String>(
+                    initialValue: selectedIssue,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'ปัญหาที่พบ',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: [
+                      for (final issue in issueOptions)
+                        DropdownMenuItem(value: issue, child: Text(issue)),
+                    ],
+                    onChanged: (value) {
+                      if (value == null) return;
+                      setDialogState(() => selectedIssue = value);
+                    },
+                  ),
+                  const SizedBox(height: 14),
+                  Text('ข้อมูลสรุปที่จะนำไปวิเคราะห์',
+                      style: Theme.of(dialogContext).textTheme.titleSmall),
+                  const SizedBox(height: 6),
+                  Text('เวรที่แสดง: ${controller.shifts.length}'),
+                  Text('ส่วนตาราง: ${controller.monthlyRoster.sections.length}'),
+                  Text('รายการรายเดือน: ${controller.monthlyRoster.assignments.length}'),
+                  Text('คำเตือน: ${controller.monthlyRoster.warnings.length}'),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'รายงานจะไม่แนบลิงก์ชีต อีเมล หรือชื่อผู้ปฏิบัติงาน '
+                    'ตรวจทานรายงานก่อนนำไปวางใน AI',
+                    style: TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('ยกเลิก'),
+            ),
+            FilledButton.icon(
+              onPressed: () async {
+                final summary = report.toString().replaceFirst(
+                  'ปัญหาที่พบ: เวรบางรายการหายไป',
+                  'ปัญหาที่พบ: $selectedIssue',
+                );
+                await Clipboard.setData(ClipboardData(text: summary));
+                if (!mounted || !dialogContext.mounted) return;
+                final messenger = ScaffoldMessenger.of(context);
+                Navigator.of(dialogContext).pop();
+                messenger.showSnackBar(
+                  const SnackBar(
+                    content: Text('คัดลอกรายงานแล้ว ตรวจทานก่อนส่งให้ AI'),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.copy_outlined),
+              label: const Text('คัดลอกรายงานให้ AI'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _pickGoogleSheet({
     OwnedSheetOrder order = OwnedSheetOrder.recentlyModified,
   }) async {
@@ -1123,7 +1511,7 @@ class _DashboardPageState extends State<_DashboardPage> {
       throw StateError('ไม่พบ Google Sheets ที่บัญชีนี้เป็นเจ้าของ');
     }
 
-    final selected = await showDialog<List<RecentOwnedSheet>>(
+    final selection = await showDialog<_GoogleSheetPickerResult>(
       context: context,
       builder: (context) => _GoogleSheetPickerDialog(
         files: controller.recentOwnedSheets,
@@ -1134,8 +1522,76 @@ class _DashboardPageState extends State<_DashboardPage> {
       ),
     );
 
-    if (selected == null || selected.isEmpty || !mounted) return;
-    await controller.selectRecentSourceSheets(selected);
+    if (selection == null || !mounted) return;
+
+    if (selection.removedSpreadsheetIds.isNotEmpty) {
+      final savedToRemove = controller.savedSheetsForCurrentAccount
+          .where(
+            (sheet) =>
+                selection.removedSpreadsheetIds.contains(sheet.spreadsheetId),
+          )
+          .toList(growable: false);
+      for (final sheet in savedToRemove) {
+        await controller.deleteSavedSheet(sheet);
+      }
+    }
+
+    if (selection.addedFiles.isNotEmpty) {
+      await controller.selectRecentSourceSheets(selection.addedFiles);
+    }
+  }
+
+  Future<void> _selectSourceByUrl() async {
+    final urlController = TextEditingController();
+    try {
+      final sourceUrl = await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('เลือกไฟล์หรือแท็บด้วยลิงก์'),
+          content: SizedBox(
+            width: 520,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'คัดลอกลิงก์ Google Sheets จากแท็บที่ต้องการใช้ '
+                  'ลิงก์ที่มี #gid= จะอ่านเฉพาะแท็บนั้น '
+                  'หากไม่มี gid จะอ่านทุกแท็บที่มองเห็น',
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: urlController,
+                  autofocus: true,
+                  keyboardType: TextInputType.url,
+                  decoration: const InputDecoration(
+                    labelText: 'URL Google Sheets',
+                    hintText:
+                        'https://docs.google.com/spreadsheets/d/.../edit#gid=123',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('ยกเลิก'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(
+                dialogContext,
+              ).pop(urlController.text.trim()),
+              child: const Text('เลือกแหล่งข้อมูล'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted || sourceUrl == null || sourceUrl.isEmpty) return;
+      await widget.controller.selectSourceForCurrentAccount(sourceUrl);
+    } finally {
+      urlController.dispose();
+    }
   }
 
   Future<void> _pasteGoogleSheetUrl() async {
@@ -1238,7 +1694,7 @@ class _DashboardPageState extends State<_DashboardPage> {
               const SizedBox(height: 16),
               DashboardSummaryGrid(
                 summary: widget.dashboardSummaryService.build(
-                  schedule: controller.canonicalSchedule,
+                  schedule: controller.effectiveSchedule,
                   now: DateTime.now(),
                   conflictCount: controller.pendingAlertCount,
                 ),
@@ -1319,6 +1775,11 @@ class _DashboardPageState extends State<_DashboardPage> {
                         ),
                       ),
                       const SizedBox(height: 10),
+                      const SizedBox(height: 6),
+                      const Text(
+                        'นำเข้าไฟล์ในเครื่องเพื่ออ่านตารางเวรเท่านั้น '
+                        'ไฟล์จะไม่ถูกอัปโหลดไป Google Drive หรือ Google Sheets',
+                      ),
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
@@ -1352,6 +1813,24 @@ class _DashboardPageState extends State<_DashboardPage> {
                             label: const Text('วาง URL จากเบราว์เซอร์'),
                           ),
                           OutlinedButton.icon(
+                            onPressed:
+                                controller.auth.isSignedIn && !controller.busy
+                                ? () => widget.perform(_selectSourceByUrl)
+                                : null,
+                            icon: const Icon(Icons.link_outlined),
+                            label: const Text('เลือกแท็บด้วยลิงก์'),
+                          ),
+                          OutlinedButton.icon(
+                            key: const Key('clearRosterSourceSelectionButton'),
+                            onPressed: controller.hasRosterSource && !controller.busy
+                                ? () => widget.perform(
+                                    controller.clearRosterSourceSelection,
+                                  )
+                                : null,
+                            icon: const Icon(Icons.clear),
+                            label: const Text('ยกเลิกการเลือกตาราง'),
+                          ),
+                          OutlinedButton.icon(
                             onPressed: controller.busy
                                 ? null
                                 : () => widget.perform(() async {
@@ -1359,9 +1838,7 @@ class _DashboardPageState extends State<_DashboardPage> {
                                     await controller.importLocalRosterFile();
                                   }),
                             icon: const Icon(Icons.upload_file_outlined),
-                            label: const Text(
-                              'ไฟล์ .xlsx / .csv / .tsv / .txt',
-                            ),
+                            label: const Text('นำเข้าตารางเวรจากไฟล์'),
                           ),
                           OutlinedButton.icon(
                             onPressed: controller.busy
@@ -1523,6 +2000,28 @@ class _DashboardPageState extends State<_DashboardPage> {
                             label: const Text('รีเฟรช/อ่านใหม่ตอนนี้'),
                           ),
                           OutlinedButton.icon(
+                            key: const Key('ai-roster-import-support'),
+                            onPressed: !controller.busy
+                                ? () => unawaited(_showAiRosterSupport())
+                                : null,
+                            icon: const Icon(Icons.auto_awesome_outlined),
+                            label: const Text('AI ซัพพอร์ต: อ่านเวรผิด'),
+                          ),
+                          OutlinedButton.icon(
+                            key: const Key('sync-historical-timeline'),
+                            onPressed:
+                                controller.auth.isSignedIn &&
+                                    controller.hasSelectedSourceSheet &&
+                                    !controller.busy
+                                ? () => widget.perform(() async {
+                                    await _saveSettings();
+                                    await controller.syncHistoricalTimeline();
+                                  })
+                                : null,
+                            icon: const Icon(Icons.history_toggle_off_outlined),
+                            label: const Text('ซิงค์ Timeline ย้อนหลัง'),
+                          ),
+                          OutlinedButton.icon(
                             onPressed:
                                 controller.auth.isSignedIn &&
                                     controller.shifts.isNotEmpty &&
@@ -1544,6 +2043,43 @@ class _DashboardPageState extends State<_DashboardPage> {
                           ),
                         ],
                       ),
+                      if (controller.hasRosterSource &&
+                          controller.shifts.isEmpty) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          key: const Key('empty-roster-sync-diagnostic'),
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            buildEmptyRosterSyncDiagnostic(
+                              selectedPeriodsLabel:
+                                  controller.settings.effectivePeriods.isEmpty
+                                  ? 'ยังไม่ได้เลือกเดือน'
+                                  : controller.settings.effectivePeriods
+                                      .map((period) =>
+                                          '${period.month}/${period.year + 543}')
+                                      .join(', '),
+                              parsedShiftCount:
+                                  controller.loadedRosterShiftCount,
+                              filteredShiftCount:
+                                  controller.filteredRosterShiftCount,
+                              monthlyAssignmentCount:
+                                  controller.monthlyRoster.assignments.length,
+                              unconvertedAssignmentCount: controller
+                                  .monthlyRosterConversion
+                                  .unconvertedAssignments
+                                  .length,
+                              warnings: controller.monthlyRoster.warnings,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -1620,7 +2156,10 @@ class _GoogleSheetPickerDialog extends StatefulWidget {
 
 class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
   final TextEditingController _searchController = TextEditingController();
-  final Set<String> _selectedIds = <String>{};
+  late final MultiSheetPickerSelection _selection =
+      MultiSheetPickerSelection(
+        alreadyAddedIds: widget.alreadyAddedSpreadsheetIds,
+      );
   String _query = '';
 
   List<RecentOwnedSheet> get _filteredFiles {
@@ -1632,16 +2171,11 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
   }
 
   List<RecentOwnedSheet> get _selectedFiles => widget.files
-      .where((file) => _selectedIds.contains(file.id))
+      .where((file) => _selection.selectedIds.contains(file.id))
       .toList(growable: false);
 
   void _toggle(RecentOwnedSheet file) {
-    if (widget.alreadyAddedSpreadsheetIds.contains(file.id)) return;
-    setState(() {
-      if (!_selectedIds.add(file.id)) {
-        _selectedIds.remove(file.id);
-      }
-    });
+    setState(() => _selection.toggle(file.id));
   }
 
   @override
@@ -1682,8 +2216,9 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
               child: Text(
                 '${widget.order == OwnedSheetOrder.firstCreated ? 'เรียงจากไฟล์ที่สร้างก่อน' : 'เรียงจากไฟล์ที่แก้ไขล่าสุด'} • '
                 'แสดงหน้าแรก ${files.length}/${widget.files.length} ไฟล์ • '
-                'เลือกใหม่ ${_selectedIds.length} ไฟล์ • '
-                'เพิ่มไว้แล้ว ${widget.alreadyAddedSpreadsheetIds.length} ไฟล์',
+                'เลือกใหม่ ${_selection.addedCount} ไฟล์ • '
+                'เพิ่มไว้แล้ว ${widget.alreadyAddedSpreadsheetIds.length} ไฟล์ • '
+                'เอาออก ${_selection.removedCount} ไฟล์',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
             ),
@@ -1698,10 +2233,9 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
                         final file = files[index];
                         final alreadyAdded = widget.alreadyAddedSpreadsheetIds
                             .contains(file.id);
-                        final selected = _selectedIds.contains(file.id);
                         return CheckboxListTile(
-                          value: alreadyAdded || selected,
-                          onChanged: alreadyAdded ? null : (_) => _toggle(file),
+                          value: _selection.isChecked(file.id),
+                          onChanged: (_) => _toggle(file),
                           secondary: const CircleAvatar(
                             child: Icon(Icons.table_chart_outlined),
                           ),
@@ -1712,7 +2246,9 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
                           ),
                           subtitle: Text(
                             alreadyAdded
-                                ? 'เพิ่มไว้แล้ว'
+                                ? _selection.removedIds.contains(file.id)
+                                      ? 'จะเอาออกจากรายการในแอป (ไม่ลบไฟล์จริง)'
+                                      : 'เพิ่มไว้แล้ว · ติ๊กเพื่อเอาออกจากรายการในแอป'
                                 : widget.order == OwnedSheetOrder.firstCreated
                                 ? file.createdAt == null
                                       ? 'ไม่พบเวลาที่สร้างไฟล์'
@@ -1737,15 +2273,35 @@ class _GoogleSheetPickerDialogState extends State<_GoogleSheetPickerDialog> {
           child: const Text('ยกเลิก'),
         ),
         FilledButton.icon(
-          onPressed: _selectedIds.isEmpty
+          onPressed: !_selection.hasChanges
               ? null
-              : () => Navigator.of(context).pop(_selectedFiles),
-          icon: const Icon(Icons.add),
-          label: Text('เพิ่ม ${_selectedIds.length} ไฟล์'),
+              : () => Navigator.of(context).pop(
+                  _GoogleSheetPickerResult(
+                    addedFiles: _selectedFiles,
+                    removedSpreadsheetIds: _selection.removedIds,
+                  ),
+                ),
+          icon: const Icon(Icons.save_outlined),
+          label: Text(
+            _selection.removedCount == 0
+                ? 'เพิ่ม ${_selection.addedCount} ไฟล์'
+                : 'บันทึกการเลือก',
+          ),
         ),
       ],
     );
   }
+}
+
+
+class _GoogleSheetPickerResult {
+  const _GoogleSheetPickerResult({
+    required this.addedFiles,
+    required this.removedSpreadsheetIds,
+  });
+
+  final List<RecentOwnedSheet> addedFiles;
+  final Set<String> removedSpreadsheetIds;
 }
 
 class _SceDashboardHero extends StatelessWidget {
@@ -1935,6 +2491,12 @@ class _GoogleAccountCard extends StatelessWidget {
                           const Text(
                             'ล็อกอินก่อน แล้วค่อยอนุญาตสิทธิ์ตามปุ่มที่ใช้งาน',
                           ),
+                          if (!controller.auth.oauthConfigured &&
+                              !controller.auth.canConfigureWebOAuth &&
+                              controller.auth.oauthUnavailableMessage != null) ...[
+                            const SizedBox(height: 4),
+                            Text(controller.auth.oauthUnavailableMessage!),
+                          ],
                           if (controller.auth.error != null) ...[
                             const SizedBox(height: 4),
                             Text(
@@ -2400,12 +2962,58 @@ class _PreviewPage extends StatelessWidget {
     });
   }
 
+  Widget _unconvertedAssignmentsWarning(BuildContext context) {
+    final report = controller.monthlyRosterConversion;
+    if (!report.hasUnconvertedAssignments) return const SizedBox.shrink();
+    final colors = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      child: Card(
+        color: colors.errorContainer,
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'พบรายการเวรที่อ่านได้แต่ยังแปลงไม่ได้ ${report.unconvertedCount} รายการ',
+                style: TextStyle(
+                  color: colors.onErrorContainer,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'รายการเหล่านี้จะไม่ถูกส่งไปซิงก์ จนกว่าจะกำหนดกติกาเวรให้ถูกต้อง',
+                style: TextStyle(color: colors.onErrorContainer),
+              ),
+              const SizedBox(height: 8),
+              for (final assignment in report.unconvertedAssignments.take(8))
+                Text(
+                  '${assignment.date.day}/${assignment.date.month}/${assignment.date.year + 543} · '
+                  '${assignment.workerName} · ${assignment.rowLabel} · ${assignment.sourceCell}',
+                  style: TextStyle(color: colors.onErrorContainer),
+                ),
+              if (report.unconvertedCount > 8)
+                Text(
+                  'และอีก ${report.unconvertedCount - 8} รายการ',
+                  style: TextStyle(color: colors.onErrorContainer),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (controller.shifts.isEmpty) {
+    final visibleShifts = controller.effectiveShifts;
+    if (visibleShifts.isEmpty) {
       return Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
+          _unconvertedAssignmentsWarning(context),
           const _EmptyState(
             icon: Icons.event_note_outlined,
             title: 'ยังไม่มีรายการตัวอย่าง',
@@ -2422,6 +3030,29 @@ class _PreviewPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        _unconvertedAssignmentsWarning(context),
+        if (controller.shiftTransactionProjectionWarnings.isNotEmpty)
+          Card(
+            margin: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'ธุรกรรมที่ยังนำไปใช้กับตารางไม่ได้',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(height: 6),
+                  for (final warning in controller.shiftTransactionProjectionWarnings)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 4),
+                      child: Text('• $warning'),
+                    ),
+                ],
+              ),
+            ),
+          ),
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
           child: Align(
@@ -2436,10 +3067,12 @@ class _PreviewPage extends StatelessWidget {
         Expanded(
           child: ListView.separated(
             padding: const EdgeInsets.all(20),
-            itemCount: controller.shifts.length,
+            itemCount: visibleShifts.length,
             separatorBuilder: (_, _) => const SizedBox(height: 10),
             itemBuilder: (context, index) {
-              final shift = controller.shifts[index];
+              final shift = visibleShifts[index];
+              final isTransactionProjected =
+                  shift.assignedName != controller.shifts[index].assignedName;
               final exists = CalendarService.matchesExisting(
                 shift,
                 controller.existingKeys,
@@ -2481,6 +3114,12 @@ class _PreviewPage extends StatelessWidget {
                                 shift.displayName,
                                 style: Theme.of(context).textTheme.titleMedium,
                               ),
+                              if (isTransactionProjected)
+                                const Chip(
+                                  visualDensity: VisualDensity.compact,
+                                  avatar: Icon(Icons.swap_horiz, size: 16),
+                                  label: Text('เจ้าของจากธุรกรรม'),
+                                ),
                               Chip(
                                 visualDensity: VisualDensity.compact,
                                 avatar: Icon(
@@ -3320,6 +3959,48 @@ class _SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) => ListView(
     padding: const EdgeInsets.all(20),
     children: [
+      Card(child: ListTile(leading: const CircleAvatar(child: Icon(Icons.tune_outlined)), title: const Text('ตั้งค่าหน่วยงานและเวร'), subtitle: Text('${controller.settings.organizationName.isEmpty ? 'ยังไม่ได้ตั้งค่า' : controller.settings.organizationName} • ${controller.settings.officerName}'), trailing: const Icon(Icons.edit_outlined), onTap: openSetup)),
+      const SizedBox(height: 12),
+      Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const CircleAvatar(child: Icon(Icons.sync)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Google Account Sync',
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          controller.auth.account?.email ??
+                              (controller.auth.oauthConfigured
+                                  ? 'พร้อมเชื่อมต่อบัญชี Google'
+                                  : 'ตั้งค่า Web OAuth Client ID เพื่อเริ่มซิงค์'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                onPressed: controller.busy ? null : syncGoogleAccount,
+                icon: const Icon(Icons.sync),
+                label: const Text('Sync Google Account'),
+              ),
+            ],
+          ),
+        ),
+      ),
       Card(
         child: ListTile(
           leading: const CircleAvatar(

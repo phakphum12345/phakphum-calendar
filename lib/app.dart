@@ -6,6 +6,7 @@ import 'controller/app_controller.dart';
 import 'core/di/app_dependencies.dart';
 import 'features/excel_import/presentation/pages/import_excel_page.dart';
 import 'l10n/app_localizations.dart';
+import 'l10n/l10n.dart';
 import 'ui/app_shell.dart';
 
 class ShiftToolsApp extends StatefulWidget {
@@ -28,7 +29,11 @@ class _ShiftToolsAppState extends State<ShiftToolsApp> {
   static const _startupTimeout = Duration(seconds: 12);
 
   late final AppDependencies dependencies =
-      widget.dependencies ?? AppDependencies.production();
+      widget.dependencies ??
+      AppDependencies.production(
+        workflowMessageProvider: (key) =>
+            workflowMessageFor(localizationsForLocale(_locale), key),
+      );
   late final AppController controller =
       widget.controller ?? dependencies.createAppController();
   late final bool ownsController = widget.controller == null;
@@ -45,13 +50,14 @@ class _ShiftToolsAppState extends State<ShiftToolsApp> {
       await controller.initialize().timeout(_startupTimeout);
     } on TimeoutException {
       if (!mounted || controller.initialized) return;
-      controller.error ??=
-          'เริ่มต้นระบบช้าเกินไป กรุณาตรวจการตั้งค่า Google OAuth หรือรีโหลดหน้าเว็บ';
+      controller.error ??= localizationsForLocale(_locale).startupTimeout;
       controller.initialized = true;
       controller.notifyListeners();
     } catch (caught) {
       if (!mounted || controller.initialized) return;
-      controller.error ??= 'เริ่มต้นระบบไม่สำเร็จ: $caught';
+      controller.error ??= localizationsForLocale(_locale).startupFailed(
+        caught.toString(),
+      );
       controller.initialized = true;
       controller.notifyListeners();
     }
@@ -190,7 +196,13 @@ class _ShiftToolsAppState extends State<ShiftToolsApp> {
           importedScheduleFactory: dependencies.createImportedSchedule,
           scheduleControllerFactory:
               dependencies.createImportedScheduleController,
+          workflowControllerFactory:
+              dependencies.createAuthorizedCalendarWorkflowController,
           scheduleSaver: dependencies.saveImportedSchedule,
+          existingScheduleLoader: dependencies.loadImportedSchedule,
+          employeeRepository: dependencies.employeeRepository,
+          shiftTemplateControllerFactory:
+              dependencies.createShiftTemplateController,
         ),
       },
       home: AppShell(

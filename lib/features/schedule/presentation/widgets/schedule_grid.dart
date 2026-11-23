@@ -54,25 +54,43 @@ class _ScheduleGridState extends State<ScheduleGrid> {
         : widget.days.length.clamp(1, 7);
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            const Icon(Icons.zoom_out, size: 18),
-            SizedBox(
-              width: 150,
-              child: Slider(
-                value: zoom,
-                min: 0.75,
-                max: 1.75,
-                divisions: 4,
-                label: '${(zoom * 100).round()}%',
-                onChanged: (value) => setState(() => zoom = value),
+        Align(
+          alignment: Alignment.centerRight,
+          child: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 4,
+            children: [
+              Icon(
+                Icons.zoom_out_rounded,
+                size: 18,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
-            ),
-            const Icon(Icons.zoom_in, size: 18),
-          ],
+              SizedBox(
+                width: 132,
+                child: Slider(
+                  value: zoom,
+                  min: 0.75,
+                  max: 1.75,
+                  divisions: 4,
+                  label: '${(zoom * 100).round()}%',
+                  onChanged: (value) => setState(() => zoom = value),
+                ),
+              ),
+              Icon(
+                Icons.zoom_in_rounded,
+                size: 18,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              Text(
+                '${(zoom * 100).round()}%',
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+            ],
+          ),
         ),
+        const SizedBox(height: 4),
         LayoutBuilder(
           builder: (context, constraints) {
             final minimumWidth = widget.showMonthPadding ? 700.0 : 480.0;
@@ -150,10 +168,24 @@ class _WeekdayHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Row(
       children: [
         for (final label in ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])
-          Expanded(child: Center(child: Text(label))),
+          Expanded(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 6),
+                child: Text(
+                  label,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:http/http.dart' as http;
 
 class GoogleApiClient extends http.BaseClient {
@@ -13,7 +15,7 @@ class GoogleApiClient extends http.BaseClient {
   final Duration _timeout;
 
   @override
-  Future<http.StreamedResponse> send(http.BaseRequest request) {
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
     request.headers.addAll(_headers);
     return _inner.send(request).timeout(_timeout);
   }

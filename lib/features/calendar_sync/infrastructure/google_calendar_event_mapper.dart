@@ -73,6 +73,13 @@ class GoogleCalendarEventMapper {
       return null;
     }
 
-    return normalized;
+    const marker = '--- Timeline ---';
+    final markerIndex = normalized.indexOf(marker);
+    // Timeline audit entries are preserved in Google Calendar but are not
+    // part of the roster-generated description used by the sync diff engine.
+    final rosterDescription = markerIndex < 0
+        ? normalized
+        : normalized.substring(0, markerIndex).trimRight();
+    return rosterDescription.isEmpty ? null : rosterDescription;
   }
 }

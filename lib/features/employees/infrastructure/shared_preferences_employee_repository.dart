@@ -123,6 +123,31 @@ class SharedPreferencesEmployeeRepository implements EmployeeRepository {
   }
 
   @override
+  Future<Result<List<Employee>>> saveAll(List<Employee> employees) async {
+    final ids = <String>{};
+    final codes = <String>{};
+    for (final employee in employees) {
+      final validation = _validate(employee);
+      if (validation != null) {
+        return ValidationFailure(
+          validation.message,
+          fieldErrors: validation.fieldErrors,
+        );
+      }
+      if (!ids.add(employee.id)) {
+        return ValidationFailure('Employee ID "${employee.id}" is duplicated.');
+      }
+      if (!codes.add(employee.employeeCode.trim().toLowerCase())) {
+        return ValidationFailure(
+          'Employee code "${employee.employeeCode}" is duplicated.',
+          fieldErrors: const {'employeeCode': 'duplicate'},
+        );
+      }
+    }
+    return _saveAll(employees);
+  }
+
+  @override
   Future<Result<List<Employee>>> search(String query) async {
     final loaded = await _load();
     return switch (loaded) {

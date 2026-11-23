@@ -36,25 +36,25 @@ extension ShiftCategoryInfo on ShiftCategory {
   };
 
   String get googleColorId => switch (this) {
-    ShiftCategory.own => '8',
+    ShiftCategory.own => '9',
     ShiftCategory.other => '11',
-    ShiftCategory.clinic => '7',
-    ShiftCategory.specialClinic => '10',
-    ShiftCategory.off => '1',
-    ShiftCategory.majorSwap => '11',
-    ShiftCategory.given => '1',
+    ShiftCategory.clinic => '5',
+    ShiftCategory.specialClinic => '6',
+    ShiftCategory.off => '8',
+    ShiftCategory.majorSwap => '9',
+    ShiftCategory.given => '10',
     ShiftCategory.borrowedUnpaid => '5',
     ShiftCategory.borrowedPaid => '10',
   };
 
   int get colorValue => switch (this) {
-    ShiftCategory.own => 0xFF616161,
+    ShiftCategory.own => 0xFF3F51B5,
     ShiftCategory.other => 0xFFD50000,
-    ShiftCategory.clinic => 0xFF039BE5,
-    ShiftCategory.specialClinic => 0xFF0B8043,
-    ShiftCategory.off => 0xFF7986CB,
-    ShiftCategory.majorSwap => 0xFFD50000,
-    ShiftCategory.given => 0xFF7986CB,
+    ShiftCategory.clinic => 0xFFF6BF26,
+    ShiftCategory.specialClinic => 0xFFF4511E,
+    ShiftCategory.off => 0xFF616161,
+    ShiftCategory.majorSwap => 0xFF3F51B5,
+    ShiftCategory.given => 0xFF0B8043,
     ShiftCategory.borrowedUnpaid => 0xFFF6BF26,
     ShiftCategory.borrowedPaid => 0xFF0B8043,
   };
@@ -77,6 +77,8 @@ class Shift {
     this.customTitle,
     this.calendarColorId,
     this.relationshipComment,
+    this.sourceSpreadsheetId,
+    this.sourceSheetId,
   });
 
   final String code;
@@ -94,6 +96,8 @@ class Shift {
   final String? customTitle;
   final String? calendarColorId;
   final String? relationshipComment;
+  final String? sourceSpreadsheetId;
+  final int? sourceSheetId;
 
   bool get isNightShift {
     if (isOffDuty) return false;
@@ -121,13 +125,61 @@ class Shift {
       ? null
       : '#${(sourceColorValue! & 0xFFFFFF).toRadixString(16).padLeft(6, '0').toUpperCase()}';
 
+  /// Historical key retained for user overrides and backward compatibility.
   String get sourceKey =>
       '${start.year.toString().padLeft(4, '0')}-'
       '${start.month.toString().padLeft(2, '0')}-'
       '${start.day.toString().padLeft(2, '0')}|$code|$assignedName';
 
+  /// Stable locator used for deduplication when source coordinates are known.
+  String get sourceIdentityKey {
+    if (sourceSpreadsheetId != null &&
+        sourceSheetId != null &&
+        cell.isNotEmpty) {
+      return '${sourceSpreadsheetId!}|${sourceSheetId!}|${cell.toUpperCase()}';
+    }
+    return sourceKey;
+  }
+
   String get effectiveCalendarColorId =>
       calendarColorId ?? category.googleColorId;
+
+  /// Opens the exact source tab and cell when the Google source is known.
+  String? get sourceUrl {
+    final spreadsheetId = sourceSpreadsheetId;
+    final sheetId = sourceSheetId;
+    if (spreadsheetId == null ||
+        spreadsheetId.trim().isEmpty ||
+        sheetId == null ||
+        cell.isEmpty) {
+      return null;
+    }
+    return 'https://docs.google.com/spreadsheets/d/$spreadsheetId/edit'
+        '#gid=$sheetId&range=$cell';
+  }
+
+  Shift withSourceIdentity({
+    required String spreadsheetId,
+    required int sheetId,
+  }) => Shift(
+    code: code,
+    rowLabel: rowLabel,
+    assignedName: assignedName,
+    start: start,
+    end: end,
+    sheetTitle: sheetTitle,
+    cell: cell,
+    category: category,
+    excluded: excluded,
+    generated: generated,
+    linkedShiftKey: linkedShiftKey,
+    sourceColorValue: sourceColorValue,
+    customTitle: customTitle,
+    calendarColorId: calendarColorId,
+    relationshipComment: relationshipComment,
+    sourceSpreadsheetId: spreadsheetId,
+    sourceSheetId: sheetId,
+  );
 
   Shift copyWith({
     ShiftCategory? category,
@@ -160,6 +212,8 @@ class Shift {
     relationshipComment: clearRelationshipComment
         ? null
         : relationshipComment ?? this.relationshipComment,
+    sourceSpreadsheetId: sourceSpreadsheetId,
+    sourceSheetId: sourceSheetId,
   );
 }
 
@@ -168,11 +222,17 @@ class SheetSnapshot {
     required this.title,
     required this.rows,
     this.backgroundColors = const [],
+    this.spreadsheetId,
+    this.sheetId,
+    this.hidden = false,
   });
 
   final String title;
   final List<List<Object?>> rows;
   final List<List<int?>> backgroundColors;
+  final String? spreadsheetId;
+  final int? sheetId;
+  final bool hidden;
 
   int? backgroundColorAt(int row, int column) =>
       row >= 0 &&

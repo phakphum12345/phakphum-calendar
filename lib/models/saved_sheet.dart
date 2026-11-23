@@ -21,6 +21,13 @@ class SavedSheet {
   final bool isActive;
   final bool hasExplicitActiveState;
 
+  /// Whether this source is explicitly selected for the current account.
+  final bool isActive;
+
+  /// False only when loading a legacy record that predates explicit selection.
+  /// This is migration metadata and is intentionally not serialized.
+  final bool hasExplicitActiveState;
+
   String get key => '$ownerAccountId:$spreadsheetId:${sheetId ?? 'all'}';
 
   String get displayTitle {

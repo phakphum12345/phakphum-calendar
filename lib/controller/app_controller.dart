@@ -16,8 +16,11 @@ import '../models/shift_alert.dart';
 import '../models/tool_definition.dart';
 import '../domain/entities/schedule.dart';
 import '../domain/repositories/schedule_repository.dart';
+import '../domain/repositories/shift_template_repository.dart';
+import '../core/result/result.dart';
 import '../features/schedule/data/legacy_schedule_adapter.dart';
 import '../features/workflow/application/shift_calendar_workflow_controller.dart';
+import '../features/diff_engine/domain/calendar_event_candidate.dart';
 import '../services/calendar_service.dart';
 import '../services/calendar_color_service.dart';
 import '../services/drive_archive_service.dart';
@@ -30,6 +33,8 @@ import '../services/sheets_service.dart';
 import '../services/shift_alert_service.dart';
 import '../services/shift_parser.dart';
 import '../core/state/controller_state.dart';
+import '../features/diff_engine/domain/calendar_diff.dart';
+import '../services/roster_timeline_generator.dart';
 
 class AppController extends ChangeNotifier implements ControllerState {
   factory AppController({
@@ -43,6 +48,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     required DriveOwnershipGateway ownershipService,
     required LocalRosterSource localFileService,
     required ScheduleRepository scheduleRepository,
+    ShiftTemplateRepository? shiftTemplateRepository,
     required LegacyScheduleAdapter legacyScheduleAdapter,
     required Future<ShiftCalendarWorkflowController> Function()
     calendarWorkflowControllerFactory,
@@ -58,6 +64,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       ownershipService: ownershipService,
       localFileService: localFileService,
       scheduleRepository: scheduleRepository,
+      shiftTemplateRepository: shiftTemplateRepository,
       legacyScheduleAdapter: legacyScheduleAdapter,
       calendarWorkflowControllerFactory: calendarWorkflowControllerFactory,
     );
@@ -74,6 +81,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     required DriveOwnershipGateway ownershipService,
     required LocalRosterSource localFileService,
     required ScheduleRepository scheduleRepository,
+    ShiftTemplateRepository? shiftTemplateRepository,
     required LegacyScheduleAdapter legacyScheduleAdapter,
     required Future<ShiftCalendarWorkflowController> Function()
     calendarWorkflowControllerFactory,
@@ -89,6 +97,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       ownershipService: ownershipService,
       localFileService: localFileService,
       scheduleRepository: scheduleRepository,
+      shiftTemplateRepository: shiftTemplateRepository,
       legacyScheduleAdapter: legacyScheduleAdapter,
       calendarWorkflowControllerFactory: calendarWorkflowControllerFactory,
     );
@@ -107,6 +116,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     required this._ownershipService,
     required this._localFileService,
     required this._scheduleRepository,
+    this._shiftTemplateRepository,
     required this._legacyScheduleAdapter,
     required this._calendarWorkflowControllerFactory,
   });
@@ -166,7 +176,9 @@ class AppController extends ChangeNotifier implements ControllerState {
   final GoogleAuthGateway auth;
   final AppSettingsStore _settingsService;
   final RosterSheetsGateway _sheetsService;
-  final RosterShiftParser _parser;
+  RosterShiftParser _parser;
+  final ShiftTemplateRepository? _shiftTemplateRepository;
+  List<ShiftTemplate> _shiftTemplates = const [];
   final ShiftAlertPolicy _alertService;
   final LegacyCalendarGateway _calendarService;
   final DriveArchiveGateway _archiveService;
@@ -189,8 +201,53 @@ class AppController extends ChangeNotifier implements ControllerState {
   /// Canonical runtime schedule used by all legacy schedule orchestration.
   Schedule get canonicalSchedule => _legacySchedule.schedule;
 
-  /// Read-only compatibility projection consumed by the legacy shell.
+  /// Read-only compatibility projection for source editing and import workflows.
+  /// This remains the original canonical schedule, not a transaction overlay.
   List<Shift> get shifts => _legacySchedule.toLegacyShifts();
+
+  int get loadedRosterShiftCount => _loadedRosterShifts.length;
+  int get filteredRosterShiftCount =>
+      _filterToSyncDateRange(_loadedRosterShifts).length;
+
+  final ShiftTransactionScheduleProjector _shiftTransactionProjector =
+      const ShiftTransactionScheduleProjector();
+  List<ShiftTransactionSnapshot> _shiftTransactions = const [];
+
+  ShiftTransactionScheduleProjection get _shiftTransactionProjection =>
+      _shiftTransactionProjector.project(
+        source: canonicalSchedule,
+        transactions: _shiftTransactions,
+      );
+
+  /// Effective view with approved transfers applied; canonical source is untouched.
+  Schedule get effectiveSchedule => _shiftTransactionProjection.schedule;
+
+  /// Legacy read-only view of the effective schedule, retaining imported metadata.
+  List<Shift> get effectiveShifts =>
+      _legacySchedule.toLegacyShifts(schedule: effectiveSchedule);
+
+  List<String> get shiftTransactionProjectionWarnings =>
+      _shiftTransactionProjection.warnings;
+
+  void updateShiftTransactions(List<ShiftTransactionSnapshot> transactions) {
+    final pending = _pendingShiftTransactionCalendarSync;
+    if (pending != null) {
+      final latest = transactions.where((item) => item.id == pending.transactionId);
+      if (latest.length != 1 ||
+          latest.single.version != pending.transactionVersion) {
+        cancelShiftTransactionCalendarSyncPreview();
+      }
+    }
+    _shiftTransactions = List.unmodifiable(transactions);
+    notifyListeners();
+  }
+
+  void clearShiftTransactions() {
+    cancelShiftTransactionCalendarSyncPreview();
+    if (_shiftTransactions.isEmpty) return;
+    _shiftTransactions = const [];
+    notifyListeners();
+  }
   List<ShiftAlert> alerts = [];
   List<CalendarBusyPeriod> calendarPeriods = [];
   Map<String, ShiftAlertDecision> alertDecisions = {};
@@ -200,6 +257,9 @@ class AppController extends ChangeNotifier implements ControllerState {
   Set<String> existingKeys = {};
   List<String> sheetTitles = [];
   Set<String> pinnedToolIds = {...defaultPinnedToolIds};
+  // Keep Google Calendar audit history enabled by default; callers can still
+  // disable it explicitly for a session when the user requests that.
+  bool shiftTimelineEnabled = true;
   bool initialized = false;
   bool busy = false;
   bool recentSheetHistoryLoaded = false;
@@ -212,6 +272,7 @@ class AppController extends ChangeNotifier implements ControllerState {
   String? localSourceLabel;
   final Map<String, _ShiftOverride> _shiftOverrides = {};
   ShiftCalendarWorkflowController? _pendingCalendarWorkflow;
+  _PendingShiftTransactionCalendarSync? _pendingShiftTransactionCalendarSync;
 
   static const _runtimeScheduleId = 'legacy-runtime';
   static const _runtimeScheduleName = 'Legacy runtime schedule';
@@ -281,9 +342,9 @@ class AppController extends ChangeNotifier implements ControllerState {
       error ??= 'โหลดแถบเครื่องมือไม่สำเร็จ: $caught';
     }
     try {
-      alertDecisions = await _settingsService.loadAlertDecisions();
+      await _ensureActiveSavedSheetPerAccount();
     } catch (caught) {
-      error ??= 'โหลดการตัดสินใจแจ้งเตือนไม่สำเร็จ: $caught';
+      error ??= 'ปรับข้อมูลแหล่งชีตเดิมไม่สำเร็จ: $caught';
     }
     auth.addListener(_onAuthChanged);
     await auth.initialize(webClientId: settings.googleWebClientId);
@@ -302,9 +363,12 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   Future<void> signOut() async {
+    _timelineLoadGeneration++;
+    timelineLoading = false;
     await auth.signOut();
     _autoRefreshTimer?.cancel();
     _replaceLegacyShifts(const []);
+    _shiftTransactions = const [];
     alerts = [];
     calendarPeriods = [];
     existingKeys = {};
@@ -341,10 +405,28 @@ class AppController extends ChangeNotifier implements ControllerState {
     if (periodChanged) {
       calendarPeriods = [];
       existingKeys = {};
+      // A month change invalidates any previously customized date range.
+      // Recompute it from the selected periods instead of retaining a stale
+      // range that could silently point at a different month.
+      syncRangeStart = null;
+      syncRangeEnd = null;
+      _syncRangeCustomized = false;
     }
     settings = next;
     await _settingsService.save(next);
-    if (periodChanged) _rebuildAlerts();
+    if (periodChanged) {
+      monthlyRoster = _filterMonthlyReportToSelectedPeriods(_allMonthlyRoster);
+      _setDefaultSyncDateRange(_loadedRosterShifts);
+      if (_loadedRosterShifts.isNotEmpty) {
+        final selectedShifts = _filterToSyncDateRange(_loadedRosterShifts);
+        _replaceLegacyShifts(
+          _alertService.addOffDutyPeriods(
+            _applyReferenceRelationships(selectedShifts),
+          ),
+        );
+      }
+      _rebuildAlerts();
+    }
     _scheduleAutoRefresh();
     notifyListeners();
   }
@@ -389,6 +471,8 @@ class AppController extends ChangeNotifier implements ControllerState {
       });
   }
 
+  /// Only an explicitly selected source is used for roster import/sync.
+  /// Saved sources are not automatically substituted when selection is empty.
   SavedSheet? get currentSourceSheet =>
       savedSheetsForCurrentAccount.where((sheet) => sheet.isActive).firstOrNull;
 
@@ -434,6 +518,53 @@ class AppController extends ChangeNotifier implements ControllerState {
       throw StateError('กรุณาเลือกไฟล์ Google Sheets หลักในหน้าแรกก่อน');
     }
     await selectSourceForCurrentAccount(sourceUrl);
+  }
+
+  Future<void> clearRosterSourceSelection() async {
+    _timelineLoadGeneration++;
+    timelineLoading = false;
+    await _run('ยกเลิกการเลือกตารางเวร', () async {
+      final accountId = auth.account?.id;
+      if (accountId != null) {
+        savedSheets = [
+          for (final sheet in savedSheets)
+            if (sheet.ownerAccountId != accountId)
+              sheet
+            else
+              sheet.copyWith(isActive: false),
+        ];
+        await _settingsService.saveSavedSheets(savedSheets);
+      }
+
+      localSourceLabel = null;
+      _autoRefreshTimer?.cancel();
+      _replaceLegacyShifts(const []);
+      alerts = [];
+      calendarPeriods = [];
+      existingKeys = {};
+      sheetTitles = [];
+      monthlyRoster = const MonthlyRosterParseReport(
+        sections: [],
+        warnings: [],
+      );
+      monthlyRosterConversion = const MonthlyRosterConversionReport(
+        shifts: [],
+        unconvertedAssignments: [],
+      );
+      _loadedRosterShifts = [];
+      _currentAllRosterShifts = [];
+      _referenceAllRosterShifts = [];
+      _revisionTimelines = const {};
+      _loadedRevisionCount = 0;
+      timelineWarning = null;
+      _resetSyncRange();
+      status = 'ยกเลิกการเลือกตารางแล้ว; ไฟล์ต้นฉบับยังอยู่ใน Google Sheets';
+      await _addAudit(
+        'sheet.source.clear',
+        'ยกเลิกการเลือกแหล่งข้อมูลเวรสำหรับบัญชีปัจจุบัน; ไม่ได้ลบไฟล์ต้นฉบับ',
+        true,
+      );
+    });
   }
 
   Future<void> findAvailableSourceSheets({
@@ -500,16 +631,23 @@ class AppController extends ChangeNotifier implements ControllerState {
 
       try {
         var addedCount = 0;
+        final shouldActivateFirst = currentSourceSheet == null;
+        final firstSelectedId = uniqueSheets.first.id;
 
-        // บันทึกย้อนลำดับ เพื่อให้ไฟล์แรกที่ผู้ใช้เลือกเป็นไฟล์หลักล่าสุด
-        // และยังเก็บไฟล์อื่นทั้งหมดไว้ในรายการชีตที่บันทึก
+        // Keep an existing explicit selection when adding more files.
+        // If no source is active yet, use the first file the user selected.
         for (final selected in uniqueSheets.reversed) {
           await _ownershipService.requireOwnedSpreadsheet(client, selected.id);
           final reference = await _sheetsService.describeSpreadsheet(
             client,
             selected.url,
           );
-          await _saveSheetReference(account.id, reference);
+          await _saveSheetReference(
+            account.id,
+            reference,
+            setActive:
+                shouldActivateFirst && selected.id == firstSelectedId,
+          );
           addedCount++;
         }
 
@@ -528,6 +666,8 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   Future<void> selectSourceForCurrentAccount(String sourceUrl) async {
+    _timelineLoadGeneration++;
+    timelineLoading = false;
     final account = auth.account;
     if (account == null) throw StateError('กรุณาล็อกอิน Google ก่อน');
     final normalizedUrl = sourceUrl.trim();
@@ -583,6 +723,10 @@ class AppController extends ChangeNotifier implements ControllerState {
 
   Future<void> deleteSavedSheet(SavedSheet sheet) async {
     _requireSheetOwner(sheet);
+    if (currentSourceSheet?.key == sheet.key) {
+      _timelineLoadGeneration++;
+      timelineLoading = false;
+    }
     await _run('ลบชีตออกจากรายการบันทึก', () async {
       final wasCurrent = currentSourceSheet?.key == sheet.key;
       savedSheets = [
@@ -607,7 +751,41 @@ class AppController extends ChangeNotifier implements ControllerState {
     });
   }
 
-  Future<void> loadRoster({bool background = false}) async {
+  /// Explicitly reloads the selected Google Sheet and its historical Drive
+  /// revisions for Timeline. This operation is read-only and must never trigger
+  /// automatic writes to Google Calendar.
+  Future<void> syncHistoricalTimeline() async {
+    if (busy) throw StateError('กำลังทำงานอื่นอยู่ กรุณารอสักครู่');
+    if (!auth.isSignedIn) throw StateError('กรุณาเข้าสู่ระบบ Google ก่อน');
+    if (!hasSelectedSourceSheet) {
+      throw StateError('กรุณาเลือก Google Sheets ที่ต้องการซิงค์ Timeline ก่อน');
+    }
+
+    await loadRoster(
+      allowAutomaticCalendarSync: false,
+      refreshHistoricalTimeline: true,
+    );
+    if (error != null) return;
+
+    final warning = timelineWarning;
+    status = warning == null
+        ? 'อ่านตารางเวรแล้ว; กำลังซิงค์ Timeline ย้อนหลังเบื้องหลัง'
+        : 'อ่านตารางเวรแล้ว; Timeline ย้อนหลังมีข้อจำกัด: $warning';
+    await _addAudit('sheet.timeline.sync.started', status!, true);
+    notifyListeners();
+  }
+
+  Future<void> loadRoster({
+    bool background = false,
+    bool allowAutomaticCalendarSync = true,
+    bool refreshHistoricalTimeline = false,
+  }) async {
+    final timelineGeneration = ++_timelineLoadGeneration;
+    timelineLoading = false;
+    dynamic pendingTimelineSnapshots;
+    String? pendingTimelineSpreadsheetId;
+    String? pendingTimelineAccountId;
+    String? pendingTimelineScope;
     await _run('อ่านตารางเวร', () async {
       final sourceUrl = localSourceLabel == null ? currentSourceUrl : '';
       if (sourceUrl.isEmpty) {
@@ -629,7 +807,7 @@ class AppController extends ChangeNotifier implements ControllerState {
         final spreadsheetId = _sheetsService.parseSpreadsheetId(sourceUrl);
         await _ownershipService.requireOwnedSpreadsheet(client, spreadsheetId);
         final snapshots = await _sheetsService.readAll(client, sourceUrl);
-        final parsed = _parseRosterSnapshots(
+        final legacyParsed = _parseRosterSnapshots(
           snapshots,
           searchNames: searchNames,
         );
@@ -662,7 +840,283 @@ class AppController extends ChangeNotifier implements ControllerState {
         client.close();
       }
     });
+    if (pendingTimelineSnapshots != null &&
+        pendingTimelineSpreadsheetId != null &&
+        pendingTimelineScope != null) {
+      timelineLoading = true;
+      timelineWarning = 'กำลังโหลด Timeline ย้อนหลังเบื้องหลัง';
+      notifyListeners();
+      unawaited(
+        _loadTimelineInBackground(
+          snapshots: pendingTimelineSnapshots,
+          spreadsheetId: pendingTimelineSpreadsheetId!,
+          accountId: pendingTimelineAccountId,
+          timelineScope: pendingTimelineScope!,
+          background: background,
+          refreshHistoricalTimeline: refreshHistoricalTimeline,
+          generation: timelineGeneration,
+        ),
+      );
+    }
     _scheduleAutoRefresh();
+    // A roster read must never write to Google Calendar. Keep compatibility
+    // with legacy autoSync settings, but require the normal preview and the
+    // explicit confirmation dialog for every Calendar mutation.
+    if (allowAutomaticCalendarSync && settings.autoSync && auth.isSignedIn) {
+      final message = pendingAlertCount > 0
+          ? 'ข้ามการซิงก์อัตโนมัติเนื่องจากมีแจ้งเตือนค้าง $pendingAlertCount รายการ'
+          : 'ยังไม่เขียน Google Calendar อัตโนมัติ; กรุณาตรวจตัวอย่างและยืนยันการซิงก์ด้วยตนเอง';
+      await _addAudit('auto.sync.requires_confirmation', message, true);
+    }
+  }
+
+  Future<void> _loadTimelineInBackground({
+    required dynamic snapshots,
+    required String spreadsheetId,
+    required String? accountId,
+    required String timelineScope,
+    required bool background,
+    required bool refreshHistoricalTimeline,
+    required int generation,
+  }) async {
+    if (generation != _timelineLoadGeneration || !auth.isSignedIn) return;
+    GoogleApiClient? client;
+    try {
+      client = await auth.clientFor([
+        sheets.SheetsApi.spreadsheetsReadonlyScope,
+        drive.DriveApi.driveMetadataReadonlyScope,
+        drive.DriveApi.driveReadonlyScope,
+      ], promptIfNecessary: false);
+      if (generation != _timelineLoadGeneration) return;
+    final currentRevision = RosterRevisionDocument(
+      revisionId: 'current',
+      modifiedAt: DateTime.now(),
+      snapshots: snapshots,
+    );
+    final timelineGenerator = RosterTimelineGenerator(
+      shiftTemplates: _shiftTemplates,
+    );
+    void appendTimelineGenerationWarnings(Iterable<String> source) {
+      final messages = source.toList(growable: false);
+      if (messages.isEmpty) return;
+      final shown = messages.take(4).join('；');
+      final more = messages.length > 4
+          ? ' และอีก ${messages.length - 4} รายการ'
+          : '';
+      final warning = 'Timeline มีข้อมูลบางส่วนที่ถูกข้าม: $shown$more';
+      timelineWarning = timelineWarning == null
+          ? warning
+          : '$timelineWarning; $warning';
+    }
+    if (background &&
+        _loadedRevisionCount > 0 &&
+        _loadedTimelineScope == timelineScope) {
+      timelineWarning =
+          'ใช้ประวัติ Timeline จากการอ่านล่าสุด; '
+          'กดอ่านใหม่เพื่อโหลด revision ล่าสุดจาก Drive';
+    } else {
+      if (generation == _timelineLoadGeneration) timelineWarning = null;
+      try {
+        final skippedArchiveRevisionIds = <String>{};
+        final skippedDriveRevisionIds = <String>{};
+        final legacyAccountId = auth.account?.email.trim();
+        const archive = TimelineArchiveService();
+        var archivedRevisions = <RosterRevisionDocument>[];
+
+        // Render the durable local archive first. A temporary Drive or
+        // network failure must not hide history already saved on this device.
+        if (accountId != null && accountId.isNotEmpty) {
+          try {
+            archivedRevisions = await archive.readRevisionsWithLegacyAccountScope(
+              accountId: accountId,
+              legacyAccountId: legacyAccountId,
+              fileId: spreadsheetId,
+              onRevisionSkipped: (revisionId, error) {
+                skippedArchiveRevisionIds.add(revisionId);
+              },
+              onMigrationError: (migrationError) {
+                final message =
+                    'ย้ายคลัง Timeline จากอีเมลไปยังรหัสบัญชี Google ไม่สำเร็จ: '
+                    '$migrationError';
+                if (generation == _timelineLoadGeneration) timelineWarning = message;
+                unawaited(_addAudit(
+                  'sheet.timeline.archive.migration.failed',
+                  message,
+                  false,
+                ));
+              },
+            );
+          } on Object catch (archiveReadError) {
+            final archiveWarning =
+                'อ่านคลัง Timeline ในเครื่องไม่สำเร็จ: $archiveReadError';
+            if (generation == _timelineLoadGeneration) timelineWarning = archiveWarning;
+            await _addAudit(
+              'sheet.timeline.archive.read.failed',
+              archiveWarning,
+              false,
+            );
+          }
+        } else {
+          if (generation == _timelineLoadGeneration) {
+            timelineWarning =
+                'ไม่พบอีเมลบัญชี Google จึงไม่สามารถแยกคลัง Timeline ตามบัญชีได้';
+          }
+        }
+        skippedArchiveRevisionIds.removeAll(
+          archivedRevisions.map((revision) => revision.revisionId),
+        );
+
+        try {
+          if (generation != _timelineLoadGeneration) return;
+          final knownRevisionIds = archivedRevisions
+              .map((revision) => revision.revisionId)
+              .toSet();
+          // Bootstrap an empty local archive once so historical Timeline
+          // remains available on first use. Routine reads with an existing
+          // archive avoid Drive revision exports; explicit refresh still
+          // checks Drive for revisions added since the last archive.
+          final shouldRefreshDriveHistory =
+              refreshHistoricalTimeline ||
+              archivedRevisions.isEmpty ||
+              skippedArchiveRevisionIds.isNotEmpty;
+          final missingRevisions = shouldRefreshDriveHistory
+              ? await const RosterRevisionService().readHistoryTransient(
+                  client,
+                  spreadsheetId,
+                  knownRevisionIds: knownRevisionIds,
+                  onRevisionSkipped: (revisionId, error) {
+                    skippedDriveRevisionIds.add(revisionId);
+                  },
+                )
+              : <RosterRevisionDocument>[];
+
+          if (generation != _timelineLoadGeneration) return;
+          final recoveredRevisionIds = missingRevisions
+              .map((revision) => revision.revisionId)
+              .toSet();
+          final unresolvedRevisionIds = <String>{
+            ...skippedArchiveRevisionIds.difference(recoveredRevisionIds),
+            ...skippedDriveRevisionIds,
+          };
+
+          // Persist each downloaded revision before adding it to the
+          // in-memory timeline. If a write fails, the local archive remains
+          // valid and the warning makes the incomplete refresh visible.
+          if (accountId != null && accountId.isNotEmpty) {
+            for (final revision in missingRevisions) {
+              await archive.putRevision(
+                accountId: accountId,
+                fileId: spreadsheetId,
+                document: revision,
+              );
+            }
+          }
+
+          final mergedRevisions = <String, RosterRevisionDocument>{
+            for (final revision in archivedRevisions)
+              revision.revisionId: revision,
+            for (final revision in missingRevisions)
+              revision.revisionId: revision,
+          }.values.toList()
+            ..sort((left, right) =>
+                left.modifiedAt.compareTo(right.modifiedAt));
+
+          if (generation != _timelineLoadGeneration) return;
+          _loadedRevisionCount = mergedRevisions.length + 1;
+          final generatedTimeline = await timelineGenerator
+              .generateFromDocumentsWithDiagnosticsAsync([
+                ...mergedRevisions,
+                currentRevision,
+              ]);
+          _revisionTimelines = generatedTimeline.timelines;
+          _loadedTimelineScope = timelineScope;
+          if (mergedRevisions.isEmpty) {
+            timelineWarning = shouldRefreshDriveHistory
+                ? 'ไม่พบประวัติ revision ที่อ่านได้ จึงแสดงเฉพาะรายชื่อเวรปัจจุบัน'
+                : 'ใช้คลัง Timeline ในเครื่อง; กด “ซิงค์ Timeline ย้อนหลัง” เพื่อตรวจ revision ใหม่จาก Drive';
+          }
+          appendTimelineGenerationWarnings(generatedTimeline.warnings);
+          if (unresolvedRevisionIds.isNotEmpty) {
+            final skippedIds = unresolvedRevisionIds.toList()..sort();
+            final shownIds = skippedIds.take(5).join(', ');
+            final more = skippedIds.length > 5
+                ? ' และอีก ${skippedIds.length - 5} รายการ'
+                : '';
+            final skippedWarning =
+                'อ่าน revision ไม่สำเร็จ ${skippedIds.length} รายการ '
+                '($shownIds$more); Timeline อาจไม่ครบ';
+            timelineWarning = timelineWarning == null
+                ? skippedWarning
+                : '$timelineWarning; $skippedWarning';
+          }
+        } on Object catch (historyError) {
+          if (generation != _timelineLoadGeneration) return;
+          _loadedRevisionCount = archivedRevisions.length + 1;
+          final fallbackTimeline = await timelineGenerator
+              .generateFromDocumentsWithDiagnosticsAsync([
+                ...archivedRevisions,
+                currentRevision,
+              ]);
+          _revisionTimelines = fallbackTimeline.timelines;
+          appendTimelineGenerationWarnings(fallbackTimeline.warnings);
+          _loadedTimelineScope = timelineScope;
+          final fallbackWarning = archivedRevisions.isEmpty
+              ? 'อ่านประวัติ Timeline จาก Drive ไม่สำเร็จและไม่มีคลังในเครื่อง: $historyError'
+              : 'Drive ยังอ่านประวัติใหม่ไม่ได้ จึงใช้ Timeline ที่บันทึกในเครื่อง '
+                    '(${archivedRevisions.length} revision): $historyError';
+          timelineWarning = timelineWarning == null
+              ? fallbackWarning
+              : '$timelineWarning; $fallbackWarning';
+          await _addAudit(
+            'sheet.timeline.drive.failed',
+            fallbackWarning,
+            false,
+          );
+        }
+      } on Object catch (caught, stackTrace) {
+        if (generation != _timelineLoadGeneration) return;
+        _loadedRevisionCount = 1;
+        final currentTimeline = await timelineGenerator
+            .generateFromDocumentsWithDiagnosticsAsync([currentRevision]);
+        _revisionTimelines = currentTimeline.timelines;
+        _loadedTimelineScope = timelineScope;
+        timelineWarning =
+            'อ่านประวัติ Timeline จาก Google Drive ไม่สำเร็จ: $caught';
+        appendTimelineGenerationWarnings(currentTimeline.warnings);
+        await _addAudit('sheet.timeline.failed', timelineWarning!, false);
+        debugPrintStack(
+          label: 'Could not load Google Sheets revision timeline',
+          stackTrace: stackTrace,
+        );
+      }
+    }
+
+      if (generation == _timelineLoadGeneration) {
+        if (_loadedRosterShifts.isNotEmpty) {
+          final visibleShifts = _filterToSyncDateRange(_loadedRosterShifts);
+          _replaceLegacyShifts(
+            _alertService.addOffDutyPeriods(
+              _applyReferenceRelationships(visibleShifts),
+            ),
+            persist: false,
+          );
+        }
+        timelineLoading = false;
+        notifyListeners();
+      }
+    } catch (caught, stackTrace) {
+      if (generation == _timelineLoadGeneration) {
+        timelineWarning = 'อ่านประวัติ Timeline เบื้องหลังไม่สำเร็จ: $caught';
+        timelineLoading = false;
+        _loadedRevisionCount = 1;
+        _revisionTimelines = const {};
+        await _addAudit('sheet.timeline.background.failed', timelineWarning!, false);
+        notifyListeners();
+      }
+      debugPrintStack(label: 'Background roster Timeline load failed', stackTrace: stackTrace);
+    } finally {
+      client?.close();
+    }
   }
 
   Future<void> importLocalRosterFile() async {
@@ -678,7 +1132,7 @@ class AppController extends ChangeNotifier implements ControllerState {
         status = 'ยกเลิกการเลือกไฟล์';
         return;
       }
-      final parsed = _parseRosterSnapshots(
+      final legacyParsed = _parseRosterSnapshots(
         document.snapshots,
         searchNames: searchNames,
       );
@@ -710,7 +1164,7 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   Future<void> compareCalendar() async {
-    if (shifts.isEmpty) throw StateError('กรุณาอ่านตารางเวรก่อน');
+    if (effectiveShifts.isEmpty) throw StateError('กรุณาอ่านตารางเวรก่อน');
     await _run('เปรียบเทียบ Google Calendar', () async {
       final periods = _activeRosterPeriods();
       final client = await auth.clientFor([
@@ -750,8 +1204,7 @@ class AppController extends ChangeNotifier implements ControllerState {
         throw StateError('ไม่พบแหล่งข้อมูลเวรของรอบนี้');
       }
       final periods = _activeRosterPeriods();
-      final workflow =
-          _pendingCalendarWorkflow ?? await _createPreparedCalendarWorkflow();
+      final workflow = preparedWorkflow;
       _pendingCalendarWorkflow = null;
       try {
         if (settings.archiveOriginal && sourceUrl.isNotEmpty) {
@@ -823,6 +1276,240 @@ class AppController extends ChangeNotifier implements ControllerState {
     });
   }
 
+  /// Builds and returns a prepared calendar diff for preview purposes.
+  Future<CalendarDiff> previewCalendarDiff() {
+    return _run('เตรียมตัวอย่างการซิงก์ปฏิทิน', () async {
+      _pendingCalendarWorkflow?.dispose();
+      _pendingCalendarWorkflow = null;
+      final workflow = await _createPreparedCalendarWorkflow();
+      _pendingCalendarWorkflow = workflow;
+      final prep = workflow.schedulePreparation;
+      if (prep == null) {
+        throw StateError('ไม่พบแผนการซิงก์ที่เตรียมไว้');
+      }
+      return prep.diff;
+    });
+  }
+
+  Future<ShiftTransactionCalendarSyncPreview>
+  previewShiftTransactionCalendarSync(ShiftTransactionSnapshot transaction) {
+    return _run('ตรวจสอบตัวอย่าง Calendar สำหรับธุรกรรมเวร', () async {
+      if (transaction.status != 'approved') {
+        throw StateError('ต้องอนุมัติธุรกรรมก่อนเตรียม Calendar');
+      }
+      if (transaction.syncStatus == 'pending' ||
+          transaction.syncStatus == 'synced') {
+        throw StateError('ธุรกรรมนี้กำลังซิงก์หรือซิงก์สำเร็จแล้ว');
+      }
+      if (shiftTransactionProjectionWarnings.isNotEmpty) {
+        throw StateError('มีธุรกรรมที่นำไปใช้กับตารางไม่ได้ กรุณาแก้ไขก่อนซิงก์ Calendar');
+      }
+      _pendingShiftTransactionCalendarSync?.workflow.dispose();
+      _pendingShiftTransactionCalendarSync = null;
+      final schedule = _scheduleForActivePeriods();
+      final syncIds = const ShiftTransactionCalendarSyncMapper().map(
+        schedule: schedule,
+        transaction: transaction,
+      );
+      final workflow = await _calendarWorkflowControllerFactory();
+      try {
+        await workflow.prepareSchedule(schedule);
+        if (workflow.hasBlockingFailures) {
+          throw StateError(workflow.validationResult?.errors
+              .map((item) => item.message).join('\n') ?? 'ตารางเวรไม่ผ่านการตรวจสอบ');
+        }
+        final preparation = workflow.schedulePreparation;
+        if (preparation == null) throw StateError('ไม่พบแผน Calendar ที่ผ่านการตรวจสอบ');
+        final plannedIds = {
+          ...preparation.existingEventIdsBySyncId.keys,
+          ...preparation.plan.inserts.map((item) => item.syncId),
+          ...preparation.plan.updates.map((item) => item.command.syncId),
+        };
+        if (syncIds.any((id) => !plannedIds.contains(id))) {
+          throw StateError('ไม่พบรายการเวรของธุรกรรมในแผน Calendar ที่เตรียมไว้');
+        }
+        _pendingShiftTransactionCalendarSync = _PendingShiftTransactionCalendarSync(
+          transactionId: transaction.id,
+          transactionVersion: transaction.version,
+          sourceSchedule: canonicalSchedule,
+          schedule: schedule,
+          workflow: workflow,
+          syncIds: syncIds,
+        );
+        return ShiftTransactionCalendarSyncPreview(
+          transactionId: transaction.id,
+          transactionVersion: transaction.version,
+          insertCount: preparation.diff.toAdd.length,
+          updateCount: preparation.diff.toUpdate.length,
+          deleteCount: preparation.diff.toDelete.length,
+          transferLines: [
+            for (final transfer in transaction.transfers)
+              '${transfer['shift_code'] ?? 'Shift'} · ${transfer['from_employee_id'] ?? '?'} → ${transfer['to_employee_id'] ?? '?'} · ${transfer['starts_at'] ?? ''} – ${transfer['ends_at'] ?? ''}',
+          ],
+          insertTitles: [for (final item in preparation.diff.toAdd) item.title],
+          updateTitles: [for (final item in preparation.diff.toUpdate) item.title],
+          deleteTitles: [for (final item in preparation.diff.toDelete) item.title],
+          warnings: workflow.validationResult?.warnings
+                  .map((item) => item.message).toList(growable: false) ??
+              const <String>[],
+        );
+      } catch (_) {
+        workflow.dispose();
+        rethrow;
+      }
+    });
+  }
+
+  Future<ShiftTransactionSnapshot> confirmShiftTransactionCalendarSync({
+    required ShiftTransactionSnapshot transaction,
+    required ShiftTransactionApiClient apiClient,
+    required bool userConfirmed,
+  }) {
+    return _run('ยืนยันและซิงก์ Calendar สำหรับธุรกรรมเวร', () async {
+      if (!userConfirmed) throw StateError('ต้องยืนยันจากหน้าตัวอย่างก่อนบันทึก Calendar');
+      final pending = _pendingShiftTransactionCalendarSync;
+      final currentTransactions = _shiftTransactions.where(
+        (item) => item.id == transaction.id,
+      );
+      if (pending == null ||
+          currentTransactions.length != 1 ||
+          currentTransactions.single.version != transaction.version ||
+          pending.transactionId != transaction.id ||
+          pending.transactionVersion != transaction.version ||
+          !identical(pending.sourceSchedule, canonicalSchedule)) {
+        throw StateError('ตัวอย่างหมดอายุแล้ว กรุณาเตรียม Preview ใหม่');
+      }
+      final currentIds = const ShiftTransactionCalendarSyncMapper().map(
+        schedule: _scheduleForActivePeriods(),
+        transaction: transaction,
+      );
+      if (currentIds.length != pending.syncIds.length ||
+          !currentIds.toSet().containsAll(pending.syncIds)) {
+        throw StateError('ตารางเวรเปลี่ยนหลัง Preview กรุณาตรวจสอบใหม่');
+      }
+      var syncStartAttempted = false;
+      var syncCompleted = false;
+      ShiftCalendarWorkflowController? verification;
+      try {
+        syncStartAttempted = true;
+        await apiClient.startCalendarSync(transaction.id, previewConfirmed: true);
+        await pending.workflow.synchronize();
+        final result = pending.workflow.lastResult;
+        if (result == null || result.hasFailures) {
+          throw StateError('Calendar ซิงก์ไม่ครบ กรุณาตรวจประวัติและลองใหม่');
+        }
+        verification = await _calendarWorkflowControllerFactory();
+        await verification.prepareSchedule(pending.schedule);
+        if (verification.hasBlockingFailures ||
+            verification.schedulePreparation == null) {
+          throw StateError('อ่านยืนยันรายการ Calendar หลังซิงก์ไม่สำเร็จ');
+        }
+        final providerIds = verification.schedulePreparation!.existingEventIdsBySyncId;
+        final writtenIds = {
+          for (final operation in result.operations)
+            if (operation.success &&
+                operation.providerEventId != null &&
+                operation.providerEventId!.isNotEmpty)
+              operation.referenceId: operation.providerEventId!,
+        };
+        final eventIds = <String>[];
+        for (final syncId in pending.syncIds) {
+          final readBackId = providerIds[syncId];
+          final writtenId = writtenIds[syncId];
+          if (readBackId == null ||
+              readBackId.isEmpty ||
+              (writtenId != null && writtenId != readBackId)) {
+            throw StateError(
+              'Calendar read-back ไม่ตรงกับ Event ID ที่ได้จากการเขียน',
+            );
+          }
+          eventIds.add(readBackId);
+        }
+        if (eventIds.toSet().length != pending.syncIds.length) {
+          throw StateError('Calendar read-back ไม่พบ Event ID ที่ไม่ซ้ำกันครบทุกเวร');
+        }
+        final updated = await apiClient.completeCalendarSync(
+          transaction.id,
+          calendarEventIds: eventIds,
+        );
+        syncCompleted = true;
+        _shiftTransactions = List.unmodifiable([
+          for (final item in _shiftTransactions)
+            if (item.id == updated.id) updated else item,
+        ]);
+        status = 'ซิงก์ Calendar และยืนยัน Event ID ของธุรกรรมแล้ว';
+        await _addAudit(
+          'shift_transaction.calendar_sync',
+          'ยืนยัน Calendar Event ${eventIds.length} รายการสำหรับธุรกรรม ${transaction.id}',
+          true,
+        );
+        notifyListeners();
+        return updated;
+      } catch (error) {
+        if (syncStartAttempted && !syncCompleted) {
+          try {
+            await apiClient.failCalendarSync(transaction.id, reason: error.toString());
+          } catch (_) {}
+        }
+        rethrow;
+      } finally {
+        verification?.dispose();
+        pending.workflow.dispose();
+        if (identical(_pendingShiftTransactionCalendarSync, pending)) {
+          _pendingShiftTransactionCalendarSync = null;
+        }
+      }
+    });
+  }
+
+  void cancelShiftTransactionCalendarSyncPreview() {
+    _pendingShiftTransactionCalendarSync?.workflow.dispose();
+    _pendingShiftTransactionCalendarSync = null;
+  }
+
+
+  /// Prepares a preview for a pre-mapped list of desired calendar event
+  /// candidates (used for swap/one-off previews) and returns the computed diff.
+  Future<CalendarDiff> previewCandidates(
+    List<CalendarEventCandidate> desired,
+  ) {
+    return _run('เตรียมตัวอย่างรายการปฏิทิน', () async {
+      final workflow = await _calendarWorkflowControllerFactory();
+      try {
+        await workflow.prepareCandidatePreview(desired: desired);
+        final preview = workflow.preview;
+        if (preview == null) throw StateError('ไม่พบ preview หลังจากเตรียม');
+        return preview.diff;
+      } finally {
+        workflow.dispose();
+      }
+    });
+  }
+
+  /// Executes synchronization for a pre-mapped set of desired candidates.
+  Future<void> syncCandidates(List<CalendarEventCandidate> desired) {
+    return _run('ซิงก์รายการปฏิทิน', () async {
+      final workflow = await _calendarWorkflowControllerFactory();
+      try {
+        await workflow.prepareCandidatePreview(desired: desired);
+        if (workflow.preview == null) {
+          throw StateError('ไม่พบแผนการซิงก์สำหรับรายการนี้');
+        }
+        await workflow.synchronize();
+        final result = workflow.lastResult;
+        if (result != null) {
+          await _addAudit(
+            'calendar.sync.candidates',
+            'ซิงก์ candidates: เพิ่ม ${result.historyEntry.inserted} แก้ไข ${result.historyEntry.updated} ลบ ${result.historyEntry.deleted}',
+            !result.hasFailures,
+          );
+        }
+      } finally {
+        workflow.dispose();
+      }
+    });
+  }
+
   /// Releases an authorized prepared workflow when confirmation is cancelled.
   void cancelCalendarSyncPreparation() {
     _pendingCalendarWorkflow?.dispose();
@@ -831,6 +1518,48 @@ class AppController extends ChangeNotifier implements ControllerState {
 
   Future<ShiftCalendarWorkflowController>
   _createPreparedCalendarWorkflow() async {
+    final dateAnomalies = monthlyRoster.blockingDateAnomalies;
+    if (dateAnomalies.isNotEmpty) {
+      final details = monthlyRoster.sections
+          .where((section) => section.hasBlockingDateAnomalies)
+          .expand(
+            (section) => section.dateAnomalies.map(
+              (anomaly) => '${section.title}: ${anomaly.message}',
+            ),
+          )
+          .take(8)
+          .join('；');
+      throw StateError(
+        'พบข้อผิดปกติของแถววันที่ในตารางเวร จึงหยุดก่อนสร้าง Preview และก่อนเชื่อมต่อ Google Calendar '
+        'กรุณาตรวจสอบวันที่ซ้ำ วันที่ขาด หรือวันที่เรียงผิดลำดับ: $details',
+      );
+    }
+    final schedule = _scheduleForActivePeriods();
+    final assignmentCount = schedule.months.fold<int>(
+      0,
+      (total, month) => total + month.days.fold<int>(
+        0,
+        (dayTotal, day) => dayTotal + day.assignments.length,
+      ),
+    );
+    if (assignmentCount == 0) {
+      final selectedPeriods = _activeRosterPeriods();
+      final selectedLabel = selectedPeriods
+          .map((period) => '${period.month}/${period.year + 543}')
+          .join(', ');
+      final parsedCount = _loadedRosterShifts.length;
+      final filteredCount = _filterToSyncDateRange(_loadedRosterShifts).length;
+      throw StateError(
+        'ไม่พบรายการเวรในตารางสำหรับเดือนที่เลือก ($selectedLabel) '
+        'จึงยังสร้าง Preview ไม่ได้ '
+        '(อ่านเวรต้นทางได้ $parsedCount รายการ; หลังกรองเดือน/ช่วงวันที่เหลือ $filteredCount รายการ; '
+        'ช่องตารางรายเดือนที่อ่านได้ ${monthlyRoster.assignments.length}; '
+        'ช่องที่ยังแปลงเป็นเวรไม่ได้ ${monthlyRosterConversion.unconvertedAssignments.length}). '
+        'ระบบหยุดก่อนอ่านหรือเขียน Google Calendar เพื่อป้องกันการสร้างแผนจากตารางว่าง '
+        'กรุณาตรวจปี/เดือนและผลการแปลงตารางเวร',
+      );
+    }
+
     final workflow = await _calendarWorkflowControllerFactory();
     try {
       await workflow.prepareSchedule(canonicalSchedule);
@@ -912,6 +1641,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       _replaceLegacyShifts(updatedShifts);
     }
     _rebuildAlerts();
+    unawaited(recordShiftTimelineEvent(action: excluded == true || category == ShiftCategory.given ? 'SHIFT_CANCELLED' : (category == ShiftCategory.majorSwap || category == ShiftCategory.borrowedPaid || category == ShiftCategory.borrowedUnpaid) ? 'SHIFT_EXCHANGED' : 'SHIFT_UPDATED', summary: excluded == true || category == ShiftCategory.given ? 'ยกเวร' : (category == ShiftCategory.majorSwap || category == ShiftCategory.borrowedPaid || category == ShiftCategory.borrowedUnpaid) ? 'แลกเวร' : 'ปรับสถานะเวร', details: 'เวร: ${shift.displayName}\nผู้ปฏิบัติงาน: ${shift.assignedName}\nเวลาเดิม: ${shift.start}–${shift.end}\nประเภทเดิม: ${shift.category.label}\nประเภทใหม่: ${updatedShifts[index].category.label}\nยกเวร: ${excluded == true}', shift: shift).catchError((Object error) { status = 'บันทึก Timeline ไม่สำเร็จ: $error'; notifyListeners(); }));
     notifyListeners();
   }
 
@@ -951,6 +1681,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     existingKeys = {};
     _rebuildAlerts();
     status = 'ปรับชื่อ เวลา ประเภท และสีของรายการแล้ว';
+    unawaited(recordShiftTimelineEvent(action: 'SHIFT_UPDATED', summary: 'แก้ไขรายละเอียดเวร', details: 'เวรเดิม: ${shift.displayName}\nเวรใหม่: ${updated.displayName}\nผู้ปฏิบัติงาน: ${shift.assignedName}\nเวลาเดิม: ${shift.start}–${shift.end}\nเวลาใหม่: ${updated.start}–${updated.end}\nสีใหม่: ${updated.effectiveCalendarColorId}\nประเภทใหม่: ${updated.category.label}', shift: shift).catchError((Object error) { status = 'บันทึก Timeline ไม่สำเร็จ: $error'; notifyListeners(); }));
     notifyListeners();
   }
 
@@ -1010,6 +1741,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           'ไม่บันทึกชื่อกิจกรรมหรือข้อมูลต้นฉบับใน Audit log',
       true,
     );
+    unawaited(recordShiftTimelineEvent(action: 'SHIFT_CREATED', summary: 'เพิ่มเวรใหม่', details: 'เวร: ${shift.displayName}\nผู้รับเวร: ${shift.assignedName}\nเวลา: ${shift.start}–${shift.end}\nประเภท: ${shift.category.label}\nสี Calendar: ${shift.effectiveCalendarColorId}', shift: shift).catchError((Object error) { status = 'บันทึก Timeline ไม่สำเร็จ: $error'; notifyListeners(); }));
     notifyListeners();
   }
 
@@ -1124,6 +1856,39 @@ class AppController extends ChangeNotifier implements ControllerState {
     }
   }
 
+  Future<void> _ensureActiveSavedSheetPerAccount() async {
+    final accountIds = savedSheets
+        .map((sheet) => sheet.ownerAccountId)
+        .where((id) => id.isNotEmpty)
+        .toSet();
+    var changed = false;
+
+    for (final accountId in accountIds) {
+      final accountSheets = savedSheets
+          .where((sheet) => sheet.ownerAccountId == accountId)
+          .toList()
+        ..sort((left, right) => right.savedAt.compareTo(left.savedAt));
+
+      if (accountSheets.any((sheet) => sheet.isActive)) continue;
+      // Migrate only accounts whose records all predate explicit selection.
+      // If the user already has explicit inactive records, preserve that choice.
+      if (accountSheets.any((sheet) => sheet.hasExplicitActiveState)) continue;
+      if (accountSheets.isEmpty) continue;
+
+      final activeKey = accountSheets.first.key;
+      savedSheets = [
+        for (final item in savedSheets)
+          if (item.ownerAccountId == accountId)
+            item.copyWith(isActive: item.key == activeKey)
+          else
+            item,
+      ];
+      changed = true;
+    }
+
+    if (changed) await _settingsService.saveSavedSheets(savedSheets);
+  }
+
   Future<SavedSheet> _saveSheetReference(
     String accountId,
     SheetReference reference, {
@@ -1162,14 +1927,18 @@ class AppController extends ChangeNotifier implements ControllerState {
     }
   }
 
-  Future<void> _run(String action, Future<void> Function() body) async {
-    if (busy) return;
+  Future<T> _run<T>(String action, Future<T> Function() body) async {
+    if (busy) {
+      throw StateError(
+        'กำลังทำงาน “${status ?? 'รายการก่อนหน้า'}” อยู่ กรุณารอให้เสร็จก่อนเริ่ม “$action”',
+      );
+    }
     busy = true;
     status = action;
     error = null;
     notifyListeners();
     try {
-      await body();
+      return await body();
     } catch (caught) {
       error = caught.toString().replaceFirst('Bad state: ', '');
       await _addAudit('error', '$action: $error', false);
@@ -1180,12 +1949,148 @@ class AppController extends ChangeNotifier implements ControllerState {
     }
   }
 
+  /// Writes a structured audit record to the shift event description and a separate Calendar event.
+  Future<void> recordShiftTimelineEvent({
+    required String action,
+    required String summary,
+    required String details,
+    Shift? shift,
+  }) async {
+    if (!shiftTimelineEnabled) return;
+
+    final account = auth.account;
+    if (account == null) {
+      throw StateError('กรุณาล็อกอิน Google ก่อนบันทึก Timeline');
+    }
+    final timestamp = DateTime.now();
+    final actor = account.displayName?.trim().isNotEmpty == true
+        ? account.displayName!.trim()
+        : account.email;
+    final record =
+        '[$action] ${timestamp.toIso8601String()} | ผู้แก้ไข: $actor\n$details';
+    var sourceEventStatus = '';
+    final client = await auth.clientFor([
+      calendar.CalendarApi.calendarEventsScope,
+    ]);
+    try {
+      final api = calendar.CalendarApi(client);
+      if (shift != null) {
+        // Interpret the month in the device's local timezone, then query using
+        // absolute UTC instants. Never subtract a fixed Bangkok offset.
+        final rangeStart = DateTime(
+          shift.start.year,
+          shift.start.month,
+          1,
+        ).toUtc();
+        final rangeEnd = DateTime(
+          shift.start.year,
+          shift.start.month + 1,
+          1,
+        ).toUtc();
+        String? token;
+        calendar.Event? matched;
+        do {
+          final page = await api.events.list(
+            'primary',
+            timeMin: rangeStart,
+            timeMax: rangeEnd,
+            singleEvents: true,
+            showDeleted: false,
+            maxResults: 2500,
+            pageToken: token,
+          );
+          for (final event in page.items ?? const <calendar.Event>[]) {
+            final eventStart = event.start?.dateTime;
+            if ((event.summary ?? '').trim() ==
+                    CalendarService.summaryFor(shift) &&
+                eventStart != null &&
+                eventStart
+                        .toUtc()
+                        .difference(shift.start.toUtc())
+                        .inMinutes
+                        .abs() <=
+                    1) {
+              matched = event;
+              break;
+            }
+          }
+          token = matched == null ? page.nextPageToken : null;
+        } while (token != null && token.isNotEmpty);
+
+        final matchedEvent = matched;
+        if (matchedEvent != null && matchedEvent.id != null) {
+          matchedEvent.description = CalendarService.withTimelineRecord(
+            matchedEvent.description?.trim() ?? '',
+            record,
+          );
+          await api.events.update(
+            matchedEvent,
+            'primary',
+            matchedEvent.id!,
+          );
+          sourceEventStatus =
+              'พบรายการเวรต้นฉบับและเพิ่มรายละเอียด Timeline แล้ว';
+        } else if (action != 'SHIFT_CREATED') {
+          // Keep the separate Timeline entry, but be explicit that the source
+          // event could not be matched and was not modified.
+          sourceEventStatus =
+              'ไม่พบรายการเวรต้นฉบับที่ตรงกัน จึงไม่ได้แก้ไขคำอธิบายรายการเดิม';
+        }
+      }
+
+      final recordedDetails = sourceEventStatus.isEmpty
+          ? details
+          : '$details\n\nสถานะรายการเวรต้นฉบับ: $sourceEventStatus';
+      final endTime = timestamp.add(const Duration(minutes: 10));
+      await api.events.insert(
+        calendar.Event(
+          summary: 'Timeline: $summary',
+          description:
+              'ประเภทเหตุการณ์: $action\nผู้แก้ไข: $actor (${account.email})'
+              '\nเวลา: ${timestamp.toIso8601String()}\n\n$recordedDetails',
+          colorId: '8',
+          // Use absolute instants. The timeZone controls calendar display;
+          // shifting the hour manually would record the wrong instant.
+          start: calendar.EventDateTime(
+            dateTime: timestamp.toUtc(),
+            timeZone: CalendarService.timeZone,
+          ),
+          end: calendar.EventDateTime(
+            dateTime: endTime.toUtc(),
+            timeZone: CalendarService.timeZone,
+          ),
+          extendedProperties: calendar.EventExtendedProperties(
+            private: {
+              'sourceApp': CalendarService.sourceApp,
+              'auditType': 'shift_timeline',
+              'action': action,
+              'actorEmail': account.email,
+            },
+          ),
+        ),
+        'primary',
+        sendUpdates: 'none',
+      );
+      await _addAudit(
+        action,
+        '$summary — ผู้แก้ไข: $actor; $recordedDetails',
+        true,
+      );
+    } finally {
+      client.close();
+    }
+  }
+
   Future<void> _addAudit(String action, String message, bool success) async {
+    // Use the stable authenticated account ID, never a display name, for actor
+    // attribution. A null ID deliberately remains "unknown" in the audit UI.
+    final actorId = auth.account?.id.trim();
     final entry = AuditEntry(
       timestamp: DateTime.now(),
       action: action,
       message: message,
       success: success,
+      actorId: actorId == null || actorId.isEmpty ? null : actorId,
     );
     auditEntries.insert(0, entry);
     await _settingsService.appendAudit(entry);
@@ -1194,7 +2099,10 @@ class AppController extends ChangeNotifier implements ControllerState {
   void _onAuthChanged() {
     final accountId = auth.account?.id;
     if (_observedAccountId != accountId) {
+      _timelineLoadGeneration++;
+      timelineLoading = false;
       _observedAccountId = accountId;
+      _shiftTransactions = const [];
       settings = settings.clearRosterSelection();
       _autoRefreshTimer?.cancel();
       _replaceLegacyShifts(const []);
@@ -1246,8 +2154,9 @@ class AppController extends ChangeNotifier implements ControllerState {
         year: period.year,
         month: period.month,
       );
-      for (final shift in periodShifts) {
-        parsedByKey[shift.sourceKey] = _applyShiftOverride(shift);
+      for (final rawShift in periodShifts) {
+        final shift = _attachRosterSourceIdentity(rawShift, snapshots);
+        parsedByKey[shift.sourceIdentityKey] = _applyShiftOverride(shift);
       }
     }
     return parsedByKey.values.toList()
@@ -1337,6 +2246,7 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   void _replaceLegacyShifts(List<Shift> next, {bool persist = true}) {
+    cancelShiftTransactionCalendarSyncPreview();
     final conversion = _legacyScheduleAdapter.toCanonical(
       next,
       id: _runtimeScheduleId,
@@ -1362,6 +2272,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     Schedule schedule, {
     bool persist = true,
   }) async {
+    cancelShiftTransactionCalendarSyncPreview();
     _legacySchedule = _legacyScheduleAdapter.wrapCanonical(schedule);
     _rebuildAlerts();
     if (persist) {
@@ -1374,10 +2285,29 @@ class AppController extends ChangeNotifier implements ControllerState {
   void dispose() {
     _autoRefreshTimer?.cancel();
     _pendingCalendarWorkflow?.dispose();
+    cancelShiftTransactionCalendarSyncPreview();
     auth.removeListener(_onAuthChanged);
     auth.dispose();
     super.dispose();
   }
+}
+
+class _PendingShiftTransactionCalendarSync {
+  const _PendingShiftTransactionCalendarSync({
+    required this.transactionId,
+    required this.transactionVersion,
+    required this.sourceSchedule,
+    required this.schedule,
+    required this.workflow,
+    required this.syncIds,
+  });
+
+  final String transactionId;
+  final int transactionVersion;
+  final Schedule sourceSchedule;
+  final Schedule schedule;
+  final ShiftCalendarWorkflowController workflow;
+  final List<String> syncIds;
 }
 
 class _ShiftOverride {
