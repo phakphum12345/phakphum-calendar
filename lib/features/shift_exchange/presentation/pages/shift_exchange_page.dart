@@ -527,7 +527,12 @@ class _ShiftTransactionComposerDialogState
         requesterShift,
         fromEmployeeId: requesterId,
         toEmployeeId: recipientId,
-        purpose: switch (_type) { 'give_up' => 'give_up', 'exchange' => 'exchange', 'exchange_and_return' => 'primary', _ => throw StateError('Unsupported shift transaction type.'), },
+        purpose: switch (_type) {
+          'give_up' => 'give_up',
+          'exchange' => 'exchange',
+          'exchange_and_return' => 'primary',
+          _ => throw StateError('Unsupported shift transaction type.'),
+        },
       ),
       if (_type != 'give_up')
         _transfer(

@@ -199,7 +199,7 @@ class _ShiftTransactionHistoryPanelState
                       ),
                       items: [
                         const DropdownMenuItem(value: '', child: Text('All months')),
-                        for (var offset = 0; offset < 24; offset++)
+                        for (var offset = 0; offset < 60; offset++)
                           _monthOption(offset),
                       ],
                       onChanged: (value) {
