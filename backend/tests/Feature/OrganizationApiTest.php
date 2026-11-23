@@ -347,7 +347,7 @@ class OrganizationApiTest extends TestCase
         $this->postJson("/api/v1/organizations/{$organizationId}/members", [
             'email' => 'member@example.com',
             'employee_id' => 'EMP-MEMBER-2',
-            'role' => 'admin',
+            'role' => 'staff',
         ], $this->auth('owner-token'))->assertOk();
 
         $auditUrl = "/api/v1/organizations/{$organizationId}/membership-audit";
