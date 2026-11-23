@@ -37,7 +37,7 @@ void main() {
       required String name,
     }) async {
       final organizationField = find.byKey(
-        ValueKey<String>(currentOrganizationId),
+        ValueKey<String?>(currentOrganizationId),
       );
       expect(organizationField, findsOneWidget);
       await tester.ensureVisible(organizationField);
