@@ -328,6 +328,29 @@ class HttpOrganizationAdminGateway implements OrganizationAdminGateway {
     );
   }
 
+  OrganizationMembershipAuditEvent _membershipAuditEvent(Object? value) {
+    final item = _map(value);
+    final actor = _map(item['actor']);
+    final subject = _map(item['subject']);
+    final createdAt = DateTime.tryParse(_string(item, 'created_at'));
+    if (createdAt == null) {
+      throw const FormatException(
+        'Organization membership audit timestamp is invalid.',
+      );
+    }
+    return OrganizationMembershipAuditEvent(
+      id: _integer(item, 'id'),
+      action: _string(item, 'action'),
+      actorUserId: _string(actor, 'user_id'),
+      actorName: _optionalString(actor, 'name') ?? 'ไม่ทราบชื่อ',
+      subjectUserId: _string(subject, 'user_id'),
+      subjectName: _optionalString(subject, 'name') ?? 'ไม่ทราบชื่อ',
+      before: _optionalMap(item, 'before'),
+      after: _optionalMap(item, 'after'),
+      createdAt: createdAt,
+    );
+  }
+
   OrganizationJoinRequest _joinRequest(Object? value) {
     final item = _map(value);
     final createdAt = item['created_at'];
