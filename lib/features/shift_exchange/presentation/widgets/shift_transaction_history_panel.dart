@@ -1,0 +1,630 @@
+import 'package:flutter/material.dart';
+
+import '../../../../models/roster_assignment_timeline.dart';
+import '../../infrastructure/shift_transaction_api_client.dart';
+
+class ShiftTransactionHistoryPanel extends StatefulWidget {
+  const ShiftTransactionHistoryPanel({
+    required this.apiClient,
+    this.approvableOrganizationIds = const {},
+    this.mode,
+    this.organizationId,
+    this.rosterTimelines = const {},
+    this.onTransactionsLoaded,
+    this.onSyncTransaction,
+    super.key,
+  });
+
+  final ShiftTransactionApiClient apiClient;
+  final Set<String> approvableOrganizationIds;
+  final String? mode;
+  final String? organizationId;
+  final Map<String, RosterAssignmentTimeline> rosterTimelines;
+  final ValueChanged<List<ShiftTransactionSnapshot>>? onTransactionsLoaded;
+  final Future<void> Function(ShiftTransactionSnapshot transaction)? onSyncTransaction;
+
+  @override
+  State<ShiftTransactionHistoryPanel> createState() =>
+      _ShiftTransactionHistoryPanelState();
+}
+
+class _ShiftTransactionHistoryPanelState
+    extends State<ShiftTransactionHistoryPanel> {
+  late Future<List<ShiftTransactionSnapshot>> _history;
+  String? _actingOn;
+  String? _actionError;
+  String? _typeFilter;
+  String? _monthFilter;
+
+  @override
+  void initState() {
+    super.initState();
+    _history = widget.apiClient.isConfigured
+        ? _load()
+        : Future<List<ShiftTransactionSnapshot>>.value(const []);
+  }
+
+  Future<List<ShiftTransactionSnapshot>> _load() async {
+    final items = await widget.apiClient.listTransactions(
+      mode: widget.mode,
+      type: _typeFilter,
+      month: _monthFilter,
+      organizationId: widget.organizationId,
+    );
+    if (mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) widget.onTransactionsLoaded?.call(items);
+      });
+    }
+    return items;
+  }
+
+  void _reload() {
+    if (!widget.apiClient.isConfigured) return;
+    setState(() {
+      _actionError = null;
+      _history = _load();
+    });
+  }
+
+  Future<void> _act(
+    ShiftTransactionSnapshot transaction,
+    String action,
+  ) async {
+    setState(() {
+      _actingOn = transaction.id;
+      _actionError = null;
+    });
+    try {
+      switch (action) {
+        case 'confirm':
+          await widget.apiClient.confirmTransaction(transaction.id);
+          break;
+        case 'reject':
+          await widget.apiClient.rejectTransaction(transaction.id);
+          break;
+        case 'approve':
+          await widget.apiClient.approveTransaction(transaction.id);
+          break;
+        case 'reject_by_approver':
+          await widget.apiClient.rejectByApprover(transaction.id);
+          break;
+        case 'cancel':
+          await widget.apiClient.cancelTransaction(transaction.id);
+          break;
+        case 'sync_calendar':
+          await widget.onSyncTransaction?.call(transaction);
+          break;
+        case 'recover_sync':
+          await widget.apiClient.failCalendarSync(
+            transaction.id,
+            reason: 'Participant marked a stalled Calendar sync for retry.',
+          );
+          break;
+        default:
+          if (action.startsWith('fulfill:')) {
+            await widget.apiClient.fulfillTransfer(
+              transaction.id,
+              transferId: action.substring('fulfill:'.length),
+            );
+          }
+      }
+      if (!mounted) return;
+      setState(() {
+        _actingOn = null;
+        _history = _load();
+      });
+
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _actingOn = null;
+        _actionError = error is ShiftTransactionApiException
+            ? error.message
+            : 'Unable to update this transaction. Refresh and try again.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!widget.apiClient.isConfigured) {
+      return const Card(
+        child: ListTile(
+          leading: Icon(Icons.cloud_off_outlined),
+          title: Text('Transaction history is not configured'),
+          subtitle: Text('Set ORGANIZATION_API_BASE_URL to enable server history.'),
+        ),
+      );
+    }
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Server transaction history',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Refresh history',
+                  onPressed: _reload,
+                  icon: const Icon(Icons.refresh),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 12, bottom: 4),
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  SizedBox(
+                    width: 210,
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _typeFilter ?? '',
+                      isExpanded: true,
+                      selectedItemBuilder: (context) => const [
+                        Text('All types'),
+                        Text('Release'),
+                        Text('Exchange'),
+                        Text('Exchange + return'),
+                      ],
+                      decoration: const InputDecoration(
+                        labelText: 'Transaction type',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: '', child: Text('All types')),
+                        DropdownMenuItem(value: 'give_up', child: Text('Receive / release')),
+                        DropdownMenuItem(value: 'exchange', child: Text('Exchange')),
+                        DropdownMenuItem(value: 'exchange_and_return', child: Text('Exchange + return')),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _typeFilter = value == null || value.isEmpty ? null : value;
+                          _history = _load();
+                        });
+                      },
+                    ),
+                  ),
+                  SizedBox(
+                    width: 190,
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _monthFilter ?? '',
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Shift month',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      items: [
+                        const DropdownMenuItem(value: '', child: Text('All months')),
+                        for (var offset = 0; offset < 60; offset++)
+                          _monthOption(offset),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _monthFilter = value == null || value.isEmpty ? null : value;
+                          _history = _load();
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (_actionError != null) ...[
+              const SizedBox(height: 8),
+              MaterialBanner(
+                content: Text(_actionError!),
+                actions: [
+                  TextButton(onPressed: _reload, child: const Text('Retry')),
+                ],
+              ),
+            ],
+            const SizedBox(height: 8),
+            FutureBuilder<List<ShiftTransactionSnapshot>>(
+              future: _history,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.all(20),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
+                if (snapshot.hasError) {
+                  final error = snapshot.error;
+                  final message = error is ShiftTransactionApiException
+                      ? error.message
+                      : 'Unable to load transaction history.';
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.error_outline),
+                    title: Text(message),
+                    trailing: TextButton(
+                      onPressed: _reload,
+                      child: const Text('Retry'),
+                    ),
+                  );
+                }
+                final items = snapshot.data ?? const [];
+                if (items.isEmpty) {
+                  return const ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(Icons.history),
+                    title: Text('No server transactions yet'),
+                  );
+                }
+                return Column(
+                  children: [
+                    for (final item in items)
+                      ExpansionTile(
+                        tilePadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.swap_horiz),
+                        title: Text('${_typeLabel(item.type)} · ${item.status}'),
+                        subtitle: Text(
+                          '${item.createdAt.toLocal()} · ${item.mode} · v${item.version}',
+                        ),
+                        children: [
+                          for (final participant in item.participants)
+                            ListTile(
+                              dense: true,
+                              leading: Icon(
+                                participant['confirmed_at'] == null
+                                    ? Icons.pending_outlined
+                                    : Icons.check_circle_outline,
+                              ),
+                              title: Text(
+                                '${participant['name'] ?? participant['employee_id'] ?? 'Participant'}'
+                                ' · ${participant['role'] ?? ''}',
+                              ),
+                              subtitle: Text(
+                                participant['confirmed_at'] == null
+                                    ? 'Waiting for confirmation'
+                                    : 'Confirmed ${participant['confirmed_at']}',
+                              ),
+                            ),
+                          for (final transfer in item.transfers) ...[
+                            ListTile(
+                              dense: true,
+                              title: Text(
+                                '${transfer['shift_code'] ?? 'Shift'} · '
+                                '${_participantLabel(item, transfer['from_employee_id'])} → '
+                                '${_participantLabel(item, transfer['to_employee_id'])}',
+                              ),
+                              subtitle: Text(
+                                '${transfer['starts_at'] ?? ''} – '
+                                '${transfer['ends_at'] ?? ''}\n'
+                                '${transfer['fulfilled_at'] == null ? 'Fulfillment: waiting' : 'Fulfilled: ${transfer['fulfilled_at']}'}',
+                              ),
+                            ),
+                            ..._rosterHistoryForTransfer(item, transfer),
+                          ],
+                          if (_canAct(item))
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: _actionButtons(item),
+                              ),
+                            ),
+                          const Divider(),
+                          for (final event in item.timeline)
+                            ListTile(
+                              dense: true,
+                              leading: const Icon(Icons.history, size: 18),
+                              title: Text(
+                                '${event['event_type']?.toString() ?? 'Event'}'
+                                ' · v${event['transaction_version'] ?? '?'}',
+                              ),
+                              subtitle: Text([
+                                '${event['actor_name'] ?? 'System'} · '
+                                    '${event['occurred_at'] ?? ''}',
+                                _eventDetails(event),
+                              ].where((line) => line.isNotEmpty).join('\n')),
+                            ),
+                        ],
+                      ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  DropdownMenuItem<String> _monthOption(int offset) {
+    final now = DateTime.now();
+    final month = DateTime(now.year, now.month - offset, 1);
+    final value = '${month.year}-${month.month.toString().padLeft(2, '0')}';
+    return DropdownMenuItem(value: value, child: Text(value));
+  }
+
+  bool _canAct(ShiftTransactionSnapshot item) =>
+      _actionButtons(item).isNotEmpty;
+
+  List<Widget> _actionButtons(ShiftTransactionSnapshot item) {
+    if (_actingOn == item.id) return const [];
+    final actions = <Widget>[];
+    Map<String, dynamic>? currentParticipant;
+    for (final participant in item.participants) {
+      if (participant['is_current_user'] == true) {
+        currentParticipant = participant;
+        break;
+      }
+    }
+
+    if (['pending_response', 'partially_accepted'].contains(item.status) &&
+        currentParticipant != null &&
+        currentParticipant['confirmed_at'] == null) {
+      actions.addAll([
+        FilledButton.icon(
+          onPressed: () => _act(item, 'confirm'),
+          icon: const Icon(Icons.check),
+          label: const Text('Confirm'),
+        ),
+        OutlinedButton.icon(
+          onPressed: () => _act(item, 'reject'),
+          icon: const Icon(Icons.close),
+          label: const Text('Reject'),
+        ),
+      ]);
+    }
+
+    if (item.status == 'pending_approval' &&
+        item.organizationId != null &&
+        widget.approvableOrganizationIds.contains(item.organizationId)) {
+      actions.addAll([
+        FilledButton.icon(
+          onPressed: () => _act(item, 'approve'),
+          icon: const Icon(Icons.verified_outlined),
+          label: const Text('Approve'),
+        ),
+        OutlinedButton.icon(
+          onPressed: () => _act(item, 'reject_by_approver'),
+          icon: const Icon(Icons.block_outlined),
+          label: const Text('Reject'),
+        ),
+      ]);
+    }
+
+    final isRequester = currentParticipant?['role'] == 'requester';
+    if (isRequester &&
+        !['completed', 'cancelled', 'rejected'].contains(item.status) &&
+        !['pending', 'synced'].contains(item.syncStatus)) {
+      actions.add(
+        OutlinedButton.icon(
+          onPressed: () => _act(item, 'cancel'),
+          icon: const Icon(Icons.cancel_outlined),
+          label: const Text('Cancel request'),
+        ),
+      );
+    }
+
+    if (item.syncStatus == 'pending' &&
+        currentParticipant != null &&
+        DateTime.now().difference(item.updatedAt.toLocal()) >=
+            const Duration(minutes: 30)) {
+      actions.add(
+        OutlinedButton.icon(
+          onPressed: () => _act(item, 'recover_sync'),
+          icon: const Icon(Icons.restart_alt),
+          label: const Text('Reset stalled Calendar sync'),
+        ),
+      );
+    }
+
+    if (item.status == 'approved' &&
+        !['pending', 'synced'].contains(item.syncStatus) &&
+        currentParticipant != null && widget.onSyncTransaction != null) {
+      actions.add(
+        FilledButton.icon(
+          onPressed: () => _act(item, 'sync_calendar'),
+          icon: const Icon(Icons.calendar_month_outlined),
+          label: const Text('Preview & sync Calendar'),
+        ),
+      );
+    }
+
+    if (item.status == 'approved' && item.syncStatus == 'synced' &&
+        currentParticipant != null) {
+      for (final transfer in item.transfers) {
+        final endsAt = DateTime.tryParse(transfer['ends_at']?.toString() ?? '');
+        if (transfer['to_employee_id'] == currentParticipant['employee_id'] &&
+            transfer['fulfilled_at'] == null &&
+            endsAt != null && !DateTime.now().isBefore(endsAt.toLocal())) {
+          final transferKey = transfer['transfer_key']?.toString();
+          if (transferKey == null || transferKey.isEmpty) continue;
+          actions.add(
+            OutlinedButton.icon(
+              onPressed: () => _act(item, 'fulfill:$transferKey'),
+              icon: const Icon(Icons.task_alt),
+              label: const Text('Confirm fulfillment'),
+            ),
+          );
+        }
+      }
+    }
+    return actions;
+  }
+
+  List<Widget> _rosterHistoryForTransfer(
+    ShiftTransactionSnapshot item,
+    Map<String, dynamic> transfer,
+  ) {
+    final start = _parseTransferInstant(transfer['starts_at']);
+    final end = _parseTransferInstant(transfer['ends_at']);
+    final shiftCode = transfer['shift_code']?.toString().trim();
+    final fromName = _participantName(item, transfer['from_employee_id']);
+    final toName = _participantName(item, transfer['to_employee_id']);
+    if (start == null ||
+        end == null ||
+        !end.isAfter(start) ||
+        shiftCode == null ||
+        shiftCode.isEmpty ||
+        fromName == null ||
+        toName == null) {
+      return const [];
+    }
+
+    final matching = widget.rosterTimelines.values.where((timeline) {
+      final timelineStart = timeline.start;
+      final timelineEnd = timeline.end;
+      final timelineCode = timeline.shiftCode?.trim();
+      return timelineStart != null &&
+          timelineEnd != null &&
+          timelineCode != null &&
+          timelineCode.toLowerCase() == shiftCode.toLowerCase() &&
+          _sameBangkokWallClock(timelineStart, start) &&
+          _sameBangkokWallClock(timelineEnd, end) &&
+          _containsOwnershipTransition(timeline, fromName, toName);
+    }).toList();
+
+    // A transfer can be linked to a roster position only when exactly one
+    // candidate has the same Bangkok wall-clock slot, shift code, and
+    // consecutive owner transition. Never show several plausible histories.
+    if (matching.length != 1) return const [];
+    final timeline = matching.single;
+    return [
+      Padding(
+        padding: const EdgeInsets.only(left: 16, right: 8, bottom: 8),
+        child: ExpansionTile(
+          dense: true,
+          leading: const Icon(Icons.history_toggle_off, size: 18),
+          title: const Text('Roster ownership history'),
+          subtitle: Text(timeline.workerChain.join(' → ')),
+          children: [
+            ListTile(
+              dense: true,
+              title: Text(
+                '${timeline.sheetTitle ?? 'Roster'} · '
+                '${timeline.rowLabel ?? timeline.shiftCode ?? 'Shift'}'
+                '${timeline.column == null ? '' : ' · ${timeline.column}'}',
+              ),
+            ),
+            for (final version in timeline.versions)
+              ListTile(
+                dense: true,
+                contentPadding: const EdgeInsets.only(left: 32, right: 16),
+                title: Text(version.assignedName),
+                subtitle: Text(version.modifiedAt.toLocal().toString()),
+              ),
+          ],
+        ),
+      ),
+    ];
+  }
+
+  DateTime? _parseTransferInstant(Object? value) {
+    final raw = value?.toString().trim() ?? '';
+    final hasExplicitZone =
+        RegExp(r'(?:Z|[+-]\d{2}:\d{2})$', caseSensitive: false)
+            .hasMatch(raw);
+    if (!hasExplicitZone) return null;
+    return DateTime.tryParse(raw)?.toUtc();
+  }
+
+  bool _sameBangkokWallClock(DateTime rosterWallClock, DateTime transferInstant) {
+    // Roster parser values are Bangkok wall-clock fields; transaction API
+    // timestamps are instants. Convert the latter to UTC+07:00 explicitly
+    // instead of relying on the viewer device's local timezone.
+    final bangkok = transferInstant.toUtc().add(const Duration(hours: 7));
+    return rosterWallClock.year == bangkok.year &&
+        rosterWallClock.month == bangkok.month &&
+        rosterWallClock.day == bangkok.day &&
+        rosterWallClock.hour == bangkok.hour &&
+        rosterWallClock.minute == bangkok.minute &&
+        rosterWallClock.second == bangkok.second &&
+        rosterWallClock.millisecond == bangkok.millisecond &&
+        rosterWallClock.microsecond == bangkok.microsecond;
+  }
+
+  bool _containsOwnershipTransition(
+    RosterAssignmentTimeline timeline,
+    String fromName,
+    String toName,
+  ) {
+    final from = _normalizeParticipantName(fromName);
+    final to = _normalizeParticipantName(toName);
+    for (var index = 0; index + 1 < timeline.versions.length; index++) {
+      if (_normalizeParticipantName(timeline.versions[index].assignedName) ==
+              from &&
+          _normalizeParticipantName(timeline.versions[index + 1].assignedName) ==
+              to) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  String _normalizeParticipantName(String value) =>
+      value.trim().replaceAll(RegExp(r'\s+'), ' ').toLowerCase();
+
+  String? _participantName(
+    ShiftTransactionSnapshot transaction,
+    Object? employeeId,
+  ) {
+    final id = employeeId?.toString() ?? '';
+    for (final participant in transaction.participants) {
+      if (participant['employee_id']?.toString() != id) continue;
+      final name = participant['name']?.toString().trim();
+      if (name != null && name.isNotEmpty) return name;
+    }
+    return null;
+  }
+
+  String _participantLabel(
+    ShiftTransactionSnapshot transaction,
+    Object? employeeId,
+  ) {
+    final id = employeeId?.toString() ?? '?';
+    for (final participant in transaction.participants) {
+      if (participant['employee_id']?.toString() == id) {
+        final name = participant['name']?.toString().trim();
+        if (name != null && name.isNotEmpty) return '$name ($id)';
+      }
+    }
+    return id;
+  }
+
+  String _eventDetails(Map<String, dynamic> event) {
+    final rawData = event['data'];
+    if (rawData is! Map) return '';
+    final data = rawData.map((key, value) => MapEntry(key.toString(), value));
+    final details = <String>[];
+    if (data['account_confirmed'] == true) {
+      details.add('Participant confirmed');
+    }
+    final note = data['note']?.toString().trim();
+    final reason = data['reason']?.toString().trim();
+    if (note != null && note.isNotEmpty) details.add('Note: $note');
+    if (reason != null && reason.isNotEmpty) details.add('Reason: $reason');
+    final transferId = data['transfer_id']?.toString();
+    if (transferId != null && transferId.isNotEmpty) {
+      details.add('Transfer: $transferId');
+    }
+    final shiftId = data['shift_id']?.toString();
+    if (shiftId != null && shiftId.isNotEmpty) details.add('Shift: $shiftId');
+    final eventIds = data['calendar_event_ids'];
+    if (eventIds is List) details.add('Calendar events recorded: ${eventIds.length}');
+    return details.join(' · ');
+  }
+
+  String _typeLabel(String type) => switch (type) {
+    'give_up' => 'Give up',
+    'exchange' => 'Exchange',
+    'exchange_and_return' => 'Exchange + return',
+    _ => type,
+  };
+}

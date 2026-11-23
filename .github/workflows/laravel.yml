@@ -1,0 +1,70 @@
+name: Laravel Backend CI
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - ".github/workflows/laravel.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - ".github/workflows/laravel.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: laravel-backend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: PHP 8.4 / Laravel
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ":memory:"
+      CACHE_STORE: array
+      GOOGLE_ALLOWED_CLIENT_IDS: test-server-client-id
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: ctype, curl, dom, fileinfo, filter, hash, mbstring, openssl, pdo, pdo_sqlite, session, tokenizer, xml
+          coverage: none
+
+      # Laravel's test bootstrap expects an environment file to exist.
+      # All test values are supplied by the job environment above; keep this
+      # file empty so no developer or production secrets enter CI.
+      - name: Prepare empty Laravel test environment file
+        run: touch .env
+
+      - name: Validate Composer manifest
+        run: composer validate --strict
+
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Audit locked Composer dependencies
+        run: composer audit --locked
+
+      - name: Check PHP formatting
+        run: vendor/bin/pint --test app config database routes tests
+
+      - name: Check Laravel bootstrap syntax
+        run: php -l bootstrap/app.php
+
+      - name: Run Laravel tests
+        run: php artisan test
+

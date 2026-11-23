@@ -37,6 +37,119 @@ void main() {
     expect(find.text('องค์กร'), findsOneWidget);
   });
 
+  testWidgets('personal first-run setup does not require organization fields', (
+    tester,
+  ) async {
+    final controller = demoController();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => Center(
+              child: TextButton(
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => FirstLoginSetupDialog(
+                    controller: controller,
+                    edition: AppEdition.personal,
+                  ),
+                ),
+                child: const Text('เปิดตั้งค่า'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('เปิดตั้งค่า'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('first-login-setup-dialog')), findsOneWidget);
+    expect(find.text('ชื่อหน่วยงาน *'), findsNothing);
+    expect(find.text('ชื่อเจ้าหน้าที่ *'), findsNothing);
+    expect(find.text('ชื่อเวรเริ่มต้น *'), findsOneWidget);
+
+    await tester.enterText(
+      find.widgetWithText(TextField, 'ชื่อเวรเริ่มต้น *'),
+      'เวรส่วนตัว',
+    );
+    await tester.tap(find.text('บันทึกและเข้าหน้าหลัก'));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('first-login-setup-dialog')), findsNothing);
+    expect(controller.settings.setupComplete, isTrue);
+    expect(controller.settings.organizationName, isEmpty);
+    expect(controller.settings.officerName, isEmpty);
+  });
+
+  testWidgets('organization first-run setup requires organization fields', (
+    tester,
+  ) async {
+    final controller = demoController();
+    addTearDown(controller.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: Builder(
+            builder: (context) => Center(
+              child: TextButton(
+                onPressed: () => showDialog<void>(
+                  context: context,
+                  builder: (_) => FirstLoginSetupDialog(
+                    controller: controller,
+                    edition: AppEdition.organization,
+                  ),
+                ),
+                child: const Text('เปิดตั้งค่า'),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('เปิดตั้งค่า'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ชื่อหน่วยงาน *'), findsOneWidget);
+    expect(find.text('ชื่อเจ้าหน้าที่ *'), findsOneWidget);
+    expect(find.text('ชื่อเวรเริ่มต้น *'), findsOneWidget);
+  });
+
+  test('personal edition skips Timeline without requesting Calendar write access', () async {
+    final controller = demoController();
+    addTearDown(controller.dispose);
+    controller.shiftTimelineEnabled = false;
+    final auditCount = controller.auditEntries.length;
+
+    await controller.recordShiftTimelineEvent(
+      action: 'SHIFT_UPDATED',
+      summary: 'แก้ไขเวร',
+      details: 'test personal read-only behavior',
+    );
+
+    expect(controller.auditEntries, hasLength(auditCount));
+  });
+
+  test('organization Timeline remains enabled and requires authentication', () async {
+    final controller = demoController();
+    addTearDown(controller.dispose);
+    controller.shiftTimelineEnabled = true;
+
+    await expectLater(
+      controller.recordShiftTimelineEvent(
+        action: 'SHIFT_UPDATED',
+        summary: 'แก้ไขเวร',
+        details: 'test organization Timeline path',
+      ),
+      throwsA(isA<StateError>()),
+    );
+  });
+
   test('default monthly roster contains no personal names', () {
     final controller = demoController();
     addTearDown(controller.dispose);
@@ -296,11 +409,13 @@ void main() {
     expect(find.text('Shift Tools'), findsOneWidget);
     expect(find.text('แหล่งข้อมูลเวร'), findsOneWidget);
     expect(find.byType(NavigationRail), findsOneWidget);
-    expect(find.text('เข้าสู่ระบบด้วย Google'), findsOneWidget);
+    expect(find.text('Sync Google Account'), findsNothing);
     expect(find.text('รีเฟรช/อ่านใหม่ตอนนี้'), findsOneWidget);
     expect(find.text('ชื่อที่ต้องค้นหา'), findsOneWidget);
     expect(find.text('กรอกชื่อให้ตรงกับชื่อในตารางเวร'), findsOneWidget);
     expect(find.text('เลือกไฟล์จาก Google Sheets'), findsOneWidget);
+    expect(find.text('ยกเลิกการเลือกตาราง'), findsOneWidget);
+    expect(find.text('นำเข้าตารางเวรจากไฟล์'), findsOneWidget);
     expect(find.text('เปิดกล้อง'), findsOneWidget);
     expect(find.text('วาง URL จากเบราว์เซอร์'), findsNothing);
     expect(find.text('แนบไฟล์ต้นฉบับเพื่อเปรียบเทียบ'), findsOneWidget);
@@ -509,7 +624,10 @@ void main() {
       await tester.pumpWidget(ShiftToolsApp(controller: demoController()));
       await tester.pumpAndSettle();
 
-      expect(find.text('Google Login ใช้ผ่าน Web'), findsOneWidget);
+      expect(
+        find.textContaining('กรุณาใช้แอปเวอร์ชันเว็บสำหรับการเชื่อมต่อ Google'),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
     } finally {
       debugDefaultTargetPlatformOverride = null;

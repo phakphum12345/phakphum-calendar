@@ -28,7 +28,7 @@ flutter run
 
 ### Web / PWA
 
-1. เปิด `https://phakphoum38-stack.github.io/phakphum-calendar/`
+1. เปิด `https://phakphum12345.github.io/phakphum-calendar/`
 2. ใช้ Chrome, Edge หรือ Safari รุ่นปัจจุบัน
 3. กด **ติดตั้งแอป** จากแถบที่อยู่หรือเมนูของเบราว์เซอร์เมื่อต้องการใช้แบบ PWA
 4. บน iPhone/iPad ใช้ Safari → Share → **Add to Home Screen**
@@ -37,44 +37,54 @@ flutter run
 
 1. เปิดหน้า Actions ของ repository
 2. ดาวน์โหลด artifact `phakphum-calendar-android-apk` จาก run ที่สำเร็จ
-3. แตก ZIP และตรวจ `SHA256SUMS.txt`
+3. แตกไฟล์ artifact ที่ดาวน์โหลดจาก GitHub Actions
 4. เปิด `app-release.apk` แล้วอนุญาตติดตั้งจากแหล่งนี้เฉพาะเมื่อเชื่อถือได้
 
 APK จาก CI ยังไม่ใช่ไฟล์สำหรับ Play Store และอาจใช้ debug signing
-ห้ามใช้เป็น production release จนกว่าจะตั้ง release keystore ใน GitHub Secrets
+ไม่มี checksum แยกให้ดาวน์โหลดใน artifact นี้ ห้ามใช้เป็น production release
+จนกว่าจะตั้ง release keystore ใน GitHub Secrets
 
 ### Windows
 
-1. ดาวน์โหลด artifact `phakphum-calendar-windows`
+1. ดาวน์โหลด artifact `phakphum-calendar-windows-x64`
 2. แตก artifact และ ZIP ด้านใน
-3. เก็บไฟล์ `.exe`, `.dll` และโฟลเดอร์ `data` ไว้ด้วยกัน
-4. เปิด `phakphum_calendar.exe`
+3. ตรวจ ZIP ด้วย `SHA256SUMS.txt` ที่อยู่ใน artifact หากต้องการตรวจความถูกต้อง
+4. เก็บไฟล์ `.exe`, `.dll` และโฟลเดอร์ `data` ไว้ด้วยกัน
+5. เปิด `phakphum_calendar.exe`
 
 Google Sign-In แบบ native ยังไม่รองรับใน Windows workflow ปัจจุบัน
 ให้ใช้ Web/PWA เมื่อต้องทำงานกับ Google
 
+### iPhone / iPad (iOS)
+
+จาก run ที่สำเร็จของ workflow **Build iOS** ดาวน์โหลด artifact
+`phakphum-calendar-ios-unsigned-ipa` ซึ่ง workflow สร้างโดยไม่ code-sign
+จึงยังติดตั้งบนอุปกรณ์ทั่วไปไม่ได้ ต้องมี Apple Developer signing และ
+provisioning profile ก่อนเผยแพร่หรือติดตั้ง
+
 ### macOS
 
-1. ดาวน์โหลดและแตก `phakphum-calendar-macos`
-2. ย้ายแอปไป `/Applications`
-3. ตรวจลายเซ็นและแหล่งที่มาของ artifact ก่อนอนุญาตให้เปิด
-
-artifact ปัจจุบันอาจยังไม่ notarize จึงไม่ควรแจกจ่ายสาธารณะโดยไม่ลงนาม
+ขณะนี้ไม่มี macOS build workflow หรือ CI artifact; macOS ยังไม่อยู่ในรายการ
+แพลตฟอร์มที่ส่งมอบจาก CI
 
 ### Linux
+
+จาก run ที่สำเร็จของ workflow **Build Linux** ดาวน์โหลด artifact
+`phakphum-calendar-linux-x64` แล้วแตกไฟล์ artifact ZIP เพื่อให้ได้ไฟล์ tar.gz
+ก่อนรันคำสั่งต่อไปนี้:
 
 ติดตั้ง runtime ที่จำเป็นบน Ubuntu/Debian:
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y libgtk-3-0 libstdc++6
-tar -xzf phakphum-calendar-linux.tar.gz
-./phakphum_calendar
+tar -xzf phakphum-calendar-linux-x64.tar.gz
+./bundle/phakphum_calendar
 ```
 
 ## 2. ตรวจสอบไฟล์ก่อนติดตั้ง
 
-เปรียบเทียบ SHA-256 กับ `SHA256SUMS.txt` ที่อยู่ใน artifact:
+เฉพาะ Windows artifact ที่มี `SHA256SUMS.txt` ให้เปรียบเทียบ SHA-256 ดังนี้:
 
 ```bash
 # Linux
@@ -255,6 +265,20 @@ php artisan serve
 curl http://127.0.0.1:8000/api/v1/health
 curl http://127.0.0.1:8000/api/v1/ready
 ```
+
+ตั้งค่า `GOOGLE_ALLOWED_CLIENT_IDS` ใน `backend/.env` ให้รวม OAuth client ID
+ที่ใช้รับ Google ID token และตั้ง `FRONTEND_ALLOWED_ORIGINS` เป็น origin
+ของเว็บแอปแบบคั่นด้วย comma เช่น `https://example.github.io`
+(ไม่ใส่ path) หากต้องการเปิดคำขอและอนุมัติสมาชิกใน Flutter web ให้ตั้ง
+GitHub Actions repository variable ชื่อ `ORGANIZATION_API_BASE_URL` เป็น
+origin HTTPS ของ Laravel API เช่น `https://api.example.com`
+แล้ว build/deploy เว็บใหม่ หากยังไม่ตั้งค่า แท็บองค์กรจะแจ้งว่ายังไม่เชื่อม API
+และการจัดการสมาชิกจะยังใช้ไม่ได้
+
+ผู้ใช้ใหม่ต้องล็อกอิน Google ส่งรหัสองค์กรและรหัสพนักงาน จากนั้นเจ้าขององค์กร
+หรือ Admin ตรวจชื่อ/อีเมลจาก Google และรหัสพนักงานก่อนเลือกบทบาทและอนุมัติ
+หรือปฏิเสธได้ ผู้สมัครไม่สามารถกำหนดบทบาทตนเองได้ ส่วนรหัสองค์กรต้องขอจาก
+ผู้ดูแลโดยตรง
 
 ### ติดตั้งด้วย Docker โดยไม่ลง PHP ในเครื่อง
 

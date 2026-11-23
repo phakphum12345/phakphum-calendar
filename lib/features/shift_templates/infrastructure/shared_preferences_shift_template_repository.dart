@@ -79,10 +79,13 @@ class SharedPreferencesShiftTemplateRepository
     final values = List<ShiftTemplate>.of(
       (loaded as Success<List<ShiftTemplate>>).value,
     );
+    final normalizedLocation = _normalizeLocation(template.location);
     if (values.any(
       (item) =>
           item.id != template.id &&
-          item.code.toLowerCase() == template.code.toLowerCase(),
+          _normalizeLocation(item.location) == normalizedLocation &&
+          item.code.trim().toLowerCase() ==
+              template.code.trim().toLowerCase(),
     )) {
       return ValidationFailure(
         'Shift code "${template.code}" is already in use.',
@@ -99,6 +102,9 @@ class SharedPreferencesShiftTemplateRepository
         ? Success(template)
         : PersistenceFailure((saved as Failure).message, cause: saved);
   }
+
+  String _normalizeLocation(String? value) =>
+      value?.trim().toLowerCase() ?? '';
 
   Future<Result<List<ShiftTemplate>>> _load() async {
     try {

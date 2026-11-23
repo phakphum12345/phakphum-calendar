@@ -265,6 +265,40 @@ class CalendarService implements LegacyCalendarGateway {
   static String summaryFor(Shift shift) =>
       CalendarEventMatcher.calendarTitle(shift.displayName);
 
+  /// Keeps one canonical Timeline section and appends each audit entry once.
+  /// Sync updates preserve this section, while roster comparisons ignore it.
+  static String withTimelineRecord(String existingDescription, String record) {
+    const marker = '--- Timeline ---';
+    final markerIndex = existingDescription.indexOf(marker);
+    var baseDescription = markerIndex < 0
+        ? existingDescription
+        : existingDescription.substring(0, markerIndex);
+    while (baseDescription.endsWith(r'\n')) {
+      baseDescription = baseDescription.substring(0, baseDescription.length - 2);
+    }
+    baseDescription = baseDescription.trimRight();
+
+    // Older versions could write more than one marker. Remove only the
+    // repeated markers, retaining every historical entry in chronological order.
+    final existingTimeline = markerIndex < 0
+        ? ''
+        : existingDescription
+            .substring(markerIndex + marker.length)
+            .replaceAll(marker, '')
+            .replaceAll(RegExp(r'\n{3,}'), '\n\n')
+            .trim();
+    final normalizedRecord = record.trim();
+    final entries = existingTimeline.contains(normalizedRecord)
+        ? existingTimeline
+        : existingTimeline.isEmpty
+        ? normalizedRecord
+        : '$existingTimeline\n\n$normalizedRecord';
+
+    return baseDescription.isEmpty
+        ? '$marker\n$entries'
+        : '$baseDescription\n\n$marker\n$entries';
+  }
+
   static String descriptionFor(Shift shift) {
     final relationship = shift.relationshipComment?.trim() ?? '';
     return <String>[

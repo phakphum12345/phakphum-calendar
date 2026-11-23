@@ -19,6 +19,10 @@ class ClientErrorController extends Controller
             'app_version',
             'occurred_at',
         ]);
+        $messageLength = mb_strlen($report['message']);
+        unset($report['message']);
+        $report['message_length'] = $messageLength;
+
         $requestId = $request->attributes->get('request_id');
 
         Log::warning('Shift Tools client error', [

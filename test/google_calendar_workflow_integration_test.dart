@@ -1,5 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phakphum_calendar/core/di/app_dependencies.dart';
+import 'package:phakphum_calendar/domain/entities/schedule.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_command.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_gateway.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/failed_sync_operation.dart';
@@ -13,6 +15,8 @@ import 'package:phakphum_calendar/features/rules/domain/rule_context.dart';
 import 'package:phakphum_calendar/features/rules/domain/rule_severity.dart';
 import 'package:phakphum_calendar/features/rules/domain/rule_violation.dart';
 import 'package:phakphum_calendar/features/workflow/application/canonical_schedule_event_mapper.dart';
+import 'package:phakphum_calendar/features/workflow/presentation/workflow_dashboard_screen.dart';
+import 'package:phakphum_calendar/l10n/app_localizations.dart';
 
 import 'support/canonical_schedule_fixture.dart';
 
@@ -138,6 +142,50 @@ void main() {
     expect(await failed.listForHistory(partial.id), isEmpty);
   });
 
+  testWidgets(
+    'calendar writes wait for explicit confirmation in the workflow screen',
+    (tester) async {
+      final gateway = _CalendarGateway();
+      final dependencies = AppDependencies(
+        scheduleRules: const [],
+        syncHistoryRepository: _RecordingHistoryRepository(),
+        failedSyncRepository: _InMemoryFailedSyncRepository(),
+      );
+      final controller = dependencies.createShiftCalendarWorkflowController(
+        gateway,
+      );
+      await controller.prepareSchedule(canonicalScheduleFixture());
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: WorkflowDashboardScreen(controller: controller),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(gateway.executionCount, 0);
+      await tester.tap(
+        find.text('ตรวจแล้ว ยืนยัน Sync Google Calendar'),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('ยืนยันการซิงก์ Google Calendar'),
+        findsOneWidget,
+      );
+      expect(gateway.executionCount, 0);
+
+      await tester.tap(find.text('ยืนยัน Sync'));
+      await tester.pumpAndSettle();
+
+      expect(gateway.executionCount, greaterThan(0));
+      await tester.pumpWidget(const SizedBox.shrink());
+      controller.dispose();
+    },
+  );
+
   test('equivalent canonical schedules retain stable sync identifiers', () {
     const mapper = CanonicalScheduleEventMapper();
 
@@ -184,6 +232,10 @@ void main() {
     expect(plan.updates, hasLength(1));
     expect(plan.updates.single.eventId, 'legacy-existing-event');
     expect(plan.updates.single.command.syncId, desired.syncId);
+    expect(
+      controller.schedulePreparation!.existingEventIdsBySyncId[desired.syncId],
+      'legacy-existing-event',
+    );
 
     await controller.synchronize();
 
@@ -302,6 +354,56 @@ void main() {
       expect(gateway.events, hasLength(desired.length));
     },
   );
+  test(
+    'three-month lookback preserves historical managed events',
+    () async {
+    final gateway = _CalendarGateway();
+    final historical = ManagedCalendarEvent(
+      eventId: 'historical-managed-event',
+      syncId: 'sce-historical-event',
+      title: 'Historical shift',
+      start: DateTime(2026, 10, 1, 8),
+      end: DateTime(2026, 10, 1, 20),
+      description: 'Keep this event',
+    );
+    gateway.events.add(historical);
+    final dependencies = AppDependencies(
+      scheduleRules: const [],
+      syncHistoryRepository: _RecordingHistoryRepository(),
+      failedSyncRepository: _InMemoryFailedSyncRepository(),
+    );
+    final controller = dependencies.createShiftCalendarWorkflowController(
+      gateway,
+    );
+    addTearDown(controller.dispose);
+
+    await controller.prepareSchedule(
+      Schedule(id: 'empty-schedule', name: 'No current assignments'),
+    );
+
+    final today = DateTime.now();
+    final targetMonth = DateTime(today.year, today.month - 3, 1);
+    final lastDay = DateTime(
+      targetMonth.year,
+      targetMonth.month + 1,
+      0,
+    ).day;
+    final expectedStart = DateTime(
+      targetMonth.year,
+      targetMonth.month,
+      today.day > lastDay ? lastDay : today.day,
+    );
+    final preparation = controller.schedulePreparation!;
+    expect(gateway.lastTimeMin, expectedStart);
+    expect(preparation.timeMin, expectedStart);
+    expect(preparation.diff.toDelete, isEmpty);
+    expect(
+      preparation.diff.unchanged.map((event) => event.syncId),
+      contains(historical.syncId),
+    );
+    expect(preparation.plan.operationCount, 0);
+    },
+  );
 }
 
 class _CalendarGateway
@@ -313,6 +415,8 @@ class _CalendarGateway
   final List<ManagedCalendarEvent> events = [];
   final List<ManagedCalendarEvent> legacyEvents;
   final Set<String> failingSyncIds = {};
+  DateTime? lastTimeMin;
+  DateTime? lastTimeMax;
   int executionCount = 0;
   int insertCount = 0;
   int updateCount = 0;
@@ -323,6 +427,8 @@ class _CalendarGateway
     required DateTime timeMax,
     String calendarId = 'primary',
   }) async {
+    lastTimeMin = timeMin;
+    lastTimeMax = timeMax;
     calls?.add('list');
     return List.unmodifiable(events);
   }
