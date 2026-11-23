@@ -71,15 +71,36 @@ void main() {
       idTokenProvider: () async => 'google-id-token',
       httpClient: MockClient((request) async {
         requestIds.add(request.headers['X-Request-ID'] ?? '');
+        if (request.method == 'POST') {
+          return http.Response(
+            jsonEncode({
+              'data': {
+                'id': 'transaction-1',
+                'mode': 'personal',
+                'type': 'give_up',
+                'status': 'cancelled',
+                'sync_status': 'not_started',
+                'version': 1,
+                'created_at': '2026-11-17T01:00:00Z',
+                'updated_at': '2026-11-17T02:00:00Z',
+                'participants': [],
+                'transfers': [],
+                'timeline': [],
+              },
+            }),
+            200,
+          );
+        }
         return http.Response(jsonEncode({'data': []}), 200);
       }),
     );
 
     await client.listTransactions();
     await client.listTransactions();
+    await client.cancelTransaction('transaction-1');
 
-    expect(requestIds, hasLength(2));
-    expect(requestIds.toSet(), hasLength(2));
+    expect(requestIds, hasLength(3));
+    expect(requestIds.toSet(), hasLength(3));
     expect(
       requestIds.every((id) => RegExp(r'^[A-Za-z0-9_-]{22}$').hasMatch(id)),
       isTrue,
