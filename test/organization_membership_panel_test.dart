@@ -77,7 +77,7 @@ void main() {
     expect(find.text('เปลี่ยนบทบาทสมาชิก'), findsOneWidget);
     expect(find.textContaining('ผู้ดำเนินการ: Owner'), findsOneWidget);
     expect(find.textContaining('สมาชิก: Member'), findsOneWidget);
-    expect(find.textContaining('บทบาท: staff'), findsOneWidget);
+    expect(find.textContaining('บทบาท: Staff'), findsOneWidget);
     expect(find.textContaining('บทบาท: Manager'), findsOneWidget);
   });
 
@@ -103,7 +103,10 @@ void main() {
     expect(find.text('new.nurse@example.com'), findsOneWidget);
     expect(find.text('รหัสพนักงาน: EMP-001'), findsOneWidget);
 
-    await tester.tap(find.byType(DropdownButtonFormField<StaffRole>));
+    final roleDropdown = find.byType(DropdownButtonFormField<StaffRole>);
+    await tester.ensureVisible(roleDropdown);
+    await tester.pumpAndSettle();
+    await tester.tap(roleDropdown);
     await tester.pumpAndSettle();
     await tester.tap(find.text('Manager').last);
     await tester.pumpAndSettle();
