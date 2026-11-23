@@ -107,15 +107,9 @@ void main() {
     await tester.tap(find.text('New shift transaction'));
     await tester.pumpAndSettle();
 
-    await _tapComposerDropdown(tester, 1);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('B · Bob').last);
-    await tester.pumpAndSettle();
+    await _selectComposerDropdown(tester, 1, 'B · Bob');
 
-    await _tapComposerDropdown(tester, 2);
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('18/11/2026 · M · Alice').last);
-    await tester.pumpAndSettle();
+    await _selectComposerDropdown(tester, 2, '18/11/2026 · M · Alice');
 
     await tester.tap(find.text('Create request'));
     await tester.pumpAndSettle();
@@ -243,22 +237,10 @@ void main() {
       await tester.tap(find.text('New shift transaction'));
       await tester.pumpAndSettle();
 
-        await _tapComposerDropdown(tester, 0);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Exchange and return shifts').last);
-      await tester.pumpAndSettle();
-      await _tapComposerDropdown(tester, 1);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('B · Bob').last);
-      await tester.pumpAndSettle();
-      await _tapComposerDropdown(tester, 2);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('18/11/2026 · M · Alice').last);
-      await tester.pumpAndSettle();
-      await _tapComposerDropdown(tester, 3);
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('18/11/2026 · E · Bob').last);
-      await tester.pumpAndSettle();
+      await _selectComposerDropdown(tester, 0, 'Exchange and return shifts');
+      await _selectComposerDropdown(tester, 1, 'B · Bob');
+      await _selectComposerDropdown(tester, 2, '18/11/2026 · M · Alice');
+      await _selectComposerDropdown(tester, 3, '18/11/2026 · E · Bob');
       await tester.tap(find.text('Create request'));
       await tester.pumpAndSettle();
 
@@ -282,11 +264,18 @@ void main() {
 }
 
 
-Future<void> _tapComposerDropdown(WidgetTester tester, int index) async {
-  final dropdown = find.byType(DropdownButtonFormField<String>).at(index);
-  await tester.ensureVisible(dropdown);
-  await tester.pumpAndSettle();
-  await tester.tap(dropdown);
+Future<void> _selectComposerDropdown(
+  WidgetTester tester,
+  int index,
+  String label,
+) async {
+  final finder = find.byType(DropdownButtonFormField<String>).at(index);
+  final field = tester.widget<DropdownButtonFormField<String>>(finder);
+  final item = field.items!.singleWhere((candidate) {
+    final child = candidate.child;
+    return child is Text && child.data == label;
+  });
+  tester.state<FormFieldState<String>>(finder).didChange(item.value);
   await tester.pumpAndSettle();
 }
 
