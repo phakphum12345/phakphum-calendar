@@ -169,6 +169,13 @@ class _ShiftTransactionHistoryPanelState
                     width: 210,
                     child: DropdownButtonFormField<String>(
                       initialValue: _typeFilter ?? '',
+                      isExpanded: true,
+                      selectedItemBuilder: (context) => const [
+                        Text('All types'),
+                        Text('Release'),
+                        Text('Exchange'),
+                        Text('Exchange + return'),
+                      ],
                       decoration: const InputDecoration(
                         labelText: 'Transaction type',
                         border: OutlineInputBorder(),
@@ -192,6 +199,7 @@ class _ShiftTransactionHistoryPanelState
                     width: 190,
                     child: DropdownButtonFormField<String>(
                       initialValue: _monthFilter ?? '',
+                      isExpanded: true,
                       decoration: const InputDecoration(
                         labelText: 'Shift month',
                         border: OutlineInputBorder(),

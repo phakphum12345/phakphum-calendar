@@ -412,4 +412,53 @@ void main() {
     );
     client.close();
   });
+
+  testWidgets('filters transaction history by type and effective shift month on narrow screens', (tester) async {
+    tester.view.physicalSize = const Size(320, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final requests = <http.Request>[];
+    final client = ShiftTransactionApiClient(
+      baseUrl: 'https://calendar.example.test',
+      idTokenProvider: () async => 'token',
+      httpClient: MockClient((request) async {
+        requests.add(request);
+        return http.Response(jsonEncode({'data': []}), 200);
+      }),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: ShiftTransactionHistoryPanel(apiClient: client),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final filters = find.byType(DropdownButtonFormField<String>);
+    expect(filters, findsNWidgets(2));
+
+    await tester.tap(filters.at(0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Exchange').last);
+    await tester.pumpAndSettle();
+    expect(requests.last.url.queryParameters['type'], 'exchange');
+
+    final currentDate = DateTime.now();
+    final currentMonth =
+        '${currentDate.year}-${currentDate.month.toString().padLeft(2, '0')}';
+    await tester.tap(filters.at(1));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(currentMonth).last);
+    await tester.pumpAndSettle();
+
+    expect(requests.last.url.queryParameters['type'], 'exchange');
+    expect(requests.last.url.queryParameters['month'], currentMonth);
+    expect(tester.takeException(), isNull);
+    client.close();
+  });
+
 }
