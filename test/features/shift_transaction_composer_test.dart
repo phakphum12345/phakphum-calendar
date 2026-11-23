@@ -17,6 +17,11 @@ import 'package:phakphum_calendar/features/shift_exchange/presentation/pages/shi
 
 void main() {
   testWidgets('creates an organization give-up request from the canonical roster', (tester) async {
+    tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     final date = DateTime(2026, 11, 18);
     final alice = _employee('A');
     final bob = _employee('B');
@@ -102,12 +107,12 @@ void main() {
     await tester.tap(find.text('New shift transaction'));
     await tester.pumpAndSettle();
 
-    await _tapDropdown(tester, 1);
+    await _tapComposerDropdown(tester, 1);
     await tester.pumpAndSettle();
     await tester.tap(find.text('B · Bob').last);
     await tester.pumpAndSettle();
 
-    await _tapDropdown(tester, 2);
+    await _tapComposerDropdown(tester, 2);
     await tester.pumpAndSettle();
     await tester.tap(find.text('18/11/2026 · M · Alice').last);
     await tester.pumpAndSettle();
@@ -137,7 +142,12 @@ void main() {
   testWidgets(
     'creates an exchange-and-return request with reciprocal transfer legs',
     (tester) async {
-      final date = DateTime(2026, 11, 18);
+      tester.view.physicalSize = const Size(1200, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final date = DateTime(2026, 11, 18);
       final alice = _employee('A');
       final bob = _employee('B');
       final schedule = Schedule(
@@ -233,19 +243,19 @@ void main() {
       await tester.tap(find.text('New shift transaction'));
       await tester.pumpAndSettle();
 
-        await _tapDropdown(tester, 0);
+        await _tapComposerDropdown(tester, 0);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Exchange and return shifts').last);
       await tester.pumpAndSettle();
-      await _tapDropdown(tester, 1);
+      await _tapComposerDropdown(tester, 1);
       await tester.pumpAndSettle();
       await tester.tap(find.text('B · Bob').last);
       await tester.pumpAndSettle();
-      await _tapDropdown(tester, 2);
+      await _tapComposerDropdown(tester, 2);
       await tester.pumpAndSettle();
       await tester.tap(find.text('18/11/2026 · M · Alice').last);
       await tester.pumpAndSettle();
-      await _tapDropdown(tester, 3);
+      await _tapComposerDropdown(tester, 3);
       await tester.pumpAndSettle();
       await tester.tap(find.text('18/11/2026 · E · Bob').last);
       await tester.pumpAndSettle();
@@ -272,8 +282,8 @@ void main() {
 }
 
 
-Future<void> _tapDropdown(WidgetTester tester, int index) async {
-  final dropdown = find.byType(DropdownButton<String>).at(index);
+Future<void> _tapComposerDropdown(WidgetTester tester, int index) async {
+  final dropdown = find.byType(DropdownButtonFormField<String>).at(index);
   await tester.ensureVisible(dropdown);
   await tester.pumpAndSettle();
   await tester.tap(dropdown);
