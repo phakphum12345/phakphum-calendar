@@ -32,15 +32,29 @@ void main() {
     await tester.pump();
     expect(gateway.auditCalls['organization-id'], hasLength(1));
 
-    Future<void> selectOrganization(String name) async {
-      await tester.tap(find.byType(DropdownButtonFormField<String>));
+    Future<void> selectOrganization({
+      required String currentOrganizationId,
+      required String name,
+    }) async {
+      final organizationField = find.byKey(
+        ValueKey<String>(currentOrganizationId),
+      );
+      expect(organizationField, findsOneWidget);
+      await tester.ensureVisible(organizationField);
+      await tester.tap(organizationField);
       await tester.pumpAndSettle();
       await tester.tap(find.textContaining(name).last);
       await tester.pumpAndSettle();
     }
 
-    await selectOrganization('Cardiology');
-    await selectOrganization('Radiology');
+    await selectOrganization(
+      currentOrganizationId: 'organization-id',
+      name: 'Cardiology',
+    );
+    await selectOrganization(
+      currentOrganizationId: 'cardiology-id',
+      name: 'Radiology',
+    );
 
     await tester.tap(auditHeading);
     await tester.pumpAndSettle();
