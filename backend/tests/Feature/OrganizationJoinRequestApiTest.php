@@ -112,6 +112,12 @@ class OrganizationJoinRequestApiTest extends TestCase
             'status' => 'approved',
             'approved_role' => 'incharge',
         ]);
+        $this->assertDatabaseHas('organization_membership_audit_events', [
+            'organization_id' => $organization['id'],
+            'actor_user_id' => $this->userId('owner@example.com'),
+            'subject_user_id' => $this->userId('applicant@example.com'),
+            'action' => 'join_request_approved',
+        ]);
 
         $this->postJson('/api/v1/organization-join-requests', [
             'organization_slug' => $organization['slug'],
@@ -299,6 +305,22 @@ class OrganizationJoinRequestApiTest extends TestCase
                 ->where('organization_id', $organization['id'])
                 ->where('user_id', $applicantId)
                 ->count(),
+        );
+
+        $audit = DB::table('organization_membership_audit_events')
+            ->where('organization_id', $organization['id'])
+            ->where('subject_user_id', $applicantId)
+            ->where('action', 'join_request_approved')
+            ->latest('id')
+            ->first();
+        $this->assertNotNull($audit);
+        $this->assertSame(
+            'inactive',
+            json_decode($audit->before_state, true, 512, JSON_THROW_ON_ERROR)['status'],
+        );
+        $this->assertSame(
+            'active',
+            json_decode($audit->after_state, true, 512, JSON_THROW_ON_ERROR)['status'],
         );
     }
 
