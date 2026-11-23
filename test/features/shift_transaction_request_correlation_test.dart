@@ -7,7 +7,6 @@ import 'package:http/testing.dart';
 import 'package:phakphum_calendar/features/shift_exchange/infrastructure/shift_transaction_api_client.dart';
 
 void main() {
-
   test('rejects non-loopback HTTP API origins', () {
     expect(
       () => ShiftTransactionApiClient(
@@ -20,9 +19,9 @@ void main() {
 
   test('allows HTTP only for explicit loopback development origins', () {
     for (final baseUrl in [
-      'http://localhost:8787',
-      'http://127.0.0.1:8787',
-      'http://[::1]:8787',
+      'http://localhost',
+      'http://127.0.0.1',
+      'http://[::1]',
     ]) {
       final client = ShiftTransactionApiClient(
         baseUrl: baseUrl,
