@@ -20,7 +20,6 @@ class HealthApiTest extends TestCase
             ]);
     }
 
-
     public function test_invalid_request_id_is_replaced_with_a_generated_id(): void
     {
         $response = $this->withHeader('X-Request-ID', 'bad')
