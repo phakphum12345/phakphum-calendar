@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:http/http.dart' as http;
 
@@ -162,12 +163,20 @@ class ShiftTransactionApiClient {
     http.Client? httpClient,
   }) : _baseUri = _normalizeBaseUri(baseUrl),
        _http = httpClient ?? http.Client(),
-       _ownsHttpClient = httpClient == null;
+       _ownsHttpClient = httpClient == null,
+       _requestIdProvider = _generateRequestId;
 
   final Uri? _baseUri;
   final Future<String?> Function() idTokenProvider;
   final http.Client _http;
   final bool _ownsHttpClient;
+  final String Function() _requestIdProvider;
+
+  static String _generateRequestId() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+    return base64Url.encode(bytes).replaceAll('=', '');
+  }
 
   static Uri? _normalizeBaseUri(String value) {
     final trimmed = value.trim();
@@ -385,6 +394,7 @@ class ShiftTransactionApiClient {
     final response = await _http.get(uri, headers: {
       'Accept': 'application/json',
       'Authorization': 'Bearer $token',
+      'X-Request-ID': _requestIdProvider(),
     });
     final Object? decoded;
     try {
@@ -427,6 +437,7 @@ class ShiftTransactionApiClient {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
         ...?headers,
+        'X-Request-ID': _requestIdProvider(),
       },
       body: jsonEncode(body),
     );
