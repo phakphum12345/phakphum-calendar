@@ -6,7 +6,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
 
 class WebPushSubscriptionController
@@ -36,6 +35,9 @@ class WebPushSubscriptionController
 
         $endpointHash = hash('sha256', $endpoint);
         $now = now();
+        $createdAt = DB::table('web_push_subscriptions')
+            ->where('endpoint_hash', $endpointHash)
+            ->value('created_at') ?? $now;
 
         DB::table('web_push_subscriptions')->updateOrInsert(
             ['endpoint_hash' => $endpointHash],
@@ -47,7 +49,7 @@ class WebPushSubscriptionController
                 'content_encoding' => $validated['contentEncoding'] ?? 'aes128gcm',
                 'user_agent' => mb_substr((string) $request->userAgent(), 0, 512),
                 'updated_at' => $now,
-                'created_at' => $now,
+                'created_at' => $createdAt,
             ],
         );
 
