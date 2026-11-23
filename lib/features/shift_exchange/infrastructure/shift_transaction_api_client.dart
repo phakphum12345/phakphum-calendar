@@ -144,10 +144,15 @@ class ShiftTransactionOrganizationMemberSnapshot {
 }
 
 class ShiftTransactionApiException implements Exception {
-  const ShiftTransactionApiException(this.statusCode, this.message);
+  const ShiftTransactionApiException(
+    this.statusCode,
+    this.message, {
+    this.correlationId,
+  });
 
   final int statusCode;
   final String message;
+  final String? correlationId;
 
   @override
   String toString() => 'ShiftTransactionApiException($statusCode): $message';
@@ -399,16 +404,22 @@ class ShiftTransactionApiClient {
       throw const ShiftTransactionApiException(401, 'Please sign in with Google again.');
     }
     final uri = base.resolve(path).replace(queryParameters: query);
+    final requestId = _requestIdProvider();
     final response = await _http.get(uri, headers: {
       'Accept': 'application/json',
       'Authorization': 'Bearer $token',
-      'X-Request-ID': _requestIdProvider(),
+      'X-Request-ID': requestId,
     });
+    final correlationId = response.headers['x-request-id'] ?? requestId;
     final Object? decoded;
     try {
       decoded = jsonDecode(response.body);
     } on FormatException {
-      throw ShiftTransactionApiException(response.statusCode, 'The server returned an invalid response.');
+      throw ShiftTransactionApiException(
+        response.statusCode,
+        'The server returned an invalid response.',
+        correlationId: correlationId,
+      );
     }
     if (decoded is! Map) {
       throw ShiftTransactionApiException(response.statusCode, 'The server returned an invalid response.');
@@ -420,6 +431,7 @@ class ShiftTransactionApiClient {
       throw ShiftTransactionApiException(
         response.statusCode,
         message ?? 'Unable to load transaction history.',
+        correlationId: correlationId,
       );
     }
     return body;
@@ -445,7 +457,7 @@ class ShiftTransactionApiClient {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
         ...?headers,
-        'X-Request-ID': _requestIdProvider(),
+        'X-Request-ID': requestId,
       },
       body: jsonEncode(body),
     );
