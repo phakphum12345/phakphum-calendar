@@ -22,6 +22,7 @@ This document describes the current routes. Request validation and service autho
 - Health and client-diagnostics responses also include `request_id` in the JSON body; other endpoint bodies retain their existing domain-specific shape.
 - The Flutter shift-transaction client generates a distinct opaque ID for each request and sends it in this header.
 - Clients must use HTTPS for non-loopback API origins; HTTP is permitted only for loopback local development.
+- Browser CORS permits the `X-Request-ID` header and exposes it to clients; membership `PATCH` and `DELETE` preflights are allowed but remain subject to Google bearer authentication.
 - Request IDs are diagnostic metadata, not authentication credentials or authorization claims.
 
 ## Route inventory
