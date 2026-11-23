@@ -61,7 +61,7 @@ class HttpOrganizationAdminGateway implements OrganizationAdminGateway {
     final nextBeforeId = meta['next_before_id'];
     return OrganizationMembershipAuditPage(
       events: _list(envelope['data'])
-          .map(_membershipAuditEvent)
+          .map<OrganizationMembershipAuditEvent>(_membershipAuditEvent)
           .toList(growable: false),
       nextBeforeId: nextBeforeId == null
           ? null
@@ -302,29 +302,6 @@ class HttpOrganizationAdminGateway implements OrganizationAdminGateway {
       employeeId: _string(item, 'employee_id'),
       role: _string(item, 'role'),
       status: _string(item, 'status'),
-    );
-  }
-
-  OrganizationMembershipAuditEvent _membershipAuditEvent(Object? value) {
-    final item = _map(value);
-    final actor = _map(item['actor']);
-    final subject = _map(item['subject']);
-    final createdAt = DateTime.tryParse(_string(item, 'created_at'));
-    if (createdAt == null) {
-      throw const FormatException(
-        'Organization membership audit timestamp is invalid.',
-      );
-    }
-    return OrganizationMembershipAuditEvent(
-      id: _integer(item, 'id'),
-      action: _string(item, 'action'),
-      actorUserId: _string(actor, 'user_id'),
-      actorName: _optionalString(actor, 'name') ?? 'ไม่ทราบชื่อ',
-      subjectUserId: _string(subject, 'user_id'),
-      subjectName: _optionalString(subject, 'name') ?? 'ไม่ทราบชื่อ',
-      before: _optionalMap(item, 'before'),
-      after: _optionalMap(item, 'after'),
-      createdAt: createdAt,
     );
   }
 
