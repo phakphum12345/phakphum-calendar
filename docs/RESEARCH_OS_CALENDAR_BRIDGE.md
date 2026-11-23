@@ -23,7 +23,7 @@ sync command and receives a job identifier/result metadata.
 
 ## Endpoints
 
-The bridge is intentionally loopback-only:
+The bridge is intentionally loopback-only. Its listening port is discovered from the running bridge and supplied to the client at runtime; this contract reserves no fixed port:
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -50,6 +50,7 @@ request open.
 ## Security requirements
 
 - Bind the bridge to `127.0.0.1` only.
+- Select an available port at startup and publish it through an explicit local discovery mechanism; do not assume or reserve a fixed port.
 - Never accept Google OAuth access/refresh tokens from Research OS.
 - Never log roster contents or credentials.
 - Require an explicit sync command; no implicit calendar writes from chat.
