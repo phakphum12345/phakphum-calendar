@@ -7,6 +7,7 @@ The active build and delivery surface covers **Windows, Web, Android, iOS, and L
 - `web.yml` — Flutter Web release + GitHub Pages deployment.
 - `android.yml` — Android release APK build artifact.
 - `ios.yml` — independent unsigned iOS release app build artifact.
+- `macos.yml` — independent macOS/Xcode unsigned release app build + ZIP/SHA-256 artifacts.
 - `linux.yml` — Linux x64 release bundle archive.
 - `pull-request-gate.yml` — core PR evidence gate for Auto Detect CI, Windows, Web, Android, and Linux.
 - `ios-evidence-gate.yml` — non-blocking PR advisory report for independent iOS evidence.
@@ -31,7 +32,7 @@ For the current stabilization phase:
 | Post-merge final evidence gate | Supported | `final-gate.yml` |
 | Android | Build supported | `android.yml` |
 | iOS | Unsigned build supported | `ios.yml` |
-| macOS | Paused | No active workflow |
+| macOS | Unsigned build supported | `macos.yml` (independent Xcode workflow) |
 | Linux x64 | Build supported | `linux.yml` |
 | Backend/Laravel | CI supported | `laravel.yml` (tests only; no deployment) |
 
@@ -160,3 +161,29 @@ The platform build workflows remain independent:
 
 Keep each platform in a separate workflow so a native build failure is clearly
 attributed and artifacts can be downloaded independently.
+
+## Independent macOS / Xcode workflow
+
+`macos.yml` is a standalone macOS build pipeline. It starts on its own
+`workflow_dispatch`, relevant pull-request changes, and relevant pushes to
+`main`. It does not use `needs`, poll other workflow runs, or wait for the
+Windows, Linux, Android, Web, or iOS pipelines.
+
+The workflow uses a GitHub-hosted macOS runner (default `macos-15`; optionally
+overridable with the repository variable `MACOS_RUNNER_LABEL`), verifies the
+Xcode installation and Runner project scheme, installs Flutter dependencies,
+and runs an unsigned release build through Flutter/Xcode. It verifies the
+application bundle and publishes a ZIP plus SHA-256 checksum as a standalone
+artifact.
+
+The concurrency group is unique per run and does not cancel another macOS
+build. GitHub may still queue a run while no matching macOS runner capacity is
+available; that is runner allocation, not a dependency on another CI workflow.
+The artifact is unsigned and is not a Developer ID-signed or notarized
+distribution package. Signing and notarization require a separately approved
+release configuration and credentials.
+
+This workflow reports its own result. Its existence does not silently add
+macOS to the repository's required merge checks; branch protection/rulesets
+must be configured separately if macOS success is to become a required merge
+condition.
