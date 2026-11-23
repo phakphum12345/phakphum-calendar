@@ -1,39 +1,45 @@
 # Repository Implementation Status
 
-## Current main snapshot — 2026-11-23 (supersedes the historical snapshot below)
+## Current main snapshot — 2026-11-23
 
-**Verified main SHA:** `78a1ef7c1436ccfd0495778987b97a9ebd9ac2d1`
+**Verified main SHA:** `9efb98c9d6e5ae5f60f919d5e1a24fac4c2bd35b`
 
-This section is the current evidence snapshot. The remainder of this file is retained as the 2026-11-22 historical baseline and must not be used as the current PR or release status.
+This section supersedes earlier historical snapshots below. Older entries are retained for audit history and must not be used as current PR or release status.
 
 | Item | Current observation | Status |
 |---|---|---|
 | Default branch | `main` | PASS |
-| Open PRs | 0 | PASS |
-| Issue tracker | Disabled on this repository (`has_issues: false`); reported open issue count is 0 | UNKNOWN |
+| Open PRs | 1 — PR #171 (Organization Membership Audit UI) | IN_PROGRESS |
+| PR #170 | Closed as superseded by #171; not merged | SKIPPED |
+| Issue tracker | Disabled (`has_issues: false`); no issue list is available | UNKNOWN |
 | Main branch protection | GitHub reports `protected: false` | FAIL |
-| Local working tree | Not available through the GitHub API audit | UNKNOWN |
+| Local working tree | Not available through GitHub API | UNKNOWN |
 | Current-SHA workflow runs | Auto Detect CI and Cross-platform Runtime both completed successfully | PASS |
 | Current-SHA check runs | 7 of 7 completed with conclusion `success` | PASS |
-| Current-SHA Web deployment | No Web workflow run was observed for this documentation-only SHA | UNKNOWN |
-| Exact current-SHA production metadata | Not verified | UNKNOWN |
+| Current-SHA Web deployment | No deployment run for this documentation-only SHA | UNKNOWN |
+| Latest verified deployed application-source SHA | `4618ab98b0fc371f32f08d3299365f577fa81674` | PASS (historical deployment evidence) |
+| Exact current-main published metadata | Not verified against `9efb98c9d6e5ae5f60f919d5e1a24fac4c2bd35b` | UNKNOWN |
 
 ### Exact-SHA CI evidence
 
-Current main `78a1ef7c1436ccfd0495778987b97a9ebd9ac2d1`:
-- Auto Detect CI run [45129850947](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45129850947): SUCCESS.
-- Cross-platform Runtime run [45129850973](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45129850973): SUCCESS.
-- Seven check runs completed successfully: Dart/Flutter quality, platform activation, capability detection, Linux POSIX full quality, Linux PowerShell smoke test, Windows PowerShell full quality, and Windows CMD smoke test.
+Current main `9efb98c9d6e5ae5f60f919d5e1a24fac4c2bd35b`:
+- Auto Detect CI run [45155822259](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45155822259): SUCCESS.
+- Cross-platform Runtime run [45155822214](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45155822214): SUCCESS.
+- Seven check runs completed successfully: Dart/Flutter quality, platform activation summary, Linux PowerShell launcher smoke test, Linux POSIX full quality suite, capability detection, Windows CMD launcher smoke test, and Windows PowerShell full quality suite.
 
-These results do not mean every platform build, Laravel workflow, Pages deployment, or Final Gate ran on this exact SHA.
+These results do not imply that every platform release build, Laravel workflow, Pages deployment, or PR Final Gate ran on this exact SHA.
 
 ### Deployment relationship
 
-The latest observed successful Web deployment is run [45129035935](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45129035935) on application-source SHA `4618ab98b0fc371f32f08d3299365f577fa81674`. Both the GitHub Pages deployment job and its exact-SHA published-site verification step succeeded. Final Gate run [45129036049](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45129036049) also succeeded for that SHA.
+The latest observed successful Web deployment and Final Gate are run [45129035935](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45129035935) and [45129036049](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45129036049), respectively, on application-source SHA `4618ab98b0fc371f32f08d3299365f577fa81674`.
 
-A GitHub compare of `4618ab98...` to current main `78a1ef7c1436ccfd0495778987b97a9ebd9ac2d1` reports only three changed files: `IMPLEMENTATION_STATUS.md`, `REQUIREMENTS_TRACEABILITY.md`, and `docs/REPOSITORY_AUDIT.md`. Therefore the application source tree is unchanged from the deployed application-source SHA, but the published deployment metadata has not been verified against the newer documentation-only main SHA. Strict exact-main-SHA deployment status remains UNKNOWN.
+A GitHub compare from that deployed source SHA to current main `9efb98c9d6e5ae5f60f919d5e1a24fac4c2bd35b` reports only documentation changes:
+- `IMPLEMENTATION_STATUS.md`
+- `REQUIREMENTS_TRACEABILITY.md`
+- `docs/END_TO_END_COMPLETION_AUDIT_2026-11-23.md`
+- `docs/REPOSITORY_AUDIT.md`
 
-The Web and Final Gate workflows are path-filtered to application/platform/workflow files; a documentation-only change does not trigger them.
+Therefore the application source tree is unchanged from the last verified deployed application-source SHA. However, the published deployment metadata has not been verified against current main `9efb98c9d6e5ae5f60f919d5e1a24fac4c2bd35b`; strict exact-main-SHA deployment status remains UNKNOWN. PR #171 is not merged and is not part of the deployed application.
 
 ### Current source-level findings
 
@@ -42,25 +48,25 @@ The Web and Final Gate workflows are path-filtered to application/platform/workf
 | Roster date validation | Parser detects duplicate days, missing dates, out-of-order dates and date-sequence mismatches; conversion skips sections with blocking date anomalies | PASS (guard exists; source-specific workbook outcomes remain unverified) |
 | X-OPD November 2569 | Reported malformed header requires original workbook/cell layout to confirm intended dates | UNKNOWN |
 | US Clinic ภปร.4 | Markdown header alone does not reproduce the reported offset; original workbook is required | UNKNOWN |
-| Calendar sync | Existing planner/executor/reconciliation and regression-test files are present; live authorized Google account behavior is not verified in this audit | UNKNOWN |
-| Historical roster restore | Revision/timeline support exists, but a complete safe restore workflow was not found in the current source inventory | PARTIAL |
-| Web Push | Browser subscription and authenticated API storage exist; VAPID sender, RFC 8291 encryption, durable queue/scheduler, retry and user-facing opt-in controls are not implemented | PARTIAL |
-| Membership audit | Backend migration, write events, manager-protected read endpoint and cursor pagination exist; Flutter gateway and organization UI do not expose this endpoint | PARTIAL |
+| Calendar sync | Planner/executor/reconciliation and regression tests exist; live authorized Google account behavior is not verified | UNKNOWN |
+| Historical roster restore | Revision/timeline support exists, but a complete safe restore workflow was not found | PARTIAL |
+| Web Push | Browser subscription and authenticated API storage exist; VAPID sender, RFC 8291 encryption, durable queue/scheduler, retries and user-facing opt-in controls are not implemented | PARTIAL |
+| Membership audit | Backend audit writes and manager-protected paginated read endpoint exist. Flutter integration is proposed in PR #171 and has not merged | IN_PROGRESS |
 | Responsive UI | Requires screen-by-screen device-width verification | UNKNOWN |
 | Performance | No repository-wide baseline verified | UNKNOWN |
-| Security / tenant isolation | Requires focused test and runtime review beyond this source inventory | UNKNOWN |
+| Security / tenant isolation | Existing authorization and backend tests exist; further focused review remains | UNKNOWN |
 
 ### Immediate next work
 
-1. Obtain the original X-OPD and US Clinic ภปร.4 workbook/export. Do not infer or silently repair date headers.
-2. Add the membership-audit API method, typed model, organization-scoped UI, pagination and permission/error tests.
-3. Complete Web Push delivery only after backend VAPID configuration and supported scheduler/worker strategy are available; do not invent credentials.
-4. Define safe historical restore preview/confirmation. Any Drive write-scope expansion requires separate explicit approval.
+1. Complete exact-head CI for PR #171. Merge only when all required checks pass; then verify merge SHA and post-merge main CI.
+2. Obtain the original X-OPD and US Clinic ภปร.4 workbook/export. Do not infer or silently repair date headers.
+3. Complete Web Push delivery only after VAPID configuration and a supported scheduler/worker strategy are defined; do not invent credentials.
+4. Define and implement safe historical restore preview/confirmation. Any Drive write-scope expansion requires separate explicit approval.
 5. Complete targeted security/tenant-isolation, responsive UI, performance and critical E2E audits.
 6. Verify a production deployment whose published metadata exactly matches the main SHA before claiming strict release readiness.
 
-**Snapshot date:** 2026-11-22  
-**Snapshot base:** `main` at `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5`  
+**Snapshot date:** 2026-11-23
+**Snapshot base:** `main` at `9efb98c9d6e5ae5f60f919d5e1a24fac4c2bd35b`
 **Scope:** Whole repository, Flutter client, Laravel API, persistence, synchronization, CI/CD, security and documentation.
 
 > This is a point-in-time engineering inventory, not a declaration that the repository is complete or production-ready. Source code, migrations, exact-head CI and observed runtime behavior take precedence over this document. `SKIPPED` and `UNKNOWN` are never treated as `PASS`.
