@@ -269,7 +269,13 @@ Future<void> _selectComposerDropdown(
   int index,
   String label,
 ) async {
-  final fieldFinder = find.byType(DropdownButtonFormField<String>).at(index);
+  // The page has its own organization selector. Scope the lookup to the
+  // composer dialog so indices refer only to fields in the transaction form.
+  final dialogFinder = find.byType(AlertDialog);
+  final fieldFinder = find.descendant(
+    of: dialogFinder,
+    matching: find.byType(DropdownButtonFormField<String>),
+  ).at(index);
   final dropdownFinder = find.descendant(
     of: fieldFinder,
     matching: find.byType(DropdownButton<String>),
