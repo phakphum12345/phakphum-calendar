@@ -96,45 +96,23 @@ class SheetsService implements RosterSheetsGateway {
   ) async {
     final id = spreadsheetIdFromUrl(sourceUrl);
     final api = sheets.SheetsApi(client);
-    final requestedSheetId = sheetIdFromUrl(sourceUrl);
-    List<String> titles;
-    if (requestedSheetId != null) {
-      // A URL copied from a specific tab carries gid=<sheetId>. Honor that
-      // choice rather than parsing every tab in the spreadsheet.
-      final metadata = await api.spreadsheets.get(
-        id,
-        includeGridData: false,
-        $fields: 'sheets(properties(sheetId,title,hidden))',
-      );
-      final selected = (metadata.sheets ?? const <sheets.Sheet>[])
-          .where((sheet) => sheet.properties?.sheetId == requestedSheetId)
-          .firstOrNull;
-      final selectedTitle = selected?.properties?.title;
-      if (selectedTitle == null || selectedTitle.isEmpty) {
-        throw StateError(
-          'ไม่พบแท็บ Google Sheets ที่เลือก (gid=$requestedSheetId)',
-        );
-      }
-      titles = [selectedTitle];
-    } else {
-      titles = _titleCache[id] ?? [];
-      if (titles.isEmpty) {
-        final metadata = await api.spreadsheets.get(
-          id,
-          includeGridData: false,
-          $fields: 'sheets(properties(sheetId,title,hidden))',
-        );
-        titles = [
-          for (final sheet in metadata.sheets ?? const <sheets.Sheet>[])
-            if ((sheet.properties?.title ?? '').isNotEmpty &&
-                sheet.properties?.hidden != true)
-              sheet.properties!.title!,
-        ];
-        _titleCache[id] = titles;
-      }
-    }
+    final metadata = await api.spreadsheets.get(
+      id,
+      includeGridData: false,
+      $fields: 'sheets(properties(sheetId,title,hidden))',
+    );
+    // Roster imports are workbook-wide: a URL's gid identifies the tab the
+    // user copied the link from, but must not silently hide other worksheets.
+    // Hidden tabs are included and their visibility remains in each snapshot.
+    final sourceSheets = [
+      for (final sheet in metadata.sheets ?? const <sheets.Sheet>[])
+        if ((sheet.properties?.title ?? '').isNotEmpty) sheet,
+    ];
+    final titles = sourceSheets.map((sheet) => sheet.properties!.title!).toList();
+    // A sheet-only A1 range asks Sheets for its populated value range rather
+    // than silently truncating at AF180.
     final ranges = [
-      for (final title in titles) "'${title.replaceAll("'", "''")}'!A1:AF180",
+      for (final title in titles) "'${title.replaceAll("'", "''")}'",
     ];
     final batch = await api.spreadsheets.values.batchGet(
       id,
@@ -148,7 +126,7 @@ class SheetsService implements RosterSheetsGateway {
       ranges: ranges,
       includeGridData: true,
       $fields:
-          'sheets(properties(title),data(startRow,startColumn,'
+          'sheets(properties(sheetId,title),data(startRow,startColumn,'
           'rowData(values(effectiveFormat(backgroundColorStyle)))))',
     );
     final colorsByTitle = <String, List<List<int?>>>{
@@ -160,6 +138,9 @@ class SheetsService implements RosterSheetsGateway {
       for (var index = 0; index < titles.length; index++)
         SheetSnapshot(
           title: titles[index],
+          spreadsheetId: id,
+          sheetId: sourceSheets[index].properties?.sheetId,
+          hidden: sourceSheets[index].properties?.hidden == true,
           rows:
               (index < values.length
                   ? values[index].values

@@ -19,13 +19,21 @@ import '../models/shift_alert.dart';
 import '../models/tool_definition.dart';
 import '../domain/entities/schedule.dart';
 import '../domain/entities/schedule_month.dart';
+import '../domain/entities/shift_template.dart';
 import '../domain/repositories/schedule_repository.dart';
+import '../domain/repositories/shift_template_repository.dart';
+import '../core/result/result.dart';
 import '../features/schedule/data/legacy_schedule_adapter.dart';
-import '../features/google_sheets/domain/sheet_color.dart';
+import '../features/shift_parser/application/monthly_roster_workbook_scanner.dart';
 import '../features/shift_parser/application/monthly_roster_section_parser.dart';
+import '../features/shift_exchange/application/shift_transaction_schedule_projector.dart';
+import '../features/shift_exchange/infrastructure/shift_transaction_api_client.dart';
+import '../features/shift_exchange/application/shift_transaction_calendar_sync_preview.dart';
+import '../features/shift_exchange/application/shift_transaction_calendar_sync_mapper.dart';
+import '../features/shift_parser/application/monthly_roster_conversion_diagnostics.dart';
+import '../features/shift_parser/application/smart_roster_analyze_generator.dart';
 import '../features/shift_parser/domain/monthly_roster_section.dart';
-import '../features/shift_parser/domain/normalized_cell.dart';
-import '../features/shift_parser/domain/shift_parser_input.dart';
+import '../features/shift_parser/domain/roster_sync_period_filter.dart';
 import '../features/workflow/application/shift_calendar_workflow_controller.dart';
 import '../features/diff_engine/domain/calendar_event_candidate.dart';
 import '../services/calendar_service.dart';
@@ -36,6 +44,7 @@ import '../services/google_auth_service.dart';
 import '../services/google_api_client.dart';
 import '../services/local_roster_file_service.dart';
 import '../services/roster_revision_service.dart';
+import '../services/timeline_archive_service.dart';
 import '../services/settings_service.dart';
 import '../services/sheets_service.dart';
 import '../services/shift_alert_service.dart';
@@ -56,6 +65,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     required DriveOwnershipGateway ownershipService,
     required LocalRosterSource localFileService,
     required ScheduleRepository scheduleRepository,
+    ShiftTemplateRepository? shiftTemplateRepository,
     required LegacyScheduleAdapter legacyScheduleAdapter,
     required Future<ShiftCalendarWorkflowController> Function()
     calendarWorkflowControllerFactory,
@@ -71,6 +81,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       ownershipService: ownershipService,
       localFileService: localFileService,
       scheduleRepository: scheduleRepository,
+      shiftTemplateRepository: shiftTemplateRepository,
       legacyScheduleAdapter: legacyScheduleAdapter,
       calendarWorkflowControllerFactory: calendarWorkflowControllerFactory,
     );
@@ -87,6 +98,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     required DriveOwnershipGateway ownershipService,
     required LocalRosterSource localFileService,
     required ScheduleRepository scheduleRepository,
+    ShiftTemplateRepository? shiftTemplateRepository,
     required LegacyScheduleAdapter legacyScheduleAdapter,
     required Future<ShiftCalendarWorkflowController> Function()
     calendarWorkflowControllerFactory,
@@ -102,6 +114,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       ownershipService: ownershipService,
       localFileService: localFileService,
       scheduleRepository: scheduleRepository,
+      shiftTemplateRepository: shiftTemplateRepository,
       legacyScheduleAdapter: legacyScheduleAdapter,
       calendarWorkflowControllerFactory: calendarWorkflowControllerFactory,
     );
@@ -120,6 +133,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     required this._ownershipService,
     required this._localFileService,
     required this._scheduleRepository,
+    this._shiftTemplateRepository,
     required this._legacyScheduleAdapter,
     required this._calendarWorkflowControllerFactory,
   });
@@ -180,7 +194,9 @@ class AppController extends ChangeNotifier implements ControllerState {
   final GoogleAuthGateway auth;
   final AppSettingsStore _settingsService;
   final RosterSheetsGateway _sheetsService;
-  final RosterShiftParser _parser;
+  RosterShiftParser _parser;
+  final ShiftTemplateRepository? _shiftTemplateRepository;
+  List<ShiftTemplate> _shiftTemplates = const [];
   final ShiftAlertPolicy _alertService;
   final LegacyCalendarGateway _calendarService;
   final DriveArchiveGateway _archiveService;
@@ -203,8 +219,53 @@ class AppController extends ChangeNotifier implements ControllerState {
   /// Canonical runtime schedule used by all legacy schedule orchestration.
   Schedule get canonicalSchedule => _legacySchedule.schedule;
 
-  /// Read-only compatibility projection consumed by the legacy shell.
+  /// Read-only compatibility projection for source editing and import workflows.
+  /// This remains the original canonical schedule, not a transaction overlay.
   List<Shift> get shifts => _legacySchedule.toLegacyShifts();
+
+  int get loadedRosterShiftCount => _loadedRosterShifts.length;
+  int get filteredRosterShiftCount =>
+      _filterToSyncDateRange(_loadedRosterShifts).length;
+
+  final ShiftTransactionScheduleProjector _shiftTransactionProjector =
+      const ShiftTransactionScheduleProjector();
+  List<ShiftTransactionSnapshot> _shiftTransactions = const [];
+
+  ShiftTransactionScheduleProjection get _shiftTransactionProjection =>
+      _shiftTransactionProjector.project(
+        source: canonicalSchedule,
+        transactions: _shiftTransactions,
+      );
+
+  /// Effective view with approved transfers applied; canonical source is untouched.
+  Schedule get effectiveSchedule => _shiftTransactionProjection.schedule;
+
+  /// Legacy read-only view of the effective schedule, retaining imported metadata.
+  List<Shift> get effectiveShifts =>
+      _legacySchedule.toLegacyShifts(schedule: effectiveSchedule);
+
+  List<String> get shiftTransactionProjectionWarnings =>
+      _shiftTransactionProjection.warnings;
+
+  void updateShiftTransactions(List<ShiftTransactionSnapshot> transactions) {
+    final pending = _pendingShiftTransactionCalendarSync;
+    if (pending != null) {
+      final latest = transactions.where((item) => item.id == pending.transactionId);
+      if (latest.length != 1 ||
+          latest.single.version != pending.transactionVersion) {
+        cancelShiftTransactionCalendarSyncPreview();
+      }
+    }
+    _shiftTransactions = List.unmodifiable(transactions);
+    notifyListeners();
+  }
+
+  void clearShiftTransactions() {
+    cancelShiftTransactionCalendarSyncPreview();
+    if (_shiftTransactions.isEmpty) return;
+    _shiftTransactions = const [];
+    notifyListeners();
+  }
   List<ShiftAlert> alerts = [];
   List<CalendarBusyPeriod> calendarPeriods = [];
   Set<String> _duplicateCalendarEventIds = {};
@@ -214,10 +275,20 @@ class AppController extends ChangeNotifier implements ControllerState {
   List<RecentOwnedSheet> recentOwnedSheets = [];
   Set<String> existingKeys = {};
   Map<String, RosterAssignmentTimeline> _revisionTimelines = const {};
+
+  /// Read-only historical roster ownership chains for connected workspaces.
+  Map<String, RosterAssignmentTimeline> get revisionTimelines =>
+      Map.unmodifiable(_revisionTimelines);
   int _loadedRevisionCount = 0;
+  int _timelineLoadGeneration = 0;
+  bool timelineLoading = false;
+  String? _loadedTimelineScope;
   String? timelineWarning;
   List<String> sheetTitles = [];
   Set<String> pinnedToolIds = {...defaultPinnedToolIds};
+  // Keep Google Calendar audit history enabled by default; callers can still
+  // disable it explicitly for a session when the user requests that.
+  bool shiftTimelineEnabled = true;
   bool initialized = false;
   bool busy = false;
   bool recentSheetHistoryLoaded = false;
@@ -234,15 +305,25 @@ class AppController extends ChangeNotifier implements ControllerState {
   List<Shift> _referenceAllRosterShifts = [];
   List<Shift> _loadedRosterShifts = [];
   bool _syncRangeCustomized = false;
+  MonthlyRosterParseReport _allMonthlyRoster = const MonthlyRosterParseReport(
+    sections: [],
+    warnings: [],
+  );
   MonthlyRosterParseReport monthlyRoster = const MonthlyRosterParseReport(
     sections: [],
     warnings: [],
   );
+  MonthlyRosterConversionReport monthlyRosterConversion =
+      const MonthlyRosterConversionReport(
+        shifts: [],
+        unconvertedAssignments: [],
+      );
   DateTime? syncRangeStart;
   DateTime? syncRangeEnd;
   final Map<String, _ShiftOverride> _shiftOverrides = {};
   final Map<String, String> _shiftOverrideSourceKeys = {};
   ShiftCalendarWorkflowController? _pendingCalendarWorkflow;
+  _PendingShiftTransactionCalendarSync? _pendingShiftTransactionCalendarSync;
 
   static const _runtimeScheduleId = 'legacy-runtime';
   static const _runtimeScheduleName = 'Legacy runtime schedule';
@@ -256,10 +337,10 @@ class AppController extends ChangeNotifier implements ControllerState {
   @override
   String? get message => error ?? status;
 
-  int get includedCount => shifts.where((shift) => !shift.excluded).length;
-  int get existingCount => shifts.where(_matchesCurrentCalendar).length;
+  int get includedCount => effectiveShifts.where((shift) => !shift.excluded).length;
+  int get existingCount => effectiveShifts.where(_matchesCurrentCalendar).length;
   int get duplicateCalendarEventCount => _duplicateCalendarEventIds.length;
-  int get newCount => shifts
+  int get newCount => effectiveShifts
       .where((shift) => !shift.excluded && !_matchesCurrentCalendar(shift))
       .length;
   int get pendingAlertCount => alerts.where((alert) => alert.isPending).length;
@@ -337,6 +418,23 @@ class AppController extends ChangeNotifier implements ControllerState {
         }
       }(),
     ]);
+    final templateRepository = _shiftTemplateRepository;
+    if (templateRepository != null) {
+      try {
+        final result = await templateRepository.findAll(activeOnly: false);
+        switch (result) {
+          case Success<List<ShiftTemplate>>(value: final templates):
+            _shiftTemplates = List.unmodifiable(templates);
+            if (_shiftTemplates.isNotEmpty && _parser is ShiftParser) {
+              _parser = ShiftParser(shiftTemplates: _shiftTemplates);
+            }
+          case Failure<List<ShiftTemplate>>():
+            error ??= 'โหลดรูปแบบเวรไม่สำเร็จ: ${result.message}';
+        }
+      } catch (caught) {
+        error ??= 'โหลดรูปแบบเวรไม่สำเร็จ: $caught';
+      }
+    }
     try {
       await _ensureActiveSavedSheetPerAccount();
     } catch (caught) {
@@ -359,13 +457,20 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   Future<void> signOut() async {
+    _timelineLoadGeneration++;
+    timelineLoading = false;
     await auth.signOut();
     _autoRefreshTimer?.cancel();
     _replaceLegacyShifts(const []);
+    _shiftTransactions = const [];
     alerts = [];
     calendarPeriods = [];
     existingKeys = {};
     sheetTitles = [];
+    _allMonthlyRoster = const MonthlyRosterParseReport(
+      sections: [],
+      warnings: [],
+    );
     monthlyRoster = const MonthlyRosterParseReport(sections: [], warnings: []);
     recentOwnedSheets = [];
     localSourceLabel = null;
@@ -418,7 +523,19 @@ class AppController extends ChangeNotifier implements ControllerState {
     }
     settings = next;
     await _settingsService.save(next);
-    if (periodChanged) _rebuildAlerts();
+    if (periodChanged) {
+      monthlyRoster = _filterMonthlyReportToSelectedPeriods(_allMonthlyRoster);
+      _setDefaultSyncDateRange(_loadedRosterShifts);
+      if (_loadedRosterShifts.isNotEmpty) {
+        final selectedShifts = _filterToSyncDateRange(_loadedRosterShifts);
+        _replaceLegacyShifts(
+          _alertService.addOffDutyPeriods(
+            _applyReferenceRelationships(selectedShifts),
+          ),
+        );
+      }
+      _rebuildAlerts();
+    }
     _scheduleAutoRefresh();
     notifyListeners();
   }
@@ -518,6 +635,53 @@ class AppController extends ChangeNotifier implements ControllerState {
     await selectSourceForCurrentAccount(sourceUrl);
   }
 
+  Future<void> clearRosterSourceSelection() async {
+    _timelineLoadGeneration++;
+    timelineLoading = false;
+    await _run('ยกเลิกการเลือกตารางเวร', () async {
+      final accountId = auth.account?.id;
+      if (accountId != null) {
+        savedSheets = [
+          for (final sheet in savedSheets)
+            if (sheet.ownerAccountId != accountId)
+              sheet
+            else
+              sheet.copyWith(isActive: false),
+        ];
+        await _settingsService.saveSavedSheets(savedSheets);
+      }
+
+      localSourceLabel = null;
+      _autoRefreshTimer?.cancel();
+      _replaceLegacyShifts(const []);
+      alerts = [];
+      calendarPeriods = [];
+      existingKeys = {};
+      sheetTitles = [];
+      monthlyRoster = const MonthlyRosterParseReport(
+        sections: [],
+        warnings: [],
+      );
+      monthlyRosterConversion = const MonthlyRosterConversionReport(
+        shifts: [],
+        unconvertedAssignments: [],
+      );
+      _loadedRosterShifts = [];
+      _currentAllRosterShifts = [];
+      _referenceAllRosterShifts = [];
+      _revisionTimelines = const {};
+      _loadedRevisionCount = 0;
+      timelineWarning = null;
+      _resetSyncRange();
+      status = 'ยกเลิกการเลือกตารางแล้ว; ไฟล์ต้นฉบับยังอยู่ใน Google Sheets';
+      await _addAudit(
+        'sheet.source.clear',
+        'ยกเลิกการเลือกแหล่งข้อมูลเวรสำหรับบัญชีปัจจุบัน; ไม่ได้ลบไฟล์ต้นฉบับ',
+        true,
+      );
+    });
+  }
+
   Future<void> findAvailableSourceSheets({
     OwnedSheetOrder order = OwnedSheetOrder.recentlyModified,
   }) async {
@@ -613,6 +777,8 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   Future<void> selectSourceForCurrentAccount(String sourceUrl) async {
+    _timelineLoadGeneration++;
+    timelineLoading = false;
     final account = auth.account;
     if (account == null) throw StateError('กรุณาล็อกอิน Google ก่อน');
     final normalizedUrl = sourceUrl.trim();
@@ -630,6 +796,15 @@ class AppController extends ChangeNotifier implements ControllerState {
         );
         final saved = await _saveSheetReference(account.id, reference);
         _resetSyncRange();
+        _allMonthlyRoster = const MonthlyRosterParseReport(
+          sections: [],
+          warnings: [],
+        );
+        monthlyRoster = const MonthlyRosterParseReport(
+          sections: [],
+          warnings: [],
+        );
+        _replaceLegacyShifts(const []);
         localSourceLabel = null;
         status = 'เลือก “${saved.displayTitle}” เป็นไฟล์หลักของบัญชีนี้แล้ว';
         await _addAudit(
@@ -669,6 +844,10 @@ class AppController extends ChangeNotifier implements ControllerState {
 
   Future<void> deleteSavedSheet(SavedSheet sheet) async {
     _requireSheetOwner(sheet);
+    if (currentSourceSheet?.key == sheet.key) {
+      _timelineLoadGeneration++;
+      timelineLoading = false;
+    }
     await _run('ลบชีตออกจากรายการบันทึก', () async {
       final wasCurrent = currentSourceSheet?.key == sheet.key;
       savedSheets.removeWhere(
@@ -682,6 +861,10 @@ class AppController extends ChangeNotifier implements ControllerState {
         calendarPeriods = [];
         existingKeys = {};
         sheetTitles = [];
+        _allMonthlyRoster = const MonthlyRosterParseReport(
+          sections: [],
+          warnings: [],
+        );
         monthlyRoster = const MonthlyRosterParseReport(
           sections: [],
           warnings: [],
@@ -699,7 +882,41 @@ class AppController extends ChangeNotifier implements ControllerState {
     });
   }
 
-  Future<void> loadRoster({bool background = false}) async {
+  /// Explicitly reloads the selected Google Sheet and its historical Drive
+  /// revisions for Timeline. This operation is read-only and must never trigger
+  /// automatic writes to Google Calendar.
+  Future<void> syncHistoricalTimeline() async {
+    if (busy) throw StateError('กำลังทำงานอื่นอยู่ กรุณารอสักครู่');
+    if (!auth.isSignedIn) throw StateError('กรุณาเข้าสู่ระบบ Google ก่อน');
+    if (!hasSelectedSourceSheet) {
+      throw StateError('กรุณาเลือก Google Sheets ที่ต้องการซิงค์ Timeline ก่อน');
+    }
+
+    await loadRoster(
+      allowAutomaticCalendarSync: false,
+      refreshHistoricalTimeline: true,
+    );
+    if (error != null) return;
+
+    final warning = timelineWarning;
+    status = warning == null
+        ? 'อ่านตารางเวรแล้ว; กำลังซิงค์ Timeline ย้อนหลังเบื้องหลัง'
+        : 'อ่านตารางเวรแล้ว; Timeline ย้อนหลังมีข้อจำกัด: $warning';
+    await _addAudit('sheet.timeline.sync.started', status!, true);
+    notifyListeners();
+  }
+
+  Future<void> loadRoster({
+    bool background = false,
+    bool allowAutomaticCalendarSync = true,
+    bool refreshHistoricalTimeline = false,
+  }) async {
+    final timelineGeneration = ++_timelineLoadGeneration;
+    timelineLoading = false;
+    dynamic pendingTimelineSnapshots;
+    String? pendingTimelineSpreadsheetId;
+    String? pendingTimelineAccountId;
+    String? pendingTimelineScope;
     await _run('อ่านตารางเวร', () async {
       final sourceUrl = localSourceLabel == null ? currentSourceUrl : '';
       if (sourceUrl.isEmpty) {
@@ -726,21 +943,50 @@ class AppController extends ChangeNotifier implements ControllerState {
           snapshots,
           searchNames: searchNames,
         );
-        final parsedMonthly = _parseMonthlyRosterSnapshots(
+        // Keep the complete parsed roster in memory. Month selection is
+        // applied as a separate filter so changing months never reuses a
+        // parser result that was already truncated to the previous month.
+        final parsedMonthlyAll = _parseMonthlyRosterSnapshots(
           snapshots,
           spreadsheetId: spreadsheetId,
+          applyPeriodFilter: false,
         );
-        final monthlyParsed = const MonthlyRosterShiftAdapter()
-            .parseForWorkers(parsedMonthly, targetNames: searchNames)
-            .map(_applyShiftOverride)
-            .toList(growable: false);
-        final usedMonthlyFallback =
-            legacyParsed.isEmpty && monthlyParsed.isNotEmpty;
-        final parsed = legacyParsed.isEmpty ? monthlyParsed : legacyParsed;
-        monthlyRoster = parsedMonthly.sections.isEmpty
+        final monthlyConversion = const MonthlyRosterShiftAdapter()
+            .parseForWorkersWithDiagnostics(
+              parsedMonthlyAll,
+              targetNames: searchNames,
+              shiftTemplates: _shiftTemplates,
+            );
+        monthlyRosterConversion = MonthlyRosterConversionReport(
+          shifts: List.unmodifiable(
+            monthlyConversion.shifts.map(_applyShiftOverride),
+          ),
+          unconvertedAssignments: monthlyConversion.unconvertedAssignments,
+          blockingDateAnomalies: monthlyConversion.blockingDateAnomalies,
+        );
+        final monthlyParsed = monthlyRosterConversion.shifts;
+        // Analyze both readers together; monthly-only candidates are retained
+        // for review and are not synced until the normal sync confirmation flow.
+        final smartAnalysis = const SmartRosterAnalyzeGenerator().analyze(
+          legacyShifts: legacyParsed,
+          monthlyShifts: monthlyParsed,
+        );
+        final recoveredMonthlyCount = smartAnalysis.recoveredCount;
+        final parsed = smartAnalysis.mergedShifts;
+        final usedMonthlyFallback = legacyParsed.isEmpty && monthlyParsed.isNotEmpty;
+        final monthlyReportSource = parsedMonthlyAll.sections.isEmpty
             ? MonthlyRosterParseReport.fromShifts(parsed)
-            : parsedMonthly;
+            : parsedMonthlyAll;
+        _allMonthlyRoster = monthlyReportSource;
+        monthlyRoster = _filterMonthlyReportToSelectedPeriods(
+          _allMonthlyRoster,
+        );
         _loadedRosterShifts = parsed;
+        if (recoveredMonthlyCount > 0) {
+          status =
+              'ตัวอ่านรายเดือนช่วยเพิ่มเวรที่ตัวอ่านเดิมไม่พบ '
+              '$recoveredMonthlyCount รายการ';
+        }
         _setDefaultSyncDateRange(parsed);
         final rangedParsed = _filterToSyncDateRange(parsed);
         _currentAllRosterShifts = _parseAllRosterSnapshots(
@@ -750,45 +996,12 @@ class AppController extends ChangeNotifier implements ControllerState {
         _currentAllRosterShifts = _filterToSyncDateRange(
           _currentAllRosterShifts,
         );
-        final currentRevision = RosterRevisionDocument(
-          revisionId: 'current',
-          modifiedAt: DateTime.now(),
-          snapshots: snapshots,
-        );
-        final timelineGenerator = const RosterTimelineGenerator();
-        if (background && _loadedRevisionCount > 0) {
-          timelineWarning =
-              'ใช้ประวัติ Timeline จากการอ่านล่าสุด; '
-              'กดอ่านใหม่เพื่อโหลด revision ล่าสุดจาก Drive';
-        } else {
-          timelineWarning = null;
-          try {
-            final historicalRevisions = await const RosterRevisionService()
-                .readHistoryTransient(client, spreadsheetId);
-            _loadedRevisionCount = historicalRevisions.length + 1;
-            _revisionTimelines = timelineGenerator.generateFromDocuments([
-              ...historicalRevisions,
-              currentRevision,
-            ]);
-            if (historicalRevisions.isEmpty) {
-              timelineWarning =
-                  'Google Drive ไม่พบประวัติ revision ที่อ่านได้ '
-                  'จึงแสดงเฉพาะรายชื่อเวรปัจจุบัน';
-            }
-          } on Object catch (caught, stackTrace) {
-            _loadedRevisionCount = 1;
-            _revisionTimelines = timelineGenerator.generateFromDocuments([
-              currentRevision,
-            ]);
-            timelineWarning =
-                'อ่านประวัติ Timeline จาก Google Drive ไม่สำเร็จ: $caught';
-            await _addAudit('sheet.timeline.failed', timelineWarning!, false);
-            debugPrintStack(
-              label: 'Could not load Google Sheets revision timeline',
-              stackTrace: stackTrace,
-            );
-          }
-        }
+        final accountId = auth.account?.id.trim();
+        final timelineScope = '${accountId ?? ''}|$spreadsheetId';
+        pendingTimelineSnapshots = snapshots;
+        pendingTimelineSpreadsheetId = spreadsheetId;
+        pendingTimelineAccountId = accountId;
+        pendingTimelineScope = timelineScope;
         final periods = _periodsForShifts(rangedParsed);
         _replaceLegacyShifts(
           _alertService.addOffDutyPeriods(
@@ -810,7 +1023,7 @@ class AppController extends ChangeNotifier implements ControllerState {
             'จาก ${periods.length} เดือน • '
             '${syncRangeStart == null || syncRangeEnd == null ? '' : 'ช่วง ${_dateLabel(syncRangeStart!)}–${_dateLabel(syncRangeEnd!)} • '}'
             'อ่านสีจากไฟล์หลัก $colorCount รายการ • '
-            'Timeline $_loadedRevisionCount revision'
+            'Timeline จะโหลดเบื้องหลัง'
             '${timelineWarning == null ? '' : ' • $timelineWarning'} • '
             'สร้าง OFF $offCount รายการ • รอตัดสินใจ $pendingAlertCount รายการ';
         await _addAudit(
@@ -818,7 +1031,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           'อ่าน ${snapshots.length} แท็บ ${periods.length} เดือน '
               'พบ ${rangedParsed.length} เวรในช่วงที่กำหนด '
               '${usedMonthlyFallback ? 'ใช้ตัวแปลงตารางรายเดือนสำรอง ' : ''}'
-              'อ่าน Timeline $_loadedRevisionCount revision '
+              'เริ่มโหลด Timeline เบื้องหลัง '
               'อ่านสีจากไฟล์หลัก $colorCount รายการ และสร้าง OFF '
               '$offCount รายการ; ไม่มีการแก้ไขชีต',
           true,
@@ -827,24 +1040,282 @@ class AppController extends ChangeNotifier implements ControllerState {
         client.close();
       }
     });
+    if (pendingTimelineSnapshots != null &&
+        pendingTimelineSpreadsheetId != null &&
+        pendingTimelineScope != null) {
+      timelineLoading = true;
+      timelineWarning = 'กำลังโหลด Timeline ย้อนหลังเบื้องหลัง';
+      notifyListeners();
+      unawaited(
+        _loadTimelineInBackground(
+          snapshots: pendingTimelineSnapshots,
+          spreadsheetId: pendingTimelineSpreadsheetId!,
+          accountId: pendingTimelineAccountId,
+          timelineScope: pendingTimelineScope!,
+          background: background,
+          refreshHistoricalTimeline: refreshHistoricalTimeline,
+          generation: timelineGeneration,
+        ),
+      );
+    }
     _scheduleAutoRefresh();
-    // Optionally perform automatic prepare+sync when enabled.
-    if (settings.autoSync && auth.isSignedIn) {
+    // A roster read must never write to Google Calendar. Keep compatibility
+    // with legacy autoSync settings, but require the normal preview and the
+    // explicit confirmation dialog for every Calendar mutation.
+    if (allowAutomaticCalendarSync && settings.autoSync && auth.isSignedIn) {
+      final message = pendingAlertCount > 0
+          ? 'ข้ามการซิงก์อัตโนมัติเนื่องจากมีแจ้งเตือนค้าง $pendingAlertCount รายการ'
+          : 'ยังไม่เขียน Google Calendar อัตโนมัติ; กรุณาตรวจตัวอย่างและยืนยันการซิงก์ด้วยตนเอง';
+      await _addAudit('auto.sync.requires_confirmation', message, true);
+    }
+  }
+
+  Future<void> _loadTimelineInBackground({
+    required dynamic snapshots,
+    required String spreadsheetId,
+    required String? accountId,
+    required String timelineScope,
+    required bool background,
+    required bool refreshHistoricalTimeline,
+    required int generation,
+  }) async {
+    if (generation != _timelineLoadGeneration || !auth.isSignedIn) return;
+    GoogleApiClient? client;
+    try {
+      client = await auth.clientFor([
+        sheets.SheetsApi.spreadsheetsReadonlyScope,
+        drive.DriveApi.driveMetadataReadonlyScope,
+        drive.DriveApi.driveReadonlyScope,
+      ], promptIfNecessary: false);
+      if (generation != _timelineLoadGeneration) return;
+    final currentRevision = RosterRevisionDocument(
+      revisionId: 'current',
+      modifiedAt: DateTime.now(),
+      snapshots: snapshots,
+    );
+    final timelineGenerator = RosterTimelineGenerator(
+      shiftTemplates: _shiftTemplates,
+    );
+    void appendTimelineGenerationWarnings(Iterable<String> source) {
+      final messages = source.toList(growable: false);
+      if (messages.isEmpty) return;
+      final shown = messages.take(4).join('；');
+      final more = messages.length > 4
+          ? ' และอีก ${messages.length - 4} รายการ'
+          : '';
+      final warning = 'Timeline มีข้อมูลบางส่วนที่ถูกข้าม: $shown$more';
+      timelineWarning = timelineWarning == null
+          ? warning
+          : '$timelineWarning; $warning';
+    }
+    if (background &&
+        _loadedRevisionCount > 0 &&
+        _loadedTimelineScope == timelineScope) {
+      timelineWarning =
+          'ใช้ประวัติ Timeline จากการอ่านล่าสุด; '
+          'กดอ่านใหม่เพื่อโหลด revision ล่าสุดจาก Drive';
+    } else {
+      if (generation == _timelineLoadGeneration) timelineWarning = null;
       try {
-        if (pendingAlertCount == 0) {
-          await prepareCalendarSync();
-          await syncCalendar();
+        final skippedArchiveRevisionIds = <String>{};
+        final skippedDriveRevisionIds = <String>{};
+        final legacyAccountId = auth.account?.email.trim();
+        const archive = TimelineArchiveService();
+        var archivedRevisions = <RosterRevisionDocument>[];
+
+        // Render the durable local archive first. A temporary Drive or
+        // network failure must not hide history already saved on this device.
+        if (accountId != null && accountId.isNotEmpty) {
+          try {
+            archivedRevisions = await archive.readRevisionsWithLegacyAccountScope(
+              accountId: accountId,
+              legacyAccountId: legacyAccountId,
+              fileId: spreadsheetId,
+              onRevisionSkipped: (revisionId, error) {
+                skippedArchiveRevisionIds.add(revisionId);
+              },
+              onMigrationError: (migrationError) {
+                final message =
+                    'ย้ายคลัง Timeline จากอีเมลไปยังรหัสบัญชี Google ไม่สำเร็จ: '
+                    '$migrationError';
+                if (generation == _timelineLoadGeneration) timelineWarning = message;
+                unawaited(_addAudit(
+                  'sheet.timeline.archive.migration.failed',
+                  message,
+                  false,
+                ));
+              },
+            );
+          } on Object catch (archiveReadError) {
+            final archiveWarning =
+                'อ่านคลัง Timeline ในเครื่องไม่สำเร็จ: $archiveReadError';
+            if (generation == _timelineLoadGeneration) timelineWarning = archiveWarning;
+            await _addAudit(
+              'sheet.timeline.archive.read.failed',
+              archiveWarning,
+              false,
+            );
+          }
         } else {
+          if (generation == _timelineLoadGeneration) {
+            timelineWarning =
+                'ไม่พบอีเมลบัญชี Google จึงไม่สามารถแยกคลัง Timeline ตามบัญชีได้';
+          }
+        }
+        skippedArchiveRevisionIds.removeAll(
+          archivedRevisions.map((revision) => revision.revisionId),
+        );
+
+        try {
+          if (generation != _timelineLoadGeneration) return;
+          final knownRevisionIds = archivedRevisions
+              .map((revision) => revision.revisionId)
+              .toSet();
+          // Bootstrap an empty local archive once so historical Timeline
+          // remains available on first use. Routine reads with an existing
+          // archive avoid Drive revision exports; explicit refresh still
+          // checks Drive for revisions added since the last archive.
+          final shouldRefreshDriveHistory =
+              refreshHistoricalTimeline ||
+              archivedRevisions.isEmpty ||
+              skippedArchiveRevisionIds.isNotEmpty;
+          final missingRevisions = shouldRefreshDriveHistory
+              ? await const RosterRevisionService().readHistoryTransient(
+                  client,
+                  spreadsheetId,
+                  knownRevisionIds: knownRevisionIds,
+                  onRevisionSkipped: (revisionId, error) {
+                    skippedDriveRevisionIds.add(revisionId);
+                  },
+                )
+              : <RosterRevisionDocument>[];
+
+          if (generation != _timelineLoadGeneration) return;
+          final recoveredRevisionIds = missingRevisions
+              .map((revision) => revision.revisionId)
+              .toSet();
+          final unresolvedRevisionIds = <String>{
+            ...skippedArchiveRevisionIds.difference(recoveredRevisionIds),
+            ...skippedDriveRevisionIds,
+          };
+
+          // Persist each downloaded revision before adding it to the
+          // in-memory timeline. If a write fails, the local archive remains
+          // valid and the warning makes the incomplete refresh visible.
+          if (accountId != null && accountId.isNotEmpty) {
+            for (final revision in missingRevisions) {
+              await archive.putRevision(
+                accountId: accountId,
+                fileId: spreadsheetId,
+                document: revision,
+              );
+            }
+          }
+
+          final mergedRevisions = <String, RosterRevisionDocument>{
+            for (final revision in archivedRevisions)
+              revision.revisionId: revision,
+            for (final revision in missingRevisions)
+              revision.revisionId: revision,
+          }.values.toList()
+            ..sort((left, right) =>
+                left.modifiedAt.compareTo(right.modifiedAt));
+
+          if (generation != _timelineLoadGeneration) return;
+          _loadedRevisionCount = mergedRevisions.length + 1;
+          final generatedTimeline = await timelineGenerator
+              .generateFromDocumentsWithDiagnosticsAsync([
+                ...mergedRevisions,
+                currentRevision,
+              ]);
+          _revisionTimelines = generatedTimeline.timelines;
+          _loadedTimelineScope = timelineScope;
+          if (mergedRevisions.isEmpty) {
+            timelineWarning = shouldRefreshDriveHistory
+                ? 'ไม่พบประวัติ revision ที่อ่านได้ จึงแสดงเฉพาะรายชื่อเวรปัจจุบัน'
+                : 'ใช้คลัง Timeline ในเครื่อง; กด “ซิงค์ Timeline ย้อนหลัง” เพื่อตรวจ revision ใหม่จาก Drive';
+          }
+          appendTimelineGenerationWarnings(generatedTimeline.warnings);
+          if (unresolvedRevisionIds.isNotEmpty) {
+            final skippedIds = unresolvedRevisionIds.toList()..sort();
+            final shownIds = skippedIds.take(5).join(', ');
+            final more = skippedIds.length > 5
+                ? ' และอีก ${skippedIds.length - 5} รายการ'
+                : '';
+            final skippedWarning =
+                'อ่าน revision ไม่สำเร็จ ${skippedIds.length} รายการ '
+                '($shownIds$more); Timeline อาจไม่ครบ';
+            timelineWarning = timelineWarning == null
+                ? skippedWarning
+                : '$timelineWarning; $skippedWarning';
+          }
+        } on Object catch (historyError) {
+          if (generation != _timelineLoadGeneration) return;
+          _loadedRevisionCount = archivedRevisions.length + 1;
+          final fallbackTimeline = await timelineGenerator
+              .generateFromDocumentsWithDiagnosticsAsync([
+                ...archivedRevisions,
+                currentRevision,
+              ]);
+          _revisionTimelines = fallbackTimeline.timelines;
+          appendTimelineGenerationWarnings(fallbackTimeline.warnings);
+          _loadedTimelineScope = timelineScope;
+          final fallbackWarning = archivedRevisions.isEmpty
+              ? 'อ่านประวัติ Timeline จาก Drive ไม่สำเร็จและไม่มีคลังในเครื่อง: $historyError'
+              : 'Drive ยังอ่านประวัติใหม่ไม่ได้ จึงใช้ Timeline ที่บันทึกในเครื่อง '
+                    '(${archivedRevisions.length} revision): $historyError';
+          timelineWarning = timelineWarning == null
+              ? fallbackWarning
+              : '$timelineWarning; $fallbackWarning';
           await _addAudit(
-            'auto.sync.skipped',
-            'ข้ามการซิงก์อัตโนมัติเนื่องจากมีแจ้งเตือนค้าง $pendingAlertCount รายการ',
-            true,
+            'sheet.timeline.drive.failed',
+            fallbackWarning,
+            false,
           );
         }
-      } catch (e) {
-        // Log and continue — do not fail the load flow if sync fails.
-        await _addAudit('auto.sync.failed', 'Auto sync failed: $e', false);
+      } on Object catch (caught, stackTrace) {
+        if (generation != _timelineLoadGeneration) return;
+        _loadedRevisionCount = 1;
+        final currentTimeline = await timelineGenerator
+            .generateFromDocumentsWithDiagnosticsAsync([currentRevision]);
+        _revisionTimelines = currentTimeline.timelines;
+        _loadedTimelineScope = timelineScope;
+        timelineWarning =
+            'อ่านประวัติ Timeline จาก Google Drive ไม่สำเร็จ: $caught';
+        appendTimelineGenerationWarnings(currentTimeline.warnings);
+        await _addAudit('sheet.timeline.failed', timelineWarning!, false);
+        debugPrintStack(
+          label: 'Could not load Google Sheets revision timeline',
+          stackTrace: stackTrace,
+        );
       }
+    }
+
+      if (generation == _timelineLoadGeneration) {
+        if (_loadedRosterShifts.isNotEmpty) {
+          final visibleShifts = _filterToSyncDateRange(_loadedRosterShifts);
+          _replaceLegacyShifts(
+            _alertService.addOffDutyPeriods(
+              _applyReferenceRelationships(visibleShifts),
+            ),
+            persist: false,
+          );
+        }
+        timelineLoading = false;
+        notifyListeners();
+      }
+    } catch (caught, stackTrace) {
+      if (generation == _timelineLoadGeneration) {
+        timelineWarning = 'อ่านประวัติ Timeline เบื้องหลังไม่สำเร็จ: $caught';
+        timelineLoading = false;
+        _loadedRevisionCount = 1;
+        _revisionTimelines = const {};
+        await _addAudit('sheet.timeline.background.failed', timelineWarning!, false);
+        notifyListeners();
+      }
+      debugPrintStack(label: 'Background roster Timeline load failed', stackTrace: stackTrace);
+    } finally {
+      client?.close();
     }
   }
 
@@ -865,18 +1336,39 @@ class AppController extends ChangeNotifier implements ControllerState {
         document.snapshots,
         searchNames: searchNames,
       );
-      final parsedMonthly = _parseMonthlyRosterSnapshots(
+      final parsedMonthlyAll = _parseMonthlyRosterSnapshots(
         document.snapshots,
         spreadsheetId: 'local-${document.extension}',
+        applyPeriodFilter: false,
       );
-      final monthlyParsed = const MonthlyRosterShiftAdapter()
-          .parseForWorkers(parsedMonthly, targetNames: searchNames)
-          .map(_applyShiftOverride)
-          .toList(growable: false);
-      final parsed = legacyParsed.isEmpty ? monthlyParsed : legacyParsed;
-      monthlyRoster = parsedMonthly.sections.isEmpty
+      final monthlyConversion = const MonthlyRosterShiftAdapter()
+          .parseForWorkersWithDiagnostics(
+            parsedMonthlyAll,
+            targetNames: searchNames,
+            shiftTemplates: _shiftTemplates,
+          );
+      monthlyRosterConversion = MonthlyRosterConversionReport(
+        shifts: List.unmodifiable(
+          monthlyConversion.shifts.map(_applyShiftOverride),
+        ),
+        unconvertedAssignments: monthlyConversion.unconvertedAssignments,
+        blockingDateAnomalies: monthlyConversion.blockingDateAnomalies,
+      );
+      final monthlyParsed = monthlyRosterConversion.shifts;
+      // Use the same analyzer for local imports as for Google Sheets so a
+      // partially successful legacy parse cannot hide monthly-only records.
+      final smartAnalysis = const SmartRosterAnalyzeGenerator().analyze(
+        legacyShifts: legacyParsed,
+        monthlyShifts: monthlyParsed,
+      );
+      final parsed = smartAnalysis.mergedShifts;
+      final monthlyReportSource = parsedMonthlyAll.sections.isEmpty
           ? MonthlyRosterParseReport.fromShifts(parsed)
-          : parsedMonthly;
+          : parsedMonthlyAll;
+      _allMonthlyRoster = monthlyReportSource;
+      monthlyRoster = _filterMonthlyReportToSelectedPeriods(
+        _allMonthlyRoster,
+      );
       _loadedRosterShifts = parsed;
       _syncRangeCustomized = false;
       _setDefaultSyncDateRange(parsed);
@@ -931,18 +1423,35 @@ class AppController extends ChangeNotifier implements ControllerState {
         final parsedMonthly = _parseMonthlyRosterSnapshots(
           snapshots,
           spreadsheetId: spreadsheetId,
+          applyPeriodFilter: false,
         );
-        monthlyRoster = parsedMonthly.sections.isEmpty
-            ? MonthlyRosterParseReport.fromShifts(
-                _parseAllRosterSnapshots(snapshots, fallback: const []),
-              )
-            : parsedMonthly;
+        if (parsedMonthly.sections.isEmpty) {
+          final recovered = MonthlyRosterParseReport.fromShifts(
+            _parseAllRosterSnapshots(snapshots, fallback: const []),
+          );
+          _allMonthlyRoster = MonthlyRosterParseReport(
+            sections: recovered.sections,
+            warnings: [...parsedMonthly.warnings, ...recovered.warnings],
+            sourceSheetCount: parsedMonthly.sourceSheetCount,
+            sheetSummaries: parsedMonthly.sheetSummaries,
+          );
+        } else {
+          _allMonthlyRoster = parsedMonthly;
+        }
+        monthlyRoster = _filterMonthlyReportToSelectedPeriods(
+          _allMonthlyRoster,
+        );
         sheetTitles = snapshots.map((sheet) => sheet.title).toList();
         localSourceLabel = null;
         lastRefresh = DateTime.now();
+        final emptySheetCount = monthlyRoster.sheetSummaries
+            .where((sheet) => sheet.blockCount == 0)
+            .length;
         status =
-            'อ่านตารางรายเดือน ${monthlyRoster.sections.length} บล็อก '
-            '${monthlyRoster.assignments.length} ช่อง';
+            'สแกน ${monthlyRoster.sourceSheetCount} แท็บ • '
+            'พบ ${monthlyRoster.sections.length} บล็อก '
+            '${monthlyRoster.assignments.length} ช่อง • '
+            'แท็บไม่พบบล็อก $emptySheetCount';
         await _addAudit(
           'monthly_roster.sheet.read',
           'อ่านตารางรายเดือนจาก Google Sheets แบบ read-only '
@@ -965,18 +1474,49 @@ class AppController extends ChangeNotifier implements ControllerState {
       final parsedMonthly = _parseMonthlyRosterSnapshots(
         document.snapshots,
         spreadsheetId: 'local-monthly-${document.extension}',
+        applyPeriodFilter: false,
       );
-      monthlyRoster = parsedMonthly.sections.isEmpty
-          ? MonthlyRosterParseReport.fromShifts(
-              _parseAllRosterSnapshots(document.snapshots, fallback: const []),
-            )
-          : parsedMonthly;
+      final legacyParsed = _parseAllRosterSnapshots(
+        document.snapshots,
+        fallback: const [],
+      );
+      final monthlyParsed = const MonthlyRosterShiftAdapter()
+          .parseForWorkers(parsedMonthly, targetNames: rosterSearchNames)
+          .map(_applyShiftOverride)
+          .toList(growable: false);
+      final smartAnalysis = const SmartRosterAnalyzeGenerator().analyze(
+        legacyShifts: legacyParsed,
+        monthlyShifts: monthlyParsed,
+      );
+      if (parsedMonthly.sections.isEmpty) {
+        final recovered = MonthlyRosterParseReport.fromShifts(
+          smartAnalysis.mergedShifts,
+        );
+        _allMonthlyRoster = MonthlyRosterParseReport(
+          sections: recovered.sections,
+          warnings: [...parsedMonthly.warnings, ...recovered.warnings],
+          sourceSheetCount: parsedMonthly.sourceSheetCount,
+          sheetSummaries: parsedMonthly.sheetSummaries,
+        );
+      } else {
+        _allMonthlyRoster = parsedMonthly;
+      }
+      monthlyRoster = _filterMonthlyReportToSelectedPeriods(
+        _allMonthlyRoster,
+      );
       sheetTitles = document.snapshots.map((sheet) => sheet.title).toList();
       localSourceLabel = 'ไฟล์ .${document.extension} ในเครื่อง';
       lastRefresh = DateTime.now();
+      final emptySheetCount = monthlyRoster.sheetSummaries
+          .where((sheet) => sheet.blockCount == 0)
+          .length;
       status =
-          'นำเข้าตารางรายเดือน ${monthlyRoster.sections.length} บล็อก '
-          '${monthlyRoster.assignments.length} ช่อง; ไฟล์ไม่ถูกอัปโหลด';
+          'สแกน ${monthlyRoster.sourceSheetCount} แท็บ • '
+          'พบ ${monthlyRoster.sections.length} บล็อก '
+          '${monthlyRoster.assignments.length} ช่อง • '
+          'แท็บไม่พบบล็อก $emptySheetCount • '
+          'ตัวอ่านอัจฉริยะกู้คืนเพิ่ม ${smartAnalysis.recoveredCount} เวร; '
+          'ไฟล์ไม่ถูกอัปโหลด';
       await _addAudit(
         'monthly_roster.local.read',
         'อ่านไฟล์ตารางรายเดือนในหน่วยความจำ; '
@@ -989,74 +1529,29 @@ class AppController extends ChangeNotifier implements ControllerState {
   MonthlyRosterParseReport _parseMonthlyRosterSnapshots(
     List<SheetSnapshot> snapshots, {
     required String spreadsheetId,
+    bool applyPeriodFilter = true,
   }) {
-    final sections = <MonthlyRosterSection>[];
-    final warnings = <String>[];
-    const parser = MonthlyRosterSectionParser();
-
-    for (var sheetIndex = 0; sheetIndex < snapshots.length; sheetIndex++) {
-      final snapshot = snapshots[sheetIndex];
-      final cells = <NormalizedCell>[];
-      for (var rowIndex = 0; rowIndex < snapshot.rows.length; rowIndex++) {
-        final row = snapshot.rows[rowIndex];
-        for (var columnIndex = 0; columnIndex < row.length; columnIndex++) {
-          final value = row[columnIndex];
-          final text = value?.toString().trim();
-          if ((text == null || text.isEmpty) &&
-              snapshot.backgroundColorAt(rowIndex, columnIndex) == null) {
-            continue;
-          }
-          cells.add(
-            NormalizedCell(
-              sheetId: sheetIndex,
-              sheetTitle: snapshot.title,
-              a1: '',
-              rowIndex: rowIndex,
-              columnIndex: columnIndex,
-              text: text == null || text.isEmpty ? null : text,
-              rawValue: value,
-              backgroundColor: _sheetColor(
-                snapshot.backgroundColorAt(rowIndex, columnIndex),
-              ),
-            ),
-          );
-        }
-      }
-      final report = parser.parse(
-        ShiftParserInput(
-          spreadsheetId: spreadsheetId,
-          spreadsheetTitle: selectedSourceSheetTitle,
-          sheetId: sheetIndex,
-          sheetTitle: snapshot.title,
-          timeZone: 'Asia/Bangkok',
-          cells: cells,
-        ),
-      );
-      sections.addAll(report.sections);
-      warnings.addAll(report.warnings);
-    }
-
-    final report = MonthlyRosterParseReport(
-      sections: List.unmodifiable(sections),
-      warnings: List.unmodifiable(warnings),
+    final report = const MonthlyRosterWorkbookScanner().scan(
+      snapshots: snapshots,
+      spreadsheetId: spreadsheetId,
+      spreadsheetTitle: selectedSourceSheetTitle,
+      timeZone: 'Asia/Bangkok',
     );
-    return settings.effectivePeriods.isEmpty
+    return !applyPeriodFilter || settings.effectivePeriods.isEmpty
         ? report
-        : report.filtered(
-            includesDate: (date) =>
-                settings.includesPeriod(date.year, date.month),
-          );
+        : _filterMonthlyReportToSelectedPeriods(report);
   }
 
-  SheetColor? _sheetColor(int? value) {
-    if (value == null) return null;
-    return SheetColor(
-      red: ((value >> 16) & 0xFF) / 255,
-      green: ((value >> 8) & 0xFF) / 255,
-      blue: (value & 0xFF) / 255,
-      alpha: ((value >> 24) & 0xFF) / 255,
+  MonthlyRosterParseReport _filterMonthlyReportToSelectedPeriods(
+    MonthlyRosterParseReport report,
+  ) {
+    if (settings.effectivePeriods.isEmpty) return report;
+    return report.filtered(
+      includesDate: (date) =>
+          settings.includesPeriod(date.year, date.month),
     );
   }
+
 
   Future<void> attachLocalReferenceFile() async {
     final searchNames = rosterSearchNames;
@@ -1136,7 +1631,7 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   Future<void> compareCalendar() async {
-    if (shifts.isEmpty) throw StateError('กรุณาอ่านตารางเวรก่อน');
+    if (effectiveShifts.isEmpty) throw StateError('กรุณาอ่านตารางเวรก่อน');
     await _run('เปรียบเทียบ Google Calendar', () async {
       final periods = _activeRosterPeriods();
       final client = await auth.clientFor([
@@ -1180,7 +1675,7 @@ class AppController extends ChangeNotifier implements ControllerState {
               client,
               year: period.year,
               month: period.month,
-              desiredShifts: shifts
+              desiredShifts: effectiveShifts
                   .where(
                     (shift) =>
                         !shift.excluded &&
@@ -1239,7 +1734,18 @@ class AppController extends ChangeNotifier implements ControllerState {
     });
   }
 
-  Future<void> syncCalendar() async {
+  Future<void> syncCalendar({required bool userConfirmed}) async {
+    if (!userConfirmed) {
+      throw StateError(
+        'ต้องยืนยันการซิงก์จากหน้าตรวจตัวอย่างก่อนบันทึก Google Calendar',
+      );
+    }
+    final preparedWorkflow = _pendingCalendarWorkflow;
+    if (preparedWorkflow == null) {
+      throw StateError(
+        'ยังไม่มีแผนซิงก์ที่เตรียมไว้ กรุณาตรวจตัวอย่างก่อน',
+      );
+    }
     if (shifts.isEmpty) throw StateError('กรุณาอ่านตารางเวรก่อน');
     if (pendingAlertCount > 0) {
       throw StateError(
@@ -1253,8 +1759,7 @@ class AppController extends ChangeNotifier implements ControllerState {
         throw StateError('ไม่พบแหล่งข้อมูลเวรของรอบนี้');
       }
       final periods = _activeRosterPeriods();
-      final workflow =
-          _pendingCalendarWorkflow ?? await _createPreparedCalendarWorkflow();
+      final workflow = preparedWorkflow;
       _pendingCalendarWorkflow = null;
       try {
         if (settings.archiveOriginal && sourceUrl.isNotEmpty) {
@@ -1327,55 +1832,237 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   /// Builds and returns a prepared calendar diff for preview purposes.
-  Future<CalendarDiff> previewCalendarDiff() async {
-    // Dispose any previous prepared workflow and create a new one.
-    _pendingCalendarWorkflow?.dispose();
-    _pendingCalendarWorkflow = null;
-    final workflow = await _createPreparedCalendarWorkflow();
-    _pendingCalendarWorkflow = workflow;
-    final prep = workflow.schedulePreparation;
-    if (prep == null) {
-      throw StateError('ไม่พบแผนการซิงก์ที่เตรียมไว้');
-    }
-    return prep.diff;
+  Future<CalendarDiff> previewCalendarDiff() {
+    return _run('เตรียมตัวอย่างการซิงก์ปฏิทิน', () async {
+      _pendingCalendarWorkflow?.dispose();
+      _pendingCalendarWorkflow = null;
+      final workflow = await _createPreparedCalendarWorkflow();
+      _pendingCalendarWorkflow = workflow;
+      final prep = workflow.schedulePreparation;
+      if (prep == null) {
+        throw StateError('ไม่พบแผนการซิงก์ที่เตรียมไว้');
+      }
+      return prep.diff;
+    });
   }
+
+  Future<ShiftTransactionCalendarSyncPreview>
+  previewShiftTransactionCalendarSync(ShiftTransactionSnapshot transaction) {
+    return _run('ตรวจสอบตัวอย่าง Calendar สำหรับธุรกรรมเวร', () async {
+      if (transaction.status != 'approved') {
+        throw StateError('ต้องอนุมัติธุรกรรมก่อนเตรียม Calendar');
+      }
+      if (transaction.syncStatus == 'pending' ||
+          transaction.syncStatus == 'synced') {
+        throw StateError('ธุรกรรมนี้กำลังซิงก์หรือซิงก์สำเร็จแล้ว');
+      }
+      if (shiftTransactionProjectionWarnings.isNotEmpty) {
+        throw StateError('มีธุรกรรมที่นำไปใช้กับตารางไม่ได้ กรุณาแก้ไขก่อนซิงก์ Calendar');
+      }
+      _pendingShiftTransactionCalendarSync?.workflow.dispose();
+      _pendingShiftTransactionCalendarSync = null;
+      final schedule = _scheduleForActivePeriods();
+      final syncIds = const ShiftTransactionCalendarSyncMapper().map(
+        schedule: schedule,
+        transaction: transaction,
+      );
+      final workflow = await _calendarWorkflowControllerFactory();
+      try {
+        await workflow.prepareSchedule(schedule);
+        if (workflow.hasBlockingFailures) {
+          throw StateError(workflow.validationResult?.errors
+              .map((item) => item.message).join('\n') ?? 'ตารางเวรไม่ผ่านการตรวจสอบ');
+        }
+        final preparation = workflow.schedulePreparation;
+        if (preparation == null) throw StateError('ไม่พบแผน Calendar ที่ผ่านการตรวจสอบ');
+        final plannedIds = {
+          ...preparation.existingEventIdsBySyncId.keys,
+          ...preparation.plan.inserts.map((item) => item.syncId),
+          ...preparation.plan.updates.map((item) => item.command.syncId),
+        };
+        if (syncIds.any((id) => !plannedIds.contains(id))) {
+          throw StateError('ไม่พบรายการเวรของธุรกรรมในแผน Calendar ที่เตรียมไว้');
+        }
+        _pendingShiftTransactionCalendarSync = _PendingShiftTransactionCalendarSync(
+          transactionId: transaction.id,
+          transactionVersion: transaction.version,
+          sourceSchedule: canonicalSchedule,
+          schedule: schedule,
+          workflow: workflow,
+          syncIds: syncIds,
+        );
+        return ShiftTransactionCalendarSyncPreview(
+          transactionId: transaction.id,
+          transactionVersion: transaction.version,
+          insertCount: preparation.diff.toAdd.length,
+          updateCount: preparation.diff.toUpdate.length,
+          deleteCount: preparation.diff.toDelete.length,
+          transferLines: [
+            for (final transfer in transaction.transfers)
+              '${transfer['shift_code'] ?? 'Shift'} · ${transfer['from_employee_id'] ?? '?'} → ${transfer['to_employee_id'] ?? '?'} · ${transfer['starts_at'] ?? ''} – ${transfer['ends_at'] ?? ''}',
+          ],
+          insertTitles: [for (final item in preparation.diff.toAdd) item.title],
+          updateTitles: [for (final item in preparation.diff.toUpdate) item.title],
+          deleteTitles: [for (final item in preparation.diff.toDelete) item.title],
+          warnings: workflow.validationResult?.warnings
+                  .map((item) => item.message).toList(growable: false) ??
+              const <String>[],
+        );
+      } catch (_) {
+        workflow.dispose();
+        rethrow;
+      }
+    });
+  }
+
+  Future<ShiftTransactionSnapshot> confirmShiftTransactionCalendarSync({
+    required ShiftTransactionSnapshot transaction,
+    required ShiftTransactionApiClient apiClient,
+    required bool userConfirmed,
+  }) {
+    return _run('ยืนยันและซิงก์ Calendar สำหรับธุรกรรมเวร', () async {
+      if (!userConfirmed) throw StateError('ต้องยืนยันจากหน้าตัวอย่างก่อนบันทึก Calendar');
+      final pending = _pendingShiftTransactionCalendarSync;
+      final currentTransactions = _shiftTransactions.where(
+        (item) => item.id == transaction.id,
+      );
+      if (pending == null ||
+          currentTransactions.length != 1 ||
+          currentTransactions.single.version != transaction.version ||
+          pending.transactionId != transaction.id ||
+          pending.transactionVersion != transaction.version ||
+          !identical(pending.sourceSchedule, canonicalSchedule)) {
+        throw StateError('ตัวอย่างหมดอายุแล้ว กรุณาเตรียม Preview ใหม่');
+      }
+      final currentIds = const ShiftTransactionCalendarSyncMapper().map(
+        schedule: _scheduleForActivePeriods(),
+        transaction: transaction,
+      );
+      if (currentIds.length != pending.syncIds.length ||
+          !currentIds.toSet().containsAll(pending.syncIds)) {
+        throw StateError('ตารางเวรเปลี่ยนหลัง Preview กรุณาตรวจสอบใหม่');
+      }
+      var syncStartAttempted = false;
+      var syncCompleted = false;
+      ShiftCalendarWorkflowController? verification;
+      try {
+        syncStartAttempted = true;
+        await apiClient.startCalendarSync(transaction.id, previewConfirmed: true);
+        await pending.workflow.synchronize();
+        final result = pending.workflow.lastResult;
+        if (result == null || result.hasFailures) {
+          throw StateError('Calendar ซิงก์ไม่ครบ กรุณาตรวจประวัติและลองใหม่');
+        }
+        verification = await _calendarWorkflowControllerFactory();
+        await verification.prepareSchedule(pending.schedule);
+        if (verification.hasBlockingFailures ||
+            verification.schedulePreparation == null) {
+          throw StateError('อ่านยืนยันรายการ Calendar หลังซิงก์ไม่สำเร็จ');
+        }
+        final providerIds = verification.schedulePreparation!.existingEventIdsBySyncId;
+        final writtenIds = {
+          for (final operation in result.operations)
+            if (operation.success &&
+                operation.providerEventId != null &&
+                operation.providerEventId!.isNotEmpty)
+              operation.referenceId: operation.providerEventId!,
+        };
+        final eventIds = <String>[];
+        for (final syncId in pending.syncIds) {
+          final readBackId = providerIds[syncId];
+          final writtenId = writtenIds[syncId];
+          if (readBackId == null ||
+              readBackId.isEmpty ||
+              (writtenId != null && writtenId != readBackId)) {
+            throw StateError(
+              'Calendar read-back ไม่ตรงกับ Event ID ที่ได้จากการเขียน',
+            );
+          }
+          eventIds.add(readBackId);
+        }
+        if (eventIds.toSet().length != pending.syncIds.length) {
+          throw StateError('Calendar read-back ไม่พบ Event ID ที่ไม่ซ้ำกันครบทุกเวร');
+        }
+        final updated = await apiClient.completeCalendarSync(
+          transaction.id,
+          calendarEventIds: eventIds,
+        );
+        syncCompleted = true;
+        _shiftTransactions = List.unmodifiable([
+          for (final item in _shiftTransactions)
+            if (item.id == updated.id) updated else item,
+        ]);
+        status = 'ซิงก์ Calendar และยืนยัน Event ID ของธุรกรรมแล้ว';
+        await _addAudit(
+          'shift_transaction.calendar_sync',
+          'ยืนยัน Calendar Event ${eventIds.length} รายการสำหรับธุรกรรม ${transaction.id}',
+          true,
+        );
+        notifyListeners();
+        return updated;
+      } catch (error) {
+        if (syncStartAttempted && !syncCompleted) {
+          try {
+            await apiClient.failCalendarSync(transaction.id, reason: error.toString());
+          } catch (_) {}
+        }
+        rethrow;
+      } finally {
+        verification?.dispose();
+        pending.workflow.dispose();
+        if (identical(_pendingShiftTransactionCalendarSync, pending)) {
+          _pendingShiftTransactionCalendarSync = null;
+        }
+      }
+    });
+  }
+
+  void cancelShiftTransactionCalendarSyncPreview() {
+    _pendingShiftTransactionCalendarSync?.workflow.dispose();
+    _pendingShiftTransactionCalendarSync = null;
+  }
+
 
   /// Prepares a preview for a pre-mapped list of desired calendar event
   /// candidates (used for swap/one-off previews) and returns the computed diff.
   Future<CalendarDiff> previewCandidates(
     List<CalendarEventCandidate> desired,
-  ) async {
-    final workflow = await _calendarWorkflowControllerFactory();
-    try {
-      await workflow.prepareCandidatePreview(desired: desired);
-      final preview = workflow.preview;
-      if (preview == null) throw StateError('ไม่พบ preview หลังจากเตรียม');
-      return preview.diff;
-    } finally {
-      workflow.dispose();
-    }
+  ) {
+    return _run('เตรียมตัวอย่างรายการปฏิทิน', () async {
+      final workflow = await _calendarWorkflowControllerFactory();
+      try {
+        await workflow.prepareCandidatePreview(desired: desired);
+        final preview = workflow.preview;
+        if (preview == null) throw StateError('ไม่พบ preview หลังจากเตรียม');
+        return preview.diff;
+      } finally {
+        workflow.dispose();
+      }
+    });
   }
 
   /// Executes synchronization for a pre-mapped set of desired candidates.
-  Future<void> syncCandidates(List<CalendarEventCandidate> desired) async {
-    final workflow = await _calendarWorkflowControllerFactory();
-    try {
-      await workflow.prepareCandidatePreview(desired: desired);
-      if (workflow.preview == null) {
-        throw StateError('ไม่พบแผนการซิงก์สำหรับรายการนี้');
+  Future<void> syncCandidates(List<CalendarEventCandidate> desired) {
+    return _run('ซิงก์รายการปฏิทิน', () async {
+      final workflow = await _calendarWorkflowControllerFactory();
+      try {
+        await workflow.prepareCandidatePreview(desired: desired);
+        if (workflow.preview == null) {
+          throw StateError('ไม่พบแผนการซิงก์สำหรับรายการนี้');
+        }
+        await workflow.synchronize();
+        final result = workflow.lastResult;
+        if (result != null) {
+          await _addAudit(
+            'calendar.sync.candidates',
+            'ซิงก์ candidates: เพิ่ม ${result.historyEntry.inserted} แก้ไข ${result.historyEntry.updated} ลบ ${result.historyEntry.deleted}',
+            !result.hasFailures,
+          );
+        }
+      } finally {
+        workflow.dispose();
       }
-      await workflow.synchronize();
-      final result = workflow.lastResult;
-      if (result != null) {
-        await _addAudit(
-          'calendar.sync.candidates',
-          'ซิงก์ candidates: เพิ่ม ${result.historyEntry.inserted} แก้ไข ${result.historyEntry.updated} ลบ ${result.historyEntry.deleted}',
-          !result.hasFailures,
-        );
-      }
-    } finally {
-      workflow.dispose();
-    }
+    });
   }
 
   /// Releases an authorized prepared workflow when confirmation is cancelled.
@@ -1386,9 +2073,51 @@ class AppController extends ChangeNotifier implements ControllerState {
 
   Future<ShiftCalendarWorkflowController>
   _createPreparedCalendarWorkflow() async {
+    final dateAnomalies = monthlyRoster.blockingDateAnomalies;
+    if (dateAnomalies.isNotEmpty) {
+      final details = monthlyRoster.sections
+          .where((section) => section.hasBlockingDateAnomalies)
+          .expand(
+            (section) => section.dateAnomalies.map(
+              (anomaly) => '${section.title}: ${anomaly.message}',
+            ),
+          )
+          .take(8)
+          .join('；');
+      throw StateError(
+        'พบข้อผิดปกติของแถววันที่ในตารางเวร จึงหยุดก่อนสร้าง Preview และก่อนเชื่อมต่อ Google Calendar '
+        'กรุณาตรวจสอบวันที่ซ้ำ วันที่ขาด หรือวันที่เรียงผิดลำดับ: $details',
+      );
+    }
+    final schedule = _scheduleForActivePeriods();
+    final assignmentCount = schedule.months.fold<int>(
+      0,
+      (total, month) => total + month.days.fold<int>(
+        0,
+        (dayTotal, day) => dayTotal + day.assignments.length,
+      ),
+    );
+    if (assignmentCount == 0) {
+      final selectedPeriods = _activeRosterPeriods();
+      final selectedLabel = selectedPeriods
+          .map((period) => '${period.month}/${period.year + 543}')
+          .join(', ');
+      final parsedCount = _loadedRosterShifts.length;
+      final filteredCount = _filterToSyncDateRange(_loadedRosterShifts).length;
+      throw StateError(
+        'ไม่พบรายการเวรในตารางสำหรับเดือนที่เลือก ($selectedLabel) '
+        'จึงยังสร้าง Preview ไม่ได้ '
+        '(อ่านเวรต้นทางได้ $parsedCount รายการ; หลังกรองเดือน/ช่วงวันที่เหลือ $filteredCount รายการ; '
+        'ช่องตารางรายเดือนที่อ่านได้ ${monthlyRoster.assignments.length}; '
+        'ช่องที่ยังแปลงเป็นเวรไม่ได้ ${monthlyRosterConversion.unconvertedAssignments.length}). '
+        'ระบบหยุดก่อนอ่านหรือเขียน Google Calendar เพื่อป้องกันการสร้างแผนจากตารางว่าง '
+        'กรุณาตรวจปี/เดือนและผลการแปลงตารางเวร',
+      );
+    }
+
     final workflow = await _calendarWorkflowControllerFactory();
     try {
-      await workflow.prepareSchedule(_scheduleForActivePeriods());
+      await workflow.prepareSchedule(schedule);
       if (workflow.hasBlockingFailures) {
         throw StateError(
           workflow.validationResult?.errors
@@ -1752,14 +2481,18 @@ class AppController extends ChangeNotifier implements ControllerState {
     }
   }
 
-  Future<void> _run(String action, Future<void> Function() body) async {
-    if (busy) return;
+  Future<T> _run<T>(String action, Future<T> Function() body) async {
+    if (busy) {
+      throw StateError(
+        'กำลังทำงาน “${status ?? 'รายการก่อนหน้า'}” อยู่ กรุณารอให้เสร็จก่อนเริ่ม “$action”',
+      );
+    }
     busy = true;
     status = action;
     error = null;
     notifyListeners();
     try {
-      await body();
+      return await body();
     } catch (caught) {
       error = caught.toString().replaceFirst('Bad state: ', '');
       await _addAudit('error', '$action: $error', false);
@@ -1777,6 +2510,8 @@ class AppController extends ChangeNotifier implements ControllerState {
     required String details,
     Shift? shift,
   }) async {
+    if (!shiftTimelineEnabled) return;
+
     final account = auth.account;
     if (account == null) {
       throw StateError('กรุณาล็อกอิน Google ก่อนบันทึก Timeline');
@@ -1836,12 +2571,17 @@ class AppController extends ChangeNotifier implements ControllerState {
           token = matched == null ? page.nextPageToken : null;
         } while (token != null && token.isNotEmpty);
 
-        if (matched?.id != null) {
-          final oldDescription = matched!.description?.trim() ?? '';
-          matched.description = oldDescription.isEmpty
-              ? record
-              : '$oldDescription\n\n--- Timeline ---\n$record';
-          await api.events.update(matched, 'primary', matched.id!);
+        final matchedEvent = matched;
+        if (matchedEvent != null && matchedEvent.id != null) {
+          matchedEvent.description = CalendarService.withTimelineRecord(
+            matchedEvent.description?.trim() ?? '',
+            record,
+          );
+          await api.events.update(
+            matchedEvent,
+            'primary',
+            matchedEvent.id!,
+          );
           sourceEventStatus =
               'พบรายการเวรต้นฉบับและเพิ่มรายละเอียด Timeline แล้ว';
         } else if (action != 'SHIFT_CREATED') {
@@ -1896,11 +2636,15 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   Future<void> _addAudit(String action, String message, bool success) async {
+    // Use the stable authenticated account ID, never a display name, for actor
+    // attribution. A null ID deliberately remains "unknown" in the audit UI.
+    final actorId = auth.account?.id.trim();
     final entry = AuditEntry(
       timestamp: DateTime.now(),
       action: action,
       message: message,
       success: success,
+      actorId: actorId == null || actorId.isEmpty ? null : actorId,
     );
     auditEntries.insert(0, entry);
     await _settingsService.appendAudit(entry);
@@ -1909,7 +2653,10 @@ class AppController extends ChangeNotifier implements ControllerState {
   void _onAuthChanged() {
     final accountId = auth.account?.id;
     if (_observedAccountId != accountId) {
+      _timelineLoadGeneration++;
+      timelineLoading = false;
       _observedAccountId = accountId;
+      _shiftTransactions = const [];
       settings = settings.clearRosterSelection();
       _autoRefreshTimer?.cancel();
       _replaceLegacyShifts(const []);
@@ -1927,6 +2674,14 @@ class AppController extends ChangeNotifier implements ControllerState {
       _loadedRevisionCount = 0;
       timelineWarning = null;
       _loadedRosterShifts = [];
+      _allMonthlyRoster = const MonthlyRosterParseReport(
+        sections: [],
+        warnings: [],
+      );
+      monthlyRoster = const MonthlyRosterParseReport(
+        sections: [],
+        warnings: [],
+      );
       syncRangeStart = null;
       syncRangeEnd = null;
       _syncRangeCustomized = false;
@@ -1957,19 +2712,13 @@ class AppController extends ChangeNotifier implements ControllerState {
         targetName: searchNames.first,
         targetAliases: searchNames.skip(1),
       );
-      final selectedPeriods = settings.effectivePeriods;
-      final selectedShifts = selectedPeriods.isEmpty
-          ? allPeriods
-          : allPeriods
-                .where(
-                  (shift) => settings.includesPeriod(
-                    shift.start.year,
-                    shift.start.month,
-                  ),
-                )
-                .toList(growable: false);
-      if (allPeriods.isNotEmpty || selectedPeriods.isEmpty) {
-        return selectedShifts.map(_applyShiftOverride).toList(growable: false)
+      // Keep the complete multi-period parse as the source of truth.
+      // The selected month is applied later to the visible/syncable shifts;
+      // filtering here would make a later month change reuse a truncated roster.
+      if (allPeriods.isNotEmpty || settings.effectivePeriods.isEmpty) {
+        return allPeriods
+            .map((shift) => _applyShiftOverride(_attachRosterSourceIdentity(shift, snapshots)))
+            .toList(growable: false)
           ..sort((left, right) => left.start.compareTo(right.start));
       }
     }
@@ -1983,12 +2732,27 @@ class AppController extends ChangeNotifier implements ControllerState {
         year: period.year,
         month: period.month,
       );
-      for (final shift in periodShifts) {
-        parsedByKey[shift.sourceKey] = _applyShiftOverride(shift);
+      for (final rawShift in periodShifts) {
+        final shift = _attachRosterSourceIdentity(rawShift, snapshots);
+        parsedByKey[shift.sourceIdentityKey] = _applyShiftOverride(shift);
       }
     }
     return parsedByKey.values.toList()
       ..sort((left, right) => left.start.compareTo(right.start));
+  }
+
+  Shift _attachRosterSourceIdentity(Shift shift, List<SheetSnapshot> snapshots) {
+    if (shift.sourceSpreadsheetId != null && shift.sourceSheetId != null) {
+      return shift;
+    }
+    final source = snapshots.where((snapshot) => snapshot.title == shift.sheetTitle).firstOrNull;
+    final sheetId = source?.sheetId;
+    final spreadsheetId = source?.spreadsheetId;
+    if (sheetId == null || spreadsheetId == null || shift.cell.isEmpty) return shift;
+    return shift.withSourceIdentity(
+      spreadsheetId: spreadsheetId,
+      sheetId: sheetId,
+    );
   }
 
   List<Shift> _parseAllRosterSnapshots(
@@ -2163,8 +2927,9 @@ class AppController extends ChangeNotifier implements ControllerState {
 
   Schedule _scheduleForActivePeriods() {
     final activePeriods = _activeRosterPeriods().toSet();
-    return canonicalSchedule.copyWith(
-      months: canonicalSchedule.months
+    final schedule = effectiveSchedule;
+    return schedule.copyWith(
+      months: schedule.months
           .where(
             (month) => activePeriods.contains(
               RosterPeriod(year: month.month.year, month: month.month.month),
@@ -2241,6 +3006,9 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   bool _includesSyncDate(DateTime date) {
+    if (!RosterSyncPeriodFilter.includes(date, settings.effectivePeriods)) {
+      return false;
+    }
     final start = syncRangeStart;
     final end = syncRangeEnd;
     if (start == null || end == null) return true;
@@ -2327,6 +3095,7 @@ class AppController extends ChangeNotifier implements ControllerState {
   }
 
   void _replaceLegacyShifts(List<Shift> next, {bool persist = true}) {
+    cancelShiftTransactionCalendarSyncPreview();
     final conversion = _legacyScheduleAdapter.toCanonical(
       next,
       id: _runtimeScheduleId,
@@ -2352,6 +3121,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     Schedule schedule, {
     bool persist = true,
   }) async {
+    cancelShiftTransactionCalendarSyncPreview();
     _legacySchedule = _legacyScheduleAdapter.wrapCanonical(schedule);
     _rebuildAlerts();
     if (persist) {
@@ -2364,10 +3134,29 @@ class AppController extends ChangeNotifier implements ControllerState {
   void dispose() {
     _autoRefreshTimer?.cancel();
     _pendingCalendarWorkflow?.dispose();
+    cancelShiftTransactionCalendarSyncPreview();
     auth.removeListener(_onAuthChanged);
     auth.dispose();
     super.dispose();
   }
+}
+
+class _PendingShiftTransactionCalendarSync {
+  const _PendingShiftTransactionCalendarSync({
+    required this.transactionId,
+    required this.transactionVersion,
+    required this.sourceSchedule,
+    required this.schedule,
+    required this.workflow,
+    required this.syncIds,
+  });
+
+  final String transactionId;
+  final int transactionVersion;
+  final Schedule sourceSchedule;
+  final Schedule schedule;
+  final ShiftCalendarWorkflowController workflow;
+  final List<String> syncIds;
 }
 
 class _ShiftOverride {

@@ -23,6 +23,13 @@ Sprint 6 production architecture has been merged into the existing `phakphum_cal
 
 The current `lib/main.dart`, `lib/app.dart`, `lib/controller/app_controller.dart`, and existing UI remain active. This avoids breaking the Google authentication, roster screen, and Google Sheets picker already present in the application.
 
-## Next integration step
+## Current Calendar workflow integration
 
-Connect `AppController` to `ShiftCalendarWorkflowController` behind an adapter, then expose the Sprint 6 workflow preview in the existing dashboard. The adapter should translate the current `Shift` model to the production workflow domain model rather than making either model depend directly on the other.
+The active app shell compares the Calendar, prepares a
+`ShiftCalendarWorkflowController`, shows the confirmation dialog, and only
+then calls `AppController.syncCalendar(userConfirmed: true)`. The controller
+rejects execution without an explicitly prepared workflow and confirmation.
+The adapter keeps the legacy `Shift` model separate from the workflow domain
+model. Further workflow capabilities and feature migrations remain tracked in
+the relevant roadmaps; this integration does not mean every Sprint 6 feature
+is complete.

@@ -1,21 +1,65 @@
 import '../../../models/shift.dart';
 
+/// A resolved calendar date attached to its original spreadsheet column.
+class MonthlyRosterDateColumn {
+  const MonthlyRosterDateColumn({
+    required this.columnIndex,
+    required this.displayedDay,
+    required this.date,
+  });
+
+  final int columnIndex;
+  final int displayedDay;
+  final DateTime date;
+}
+
+/// A blocking date-grid issue that must be reviewed before calendar sync.
+class MonthlyRosterDateAnomaly {
+  const MonthlyRosterDateAnomaly({
+    required this.code,
+    required this.message,
+    this.columnIndex,
+    this.displayedDay,
+  });
+
+  final String code;
+  final String message;
+  final int? columnIndex;
+  final int? displayedDay;
+}
+
+/// A shift row discovered independently of the worker names in its cells.
+class MonthlyRosterRow {
+  const MonthlyRosterRow({required this.rowIndex, required this.label});
+
+  final int rowIndex;
+  final String label;
+}
+
 class MonthlyRosterSection {
   const MonthlyRosterSection({
     required this.title,
     required this.headerRowIndex,
     required this.assignments,
     this.rowLabels = const [],
+    this.dateColumns = const [],
+    this.rosterRows = const [],
     this.startDate,
     this.endDate,
+    this.dateAnomalies = const [],
   });
 
   final String title;
   final int headerRowIndex;
   final List<MonthlyRosterAssignment> assignments;
   final List<String> rowLabels;
+  final List<MonthlyRosterDateColumn> dateColumns;
+  final List<MonthlyRosterRow> rosterRows;
   final DateTime? startDate;
   final DateTime? endDate;
+  final List<MonthlyRosterDateAnomaly> dateAnomalies;
+
+  bool get hasBlockingDateAnomalies => dateAnomalies.isNotEmpty;
 }
 
 class MonthlyRosterAssignment {
@@ -27,6 +71,9 @@ class MonthlyRosterAssignment {
     required this.date,
     required this.sourceCell,
     this.backgroundColor,
+    this.spreadsheetId,
+    this.sheetId,
+    this.sheetTitle,
   });
 
   final String sectionTitle;
@@ -36,16 +83,64 @@ class MonthlyRosterAssignment {
   final DateTime date;
   final String sourceCell;
   final String? backgroundColor;
+  final String? spreadsheetId;
+  final int? sheetId;
+  final String? sheetTitle;
+
+  String get sourceIdentityKey => spreadsheetId != null && sheetId != null
+      ? '$spreadsheetId|$sheetId|${sourceCell.toUpperCase()}'
+      : sourceCell.toUpperCase();
+
+  /// Opens the exact Google Sheets tab and cell when stable source metadata
+  /// is available. Local imports intentionally have no fabricated URL.
+  String? get sourceUrl {
+    final fileId = spreadsheetId;
+    final tabId = sheetId;
+    final cell = sourceCell.trim();
+    if (fileId == null || fileId.isEmpty || tabId == null || cell.isEmpty) {
+      return null;
+    }
+    return 'https://docs.google.com/spreadsheets/d/$fileId/edit'
+        '#gid=$tabId&range=$cell';
+  }
+}
+
+class MonthlyRosterSheetScanSummary {
+  const MonthlyRosterSheetScanSummary({
+    required this.sheetId,
+    required this.title,
+    required this.hidden,
+    required this.blockCount,
+    required this.assignmentCount,
+    required this.warningCount,
+  });
+
+  final int sheetId;
+  final String title;
+  final bool hidden;
+  final int blockCount;
+  final int assignmentCount;
+  final int warningCount;
 }
 
 class MonthlyRosterParseReport {
   const MonthlyRosterParseReport({
     required this.sections,
     required this.warnings,
+    this.sourceSheetCount = 0,
+    this.sheetSummaries = const [],
   });
 
   final List<MonthlyRosterSection> sections;
   final List<String> warnings;
+  final int sourceSheetCount;
+  final List<MonthlyRosterSheetScanSummary> sheetSummaries;
+
+  List<MonthlyRosterDateAnomaly> get blockingDateAnomalies => [
+    for (final section in sections) ...section.dateAnomalies,
+  ];
+
+  bool get hasBlockingDateAnomalies => blockingDateAnomalies.isNotEmpty;
 
   /// Builds a source-neutral monthly view when an imported source does not
   /// expose a recognizable table grid, such as a confirmed camera entry.
@@ -85,6 +180,9 @@ class MonthlyRosterParseReport {
             ),
             sourceCell: shift.cell,
             backgroundColor: shift.sourceColorHex,
+            spreadsheetId: shift.sourceSpreadsheetId,
+            sheetId: shift.sourceSheetId,
+            sheetTitle: shift.sheetTitle,
           ),
         );
       }
@@ -93,6 +191,8 @@ class MonthlyRosterParseReport {
           title: entry.key.isEmpty ? 'ข้อมูลที่นำเข้า' : entry.key,
           headerRowIndex: 0,
           assignments: List.unmodifiable(assignments),
+          dateColumns: const [],
+          rosterRows: const [],
           startDate: assignments.first.date,
           endDate: assignments.last.date,
         ),
@@ -152,18 +252,52 @@ class MonthlyRosterParseReport {
             return normalizedQuery.isEmpty ||
                 sectionMatches ||
                 assignment.rowLabel.toLowerCase().contains(normalizedQuery) ||
-                assignment.workerName.toLowerCase().contains(normalizedQuery);
+                assignment.workerName.toLowerCase().contains(normalizedQuery) ||
+                assignment.sourceCell.toLowerCase().contains(normalizedQuery) ||
+                (assignment.sheetTitle ?? '').toLowerCase().contains(
+                  normalizedQuery,
+                ) ||
+                (assignment.spreadsheetId ?? '').toLowerCase().contains(
+                  normalizedQuery,
+                ) ||
+                (assignment.sheetId?.toString() ?? '').contains(
+                  normalizedQuery,
+                ) ||
+                'row ${assignment.rowIndex + 1}'.contains(normalizedQuery);
           })
           .toList(growable: false);
-      if (filteredAssignments.isEmpty) continue;
+      var anomalousSectionInScope = false;
+      if (section.hasBlockingDateAnomalies &&
+          (normalizedQuery.isEmpty || sectionMatches)) {
+        final start = section.startDate;
+        final end = section.endDate;
+        if (includesDate == null) {
+          anomalousSectionInScope = true;
+        } else if (start != null && end != null) {
+          for (
+            var date = DateTime(start.year, start.month, start.day);
+            !date.isAfter(end);
+            date = DateTime(date.year, date.month, date.day + 1)
+          ) {
+            if (includesDate(date)) {
+              anomalousSectionInScope = true;
+              break;
+            }
+          }
+        }
+      }
+      if (filteredAssignments.isEmpty && !anomalousSectionInScope) continue;
       filteredSections.add(
         MonthlyRosterSection(
           title: section.title,
           headerRowIndex: section.headerRowIndex,
           assignments: List.unmodifiable(filteredAssignments),
           rowLabels: section.rowLabels,
+          dateColumns: section.dateColumns,
+          rosterRows: section.rosterRows,
           startDate: section.startDate,
           endDate: section.endDate,
+          dateAnomalies: section.dateAnomalies,
         ),
       );
     }
@@ -171,6 +305,8 @@ class MonthlyRosterParseReport {
     return MonthlyRosterParseReport(
       sections: List.unmodifiable(filteredSections),
       warnings: warnings,
+      sourceSheetCount: sourceSheetCount,
+      sheetSummaries: sheetSummaries,
     );
   }
 }

@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phakphum12345.github.io/phakphum-calendar/schemas/roster-knowledge-entry.schema.json",
+  "title": "Roster Knowledge Entry",
+  "description": "A provenance-backed, reviewed roster pattern. Entries are suggestions and never universal shift rules by default.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "version",
+    "kind",
+    "pattern",
+    "scope",
+    "provenance",
+    "review",
+    "createdAt",
+    "updatedAt"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[a-zA-Z0-9][a-zA-Z0-9._:-]{2,127}$"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "tableLayout",
+        "dateFormat",
+        "shiftAlias",
+        "shiftTimeRule",
+        "assignmentKind",
+        "locationAlias",
+        "importBehavior",
+        "validationRule"
+      ]
+    },
+    "pattern": {
+      "type": "object",
+      "description": "Structured pattern data interpreted by the matching kind; it must not contain personal roster assignments.",
+      "minProperties": 1,
+      "additionalProperties": true
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["level"],
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["global-suggestion", "industry", "jurisdiction", "organization", "workspace"]
+        },
+        "industry": { "type": "string", "minLength": 1 },
+        "jurisdiction": { "type": "string", "minLength": 1 },
+        "organizationId": { "type": "string", "minLength": 1 },
+        "workspaceId": { "type": "string", "minLength": 1 },
+        "notApplicableTo": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceType", "retrievedAt"],
+      "properties": {
+        "sourceType": {
+          "type": "string",
+          "enum": ["publicWebsite", "officialDocumentation", "publicDataset", "userConfirmed", "internalTestFixture"]
+        },
+        "sourceUrl": { "type": "string", "format": "uri" },
+        "sourceTitle": { "type": "string", "minLength": 1 },
+        "publisher": { "type": "string", "minLength": 1 },
+        "retrievedAt": { "type": "string", "format": "date-time" },
+        "licenseOrTerms": { "type": "string" },
+        "notes": { "type": "string" }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["discovered", "source-checked", "reviewed", "tested", "published", "rejected", "superseded"]
+        },
+        "reviewer": { "type": "string" },
+        "reviewedAt": { "type": "string", "format": "date-time" },
+        "testFixtureIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        },
+        "limitations": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "supersedes": { "type": "string", "minLength": 1 }
+      }
+    },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    }
+  }
+}

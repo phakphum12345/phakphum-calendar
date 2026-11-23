@@ -133,6 +133,31 @@ void main() {
     expect(report.warnings.single, contains('อยู่นอกช่วง'));
   });
 
+  test('prefers a dated monthly section heading over a conflicting tab title', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'ธันวาคม 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(4, ['พฤศจิกายน 2569']),
+        ..._row(12, ['วันที่', ...List.generate(30, (i) => i + 1)]),
+        ..._row(13, [
+          'GEN',
+          ...List.generate(30, (i) => i == 25 ? 'ภาคภูมิ' : null),
+        ]),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.warnings, isEmpty);
+    expect(report.sections.single.startDate, DateTime(2026, 11, 1));
+    expect(report.sections.single.endDate, DateTime(2026, 11, 30));
+    expect(report.assignments.single.date, DateTime(2026, 11, 26));
+  });
+
   test('accepts 29 February in a leap year', () {
     final input = ShiftParserInput(
       spreadsheetId: 'spreadsheet',

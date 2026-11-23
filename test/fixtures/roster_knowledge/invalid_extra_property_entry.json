@@ -1,0 +1,42 @@
+{
+  "id": "fixture:thai-roster-shift-alias-v1",
+  "version": 1,
+  "kind": "shiftAlias",
+  "pattern": {
+    "aliases": [
+      "GEN บ่าย",
+      "GEN afternoon"
+    ],
+    "canonicalRole": "clinic-afternoon",
+    "interpretation": "organization-profile-required",
+    "note": "Fixture only: no shift hours or universal meaning are asserted."
+  },
+  "scope": {
+    "level": "organization",
+    "organizationId": "example-org-fixture",
+    "notApplicableTo": [
+      "other organizations unless separately confirmed"
+    ]
+  },
+  "provenance": {
+    "sourceType": "internalTestFixture",
+    "retrievedAt": "2026-10-29T00:00:00Z",
+    "sourceTitle": "Synthetic fixture for schema validation",
+    "licenseOrTerms": "Synthetic test data; contains no real roster or personal data."
+  },
+  "review": {
+    "status": "discovered",
+    "limitations": [
+      "Fixture is not a published rule.",
+      "Alias meaning must be confirmed by the target organization."
+    ]
+  },
+  "createdAt": "2026-10-29T00:00:00Z",
+  "updatedAt": "2026-10-29T00:00:00Z",
+  "tags": [
+    "fixture",
+    "organization-scoped",
+    "shift-alias"
+  ],
+  "unexpectedField": "must fail additionalProperties=false"
+}

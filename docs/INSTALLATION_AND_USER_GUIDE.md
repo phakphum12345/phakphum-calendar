@@ -3,266 +3,144 @@
 คู่มือนี้ครอบคลุมการติดตั้งแอป การตั้งค่า Google การนำเข้าตารางเวร
 การตรวจสอบก่อนซิงก์ การออกรายงาน และการติดตั้ง Laravel API สำหรับผู้ดูแลระบบ
 
+## Quick Start (Local development)
+
+สำหรับการรันแอปจาก source code ในเครื่อง ให้ติดตั้ง Flutter SDK รุ่น stable ก่อน แล้วเปิด terminal ที่โฟลเดอร์รากของ repository
+
+ตรวจสอบ Flutter:
+
+```bash
+flutter --version
+```
+
+ติดตั้ง dependencies และเปิดแอป:
+
+```bash
+flutter pub get
+flutter run
+```
+
+หากต้องการรัน Laravel API สำหรับผู้ดูแลระบบ ให้ทำตามขั้นตอนในหัวข้อ [ติดตั้ง Laravel API สำหรับผู้ดูแลระบบ](#9-ติดตั้ง-laravel-api-สำหรับผู้ดูแลระบบ) ด้านล่าง
+
+ห้าม commit ไฟล์ `.env`, tokens, keys หรือข้อมูลตารางเวรจริงลง repository.
+
 ## 1. เลือกวิธีติดตั้งแอป
 
 ### Web / PWA
 
-1. เปิด `https://phakphoum38-stack.github.io/phakphum-calendar/`
+1. เปิด `https://phakphum12345.github.io/phakphum-calendar/`
 2. ใช้ Chrome, Edge หรือ Safari รุ่นปัจจุบัน
 3. กด **ติดตั้งแอป** จากแถบที่อยู่หรือเมนูของเบราว์เซอร์เมื่อต้องการใช้แบบ PWA
 4. บน iPhone/iPad ใช้ Safari → Share → **Add to Home Screen**
 
 ### Android
 
+1. เปิดหน้า Actions ของ repository
+2. ดาวน์โหลด artifact `phakphum-calendar-android-apk` จาก run ที่สำเร็จ
+3. แตกไฟล์ artifact ที่ดาวน์โหลดจาก GitHub Actions
+4. เปิด `app-release.apk` แล้วอนุญาตติดตั้งจากแหล่งนี้เฉพาะเมื่อเชื่อถือได้
 
+APK จาก CI ยังไม่ใช่ไฟล์สำหรับ Play Store และอาจใช้ debug signing
+ไม่มี checksum แยกให้ดาวน์โหลดใน artifact นี้ ห้ามใช้เป็น production release
+จนกว่าจะตั้ง release keystore ใน GitHub Secrets
+
+### Windows
+
+1. ดาวน์โหลด artifact `phakphum-calendar-windows-x64`
+2. แตก artifact และ ZIP ด้านใน
+3. ตรวจ ZIP ด้วย `SHA256SUMS.txt` ที่อยู่ใน artifact หากต้องการตรวจความถูกต้อง
+4. เก็บไฟล์ `.exe`, `.dll` และโฟลเดอร์ `data` ไว้ด้วยกัน
+5. เปิด `phakphum_calendar.exe`
+
+Google Sign-In แบบ native ยังไม่รองรับใน Windows workflow ปัจจุบัน
+ให้ใช้ Web/PWA เมื่อต้องทำงานกับ Google
+
+### iPhone / iPad (iOS)
+
+จาก run ที่สำเร็จของ workflow **Build iOS** ดาวน์โหลด artifact
+`phakphum-calendar-ios-unsigned-ipa` ซึ่ง workflow สร้างโดยไม่ code-sign
+จึงยังติดตั้งบนอุปกรณ์ทั่วไปไม่ได้ ต้องมี Apple Developer signing และ
+provisioning profile ก่อนเผยแพร่หรือติดตั้ง
+
+### macOS
+
+ขณะนี้ไม่มี macOS build workflow หรือ CI artifact; macOS ยังไม่อยู่ในรายการ
+แพลตฟอร์มที่ส่งมอบจาก CI
+
+### Linux
+
+จาก run ที่สำเร็จของ workflow **Build Linux** ดาวน์โหลด artifact
+`phakphum-calendar-linux-x64` แล้วแตกไฟล์ artifact ZIP เพื่อให้ได้ไฟล์ tar.gz
+ก่อนรันคำสั่งต่อไปนี้:
+
+ติดตั้ง runtime ที่จำเป็นบน Ubuntu/Debian:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y libgtk-3-0 libstdc++6
+tar -xzf phakphum-calendar-linux-x64.tar.gz
+./bundle/phakphum_calendar
+```
+
+## 2. ตรวจสอบไฟล์ก่อนติดตั้ง
+
+เฉพาะ Windows artifact ที่มี `SHA256SUMS.txt` ให้เปรียบเทียบ SHA-256 ดังนี้:
+
+```bash
+# Linux
 sha256sum -c SHA256SUMS.txt
-## Quick Start (Local development)
 
-Follow these steps for a fast local development setup. Prefer using the Docker commands
-if you don't have matching platform tool versions locally.
-
-1. Install Flutter SDK (stable) and ensure `flutter` is on your PATH. Verify with:
-
-```bash
-flutter --version
+# macOS
+shasum -a 256 FILE_NAME
 ```
 
-2. Run the Flutter app (from repo root):
+Windows PowerShell:
 
-```bash
-flutter pub get
-flutter run
+```powershell
+Get-FileHash .\FILE_NAME -Algorithm SHA256
+Get-Content .\SHA256SUMS.txt
 ```
 
-3. Backend (Laravel) local setup — recommended: Docker fallback if your PHP version
-   does not match project requirements (project requires PHP >= 8.4):
+## 3. ตั้งค่า Google Cloud
 
-Local (if PHP & Composer match project requirement):
+1. สร้างหรือเลือก Google Cloud project ที่องค์กรควบคุม
+2. เปิด Google Sheets API, Google Drive API และ Google Calendar API
+3. ตั้ง OAuth consent screen
+4. สร้าง OAuth Client สำหรับแพลตฟอร์มที่ใช้งาน
+5. Web ต้องเพิ่ม GitHub Pages URL ใน Authorized JavaScript origins
+6. ห้าม commit Client Secret, access token, refresh token หรือ service-account key
 
-```bash
-cd backend
-composer install
-cp .env.example .env
-php artisan key:generate
-touch database/database.sqlite
-php artisan migrate --seed
-php artisan serve --host=127.0.0.1 --port=8000
-```
+รายละเอียดแพลตฟอร์มและค่า OAuth อยู่ที่ [GOOGLE_SETUP.md](GOOGLE_SETUP.md)
 
-Docker (when local PHP is older than project requirement):
+## 4. เลือกภาษา
 
-```bash
-# Install composer deps using the official composer image
+Shift Tools รองรับภาษาไทยและอังกฤษ กดไอคอนรูปโลกบน AppBar เพื่อสลับภาษา
+การสลับภาษามีผลเฉพาะข้อความแสดงผล ไม่เปลี่ยนวันที่ที่จัดเก็บ Schedule ID,
+sync ID หรือข้อมูลตารางเวร
+
+## 5. นำเข้าตารางเวร
+
+### Excel
+
+1. เปิด **นำเข้า Excel**
+2. เลือกไฟล์ `.xlsx`
+3. เลือก worksheet
+4. ตรวจ preview 50 แถวแรก
+5. จับคู่คอลัมน์ Date, Shift และ Employee
+6. จับคู่ Department, Location และ Notes เมื่อตารางมีข้อมูล
+7. ตรวจ error/warning แล้วจึงดำเนินการนำเข้า
+
+preview จำกัด 50 แถวเพื่อความลื่นไหล แต่การนำเข้าจริงอ่านทุกแถว
+
+### Google Sheets
+
 1. ล็อกอินด้วยบัญชี Google ที่ได้รับอนุญาต
-
-# Serve with PHP 8.4 container (adjust port mapping as needed)
 2. เลือกไฟล์จาก Drive หรือวาง URL/Spreadsheet ID
-  sh -c "php artisan migrate --seed && php artisan serve --host=0.0.0.0 --port=8000"
-```
-
-4. Health checks (once backend is running):
-
-```bash
-curl http://127.0.0.1:8000/api/v1/health
-curl http://127.0.0.1:8000/api/v1/ready
-```
-
-Notes:
-- If `composer install` fails due to PHP version, use the Docker commands above.
-- Keep your Flutter SDK on the stable channel for compatibility with CI artifacts.
-
-## เวลาเวรมาตรฐานและการแมปสี
-
-ส่วนนี้สรุปเวลาเวรมาตรฐาน การสร้างรายการ OFF สำหรับเวรดึก การแมปสีจากไฟล์หลักไปยัง Google Calendar และพฤติกรรมเมื่อพบรายการชน
-
-เวลาเวรมาตรฐาน (ประเภทเวร → เวลา):
-
-- P1/P2/P3/P4 เช้า: 08:00–16:00
-- P1/P2/P3/P4 บ่าย: 16:00–00:00
-- P1/P2/P3/P4 ดึก: 00:00–08:00
-- IPD เช้า: 08:00–16:00
-- IPD บ่าย: 16:00–08:00 (วันถัดไป)
-- CT IPD เช้า: 08:00–16:00
-- CT IPD บ่าย: 16:00–08:00 (วันถัดไป)
-- CT ER เช้า: 08:00–16:00
-- CT ER บ่าย: 16:00–08:00 (วันถัดไป)
-- ER เช้า: 08:00–16:00
-- ER บ่าย: 16:00–00:00
-- ER ดึก: 00:00–08:00
-- GEN เช้า: 07:30–12:00
-- GEN บ่าย: 16:30–20:00
-- 14 ชั้น เช้า: 07:00–08:00
-
-สีจากไฟล์หลักไปยัง Google Calendar
-
-แอปจะอ่านสีพื้นหลังจาก Google Sheets (`effectiveFormat`) หรือจากรูปแบบเซลล์ในไฟล์ `.xlsx` เพื่อเสนอสี Calendar ที่จะใช้ในหน้า ตัวอย่าง ผู้ใช้สามารถแก้ประเภท เวลาหรือพิมพ์เลขสี 1–11 หรือชื่อสีเพื่อปรับก่อนบันทึก
-
-ตารางตัวอย่างการแมปสี (สีในไฟล์หลัก → ความหมาย → สี Google Calendar):
-
- - กราไฟต์ → เวรของตัวเอง → กราไฟต์
- - มะเขือเทศ → เวรคนอื่น → มะเขือเทศ
 3. เลือก worksheet
 4. ตรวจ preview และจับคู่คอลัมน์เหมือน Excel
 
 แอปไม่แก้ Google Sheets ต้นฉบับในขั้นตอนอ่านข้อมูล
 
-## 6. ตรวจปฏิทินและกฎ
-
-1. เปิดปฏิทินรายเดือนหลังนำเข้าสำเร็จ
-2. เลือกวันเพื่อตรวจพนักงานและเวรทั้งหมด
-3. ใช้ตัวกรองชื่อ ตำแหน่ง แผนก หรือประเภทเวร
-4. ตรวจ Errors และ Warnings จาก Rule Engine
-5. ห้ามซิงก์เมื่อมี blocking error
-
-คำเตือนอนุญาตให้ดำเนินการได้เมื่อผู้ใช้ตรวจและยืนยันแล้ว
-
-## 7. ซิงก์ Google Calendar
-
-ลำดับการทำงานคือ Validation → Diff → Preview → Confirmation → Execution
-→ History/Resume
-
-1. เปรียบเทียบ Calendar ก่อนทุกครั้ง
-2. ตรวจรายการเพิ่ม แก้ และลบ
-3. แก้ blocking error ให้หมด
-4. ตรวจ warning และรายการชน
-5. กดยืนยันเมื่อผลลัพธ์ถูกต้อง
-6. หากเกิด partial failure ให้ใช้ Retry/Resume เดิม ห้ามเริ่มสร้างรายการซ้ำ
-
-Shift Tools ใช้ stable sync ID ป้องกันกิจกรรมซ้ำ การเปลี่ยนภาษาไม่มีผลต่อ ID
-
-## 8. สร้างรายงาน PDF
-
-1. เปิดแท็บ **รายงาน**
-2. เลือกเดือนและแผนก
-3. กด **สร้างตัวอย่าง**
-4. ตรวจตาราง คำอธิบายเวร สรุป และช่องลายเซ็น
-5. เลือก **พิมพ์** หรือ **บันทึก / แชร์ PDF**
-
-รายงาน A4 รองรับภาษาไทยและอังกฤษ ชื่อพนักงาน รหัสเวร และชื่อแผนกเป็นข้อมูลจริง
-จึงไม่ถูกแปลอัตโนมัติ
-
-## 9. ติดตั้ง Laravel API สำหรับผู้ดูแลระบบ
-
-Laravel API อยู่ใน `backend/` และไม่จำเป็นต่อการเปิดแอป Flutter ในโหมดปัจจุบัน
-
-### ติดตั้งด้วย PHP และ Composer
-
-```bash
-cd backend
-composer install
-cp .env.example .env
-php artisan key:generate
-touch database/database.sqlite
-php artisan migrate
-php artisan serve
-```
-
-ตรวจระบบ:
-
-```bash
-curl http://127.0.0.1:8000/api/v1/health
-curl http://127.0.0.1:8000/api/v1/ready
-```
-
-### ติดตั้งด้วย Docker โดยไม่ลง PHP ในเครื่อง
-
-```bash
-docker run --rm -v "$PWD/backend:/app" -w /app composer:2 composer install
-docker run --rm -p 8000:8000 -v "$PWD/backend:/app" -w /app php:8.4-cli \
-  php artisan serve --host=0.0.0.0 --port=8000
-```
-
-สำหรับ production ให้ใช้เว็บเซิร์ฟเวอร์และฐานข้อมูลที่องค์กรดูแล ตั้ง `APP_ENV=production`,
-`APP_DEBUG=false`, HTTPS, secret management, log retention และ monitoring
-อย่าใช้ `php artisan serve` เป็น production server
-
-## 10. API สำหรับตรวจปัญหา
-
-| Endpoint | การใช้งาน |
-| --- | --- |
-| `GET /api/v1/health` | ตรวจ process ว่ายังทำงาน |
-| `GET /api/v1/ready` | ตรวจว่าฐานข้อมูลพร้อม |
-| `POST /api/v1/diagnostics/client-errors` | รับ error report ที่ validate และ rate-limit |
-
-Diagnostics API ไม่ควรรับ OAuth token, URL ชีตส่วนตัว, ตารางเวร, ชื่อพนักงาน
-หรือข้อมูลส่วนบุคคล ระบบตอบ `X-Request-ID` เพื่อใช้จับคู่เหตุการณ์ใน log
-
-## 11. แก้ปัญหาเบื้องต้น
-
-- **Google Login ไม่ทำงาน:** ตรวจ OAuth client, origin, bundle ID และ API ที่เปิดใช้งาน
-- **ไม่พบชีต:** ตรวจว่าบัญชีปัจจุบันเป็นเจ้าของไฟล์และมีสิทธิ์อ่าน
-- **นำเข้าไม่ครบ:** preview แสดง 50 แถว แต่ summary ต้องนับทุกแถว
-- **PDF ภาษาไทยเป็นสี่เหลี่ยม:** ตรวจเครือข่ายสำหรับโหลดฟอนต์และลองสร้างใหม่
-- **Calendar มี warning:** อย่าฝืนซิงก์จนกว่าจะตรวจรายการชน
-- **API ตอบ 503 ที่ `/ready`:** ตรวจ `DB_CONNECTION` และสิทธิ์ฐานข้อมูล
-- **GitHub Actions ไม่ผ่าน:** เปิด log ของ job ที่ล้ม แก้ที่ต้นเหตุ แล้ว rerun failed jobs
-
-## 12. ความปลอดภัย
-
-- ห้าม commit `.env`, token, key, roster จริง หรือข้อมูลส่วนบุคคล
-- ใช้ read-only Google scopes เมื่อเพียงพอ
-- ตรวจ preview ก่อน external write
-- ใช้ HTTPS สำหรับ API production
-- สำรองฐานข้อมูลและกำหนด retention ของ diagnostic logs
-
-ดูรายละเอียดเพิ่มเติมที่ [SECURITY.md](../SECURITY.md)
-<<<<<<< Updated upstream
-=======
-
-## Quick Start (Local development)
-
-Follow these steps for a fast local development setup. Prefer using the Docker commands
-if you don't have matching platform tool versions locally.
-
-1. Install Flutter SDK (stable) and ensure `flutter` is on your PATH. Verify with:
-
-```bash
-flutter --version
-```
-
-2. Run the Flutter app (from repo root):
-
-```bash
-flutter pub get
-flutter run
-```
-
-3. Backend (Laravel) local setup — recommended: Docker fallback if your PHP version
-   does not match project requirements (project requires PHP >= 8.4):
-
-Local (if PHP & Composer match project requirement):
-
-```bash
-cd backend
-composer install
-cp .env.example .env
-php artisan key:generate
-touch database/database.sqlite
-php artisan migrate --seed
-php artisan serve --host=127.0.0.1 --port=8000
-```
-
-Docker (when local PHP is older than project requirement):
-
-```bash
-# Install composer deps using the official composer image
-docker run --rm -v "$PWD/backend:/app" -w /app composer:2 composer install
-
-# Serve with PHP 8.4 container (adjust port mapping as needed)
-docker run --rm -p 8000:8000 -v "$PWD/backend:/app" -w /app php:8.4-cli \
-  sh -c "php artisan migrate --seed && php artisan serve --host=0.0.0.0 --port=8000"
-```
-
-4. Health checks (once backend is running):
-
-```bash
-curl http://127.0.0.1:8000/api/v1/health
-curl http://127.0.0.1:8000/api/v1/ready
-```
-
-Notes:
-- If `composer install` fails due to PHP version, use the Docker commands above.
-- Keep your Flutter SDK on the stable channel for compatibility with CI artifacts.
 
 ## เวลาเวรมาตรฐานและการแมปสี
 
@@ -330,6 +208,117 @@ Auto refresh และสำเนาต้นฉบับ
 ค่าเริ่มต้นและความยืดหยุ่น
 
 ผู้ใช้สามารถแก้ไขประเภท เวลาชื่อเวร และสีได้อย่างยืดหยุ่น ค่าเริ่มต้นของฟิลด์จะเป็นค่าว่างเพื่อบังคับให้ผู้ใช้ยืนยันก่อนบันทึก
+## 6. ตรวจปฏิทินและกฎ
 
+1. เปิดปฏิทินรายเดือนหลังนำเข้าสำเร็จ
+2. เลือกวันเพื่อตรวจพนักงานและเวรทั้งหมด
+3. ใช้ตัวกรองชื่อ ตำแหน่ง แผนก หรือประเภทเวร
+4. ตรวจ Errors และ Warnings จาก Rule Engine
+5. ห้ามซิงก์เมื่อมี blocking error
 
->>>>>>> Stashed changes
+คำเตือนอนุญาตให้ดำเนินการได้เมื่อผู้ใช้ตรวจและยืนยันแล้ว
+
+## 7. ซิงก์ Google Calendar
+
+ลำดับการทำงานคือ Validation → Diff → Preview → Confirmation → Execution
+→ History/Resume
+
+1. เปรียบเทียบ Calendar ก่อนทุกครั้ง
+2. ตรวจรายการเพิ่ม แก้ และลบ
+3. แก้ blocking error ให้หมด
+4. ตรวจ warning และรายการชน
+5. กดยืนยันเมื่อผลลัพธ์ถูกต้อง
+6. หากเกิด partial failure ให้ใช้ Retry/Resume เดิม ห้ามเริ่มสร้างรายการซ้ำ
+
+Shift Tools ใช้ stable sync ID ป้องกันกิจกรรมซ้ำ การเปลี่ยนภาษาไม่มีผลต่อ ID
+
+## 8. สร้างรายงาน PDF
+
+1. เปิดแท็บ **รายงาน**
+2. เลือกเดือนและแผนก
+3. กด **สร้างตัวอย่าง**
+4. ตรวจตาราง คำอธิบายเวร สรุป และช่องลายเซ็น
+5. เลือก **พิมพ์** หรือ **บันทึก / แชร์ PDF**
+
+รายงาน A4 รองรับภาษาไทยและอังกฤษ ชื่อพนักงาน รหัสเวร และชื่อแผนกเป็นข้อมูลจริง
+จึงไม่ถูกแปลอัตโนมัติ
+
+## 9. ติดตั้ง Laravel API สำหรับผู้ดูแลระบบ
+
+Laravel API อยู่ใน `backend/` และไม่จำเป็นต่อการเปิดแอป Flutter ในโหมดปัจจุบัน
+
+### ติดตั้งด้วย PHP และ Composer
+
+```bash
+cd backend
+composer install
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate
+php artisan serve
+```
+
+ตรวจระบบ:
+
+```bash
+curl http://127.0.0.1:8000/api/v1/health
+curl http://127.0.0.1:8000/api/v1/ready
+```
+
+ตั้งค่า `GOOGLE_ALLOWED_CLIENT_IDS` ใน `backend/.env` ให้รวม OAuth client ID
+ที่ใช้รับ Google ID token และตั้ง `FRONTEND_ALLOWED_ORIGINS` เป็น origin
+ของเว็บแอปแบบคั่นด้วย comma เช่น `https://example.github.io`
+(ไม่ใส่ path) หากต้องการเปิดคำขอและอนุมัติสมาชิกใน Flutter web ให้ตั้ง
+GitHub Actions repository variable ชื่อ `ORGANIZATION_API_BASE_URL` เป็น
+origin HTTPS ของ Laravel API เช่น `https://api.example.com`
+แล้ว build/deploy เว็บใหม่ หากยังไม่ตั้งค่า แท็บองค์กรจะแจ้งว่ายังไม่เชื่อม API
+และการจัดการสมาชิกจะยังใช้ไม่ได้
+
+ผู้ใช้ใหม่ต้องล็อกอิน Google ส่งรหัสองค์กรและรหัสพนักงาน จากนั้นเจ้าขององค์กร
+หรือ Admin ตรวจชื่อ/อีเมลจาก Google และรหัสพนักงานก่อนเลือกบทบาทและอนุมัติ
+หรือปฏิเสธได้ ผู้สมัครไม่สามารถกำหนดบทบาทตนเองได้ ส่วนรหัสองค์กรต้องขอจาก
+ผู้ดูแลโดยตรง
+
+### ติดตั้งด้วย Docker โดยไม่ลง PHP ในเครื่อง
+
+```bash
+docker run --rm -v "$PWD/backend:/app" -w /app composer:2 composer install
+docker run --rm -p 8000:8000 -v "$PWD/backend:/app" -w /app php:8.4-cli \
+  php artisan serve --host=0.0.0.0 --port=8000
+```
+
+สำหรับ production ให้ใช้เว็บเซิร์ฟเวอร์และฐานข้อมูลที่องค์กรดูแล ตั้ง `APP_ENV=production`,
+`APP_DEBUG=false`, HTTPS, secret management, log retention และ monitoring
+อย่าใช้ `php artisan serve` เป็น production server
+
+## 10. API สำหรับตรวจปัญหา
+
+| Endpoint | การใช้งาน |
+| --- | --- |
+| `GET /api/v1/health` | ตรวจ process ว่ายังทำงาน |
+| `GET /api/v1/ready` | ตรวจว่าฐานข้อมูลพร้อม |
+| `POST /api/v1/diagnostics/client-errors` | รับ error report ที่ validate และ rate-limit |
+
+Diagnostics API ไม่ควรรับ OAuth token, URL ชีตส่วนตัว, ตารางเวร, ชื่อพนักงาน
+หรือข้อมูลส่วนบุคคล ระบบตอบ `X-Request-ID` เพื่อใช้จับคู่เหตุการณ์ใน log
+
+## 11. แก้ปัญหาเบื้องต้น
+
+- **Google Login ไม่ทำงาน:** ตรวจ OAuth client, origin, bundle ID และ API ที่เปิดใช้งาน
+- **ไม่พบชีต:** ตรวจว่าบัญชีปัจจุบันเป็นเจ้าของไฟล์และมีสิทธิ์อ่าน
+- **นำเข้าไม่ครบ:** preview แสดง 50 แถว แต่ summary ต้องนับทุกแถว
+- **PDF ภาษาไทยเป็นสี่เหลี่ยม:** ตรวจเครือข่ายสำหรับโหลดฟอนต์และลองสร้างใหม่
+- **Calendar มี warning:** อย่าฝืนซิงก์จนกว่าจะตรวจรายการชน
+- **API ตอบ 503 ที่ `/ready`:** ตรวจ `DB_CONNECTION` และสิทธิ์ฐานข้อมูล
+- **GitHub Actions ไม่ผ่าน:** เปิด log ของ job ที่ล้ม แก้ที่ต้นเหตุ แล้ว rerun failed jobs
+
+## 12. ความปลอดภัย
+
+- ห้าม commit `.env`, token, key, roster จริง หรือข้อมูลส่วนบุคคล
+- ใช้ read-only Google scopes เมื่อเพียงพอ
+- ตรวจ preview ก่อน external write
+- ใช้ HTTPS สำหรับ API production
+- สำรองฐานข้อมูลและกำหนด retention ของ diagnostic logs
+
+ดูรายละเอียดเพิ่มเติมที่ [SECURITY.md](../SECURITY.md)

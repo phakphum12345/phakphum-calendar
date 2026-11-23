@@ -39,19 +39,31 @@ on:
 permissions:
   contents: read
 
+# Keep each iOS run independent. A newer PR update must not cancel a build
+# that is still waiting for a GitHub-hosted macOS runner.
 concurrency:
-  group: ios-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ios-${{ github.workflow }}-${{ github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   build-ios:
     name: iOS unsigned release build
-    runs-on: macos-latest
+    # Override with repository variable IOS_RUNNER_LABEL when needed.
+    # The default macos-15 label selects GitHub's supported ARM64 hosted image
+    # instead of pinning the workflow to the Intel-only runner pool.
+    runs-on: ${{ vars.IOS_RUNNER_LABEL || 'macos-15' }}
     timeout-minutes: 50
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+
+      - name: Verify macOS runner allocation
+        run: |
+          set -euo pipefail
+          echo "Runner architecture: $(uname -m)"
+          sw_vers
+          xcodebuild -version
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -88,10 +100,12 @@ jobs:
         env:
           GOOGLE_IOS_CLIENT_ID: ${{ secrets.GOOGLE_IOS_CLIENT_ID }}
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
+          ORGANIZATION_API_BASE_URL: ${{ vars.ORGANIZATION_API_BASE_URL }}
         run: >-
           flutter build ios --release --no-codesign
           --dart-define=GOOGLE_IOS_CLIENT_ID="$GOOGLE_IOS_CLIENT_ID"
           --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID"
+          --dart-define=ORGANIZATION_API_BASE_URL="$ORGANIZATION_API_BASE_URL"
 
       - name: Verify iOS app
         run: test -d build/ios/iphoneos/Runner.app

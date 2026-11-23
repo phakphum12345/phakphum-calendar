@@ -4,6 +4,7 @@ import '../domain/calendar_sync_gateway.dart';
 import '../domain/calendar_sync_operation_result.dart';
 import '../domain/failed_sync_operation.dart';
 import '../domain/failed_sync_repository.dart';
+import 'calendar_sync_insert_reconciler.dart';
 
 class ResumeSyncResult {
   const ResumeSyncResult({
@@ -35,13 +36,24 @@ class ResumeSyncService {
     var inserted = original.inserted;
     var updated = original.updated;
     var deleted = original.deleted;
+    final insertReconciler = CalendarSyncInsertReconciler(_gateway);
 
     for (final item in failed) {
+      String? providerEventId;
       try {
         if (item.type == CalendarSyncOperationType.insert) {
           final command = item.command;
           if (command == null) throw StateError('Insert command missing.');
-          await _gateway.insert(command);
+          var event = await insertReconciler.findExisting(command);
+          if (event == null) {
+            try {
+              event = await _gateway.insert(command);
+            } catch (_) {
+              event = await insertReconciler.findExisting(command);
+              if (event == null) rethrow;
+            }
+          }
+          providerEventId = event.eventId.isEmpty ? null : event.eventId;
           inserted++;
         } else if (item.type == CalendarSyncOperationType.update) {
           final command = item.command;
@@ -62,6 +74,7 @@ class ResumeSyncService {
             type: item.type,
             referenceId: item.referenceId,
             success: true,
+            providerEventId: providerEventId,
           ),
         );
       } catch (error) {

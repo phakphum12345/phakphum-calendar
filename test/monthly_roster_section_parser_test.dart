@@ -87,6 +87,163 @@ void main() {
     expect(report.dateRanges.single.end, DateTime(2026, 9, 15));
   });
 
+  test('generates independent section dates before populating worker names', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['เวรหลัก 16 พฤศจิกายน 2569 - 15 ธันวาคม 2569']),
+        ..._row(1, ['วันที่', 16, 17, 18, 19, 20, 21, 22]),
+        ..._row(2, ['เวรเช้า', 'นาย ก', null, null, null, null, null, null]),
+        ..._row(4, ['MRI ประจำเดือน พฤศจิกายน พ.ศ. 2569']),
+        ..._row(5, ['วันที่', 1, 2, 3, 4, 5, 6, 7]),
+        ..._row(6, ['MRI', 'นาย ข', null, null, null, null, null, null]),
+      ],
+    );
+    const parser = MonthlyRosterSectionParser();
+
+    final dateStructure = parser.generateDateStructure(input);
+
+    expect(dateStructure.sections, hasLength(2));
+    expect(dateStructure.assignments, isEmpty);
+    expect(dateStructure.sections[0].dateColumns.first.date,
+        DateTime(2026, 11, 16));
+    expect(dateStructure.sections[1].dateColumns.first.date,
+        DateTime(2026, 11, 1));
+    expect(dateStructure.sections[0].rosterRows.single.label, 'เวรเช้า');
+    expect(dateStructure.sections[1].rosterRows.single.label, 'MRI');
+
+    final populated = parser.populateAssignments(input, dateStructure);
+
+    expect(populated.assignments, hasLength(2));
+    expect(populated.assignments[0].workerName, 'นาย ก');
+    expect(populated.assignments[0].date, DateTime(2026, 11, 16));
+    expect(populated.assignments[1].workerName, 'นาย ข');
+    expect(populated.assignments[1].date, DateTime(2026, 11, 1));
+  });
+
+  test('resolves every column across a declared month boundary', () {
+    final days = <Object?>[
+      'วันที่',
+      ...List<int>.generate(15, (index) => index + 16),
+      ...List<int>.generate(15, (index) => index + 1),
+    ];
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['เวรหลัก 16 พฤศจิกายน 2569 - 15 ธันวาคม 2569']),
+        ..._row(1, days),
+        ..._row(2, ['เวรเช้า', 'นาย ก']),
+      ],
+    );
+
+    final structure = const MonthlyRosterSectionParser()
+        .generateDateStructure(input);
+
+    expect(structure.sections.single.dateColumns, hasLength(30));
+    expect(structure.sections.single.dateColumns.first.date,
+        DateTime(2026, 11, 16));
+    expect(structure.sections.single.dateColumns[14].date,
+        DateTime(2026, 11, 30));
+    expect(structure.sections.single.dateColumns[15].date,
+        DateTime(2026, 12, 1));
+    expect(structure.sections.single.dateColumns.last.date,
+        DateTime(2026, 12, 15));
+  });
+
+  test('uses a single-month tab title for multiple ordered split sections', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['เวรหลัก']),
+        ..._row(1, ['วันที่', ...List<int>.generate(15, (i) => i + 1)]),
+        ..._row(2, ['เวรเช้า', 'นาย ก']),
+        ..._row(4, ['เวรเสริม']),
+        ..._row(5, ['วันที่', ...List<int>.generate(15, (i) => i + 16)]),
+        ..._row(6, ['เวรบ่าย', 'นาย ข']),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.warnings, isEmpty);
+    expect(report.sections, hasLength(2));
+    expect(report.assignments, hasLength(2));
+    expect(report.assignments.map((item) => item.date), [
+      DateTime(2026, 11, 1),
+      DateTime(2026, 11, 16),
+    ]);
+    expect(report.assignments.map((item) => item.workerName), ['นาย ก', 'นาย ข']);
+  });
+
+  test('does not infer a single-month tab for a split section that wraps months', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['เวรหลัก']),
+        ..._row(1, [
+          'วันที่',
+          ...List<int>.generate(15, (i) => i + 16),
+          ...List<int>.generate(15, (i) => i + 1),
+        ]),
+        ..._row(2, ['เวรเช้า', 'นาย ก']),
+        ..._row(4, ['เวรเสริม']),
+        ..._row(5, ['วันที่', ...List<int>.generate(15, (i) => i + 16)]),
+        ..._row(6, ['เวรบ่าย', 'นาย ข']),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, hasLength(1));
+    expect(report.sections.single.title, 'เวรเสริม');
+    expect(report.assignments.single.workerName, 'นาย ข');
+    expect(report.assignments.single.date, DateTime(2026, 11, 16));
+    expect(report.warnings, hasLength(1));
+    expect(report.warnings.single, contains('ไม่ใช้เดือนจากชื่อชีตแทน'));
+  });
+
+  test('does not borrow the tab month for an undated section in a multi-section sheet', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['เวรหลัก']),
+        ..._row(1, ['วันที่', 1, 2, 3, 4, 5, 6, 7]),
+        ..._row(2, ['เวรเช้า', 'นาย ก', null, null, null, null, null, null]),
+        ..._row(4, ['MRI ประจำเดือน พฤศจิกายน พ.ศ. 2569']),
+        ..._row(5, ['วันที่', 1, 2, 3, 4, 5, 6, 7]),
+        ..._row(6, ['MRI', 'นาย ข', null, null, null, null, null, null]),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, hasLength(1));
+    expect(report.sections.single.title, contains('MRI'));
+    expect(report.assignments.single.workerName, 'นาย ข');
+    expect(report.warnings, hasLength(1));
+    expect(report.warnings.single, contains('ไม่ใช้เดือนจากชื่อชีตแทน'));
+  });
+
   test('filters assignments by query, section, and selected month', () {
     final report = MonthlyRosterParseReport(
       sections: [
@@ -168,6 +325,40 @@ void main() {
     expect(report.sections.single.title, 'ต้นฉบับ: กล้อง');
     expect(report.assignments.single.rowLabel, 'รายการจากกล้อง');
   });
+  test('preserves unlabeled GEN afternoon continuation rows', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'คลินิกพิเศษ',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['GEN คลินิกพิเศษ ประจำเดือน พฤศจิกายน พ.ศ. 2569']),
+        ..._row(1, ['วันที่', 1, 2, 3, 4, 5, 6, 7]),
+        ..._row(2, ['GEN', 'บุคลากรเช้า']),
+        ..._row(3, [null, 'บุคลากรบ่าย']),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(
+      report.sections.single.rosterRows.map((row) => row.label),
+      ['GEN', 'GEN บ่าย'],
+    );
+    expect(report.assignments, hasLength(2));
+    expect(report.assignments.last.workerName, 'บุคลากรบ่าย');
+
+    final shifts = const MonthlyRosterShiftAdapter().parseForWorkers(
+      report,
+      targetNames: ['บุคลากรบ่าย'],
+    );
+    expect(shifts, hasLength(1));
+    expect(shifts.single.code, 'AG');
+    expect(shifts.single.start, DateTime(2026, 11, 1, 16, 30));
+    expect(shifts.single.end, DateTime(2026, 11, 1, 20));
+  });
+
   test('converts monthly roster assignments to calendar shifts for the selected worker', () {
     final labels = <String>[
       'P1 เช้า',

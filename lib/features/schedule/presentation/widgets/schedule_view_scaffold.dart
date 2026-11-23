@@ -13,12 +13,18 @@ class ScheduleViewScaffold extends StatelessWidget {
     required this.child,
     super.key,
     this.viewSelector,
+    this.periodHeader,
+    this.showStatistics = true,
+    this.appBarActions = const [],
   });
 
   final String title;
   final ScheduleController controller;
   final Widget child;
   final Widget? viewSelector;
+  final Widget? periodHeader;
+  final bool showStatistics;
+  final List<Widget> appBarActions;
 
   @override
   Widget build(BuildContext context) {
@@ -28,78 +34,77 @@ class ScheduleViewScaffold extends StatelessWidget {
         title: Text(title, style: theme.textTheme.titleLarge),
         centerTitle: false,
         scrolledUnderElevation: 1,
+        actions: appBarActions,
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final horizontalPadding = constraints.maxWidth < 600 ? 12.0 : 24.0;
+          // Keep the schedule close to the screen edges. The roster is the
+          // primary workspace, so it must not be constrained to a desktop
+          // content width.
+          final horizontalPadding = constraints.maxWidth < 600 ? 4.0 : 12.0;
           return ListView(
             padding: EdgeInsets.fromLTRB(
               horizontalPadding,
-              20,
+              8,
               horizontalPadding,
-              28,
+              16,
             ),
             children: [
-              Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 1440),
+              Card(
+                clipBehavior: Clip.antiAlias,
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: constraints.maxWidth < 600 ? 8 : 16,
+                    vertical: 8,
+                  ),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Card(
-                        clipBehavior: Clip.antiAlias,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: constraints.maxWidth < 600 ? 8 : 20,
-                            vertical: 12,
+                      periodHeader ??
+                          MonthHeader(
+                            month: controller.currentMonth,
+                            onPrevious: controller.previousMonth,
+                            onNext: controller.nextMonth,
                           ),
-                          child: Column(
-                            children: [
-                              MonthHeader(
-                                month: controller.currentMonth,
-                                onPrevious: controller.previousMonth,
-                                onNext: controller.nextMonth,
-                              ),
-                              if (viewSelector != null) ...[
-                                const SizedBox(height: 8),
-                                Align(
-                                  alignment: Alignment.center,
-                                  child: viewSelector!,
-                                ),
-                              ],
-                            ],
-                          ),
+                      if (viewSelector != null) ...[
+                        const SizedBox(height: 6),
+                        Align(
+                          alignment: Alignment.center,
+                          child: viewSelector!,
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      _Section(
-                        title: 'Filters',
-                        icon: Icons.filter_list_rounded,
-                        child: ScheduleFilters(controller: controller),
-                      ),
-                      const SizedBox(height: 16),
-                      ScheduleStatisticsPanel(
-                        statistics: controller.statistics,
-                      ),
-                      const SizedBox(height: 16),
-                      Card(
-                        clipBehavior: Clip.antiAlias,
-                        child: Padding(
-                          padding: EdgeInsets.all(
-                            constraints.maxWidth < 600 ? 8 : 16,
-                          ),
-                          child: child,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      _Section(
-                        title: 'Shift legend',
-                        icon: Icons.palette_outlined,
-                        child: Legend(shifts: controller.shifts),
-                      ),
+                      ],
                     ],
                   ),
                 ),
+              ),
+              const SizedBox(height: 6),
+              _CollapsibleSection(
+                title: 'Filters',
+                icon: Icons.filter_list_rounded,
+                child: ScheduleFilters(controller: controller),
+              ),
+              if (showStatistics)
+                _CollapsibleSection(
+                  title: 'Statistics',
+                  icon: Icons.analytics_outlined,
+                  child: ScheduleStatisticsPanel(
+                    statistics: controller.statistics,
+                  ),
+                ),
+              const SizedBox(height: 6),
+              Card(
+                clipBehavior: Clip.antiAlias,
+                child: Padding(
+                  padding: EdgeInsets.all(
+                    constraints.maxWidth < 600 ? 4 : 10,
+                  ),
+                  child: child,
+                ),
+              ),
+              const SizedBox(height: 6),
+              _CollapsibleSection(
+                title: 'Shift legend',
+                icon: Icons.palette_outlined,
+                child: Legend(shifts: controller.shifts),
               ),
             ],
           );
@@ -109,8 +114,8 @@ class ScheduleViewScaffold extends StatelessWidget {
   }
 }
 
-class _Section extends StatelessWidget {
-  const _Section({
+class _CollapsibleSection extends StatelessWidget {
+  const _CollapsibleSection({
     required this.title,
     required this.icon,
     required this.child,
@@ -124,22 +129,14 @@ class _Section extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, size: 20, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
-                Text(title, style: theme.textTheme.titleSmall),
-              ],
-            ),
-            const SizedBox(height: 12),
-            child,
-          ],
-        ),
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        initiallyExpanded: false,
+        tilePadding: const EdgeInsets.symmetric(horizontal: 16),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+        leading: Icon(icon, size: 20, color: theme.colorScheme.primary),
+        title: Text(title, style: theme.textTheme.titleSmall),
+        children: [child],
       ),
     );
   }

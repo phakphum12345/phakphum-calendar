@@ -37,7 +37,24 @@ Default:
 2 attempts per operation
 ```
 
-A short incremental delay is applied between attempts.
+New managed inserts use a deterministic Google Calendar event ID derived
+from the stable `sceSyncId`. If an insert conflicts or returns an ambiguous
+error, the gateway reads that event ID and verifies the stored `sceSyncId`
+before treating the write as successful.
+
+For older events that use server-assigned IDs, the executor also looks up
+managed events in the target interval and reconciles by `sceSyncId` before
+another insert attempt. Exactly one match is adopted and its provider event ID
+is retained. Multiple matches or a failed verification lookup remain failed;
+the executor does not blindly issue another insert when the provider outcome
+is unknown.
+
+Resume performs the same lookup before inserting and again after an ambiguous
+insert failure. Deterministic provider IDs make concurrent inserts for the same
+sync identity duplicate-resistant, but Google documents that globally
+distributed ID collisions are not guaranteed to be detected at creation time.
+Concurrent update/delete coordination across independent clients remains a
+separate concern.
 
 ## Partial success
 
@@ -61,10 +78,13 @@ A history entry records:
 - failed count;
 - final status.
 
-The current repository is in-memory only. Durable local storage is the next step.
+The production dependency setup uses `SharedPreferencesSyncHistoryRepository`
+to persist sync history locally on the device. This is not server-side storage
+or cross-device synchronization.
 
 ## Safety
 
-Retry is appropriate because inserts use deterministic Sync IDs, but production
-code must re-check for existing managed events before retrying ambiguous network
-failures to avoid duplicate events.
+Insert retries and resume re-check existing managed events by deterministic Sync
+ID before another insert. If verification fails or finds duplicate IDs, the
+operation remains failed for review rather than risking another provider write.
+This does not serialize simultaneous syncs from independent devices.
