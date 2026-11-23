@@ -37,6 +37,7 @@ class _OrganizationMembershipPanelState
   String? _membershipAuditOrganizationId;
   String? _membershipAuditError;
   bool _membershipAuditLoading = false;
+  int _membershipAuditRequestGeneration = 0;
   bool _membershipAuditRefreshQueued = false;
   String? _membershipAuditQueuedOrganizationId;
   String? _selectedOrganizationId;
@@ -143,6 +144,7 @@ class _OrganizationMembershipPanelState
   }
 
   void _clearMembershipAudit() {
+    _membershipAuditRequestGeneration++;
     _membershipAuditEvents = const [];
     _membershipAuditNextBeforeId = null;
     _membershipAuditOrganizationId = null;
@@ -155,6 +157,7 @@ class _OrganizationMembershipPanelState
   Future<void> _loadMembershipAudit({bool loadMore = false}) async {
     final organizationId = _selectedOrganizationId;
     if (organizationId == null) return;
+    final requestGeneration = _membershipAuditRequestGeneration;
     if (_membershipAuditLoading) {
       if (!loadMore) {
         _membershipAuditRefreshQueued = true;
@@ -176,7 +179,11 @@ class _OrganizationMembershipPanelState
         limit: 50,
         beforeId: beforeId,
       );
-      if (!mounted || organizationId != _selectedOrganizationId) return;
+      if (!mounted ||
+          requestGeneration != _membershipAuditRequestGeneration ||
+          organizationId != _selectedOrganizationId) {
+        return;
+      }
       setState(() {
         if (loadMore) {
           final knownIds = _membershipAuditEvents.map((event) => event.id).toSet();
@@ -190,11 +197,15 @@ class _OrganizationMembershipPanelState
         _membershipAuditNextBeforeId = page.nextBeforeId;
       });
     } catch (exception) {
-      if (mounted && organizationId == _selectedOrganizationId) {
+      if (mounted &&
+          requestGeneration == _membershipAuditRequestGeneration &&
+          organizationId == _selectedOrganizationId) {
         setState(() => _membershipAuditError = '$exception');
       }
     } finally {
-      if (mounted && organizationId == _selectedOrganizationId) {
+      if (mounted &&
+          requestGeneration == _membershipAuditRequestGeneration &&
+          organizationId == _selectedOrganizationId) {
         final refreshQueued = _membershipAuditRefreshQueued &&
             _membershipAuditQueuedOrganizationId == organizationId;
         setState(() {
