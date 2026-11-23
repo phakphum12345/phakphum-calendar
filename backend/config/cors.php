@@ -13,7 +13,7 @@ $allowedOrigins = array_filter(array_map(
 
 return [
     'paths' => ['api/*'],
-    'allowed_methods' => ['GET', 'POST', 'PUT', 'OPTIONS'],
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     'allowed_origins' => array_values($allowedOrigins),
     'allowed_origins_patterns' => [],
     'allowed_headers' => ['Accept', 'Authorization', 'Content-Type', 'X-Request-ID'],

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:http/http.dart' as http;
 
@@ -143,10 +144,15 @@ class ShiftTransactionOrganizationMemberSnapshot {
 }
 
 class ShiftTransactionApiException implements Exception {
-  const ShiftTransactionApiException(this.statusCode, this.message);
+  const ShiftTransactionApiException(
+    this.statusCode,
+    this.message, {
+    this.correlationId,
+  });
 
   final int statusCode;
   final String message;
+  final String? correlationId;
 
   @override
   String toString() => 'ShiftTransactionApiException($statusCode): $message';
@@ -162,20 +168,36 @@ class ShiftTransactionApiClient {
     http.Client? httpClient,
   }) : _baseUri = _normalizeBaseUri(baseUrl),
        _http = httpClient ?? http.Client(),
-       _ownsHttpClient = httpClient == null;
+       _ownsHttpClient = httpClient == null,
+       _requestIdProvider = _generateRequestId;
 
   final Uri? _baseUri;
   final Future<String?> Function() idTokenProvider;
   final http.Client _http;
   final bool _ownsHttpClient;
+  final String Function() _requestIdProvider;
+
+  static String _generateRequestId() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+    return base64Url.encode(bytes).replaceAll('=', '');
+  }
 
   static Uri? _normalizeBaseUri(String value) {
     final trimmed = value.trim();
     if (trimmed.isEmpty) return null;
     final parsed = Uri.tryParse(trimmed);
-    if (parsed == null || !parsed.hasScheme || parsed.host.isEmpty ||
-        (parsed.scheme != 'https' && parsed.scheme != 'http')) {
+    if (parsed == null || !parsed.hasScheme || parsed.host.isEmpty) {
       throw ArgumentError.value(value, 'baseUrl', 'Must be an absolute HTTP(S) URL.');
+    }
+    final localHttp = parsed.scheme == 'http' &&
+        {'localhost', '127.0.0.1', '::1'}.contains(parsed.host);
+    if (parsed.scheme != 'https' && !localHttp) {
+      throw ArgumentError.value(
+        value,
+        'baseUrl',
+        'Must use HTTPS except for loopback local development.',
+      );
     }
     return parsed.replace(path: parsed.path.endsWith('/') ? parsed.path : '${parsed.path}/');
   }
@@ -382,18 +404,29 @@ class ShiftTransactionApiClient {
       throw const ShiftTransactionApiException(401, 'Please sign in with Google again.');
     }
     final uri = base.resolve(path).replace(queryParameters: query);
+    final requestId = _requestIdProvider();
     final response = await _http.get(uri, headers: {
       'Accept': 'application/json',
       'Authorization': 'Bearer $token',
+      'X-Request-ID': requestId,
     });
+    final correlationId = response.headers['x-request-id'] ?? requestId;
     final Object? decoded;
     try {
       decoded = jsonDecode(response.body);
     } on FormatException {
-      throw ShiftTransactionApiException(response.statusCode, 'The server returned an invalid response.');
+      throw ShiftTransactionApiException(
+        response.statusCode,
+        'The server returned an invalid response.',
+        correlationId: correlationId,
+      );
     }
     if (decoded is! Map) {
-      throw ShiftTransactionApiException(response.statusCode, 'The server returned an invalid response.');
+      throw ShiftTransactionApiException(
+        response.statusCode,
+        'The server returned an invalid response.',
+        correlationId: correlationId,
+      );
     }
     final body = decoded.map((key, value) => MapEntry(key.toString(), value));
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -402,6 +435,7 @@ class ShiftTransactionApiClient {
       throw ShiftTransactionApiException(
         response.statusCode,
         message ?? 'Unable to load transaction history.',
+        correlationId: correlationId,
       );
     }
     return body;
@@ -420,6 +454,7 @@ class ShiftTransactionApiClient {
     if (token == null || token.trim().isEmpty) {
       throw const ShiftTransactionApiException(401, 'Please sign in with Google again.');
     }
+    final requestId = _requestIdProvider();
     final response = await _http.post(
       base.resolve(path),
       headers: {
@@ -427,17 +462,27 @@ class ShiftTransactionApiClient {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
         ...?headers,
+        'X-Request-ID': requestId,
       },
       body: jsonEncode(body),
     );
+    final correlationId = response.headers['x-request-id'] ?? requestId;
     final Object? decoded;
     try {
       decoded = jsonDecode(response.body);
     } on FormatException {
-      throw ShiftTransactionApiException(response.statusCode, 'The server returned an invalid response.');
+      throw ShiftTransactionApiException(
+        response.statusCode,
+        'The server returned an invalid response.',
+        correlationId: correlationId,
+      );
     }
     if (decoded is! Map) {
-      throw ShiftTransactionApiException(response.statusCode, 'The server returned an invalid response.');
+      throw ShiftTransactionApiException(
+        response.statusCode,
+        'The server returned an invalid response.',
+        correlationId: correlationId,
+      );
     }
     final result = decoded.map((key, value) => MapEntry(key.toString(), value));
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -446,6 +491,7 @@ class ShiftTransactionApiClient {
       throw ShiftTransactionApiException(
         response.statusCode,
         message ?? 'Unable to update shift transaction.',
+        correlationId: correlationId,
       );
     }
     return result;
