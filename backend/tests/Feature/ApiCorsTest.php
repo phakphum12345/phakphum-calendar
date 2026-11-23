@@ -6,7 +6,6 @@ use Tests\TestCase;
 
 class ApiCorsTest extends TestCase
 {
-
     public function test_browser_clients_can_read_the_request_correlation_response_header(): void
     {
         $origin = 'https://phakphum12345.github.io';
