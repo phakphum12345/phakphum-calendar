@@ -37,10 +37,16 @@ void main() {
       required String name,
     }) async {
       // ListView lazily disposes children that are far outside the viewport.
-      // The audit heading is below the selector, so return to the top before
-      // trying to find and interact with the organization dropdown.
-      await tester.drag(find.byType(ListView), const Offset(0, 1000));
-      await tester.pumpAndSettle();
+      // Jump directly to the top; pumpAndSettle can time out while scroll or
+      // other repeating animations remain active in the panel.
+      final listView = find.byType(ListView);
+      final scrollable = find.descendant(
+        of: listView,
+        matching: find.byType(Scrollable),
+      );
+      expect(scrollable, findsOneWidget);
+      tester.state<ScrollableState>(scrollable).position.jumpTo(0);
+      await tester.pump();
 
       final organizationField = find.byWidgetPredicate(
         (widget) =>
