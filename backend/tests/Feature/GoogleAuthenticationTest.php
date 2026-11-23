@@ -42,9 +42,12 @@ class GoogleAuthenticationTest extends TestCase
         );
     }
 
-    public function test_google_authentication_requires_a_bearer_token(): void
+    public function test_google_authentication_requires_a_bearer_token_and_echoes_request_id(): void
     {
-        $this->getJson('/api/v1/me')->assertUnauthorized();
+        $this->withHeader('X-Request-ID', 'auth-failure-123')
+            ->getJson('/api/v1/me')
+            ->assertUnauthorized()
+            ->assertHeader('X-Request-ID', 'auth-failure-123');
     }
 
     public function test_invalid_google_token_is_rejected(): void
