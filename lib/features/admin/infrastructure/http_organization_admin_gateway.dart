@@ -316,7 +316,7 @@ class HttpOrganizationAdminGateway implements OrganizationAdminGateway {
             (rawCreatedAt[rawCreatedAt.length - 6] == '+' ||
                 rawCreatedAt[rawCreatedAt.length - 6] == '-') &&
             rawCreatedAt[rawCreatedAt.length - 3] == ':');
-    final createdAtInput = hasTimezone ? rawCreatedAt : rawCreatedAt + 'Z';
+    final createdAtInput = hasTimezone ? rawCreatedAt : ${rawCreatedAt}Z;
     final createdAt = DateTime.tryParse(createdAtInput);
     if (createdAt == null) {
       throw const FormatException(
