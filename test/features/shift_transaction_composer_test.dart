@@ -103,12 +103,12 @@ void main() {
     await tester.pumpAndSettle();
 
     final dropdowns = find.byType(DropdownButtonFormField<String>);
-    await tester.tap(dropdowns.at(1));
+    await _tapDropdown(tester, 1);
     await tester.pumpAndSettle();
     await tester.tap(find.text('B · Bob').last);
     await tester.pumpAndSettle();
 
-    await tester.tap(dropdowns.at(2));
+    await _tapDropdown(tester, 2);
     await tester.pumpAndSettle();
     await tester.tap(find.text('18/11/2026 · M · Alice').last);
     await tester.pumpAndSettle();
@@ -235,19 +235,19 @@ void main() {
       await tester.pumpAndSettle();
 
       final dropdowns = find.byType(DropdownButtonFormField<String>);
-      await tester.tap(dropdowns.at(0));
+      await _tapDropdown(tester, 0);
       await tester.pumpAndSettle();
       await tester.tap(find.text('Exchange and return shifts').last);
       await tester.pumpAndSettle();
-      await tester.tap(dropdowns.at(1));
+      await _tapDropdown(tester, 1);
       await tester.pumpAndSettle();
       await tester.tap(find.text('B · Bob').last);
       await tester.pumpAndSettle();
-      await tester.tap(dropdowns.at(2));
+      await _tapDropdown(tester, 2);
       await tester.pumpAndSettle();
       await tester.tap(find.text('18/11/2026 · M · Alice').last);
       await tester.pumpAndSettle();
-      await tester.tap(dropdowns.at(3));
+      await _tapDropdown(tester, 3);
       await tester.pumpAndSettle();
       await tester.tap(find.text('18/11/2026 · E · Bob').last);
       await tester.pumpAndSettle();
@@ -271,6 +271,15 @@ void main() {
       client.close();
     },
   );
+}
+
+
+Future<void> _tapDropdown(WidgetTester tester, int index) async {
+  final dropdown = find.byType(DropdownButton<String>).at(index);
+  await tester.ensureVisible(dropdown);
+  await tester.pumpAndSettle();
+  await tester.tap(dropdown);
+  await tester.pumpAndSettle();
 }
 
 Employee _employee(String id) => Employee(
