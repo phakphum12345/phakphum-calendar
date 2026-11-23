@@ -36,8 +36,10 @@ void main() {
       required String currentOrganizationId,
       required String name,
     }) async {
-      final organizationField = find.byKey(
-        ValueKey<String?>(currentOrganizationId),
+      final organizationField = find.byWidgetPredicate(
+        (widget) =>
+            widget is DropdownButtonFormField<String> &&
+            widget.initialValue == currentOrganizationId,
       );
       expect(organizationField, findsOneWidget);
       await tester.ensureVisible(organizationField);
