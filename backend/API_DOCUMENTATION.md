@@ -13,6 +13,16 @@ This document describes the current routes. Request validation and service autho
 - Send a Google **ID token** as `Authorization: Bearer <google-id-token>`. The backend verifies the Google identity token; do not send an OAuth client secret or refresh token.
 - The middleware resolves or updates the account by verified Google subject and rejects conflicting email identities.
 
+
+## Request correlation
+
+- Clients may send `X-Request-ID` using 8–128 ASCII letters, digits, dots, underscores or hyphens.
+- The API validates the supplied value; missing or malformed values are replaced with a generated UUID.
+- API responses echo the effective value in the `X-Request-ID` response header.
+- Health and client-diagnostics responses also include `request_id` in the JSON body; other endpoint bodies retain their existing domain-specific shape.
+- The Flutter shift-transaction client generates a distinct opaque ID for each request and sends it in this header.
+- Request IDs are diagnostic metadata, not authentication credentials or authorization claims.
+
 ## Route inventory
 
 | Method | Path | Purpose |
