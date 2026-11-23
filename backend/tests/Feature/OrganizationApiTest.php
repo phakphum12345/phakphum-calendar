@@ -180,6 +180,7 @@ class OrganizationApiTest extends TestCase
     {
         $this->getJson('/api/v1/me', $this->auth('owner-token'))->assertOk();
         $this->getJson('/api/v1/me', $this->auth('member-token'))->assertOk();
+        $this->getJson('/api/v1/me', $this->auth('outsider-token'))->assertOk();
 
         $organization = $this->postJson('/api/v1/organizations', [
             'name' => 'Emergency',
@@ -352,6 +353,7 @@ class OrganizationApiTest extends TestCase
 
         $auditUrl = "/api/v1/organizations/{$organizationId}/membership-audit";
         $this->getJson($auditUrl, $this->auth('member-token'))->assertForbidden();
+        $this->getJson($auditUrl, $this->auth('outsider-token'))->assertForbidden();
 
         $this->getJson("{$auditUrl}?limit=1", $this->auth('owner-token'))
             ->assertOk()
