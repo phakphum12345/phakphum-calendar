@@ -63,9 +63,12 @@ void main() {
       expect(organizationField, findsOneWidget);
       await tester.ensureVisible(organizationField);
       await tester.tap(organizationField);
-      await tester.pumpAndSettle();
+      // The panel can keep an indeterminate progress animation alive while
+      // audit requests are pending; advance the dropdown route without
+      // waiting for every ticker in the widget tree to settle.
+      await tester.pump(const Duration(milliseconds: 300));
       await tester.tap(find.textContaining(name).last);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
     }
 
     await selectOrganization(
