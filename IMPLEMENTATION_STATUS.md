@@ -1,75 +1,70 @@
 # Repository Implementation Status
 
-## Current main snapshot — 2026-11-23
+## Current main snapshot — 2026-11-24
 
-**Verified main SHA:** `9efb98c9d6e5ae5f60f919d5e1a24fac4c2bd35b`
+**Verified main SHA:** `dcb51b6ad7db3540eea7152949556465ea67256c`
 
-This section supersedes earlier historical snapshots below. Older entries are retained for audit history and must not be used as current PR or release status.
+This is a source-backed snapshot of the current default branch. It supersedes earlier snapshots below; historical sections remain for audit history only.
 
 | Item | Current observation | Status |
 |---|---|---|
-| Default branch | `main` | PASS |
-| Open PRs | 1 — PR #171 (Organization Membership Audit UI) | IN_PROGRESS |
-| PR #170 | Closed as superseded by #171; not merged | SKIPPED |
-| Issue tracker | Disabled (`has_issues: false`); no issue list is available | UNKNOWN |
-| Main branch protection | GitHub reports `protected: false` | FAIL |
-| Local working tree | Not available through GitHub API | UNKNOWN |
-| Current-SHA workflow runs | Auto Detect CI and Cross-platform Runtime both completed successfully | PASS |
-| Current-SHA check runs | 7 of 7 completed with conclusion `success` | PASS |
-| Current-SHA Web deployment | No deployment run for this documentation-only SHA | UNKNOWN |
-| Latest verified deployed application-source SHA | `4618ab98b0fc371f32f08d3299365f577fa81674` | PASS (historical deployment evidence) |
-| Exact current-main published metadata | Not verified against `9efb98c9d6e5ae5f60f919d5e1a24fac4c2bd35b` | UNKNOWN |
+| Default branch | `main` at `dcb51b6ad7db3540eea7152949556465ea67256c` | PASS |
+| Open pull requests | #150, #163, #171 and #172 observed open | IN_PROGRESS |
+| Open issue tracker | Repository issue tracking is disabled; an empty issue search is not proof of no work | UNKNOWN |
+| Main branch protection | Not re-verified in this reconciliation | UNKNOWN |
+| Exact-main-SHA PR workflow evidence | No PR-triggered workflow runs were returned for this merge commit | UNKNOWN |
+| Latest verified deployed application-source SHA | `4618ab98b0fc371f32f08d3299365f577fa81674` | Historical evidence only |
+| Deployment of current main | Current main is 34 commits ahead of the last verified deployed source; exact published metadata for `dcb51b6` is not verified | UNKNOWN |
 
-### Exact-SHA CI evidence
+### Current pull-request reconciliation
 
-Current main `9efb98c9d6e5ae5f60f919d5e1a24fac4c2bd35b`:
-- Auto Detect CI run [45155822259](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45155822259): SUCCESS.
-- Cross-platform Runtime run [45155822214](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45155822214): SUCCESS.
-- Seven check runs completed successfully: Dart/Flutter quality, platform activation summary, Linux PowerShell launcher smoke test, Linux POSIX full quality suite, capability detection, Windows CMD launcher smoke test, and Windows PowerShell full quality suite.
-
-These results do not imply that every platform release build, Laravel workflow, Pages deployment, or PR Final Gate ran on this exact SHA.
-
-### Deployment relationship
-
-The latest observed successful Web deployment and Final Gate are run [45129035935](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45129035935) and [45129036049](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45129036049), respectively, on application-source SHA `4618ab98b0fc371f32f08d3299365f577fa81674`.
-
-A GitHub compare from that deployed source SHA to current main `9efb98c9d6e5ae5f60f919d5e1a24fac4c2bd35b` reports only documentation changes:
-- `IMPLEMENTATION_STATUS.md`
-- `REQUIREMENTS_TRACEABILITY.md`
-- `docs/END_TO_END_COMPLETION_AUDIT_2026-11-23.md`
-- `docs/REPOSITORY_AUDIT.md`
-
-Therefore the application source tree is unchanged from the last verified deployed application-source SHA. However, the published deployment metadata has not been verified against current main `9efb98c9d6e5ae5f60f919d5e1a24fac4c2bd35b`; strict exact-main-SHA deployment status remains UNKNOWN. PR #171 is not merged and is not part of the deployed application.
-
-### Current source-level findings
-
-| Area | Current evidence | Status |
+| PR | Current observation | Decision |
 |---|---|---|
-| Roster date validation | Parser detects duplicate days, missing dates, out-of-order dates and date-sequence mismatches; conversion skips sections with blocking date anomalies | PASS (guard exists; source-specific workbook outcomes remain unverified) |
-| X-OPD November 2569 | Reported malformed header requires original workbook/cell layout to confirm intended dates | UNKNOWN |
-| US Clinic ภปร.4 | Markdown header alone does not reproduce the reported offset; original workbook is required | UNKNOWN |
-| Calendar sync | Planner/executor/reconciliation and regression tests exist; live authorized Google account behavior is not verified | UNKNOWN |
-| Historical roster restore | Revision/timeline support exists, but a complete safe restore workflow was not found | PARTIAL |
-| Web Push | Browser subscription and authenticated API storage exist; VAPID sender, RFC 8291 encryption, durable queue/scheduler, retries and user-facing opt-in controls are not implemented | PARTIAL |
-| Membership audit | Backend audit writes and manager-protected paginated read endpoint exist. Flutter integration is proposed in PR #171 and has not merged | IN_PROGRESS |
-| Responsive UI | Requires screen-by-screen device-width verification | UNKNOWN |
-| Performance | No repository-wide baseline verified | UNKNOWN |
-| Security / tenant isolation | Existing authorization and backend tests exist; further focused review remains | UNKNOWN |
+| #150 | Open; latest diff changes only `DOCUMENTATION_INDEX.md`, `IMPLEMENTATION_STATUS.md` and `REQUIREMENTS_TRACEABILITY.md`, including removal of current status material. API and database guides already exist on main. | Do not merge this stale/reverting documentation diff. |
+| #163 | Open; GitHub compare reports zero changed files against current main. The year overview and selector are already present in `ScheduleWorkspacePage` and `ScheduleYearOverview` on main. | No-op PR; do not merge. |
+| #171 | Open; membership-audit Flutter gateway/UI and tests are proposed. Main exact-head CI evidence is not complete; Build iOS remains queued in the observed run. | Keep open pending exact-head checks and final review. |
+| #172 | This documentation refresh branch. Its earlier snapshot referenced main SHA `9efb98c`, which is superseded by `dcb51b6`. | Refresh this snapshot and validate its exact head. |
 
-### Immediate next work
+PR #162 is already merged. PR #173 is merged as `dcb51b6ad7db3540eea7152949556465ea67256c`; it adds exchange-and-return transaction composition and transaction-history filters. No claim is made here that current main has been deployed.
 
-1. Complete exact-head CI for PR #171. Merge only when all required checks pass; then verify merge SHA and post-merge main CI.
-2. Obtain the original X-OPD and US Clinic ภปร.4 workbook/export. Do not infer or silently repair date headers.
-3. Complete Web Push delivery only after VAPID configuration and a supported scheduler/worker strategy are defined; do not invent credentials.
-4. Define and implement safe historical restore preview/confirmation. Any Drive write-scope expansion requires separate explicit approval.
-5. Complete targeted security/tenant-isolation, responsive UI, performance and critical E2E audits.
-6. Verify a production deployment whose published metadata exactly matches the main SHA before claiming strict release readiness.
+### Source-level gap register
 
-**Snapshot date:** 2026-11-23
-**Snapshot base:** `main` at `9efb98c9d6e5ae5f60f919d5e1a24fac4c2bd35b`
-**Scope:** Whole repository, Flutter client, Laravel API, persistence, synchronization, CI/CD, security and documentation.
+| Area | Evidence on current main | Status | Required next work |
+|---|---|---|---|
+| Calendar day/week/month/year views | `ScheduleWorkspacePage` selects day, week, month and year; `ScheduleYearOverview` renders the 12-month view. | IMPLEMENTED FOUNDATION | Verify widget coverage, narrow-width layout, year navigation and month-selection regressions. PR #163 has no diff. |
+| Organization membership audit | Backend audit writes/read endpoint exist; Flutter gateway, panel and tests are proposed in #171. | IN_PROGRESS | Complete exact-head CI, permission/tenant-isolation review and post-merge verification. |
+| Notifications/reminders | `NotificationService` is an abstract interface; no concrete platform delivery implementation is present in the inspected source. | MISSING | Decide supported platforms/background behavior; add permission-aware implementation, scheduling/cancellation, tests and user controls. |
+| Historical roster restoration | `RosterRevisionService` explicitly reads Drive revisions only and never writes to Drive/Sheets. | PARTIAL | Define preview, conflict handling, confirmation, audit and recovery. Any Drive write-scope expansion requires separate explicit approval. |
+| Web Push | Subscription/API groundwork exists; VAPID sender, RFC 8291 encryption, durable delivery queue/scheduler, retry and opt-in controls remain unimplemented in the prior source audit. | PARTIAL | Verify current backend source, then implement only with configured secrets and a supported worker/scheduler. |
+| Calendar sync live integration | Planner/executor/reconciliation and regression tests exist. | UNKNOWN | Verify authorized Google account behavior, idempotency and recovery without modifying real calendars during tests. |
+| Workbook edge cases | Date validation blocks malformed sections; X-OPD November 2569 and US Clinic ภปร.4 issues require original workbooks to confirm intended cell/date layouts. | UNKNOWN | Obtain original source workbooks; never infer or silently repair dates. |
+| Responsive UI | Year overview adapts columns at width breakpoints; full screen-by-screen device verification is not established. | NEEDS REVIEW | Test mobile, tablet and desktop layouts across critical workflows. |
+| Performance | No repository-wide benchmark baseline is established. | UNKNOWN | Add reproducible large-workbook, event-volume, memory and long-history benchmarks. |
+| Local data protection | Timeline/revision snapshots use local persistence; encryption and retention behavior require focused review. | NEEDS REVIEW | Document data classification, retention, encryption and recovery requirements before changing storage. |
+| API/database documentation | `backend/API_DOCUMENTATION.md` and `backend/DATABASE_SCHEMA.md` are present on main. Migrations remain authoritative. | IMPLEMENTED FOUNDATION | Keep route, authorization and constraint descriptions synchronized with source/migrations. |
+| Roadmap and traceability | Existing roadmap is version-only and does not map phases to acceptance evidence. | NEEDS REVIEW | Use the reconciled, evidence-based roadmap and traceability matrix in this PR. |
 
-> This is a point-in-time engineering inventory, not a declaration that the repository is complete or production-ready. Source code, migrations, exact-head CI and observed runtime behavior take precedence over this document. `SKIPPED` and `UNKNOWN` are never treated as `PASS`.
+### CI and release qualification
+
+- CI states must be tied to the exact head SHA. Queued, in-progress, cancelled, skipped or missing checks are not PASS.
+- The current PR checks for #150, #163 and #172 are still queued/in progress in the latest observed run set; #171 has successful core checks but its iOS build was still queued.
+- The latest observed successful Web deployment was on application-source SHA `4618ab98b0fc371f32f08d3299365f577fa81674`. Current main `dcb51b6` includes later application changes, so the deployed site must not be represented as current-main verified.
+- The Web workflow is configured to build on main pushes and deploy Pages only on `refs/heads/main`; this configuration does not itself prove a successful deployment for the current SHA.
+- Composer dependency remediation and the `composer audit --locked` CI gate were merged previously in PR #154; re-run the audit on the current relevant head before release claims.
+
+### Immediate execution order
+
+1. Finish exact-head CI and review for PR #171; merge only if every required gate passes.
+2. Close or supersede no-op/stale documentation PRs only after preserving any unique, still-valid material; do not merge #150 or #163 as they currently stand.
+3. Complete concrete notification delivery as a separately scoped implementation with platform and background-delivery requirements.
+4. Design safe historical restore as a separate reviewed workflow; do not expand OAuth scopes or write to user calendars without explicit approval.
+5. Add responsive, performance, data-protection and critical E2E evidence.
+6. Verify the Pages deployment metadata against the exact current main SHA before claiming production readiness.
+
+**Snapshot date:** 2026-11-24  
+**Snapshot base:** `main` at `dcb51b6ad7db3540eea7152949556465ea67256c`
+
+> This inventory is not a declaration that the repository is complete or production-ready. Source code, tests, exact-head CI and observed runtime behavior take precedence. `SKIPPED` and `UNKNOWN` are never treated as `PASS`.
 
 ## Repository evidence
 
