@@ -33,6 +33,8 @@ class _ShiftTransactionHistoryPanelState
   late Future<List<ShiftTransactionSnapshot>> _history;
   String? _actingOn;
   String? _actionError;
+  String? _typeFilter;
+  String? _monthFilter;
 
   @override
   void initState() {
@@ -45,6 +47,8 @@ class _ShiftTransactionHistoryPanelState
   Future<List<ShiftTransactionSnapshot>> _load() async {
     final items = await widget.apiClient.listTransactions(
       mode: widget.mode,
+      type: _typeFilter,
+      month: _monthFilter,
       organizationId: widget.organizationId,
     );
     if (mounted) {
@@ -154,6 +158,60 @@ class _ShiftTransactionHistoryPanelState
                   icon: const Icon(Icons.refresh),
                 ),
               ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(top: 12, bottom: 4),
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  SizedBox(
+                    width: 210,
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _typeFilter ?? '',
+                      decoration: const InputDecoration(
+                        labelText: 'Transaction type',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: '', child: Text('All types')),
+                        DropdownMenuItem(value: 'give_up', child: Text('Receive / release')),
+                        DropdownMenuItem(value: 'exchange', child: Text('Exchange')),
+                        DropdownMenuItem(value: 'exchange_and_return', child: Text('Exchange + return')),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _typeFilter = value == null || value.isEmpty ? null : value;
+                          _history = _load();
+                        });
+                      },
+                    ),
+                  ),
+                  SizedBox(
+                    width: 190,
+                    child: DropdownButtonFormField<String>(
+                      initialValue: _monthFilter ?? '',
+                      decoration: const InputDecoration(
+                        labelText: 'Shift month',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      items: [
+                        const DropdownMenuItem(value: '', child: Text('All months')),
+                        for (var offset = 0; offset < 24; offset++)
+                          _monthOption(offset),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _monthFilter = value == null || value.isEmpty ? null : value;
+                          _history = _load();
+                        });
+                      },
+                    ),
+                  ),
+                ],
+              ),
             ),
             if (_actionError != null) ...[
               const SizedBox(height: 8),
@@ -276,6 +334,13 @@ class _ShiftTransactionHistoryPanelState
         ),
       ),
     );
+  }
+
+  DropdownMenuItem<String> _monthOption(int offset) {
+    final now = DateTime.now();
+    final month = DateTime(now.year, now.month - offset, 1);
+    final value = '${month.year}-${month.month.toString().padLeft(2, '0')}';
+    return DropdownMenuItem(value: value, child: Text(value));
   }
 
   bool _canAct(ShiftTransactionSnapshot item) =>

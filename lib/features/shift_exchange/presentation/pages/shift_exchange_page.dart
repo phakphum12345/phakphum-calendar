@@ -501,7 +501,7 @@ class _ShiftTransactionComposerDialogState
         requesterEmployee.id == recipientEmployee.id ||
         requesterCodeMatches != 1 || recipientCodeMatches != 1 ||
         requesterShift == null ||
-        (_type == 'exchange' && recipientShift == null)) {
+        (_type != 'give_up' && recipientShift == null)) {
       setState(() => _error = 'Roster employee codes must match exactly one active account or organization member, and both shifts must be valid.');
       return;
     }
@@ -527,14 +527,14 @@ class _ShiftTransactionComposerDialogState
         requesterShift,
         fromEmployeeId: requesterId,
         toEmployeeId: recipientId,
-        purpose: _type == 'give_up' ? 'give_up' : 'exchange',
+        purpose: switch (_type) { 'give_up' => 'give_up', 'exchange' => 'exchange', 'exchange_and_return' => 'primary', _ => throw StateError('Unsupported shift transaction type.'), },
       ),
-      if (_type == 'exchange')
+      if (_type != 'give_up')
         _transfer(
           recipientShift!,
           fromEmployeeId: recipientId,
           toEmployeeId: requesterId,
-          purpose: 'exchange',
+          purpose: _type == 'exchange' ? 'exchange' : 'return_shift',
         ),
     ];
     final idempotencySeed = [
@@ -648,6 +648,7 @@ class _ShiftTransactionComposerDialogState
                   items: const [
                     DropdownMenuItem(value: 'give_up', child: Text('Give up a shift')),
                     DropdownMenuItem(value: 'exchange', child: Text('Exchange shifts')),
+                    DropdownMenuItem(value: 'exchange_and_return', child: Text('Exchange and return shifts')),
                   ],
                   onChanged: _saving ? null : (value) => setState(() {
                     _type = value ?? 'give_up';
@@ -745,7 +746,7 @@ class _ShiftTransactionComposerDialogState
                   onChanged: _saving ? null : (value) => setState(() => _requesterShiftKey = value),
                   validator: (value) => value == null ? 'Select the shift you own.' : null,
                 ),
-                if (_type == 'exchange') ...[
+                if (_type != 'give_up') ...[
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     initialValue: _recipientShiftKey,
@@ -758,7 +759,7 @@ class _ShiftTransactionComposerDialogState
                         ),
                     ],
                     onChanged: _saving ? null : (value) => setState(() => _recipientShiftKey = value),
-                    validator: (value) => _type == 'exchange' && value == null
+                    validator: (value) => _type != 'give_up' && value == null
                         ? 'Select the recipient shift.'
                         : null,
                   ),

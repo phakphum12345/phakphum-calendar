@@ -133,6 +133,96 @@ void main() {
     expect(requests.any((request) => request.url.path.endsWith('/confirm')), isTrue);
     client.close();
   });
+
+  testWidgets('creates an exchange-and-return request with reciprocal transfer legs', (tester) async {
+    final date = DateTime(2026, 11, 18);
+    final alice = _employee('A');
+    final bob = _employee('B');
+    final schedule = Schedule(
+      id: 'schedule-return',
+      name: 'November roster',
+      months: [
+        ScheduleMonth.empty(date).replaceDay(
+          ScheduleDay(
+            date: date,
+            assignments: [
+              ShiftAssignment(employee: alice, shift: _shift('morning', 'M', 8, 16)),
+              ShiftAssignment(employee: bob, shift: _shift('evening', 'E', 16, 23)),
+            ],
+          ),
+        ),
+      ],
+    );
+    final requests = <http.Request>[];
+    final client = ShiftTransactionApiClient(
+      baseUrl: 'https://calendar.example.test',
+      idTokenProvider: () async => 'token',
+      httpClient: MockClient((request) async {
+        requests.add(request);
+        if (request.method == 'GET') {
+          if (request.url.path == '/api/v1/organizations') {
+            return http.Response(jsonEncode({'data': [{
+              'id': 'org-uuid', 'name': 'Radiology', 'slug': 'radiology',
+              'employee_id': 'A', 'role': 'owner',
+            }]}), 200);
+          }
+          if (request.url.path == '/api/v1/organizations/org-uuid/members') {
+            return http.Response(jsonEncode({'data': [
+              {'user_id': '1', 'name': 'Alice', 'email': 'alice@example.com', 'employee_id': 'A', 'role': 'owner', 'status': 'active'},
+              {'user_id': '2', 'name': 'Bob', 'email': 'bob@example.com', 'employee_id': 'B', 'role': 'staff', 'status': 'active'},
+            ]}), 200);
+          }
+          return http.Response(jsonEncode({'data': []}), 200);
+        }
+        return http.Response(jsonEncode({'data': _transaction('pending_response')}), 201);
+      }),
+    );
+
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(body: ShiftExchangePage(
+        schedule: schedule,
+        organizationMode: true,
+        historyApiClient: client,
+      )),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('New shift transaction'));
+    await tester.pumpAndSettle();
+
+    final dropdowns = find.byType(DropdownButtonFormField<String>);
+    await tester.tap(dropdowns.at(0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Exchange and return shifts').last);
+    await tester.pumpAndSettle();
+    await tester.tap(dropdowns.at(1));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('B · Bob').last);
+    await tester.pumpAndSettle();
+    await tester.tap(dropdowns.at(2));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('18/11/2026 · M · Alice').last);
+    await tester.pumpAndSettle();
+    await tester.tap(dropdowns.at(3));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('18/11/2026 · E · Bob').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Create request'));
+    await tester.pumpAndSettle();
+
+    final request = requests.firstWhere((item) =>
+      item.method == 'POST' && item.url.path == '/api/v1/shift-transactions');
+    final payload = jsonDecode(request.body) as Map<String, dynamic>;
+    expect(payload['type'], 'exchange_and_return');
+    expect(payload['transfers'], hasLength(2));
+    expect(payload['transfers'][0]['purpose'], 'primary');
+    expect(payload['transfers'][0]['from_employee_id'], 'A');
+    expect(payload['transfers'][0]['to_employee_id'], 'B');
+    expect(payload['transfers'][1]['purpose'], 'return_shift');
+    expect(payload['transfers'][1]['from_employee_id'], 'B');
+    expect(payload['transfers'][1]['to_employee_id'], 'A');
+    client.close();
+  });
+
 }
 
 Employee _employee(String id) => Employee(
