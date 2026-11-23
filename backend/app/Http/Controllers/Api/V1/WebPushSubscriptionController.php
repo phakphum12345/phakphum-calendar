@@ -29,6 +29,10 @@ class WebPushSubscriptionController
 
         $endpoint = $validated['endpoint'];
         $this->assertAllowedEndpoint($endpoint);
+        $this->assertValidSubscriptionKeys(
+            $validated['keys']['p256dh'],
+            $validated['keys']['auth'],
+        );
 
         $endpointHash = hash('sha256', $endpoint);
         $now = now();
@@ -69,6 +73,32 @@ class WebPushSubscriptionController
         return response()->json([
             'status' => 'unsubscribed',
         ]);
+    }
+
+    private function assertValidSubscriptionKeys(string $publicKey, string $authToken): void
+    {
+        $decodedPublicKey = $this->decodeBase64Url($publicKey);
+        $decodedAuthToken = $this->decodeBase64Url($authToken);
+
+        if (
+            $decodedPublicKey === false
+            || strlen($decodedPublicKey) !== 65
+            || $decodedPublicKey[0] !== "\\x04"
+            || $decodedAuthToken === false
+            || strlen($decodedAuthToken) !== 16
+        ) {
+            throw ValidationException::withMessages([
+                'keys' => ['The browser push subscription keys are invalid.'],
+            ]);
+        }
+    }
+
+    private function decodeBase64Url(string $value): string|false
+    {
+        $base64 = strtr($value, '-_', '+/');
+        $base64 .= str_repeat('=', (4 - strlen($base64) % 4) % 4);
+
+        return base64_decode($base64, true);
     }
 
     private function assertAllowedEndpoint(string $endpoint): void
