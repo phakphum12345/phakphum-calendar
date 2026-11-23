@@ -7,7 +7,7 @@ import 'google_calendar_event_mapper.dart';
 
 class GoogleCalendarEventRepository implements CalendarEventRepository {
   GoogleCalendarEventRepository({
-    required this._calendarApi,
+    required this.calendarApi,
     required String calendarId,
   }) : _calendarId = calendarId.trim(),
        _mapper = const GoogleCalendarEventMapper() {
@@ -20,7 +20,7 @@ class GoogleCalendarEventRepository implements CalendarEventRepository {
     }
   }
 
-  final calendar.CalendarApi _calendarApi;
+  final calendar.CalendarApi calendarApi;
   final String _calendarId;
   final GoogleCalendarEventMapper _mapper;
 
@@ -37,7 +37,7 @@ class GoogleCalendarEventRepository implements CalendarEventRepository {
     String? pageToken;
 
     do {
-      final response = await _calendarApi.events.list(
+      final response = await calendarApi.events.list(
         _calendarId,
         timeMin: timeMin.toUtc(),
         timeMax: timeMax.toUtc(),
@@ -70,7 +70,7 @@ class GoogleCalendarEventRepository implements CalendarEventRepository {
   Future<String> createEvent(CalendarEventCandidate candidate) async {
     final request = _mapper.toGoogleEvent(candidate);
 
-    final created = await _calendarApi.events.insert(request, _calendarId);
+    final created = await calendarApi.events.insert(request, _calendarId);
 
     final providerEventId = created.id?.trim();
 
@@ -90,16 +90,43 @@ class GoogleCalendarEventRepository implements CalendarEventRepository {
   }) async {
     final normalizedEventId = _requireProviderEventId(providerEventId);
 
+    // Read the provider copy before replacing it so audit history survives sync.
+    final existing = await calendarApi.events.get(_calendarId, normalizedEventId);
     final request = _mapper.toGoogleEvent(candidate);
-
-    await _calendarApi.events.update(request, _calendarId, normalizedEventId);
+    request.description = _preserveTimelineSection(
+      desiredDescription: candidate.description,
+      existingDescription: existing.description,
+    );
+    await calendarApi.events.update(request, _calendarId, normalizedEventId);
   }
 
   @override
   Future<void> deleteEvent({required String providerEventId}) async {
     final normalizedEventId = _requireProviderEventId(providerEventId);
 
-    await _calendarApi.events.delete(_calendarId, normalizedEventId);
+    await calendarApi.events.delete(_calendarId, normalizedEventId);
+  }
+
+  String? _preserveTimelineSection({
+    required String? desiredDescription,
+    required String? existingDescription,
+  }) {
+    const marker = '--- Timeline ---';
+    final existing = existingDescription?.trimRight() ?? '';
+    final markerIndex = existing.indexOf(marker);
+    if (markerIndex < 0) return desiredDescription;
+
+    final desired = desiredDescription?.trimRight();
+    final desiredMarkerIndex = desired?.indexOf(marker) ?? -1;
+    final baseDescription = desired == null || desired.isEmpty
+        ? existing.substring(0, markerIndex).trimRight()
+        : desiredMarkerIndex < 0
+        ? desired
+        : desired.substring(0, desiredMarkerIndex).trimRight();
+    final timelineSection = existing.substring(markerIndex).trimRight();
+    return baseDescription.isEmpty
+        ? timelineSection
+        : '$baseDescription\n\n$timelineSection';
   }
 
   int _compareRecords(CalendarEventRecord left, CalendarEventRecord right) {

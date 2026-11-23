@@ -1,0 +1,133 @@
+name: Pull Request Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "lib/**"
+      - "assets/**"
+      - "android/**"
+      - "ios/**"
+      - "linux/**"
+      - "windows/**"
+      - "web/**"
+      - "test/**"
+      - "integration_test/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - ".github/workflows/**"
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+concurrency:
+  group: pull-request-gate-${{ github.event.pull_request.number }}-${{ github.event.pull_request.head.sha }}
+  cancel-in-progress: true
+
+jobs:
+  required-evidence:
+    name: Require core platform evidence for exact PR head
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Collect core workflow evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          EXPECTED_SHA: ${{ github.event.pull_request.head.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          export EXPECTED_SHA PR_NUMBER
+
+          required_workflows=(
+            "Auto Detect CI:ci-auto-detect.yml"
+            "Windows:windows.yml"
+            "Web:web.yml"
+            "Android:android.yml"
+            "Linux:linux.yml"
+          )
+
+          get_run_state() {
+            local workflow="$1"
+            gh api \
+              -H 'Accept: application/vnd.github+json' \
+              "/repos/${REPOSITORY}/actions/workflows/${workflow}/runs?head_sha=${EXPECTED_SHA}&per_page=100" \
+              --jq '
+                [.workflow_runs[]
+                 | select(.event == "pull_request")
+                 | select(.head_sha == env.EXPECTED_SHA)
+                 | select(any(.pull_requests[]?; .number == (env.PR_NUMBER | tonumber)))]
+                | sort_by(.run_number, .run_attempt)
+                | last // {}
+                | [(.status // "missing"), (.conclusion // ""), (.html_url // "")]
+                | @tsv
+              ' 2>/dev/null
+          }
+
+          for attempt in $(seq 1 60); do
+            current_sha="$(gh api "/repos/${REPOSITORY}/pulls/${PR_NUMBER}" --jq '.head.sha')"
+            if [[ "$current_sha" != "$EXPECTED_SHA" ]]; then
+              echo "SUPERSEDED: PR head moved from $EXPECTED_SHA to $current_sha."
+              echo "A new Pull Request Gate run must evaluate the updated head."
+              exit 0
+            fi
+
+            pending=0
+            failed=0
+            echo ""
+            echo "===== CORE PR GATE CHECK ${attempt}/60 | PR #${PR_NUMBER} | ${EXPECTED_SHA} ====="
+
+            for entry in "${required_workflows[@]}"; do
+              label="${entry%%:*}"
+              workflow="${entry#*:}"
+              state="$(get_run_state "$workflow" || true)"
+              if [[ -z "$state" ]]; then
+                status="missing"
+                conclusion=""
+                url=""
+              else
+                IFS=$'\t' read -r status conclusion url <<< "$state"
+                status="${status:-missing}"
+                conclusion="${conclusion:-}"
+                url="${url:-}"
+              fi
+
+              echo "${label}: status=${status} conclusion=${conclusion:-PENDING}"
+              [[ -z "$url" ]] || echo "  $url"
+
+              if [[ "$status" == "completed" ]]; then
+                if [[ "$conclusion" != "success" ]]; then
+                  echo "FAIL: ${label} concluded ${conclusion:-unknown}."
+                  failed=1
+                fi
+              else
+                pending=1
+              fi
+            done
+
+            if [[ "$failed" -eq 1 ]]; then
+              echo ""
+              echo "CORE PULL REQUEST GATE: FAIL"
+              exit 1
+            fi
+
+            if [[ "$pending" -eq 0 ]]; then
+              echo ""
+              echo "CORE PULL REQUEST GATE: PASS"
+              echo "All five core workflows succeeded for the exact PR head SHA."
+              echo "iOS is evaluated independently by the iOS Evidence Gate."
+              exit 0
+            fi
+
+            if [[ "$attempt" -lt 60 ]]; then
+              sleep 30
+            fi
+          done
+
+          echo "CORE PULL REQUEST GATE: FAIL"
+          echo "Core evidence was missing or incomplete after 30 minutes."
+          exit 1

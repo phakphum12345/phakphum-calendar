@@ -66,12 +66,28 @@ void main() {
 
       expect(seededIds, [
         'shift:morning',
+        'shift:day',
         'shift:evening',
         'shift:night',
-        'shift:on-call',
       ]);
+      expect(
+        controller.templates.map((value) => value.code),
+        ['ช', 'พัก', 'บ', 'ด'],
+      );
+      expect(
+        controller.templates.map((value) => value.shortName),
+        ['ช', 'พัก', 'บ', 'ด'],
+      );
       expect(controller.templates.map((value) => value.id), seededIds);
       expect(repository.values, hasLength(4));
+      final lunchBreak = controller.templates.singleWhere(
+        (value) => value.id == 'shift:day',
+      );
+      expect(lunchBreak.name, 'ช่วงพักกลางวัน');
+      expect(lunchBreak.startTime, const Duration(hours: 12));
+      expect(lunchBreak.endTime, const Duration(hours: 13));
+      expect(lunchBreak.workingHours, 0);
+      expect(lunchBreak.rate, 0);
     },
   );
 

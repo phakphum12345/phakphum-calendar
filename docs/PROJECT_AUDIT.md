@@ -1,3 +1,5 @@
+<!-- Historical snapshot: audit dated 2026-07-24. Do not treat its test counts, branch state or implementation findings as current. See ../IMPLEMENTATION_STATUS.md and ../REQUIREMENTS_TRACEABILITY.md for the newer repository-wide inventory. -->
+
 # Shift Tools Project Audit
 
 **Audit date:** 2026-07-24

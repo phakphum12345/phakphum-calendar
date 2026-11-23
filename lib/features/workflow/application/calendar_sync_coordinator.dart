@@ -17,12 +17,14 @@ class CalendarSyncPreparation {
     required this.plan,
     required this.timeMin,
     required this.timeMax,
+    this.existingEventIdsBySyncId = const {},
   });
 
   final CalendarDiff diff;
   final CalendarSyncPlan plan;
   final DateTime timeMin;
   final DateTime timeMax;
+  final Map<String, String> existingEventIdsBySyncId;
 }
 
 class CalendarSyncCoordinator {
@@ -63,13 +65,52 @@ class CalendarSyncCoordinator {
             calendarId: calendarId,
           );
     final deduplicatedManaged = _deduplicateManaged(desired, managed);
+    // Past provider events are historical records, not omissions from the
+    // current schedule. Keep them in the desired set so the expanded lookback
+    // window cannot turn them into deletion requests. Current desired IDs are
+    // excluded so legitimate updates to past-dated assignments still work.
+    final today = DateTime.now();
+    final desiredIds = desired.map((candidate) => candidate.syncId).toSet();
+    final selectedRanges = schedule.months
+        .map((scheduleMonth) {
+          final month = scheduleMonth.month;
+          final start = DateTime(month.year, month.month, 1);
+          final end = DateTime(month.year, month.month + 1, 1);
+          return (start, end);
+        })
+        .toList(growable: false);
+    final preservedOutsideSelection = deduplicatedManaged.where((event) {
+      if (desiredIds.contains(event.syncId) ||
+          event.syncId.startsWith('legacy:duplicate-managed:')) {
+        return false;
+      }
+
+      final belongsToSelectedPeriod = selectedRanges.any(
+        (selectedRange) =>
+            !event.start.isBefore(selectedRange.$1) &&
+            event.start.isBefore(selectedRange.$2),
+      );
+
+      // Keep every managed event outside the selected months, including
+      // future events. Within selected months, keep past events as history.
+      // This prevents a December-only sync from deleting unselected future
+      // November events merely because the provider query includes lookback.
+      return !belongsToSelectedPeriod || event.start.isBefore(today);
+    });
+    final effectiveDesired = <CalendarEventCandidate>[
+      ...desired,
+      ...preservedOutsideSelection.map(_candidateFromManaged),
+    ];
     final adopted = _adoptEquivalentLegacy(
-      desired,
+      effectiveDesired,
       deduplicatedManaged,
       legacy,
     );
     final existing = adopted.map(_candidateFromManaged).toList(growable: false);
-    final diff = diffEngine.compare(desired: desired, existing: existing);
+    final diff = diffEngine.compare(
+      desired: effectiveDesired,
+      existing: existing,
+    );
     final plan = _planBuilder.build(
       diff: diff,
       existingEvents: adopted,
@@ -80,6 +121,10 @@ class CalendarSyncCoordinator {
       plan: plan,
       timeMin: range.$1,
       timeMax: range.$2,
+      existingEventIdsBySyncId: Map.unmodifiable({
+        for (final event in adopted)
+          if (event.eventId.isNotEmpty) event.syncId: event.eventId,
+      }),
     );
   }
 
@@ -125,9 +170,10 @@ class CalendarSyncCoordinator {
 
   (DateTime, DateTime) _range(List<CalendarEventCandidate> candidates) {
     final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final lookbackStart = _subtractCalendarMonths(today, 3);
     if (candidates.isEmpty) {
-      final start = DateTime(now.year, now.month, now.day);
-      return (start, start.add(const Duration(days: 1)));
+      return (lookbackStart, today.add(const Duration(days: 1)));
     }
     final starts = candidates.map((candidate) => candidate.start);
     final ends = candidates.map((candidate) => candidate.end);
@@ -137,7 +183,22 @@ class CalendarSyncCoordinator {
     final timeMax = ends.reduce(
       (left, right) => left.isAfter(right) ? left : right,
     );
-    return (timeMin, timeMax);
+    final currentWindowEnd = today.add(const Duration(days: 1));
+    return (
+      lookbackStart.isBefore(timeMin) ? lookbackStart : timeMin,
+      currentWindowEnd.isAfter(timeMax) ? currentWindowEnd : timeMax,
+    );
+  }
+
+  /// Subtracts calendar months while clamping month-end dates (for example,
+  /// May 31 minus three months becomes February 28/29, not March 3).
+  DateTime _subtractCalendarMonths(DateTime value, int months) {
+    final monthIndex = value.year * 12 + value.month - 1 - months;
+    final year = monthIndex ~/ 12;
+    final month = monthIndex % 12 + 1;
+    final lastDay = DateTime(year, month + 1, 0).day;
+    final day = value.day > lastDay ? lastDay : value.day;
+    return DateTime(year, month, day);
   }
 
   CalendarEventCandidate _candidateFromManaged(ManagedCalendarEvent event) {

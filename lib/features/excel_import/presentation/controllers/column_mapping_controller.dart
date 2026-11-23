@@ -62,6 +62,24 @@ class ColumnMappingController extends ChangeNotifier
     notifyListeners();
   }
 
+  /// Applies detected columns only when they exist in the current worksheet.
+  /// Existing explicit mapping is replaced; the caller should invoke this after
+  /// resetting the mapping for a newly selected worksheet.
+  void applySuggestedMapping(ColumnMapping suggestion) {
+    String? available(String? value) => _availableOrNull(value);
+    mapping = ColumnMapping(
+      dateColumn: available(suggestion.dateColumn),
+      shiftColumn: available(suggestion.shiftColumn),
+      employeeColumn: available(suggestion.employeeColumn),
+      departmentColumn: available(suggestion.departmentColumn),
+      locationColumn: available(suggestion.locationColumn),
+      notesColumn: available(suggestion.notesColumn),
+    );
+    hasValidated = false;
+    _refreshValidation();
+    notifyListeners();
+  }
+
   void updateMapping(DestinationField field, String? sourceColumn) {
     if (sourceColumn != null && !availableColumns.contains(sourceColumn)) {
       throw ArgumentError.value(

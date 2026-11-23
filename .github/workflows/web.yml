@@ -68,13 +68,18 @@ jobs:
 
       - name: Build web release
         env:
-          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+          # Web OAuth Client IDs are public identifiers, not client secrets.
+          # Prefer the repository secret when configured; otherwise use the
+          # owner's existing Google Web OAuth client for GitHub Pages.
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID || '667656026445-pffm0rtkaiunhfujgfv52dlfb6pbtnm2.apps.googleusercontent.com' }}
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
+          ORGANIZATION_API_BASE_URL: ${{ vars.ORGANIZATION_API_BASE_URL }}
         run: |
           REPO_NAME="${GITHUB_REPOSITORY#*/}"
           flutter build web --release --base-href "/$REPO_NAME/" \
             --dart-define=GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID" \
-            --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID"
+            --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID" \
+            --dart-define=ORGANIZATION_API_BASE_URL="$ORGANIZATION_API_BASE_URL"
 
       - name: Verify web output
         shell: bash
@@ -83,6 +88,13 @@ jobs:
           test -f build/web/index.html
           test -d build/web/assets
           echo "WEB BUILD PASS"
+
+      - name: Write exact deployment metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '{"repository":"%s","commit_sha":"%s"}\n' \
+            "$GITHUB_REPOSITORY" "$GITHUB_SHA" > build/web/deployment.json
 
       - name: Upload downloadable web build
         uses: actions/upload-artifact@v7

@@ -10,5 +10,10 @@ roster contents must never be stored here.
 `ResumeSyncService` retries failed operations and updates the original history entry.
 `CalendarSyncCoordinator` joins managed-event lookup, plan building and execution.
 
-Production follow-up: duplicate-safe insert reconciliation, progress UI, authorization
-refresh and main-screen dependency wiring.
+Insert retries and resume now reconcile the deterministic managed-event Sync ID
+before another insert. A single matching provider event is adopted; duplicate
+matches or a failed verification lookup remain failed rather than risking a
+second event.
+
+Remaining follow-up: cross-device concurrent-sync coordination, authorization
+refresh behavior, and durable cross-device history are separate concerns.

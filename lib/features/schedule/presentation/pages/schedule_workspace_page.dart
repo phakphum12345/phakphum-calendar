@@ -15,6 +15,7 @@ import '../widgets/schedule_controller_host.dart';
 import '../widgets/schedule_grid.dart';
 import '../widgets/schedule_view_scaffold.dart';
 import '../widgets/schedule_view_selector.dart';
+import '../widgets/schedule_year_overview.dart';
 
 class ScheduleWorkspacePage extends StatefulWidget {
   const ScheduleWorkspacePage({
@@ -46,35 +47,57 @@ class _ScheduleWorkspacePageState extends State<ScheduleWorkspacePage> {
           value: mode,
           onChanged: (value) => setState(() => mode = value),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ScheduleGrid(
-              days: _days(controller),
-              assignmentsFor: controller.assignmentsFor,
-              showMonthPadding: mode == ScheduleViewMode.month,
-              selectedDate: controller.selectedDay,
-              onDaySelected: (day) {
-                controller.selectDay(day.date);
-                if (mode != ScheduleViewMode.day) {
-                  setState(() => mode = ScheduleViewMode.day);
-                }
-              },
-            ),
-            if (mode == ScheduleViewMode.day)
-              const DailyRosterNameStatusPanel(),
-            if (widget.editable) ...[
-              const SizedBox(height: 20),
-              _ManualAssignmentPanel(
+        periodHeader: mode == ScheduleViewMode.year
+            ? _YearHeader(controller: controller)
+            : null,
+        showStatistics: mode != ScheduleViewMode.year,
+        child: mode == ScheduleViewMode.year
+            ? ScheduleYearOverview(
+                year: controller.currentMonth.year,
                 controller: controller,
-                onCommitted: widget.onCommitted,
+                onMonthSelected: (month) {
+                  controller.loadMonth(month);
+                  setState(() => mode = ScheduleViewMode.month);
+                },
+              )
+            : Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ScheduleGrid(
+                    days: _days(controller),
+                    assignmentsFor: controller.assignmentsFor,
+                    showMonthPadding: mode == ScheduleViewMode.month,
+                    selectedDate: controller.selectedDay,
+                    onDaySelected: (day) {
+                      final date = day.date;
+                      if (controller.currentMonth.year != date.year ||
+                          controller.currentMonth.month != date.month) {
+                        controller.loadMonth(date);
+                      }
+                      controller.selectDay(date);
+                      if (mode != ScheduleViewMode.day) {
+                        setState(() => mode = ScheduleViewMode.day);
+                      }
+                    },
+                  ),
+                  if (mode == ScheduleViewMode.day)
+                    const DailyRosterNameStatusPanel(),
+                  if (widget.editable) ...[
+                    const SizedBox(height: 20),
+                    _ManualAssignmentPanel(
+                      controller: controller,
+                      onCommitted: widget.onCommitted,
+                    ),
+                  ],
+                ],
               ),
-            ],
-          ],
-        ),
       ),
     );
   }
+
+  ScheduleDay _dayForDate(ScheduleController controller, DateTime date) =>
+      controller.canonicalSchedule.month(date)?.day(date) ??
+      ScheduleDay(date: date);
 
   List<ScheduleDay> _days(ScheduleController controller) {
     if (mode == ScheduleViewMode.month) {
@@ -88,15 +111,15 @@ class _ScheduleWorkspacePageState extends State<ScheduleWorkspacePage> {
         controller.schedule.days.firstOrNull?.date;
     if (anchor == null) return const [];
     if (mode == ScheduleViewMode.day) {
-      final day = controller.schedule.day(anchor);
-      return day == null ? const [] : [day];
+      final day = _dayForDate(controller, anchor);
+      return [day];
     }
 
     final start = anchor.subtract(Duration(days: anchor.weekday - 1));
-    final end = start.add(const Duration(days: 6));
-    return controller.schedule.days
-        .where((day) => !day.date.isBefore(start) && !day.date.isAfter(end))
-        .toList(growable: false);
+    return [
+      for (var offset = 0; offset < 7; offset++)
+        _dayForDate(controller, start.add(Duration(days: offset))),
+    ];
   }
 
   DateTime? _todayInMonth(ScheduleController controller) {
@@ -374,4 +397,37 @@ class _AssignmentDialogState extends State<_AssignmentDialog> {
       ),
     ],
   );
+}
+
+class _YearHeader extends StatelessWidget {
+  const _YearHeader({required this.controller});
+
+  final ScheduleController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final year = controller.currentMonth.year;
+    final month = controller.currentMonth.month;
+    return Row(
+      children: [
+        IconButton(
+          tooltip: 'Previous year',
+          onPressed: () => controller.loadMonth(DateTime(year - 1, month)),
+          icon: const Icon(Icons.chevron_left),
+        ),
+        Expanded(
+          child: Text(
+            '$year',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+        ),
+        IconButton(
+          tooltip: 'Next year',
+          onPressed: () => controller.loadMonth(DateTime(year + 1, month)),
+          icon: const Icon(Icons.chevron_right),
+        ),
+      ],
+    );
+  }
 }

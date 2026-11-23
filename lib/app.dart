@@ -196,7 +196,13 @@ class _ShiftToolsAppState extends State<ShiftToolsApp> {
           importedScheduleFactory: dependencies.createImportedSchedule,
           scheduleControllerFactory:
               dependencies.createImportedScheduleController,
+          workflowControllerFactory:
+              dependencies.createAuthorizedCalendarWorkflowController,
           scheduleSaver: dependencies.saveImportedSchedule,
+          existingScheduleLoader: dependencies.loadImportedSchedule,
+          employeeRepository: dependencies.employeeRepository,
+          shiftTemplateControllerFactory:
+              dependencies.createShiftTemplateController,
         ),
       },
       home: AppShell(

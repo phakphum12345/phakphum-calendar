@@ -1,0 +1,59 @@
+name: DISKPATH Maintainer Refresh
+
+on:
+  push:
+    branches:
+      - fix/diskpath-manifest-refresh
+      - fix/diskpath-manifest-refresh-v2
+
+permissions:
+  contents: write
+
+concurrency:
+  group: diskpath-maintainer-refresh
+  cancel-in-progress: false
+
+jobs:
+  regenerate-and-commit:
+    name: Regenerate and commit canonical manifests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout maintenance branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Regenerate canonical manifests
+        run: python3 tools/diskpath/generate_diskpath.py
+
+      - name: Validate generated manifests
+        run: |
+          python3 tools/diskpath/generate_diskpath.py --check
+          python3 tools/diskpath/validate_diskpath.py
+          git diff --check
+
+      - name: Commit only generated manifest files
+        run: |
+          if git diff --quiet -- DISKPATH.json DISKPATH.md; then
+            echo "DISKPATH manifests already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- DISKPATH.json DISKPATH.md
+          git commit -m "chore(diskpath): regenerate canonical manifests"
+          git push origin "HEAD:$GITHUB_REF_NAME"
+
+      - name: Verify committed manifests
+        run: |
+          python3 tools/diskpath/generate_diskpath.py --check
+          python3 tools/diskpath/validate_diskpath.py
+
+# Manifest refresh is restricted to the dedicated maintenance branches above.
