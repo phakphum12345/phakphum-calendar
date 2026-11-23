@@ -1,42 +1,71 @@
-# Shift Exchange
+# Shift Exchange and Shift Transaction Timeline
 
-The existing Phase 1 request workspace remains read-only until its application
-and persistence boundaries are connected. The typed transaction foundation
-models three distinct operations:
+This feature provides server-backed shift release/receive, reciprocal exchange,
+exchange-and-return, participant consent, organization approval, Calendar
+synchronization safeguards, fulfillment tracking, and immutable transaction
+history.
 
-- `giveUp`: one shift moves from the requester to the recipient;
-- `exchange`: two reciprocal shift movements are agreed as one transaction;
-- `exchangeAndReturn`: a primary movement and a reciprocal return obligation
-  are tracked separately.
+## Supported transaction types
 
-Transactions distinguish personal agreements from organization-scoped
-requests. Personal transactions never require an organization approver.
-Organization requests can require an approval decision, which must be checked
-through the application authorization boundary.
+- `give_up`: the requester releases one assigned shift to a recipient. The
+  recipient confirms or rejects the request; an organization policy may require
+  an authorized manager approval.
+- `exchange`: two employees agree to transfer one shift each in opposite
+  directions as one transaction.
+- `exchange_and_return`: the requester transfers a primary shift to the
+  recipient and records a separate return-shift obligation in the opposite
+  direction. The two legs remain independently visible and fulfilled.
 
-Participant agreement, organization approval, Calendar synchronization, and
-actual shift fulfillment are separate lifecycle stages. Calendar writes remain
-previewed and explicitly confirmed by the user. The server-backed read-only history panel now consumes the authenticated Laravel
-transaction API and renders transfer details plus append-only audit events. The
-Flutter API adapter intentionally uses response DTOs separate from the local
-domain aggregate because the server does not expose participant Google subjects.
-The authenticated API adapter exposes transaction creation and lifecycle
-transitions with idempotency keys, server authorization, and version-checked
-server state. The current `ShiftExchangePage` remains read-only until the
-user-facing receive/exchange/give-up workflow and canonical schedule projection
-are connected. Calendar writes remain behind the preview and explicit user
-confirmation workflow.
+The existing server lifecycle distinguishes participant agreement, organization
+approval, Calendar synchronization, and actual fulfillment. A successful
+Calendar write is not treated as proof that the shift was worked.
 
-No existing roster, Employee Directory, Calendar event, or historical Timeline
-record is changed by this domain foundation.
+## Timeline and history
 
+The backend stores append-only events in `shift_transaction_events`. Every
+successful state transition records the actor, event type, transaction version,
+event payload, and occurrence time. Both participants see the same transaction
+timeline, subject to participant or organization membership authorization.
 
-## Read-only server history
+The history panel supports filtering by transaction type and effective shift
+month. Each transaction displays participants, transfer legs, fulfillment
+state, and chronological audit events. Existing roster ownership timelines are
+linked only when exactly one matching roster slot and owner transition can be
+identified; ambiguous matches are intentionally not guessed.
 
-Set `ORGANIZATION_API_BASE_URL` at build time to the Laravel API origin. The app
-uses the signed-in Google account's ID token as a Bearer token for
-`GET /api/v1/shift-transactions`. No access token or ID token is persisted by
-this feature. When the URL is not configured, the history panel explains the
-missing configuration and makes no network request. The panel is read-only;
-Google Calendar changes remain behind the existing preview and explicit user
-confirmation workflow.
+## Safety boundaries
+
+- Personal transactions never require organization approval.
+- Organization approval follows the organization's configured workflow policy.
+- Only transaction participants can respond, cancel as requester, sync, or
+  confirm fulfillment as the receiving employee.
+- Only authorized organization managers can approve organization requests.
+- Calendar writes require an explicit preview confirmation.
+- Server transitions use version checks and idempotency on creation.
+- Historical events are append-only; cancellation or rejection never erases
+  prior events or the original roster assignment.
+- The canonical imported roster remains unchanged. Approved transactions are
+  projected as an effective view rather than overwriting the import source.
+
+## Related implementation
+
+- `lib/features/shift_exchange/presentation/pages/shift_exchange_page.dart`
+- `lib/features/shift_exchange/presentation/widgets/shift_transaction_history_panel.dart`
+- `lib/features/shift_exchange/infrastructure/shift_transaction_api_client.dart`
+- `backend/app/Services/ShiftTransactions/ShiftTransactionService.php`
+- `backend/database/migrations/2026_11_16_000001_create_shift_transactions.php`
+- `backend/tests/Feature/ShiftTransactionApiTest.php`
+
+Run the focused Flutter tests with:
+
+```bash
+flutter test test/features/shift_transaction_composer_test.dart
+flutter test test/features/shift_transaction_history_panel_test.dart
+flutter test test/shift_transaction_exchange_test.dart
+```
+
+Run the backend feature tests from `backend/` with:
+
+```bash
+php artisan test --filter=ShiftTransactionApiTest
+```
