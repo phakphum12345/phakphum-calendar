@@ -33,7 +33,6 @@ void main() {
     }
   });
 
-
   test('surfaces the server correlation ID with API errors', () async {
     final client = ShiftTransactionApiClient(
       baseUrl: 'https://calendar.example.test',
