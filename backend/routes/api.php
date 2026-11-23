@@ -30,6 +30,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/organizations/{organizationId}/members', [OrganizationController::class, 'members'])
             ->whereUuid('organizationId')
             ->name('api.v1.organizations.members');
+        Route::get('/organizations/{organizationId}/membership-audit', [OrganizationController::class, 'membershipAudit'])
+            ->whereUuid('organizationId')
+            ->name('api.v1.organizations.membership-audit');
         Route::post('/organizations/{organizationId}/members', [OrganizationController::class, 'addMember'])
             ->whereUuid('organizationId')
             ->name('api.v1.organizations.members.store');
