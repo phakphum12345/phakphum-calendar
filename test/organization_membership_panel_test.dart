@@ -51,6 +51,36 @@ void main() {
     expect(find.byTooltip('จัดการสมาชิก'), findsNothing);
   });
 
+  testWidgets('admin can view organization membership audit history', (
+    tester,
+  ) async {
+    final gateway = _FakeOrganizationAdminGateway();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: OrganizationMembershipPanel(
+            apiBaseUrl: 'https://api.example.com',
+            currentEmail: 'admin@example.com',
+            gateway: gateway,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final auditHeading = find.text('ประวัติการเปลี่ยนแปลงสมาชิก');
+    await tester.ensureVisible(auditHeading);
+    await tester.tap(auditHeading);
+    await tester.pumpAndSettle();
+
+    expect(gateway.auditRequests, 1);
+    expect(find.text('เปลี่ยนบทบาทสมาชิก'), findsOneWidget);
+    expect(find.textContaining('ผู้ดำเนินการ: Owner'), findsOneWidget);
+    expect(find.textContaining('สมาชิก: Member'), findsOneWidget);
+    expect(find.textContaining('บทบาท: staff'), findsOneWidget);
+    expect(find.textContaining('บทบาท: Manager'), findsOneWidget);
+  });
+
   testWidgets('admin reviews profile and approves with selected role', (
     tester,
   ) async {
@@ -100,6 +130,7 @@ class _FakeOrganizationAdminGateway implements OrganizationAdminGateway {
   String? approvedRole;
   String? updatedRole;
   String? removedMemberId;
+  int auditRequests = 0;
   List<OrganizationMember> _members = const [
     OrganizationMember(
       userId: 'member-id',
@@ -133,6 +164,30 @@ class _FakeOrganizationAdminGateway implements OrganizationAdminGateway {
   @override
   Future<List<OrganizationMember>> members(String organizationId) async =>
       _members;
+
+  @override
+  Future<OrganizationMembershipAuditPage> membershipAudit(
+    String organizationId, {
+    int limit = 50,
+    int? beforeId,
+  }) async {
+    auditRequests++;
+    return OrganizationMembershipAuditPage(
+      events: [
+        OrganizationMembershipAuditEvent(
+          id: 1,
+          action: 'role_changed',
+          actorUserId: 'owner-id',
+          actorName: 'Owner',
+          subjectUserId: 'member-id',
+          subjectName: 'Member',
+          before: const {'role': 'staff', 'status': 'active'},
+          after: const {'role': 'manager', 'status': 'active'},
+          createdAt: DateTime.utc(2026, 11, 23, 10),
+        ),
+      ],
+    );
+  }
 
   @override
   Future<void> updateMemberRole({
