@@ -48,8 +48,8 @@ class WebPushSubscriptionApiTest extends TestCase
         $response = $this->postJson('/api/v1/push-subscriptions', [
             'endpoint' => $endpoint,
             'keys' => [
-                'p256dh' => 'B'.str_repeat('a', 86),
-                'auth' => 'b'.str_repeat('c', 22),
+                'p256dh' => rtrim(strtr(base64_encode("\x04".str_repeat("\x01", 64)), '+/', '-_'), '='),
+                'auth' => rtrim(strtr(base64_encode(str_repeat("\x02", 16)), '+/', '-_'), '='),
             ],
             'contentEncoding' => 'aes128gcm',
         ], $this->auth('owner-token'));
@@ -61,10 +61,10 @@ class WebPushSubscriptionApiTest extends TestCase
         $this->assertSame(hash('sha256', $endpoint), $subscription->endpoint_hash);
         $this->assertSame($endpoint, Crypt::decryptString($subscription->endpoint_encrypted));
         $this->assertSame(
-            'b'.str_repeat('c', 22),
+            rtrim(strtr(base64_encode(str_repeat("\x02", 16)), '+/', '-_'), '='),
             Crypt::decryptString($subscription->auth_token_encrypted),
         );
-        $this->assertSame('B'.str_repeat('a', 86), $subscription->p256dh_key);
+        $this->assertSame(rtrim(strtr(base64_encode("\x04".str_repeat("\x01", 64)), '+/', '-_'), '='), $subscription->p256dh_key);
         $this->assertSame('aes128gcm', $subscription->content_encoding);
     }
 
@@ -74,8 +74,8 @@ class WebPushSubscriptionApiTest extends TestCase
         $payload = [
             'endpoint' => 'https://fcm.googleapis.com/fcm/send/same-endpoint',
             'keys' => [
-                'p256dh' => 'B'.str_repeat('a', 86),
-                'auth' => 'b'.str_repeat('c', 22),
+                'p256dh' => rtrim(strtr(base64_encode("\x04".str_repeat("\x01", 64)), '+/', '-_'), '='),
+                'auth' => rtrim(strtr(base64_encode(str_repeat("\x02", 16)), '+/', '-_'), '='),
             ],
         ];
 
@@ -100,8 +100,8 @@ class WebPushSubscriptionApiTest extends TestCase
             $this->postJson('/api/v1/push-subscriptions', [
                 'endpoint' => $endpoint,
                 'keys' => [
-                    'p256dh' => 'B'.str_repeat('a', 86),
-                    'auth' => 'b'.str_repeat('c', 22),
+                    'p256dh' => rtrim(strtr(base64_encode("\x04".str_repeat("\x01", 64)), '+/', '-_'), '='),
+                    'auth' => rtrim(strtr(base64_encode(str_repeat("\x02", 16)), '+/', '-_'), '='),
                 ],
             ], $this->auth('owner-token'))->assertUnprocessable();
         }
@@ -114,8 +114,8 @@ class WebPushSubscriptionApiTest extends TestCase
         $this->postJson('/api/v1/push-subscriptions', [
             'endpoint' => 'https://fcm.googleapis.com/fcm/send/token',
             'keys' => [
-                'p256dh' => 'B'.str_repeat('a', 86),
-                'auth' => 'b'.str_repeat('c', 22),
+                'p256dh' => rtrim(strtr(base64_encode("\x04".str_repeat("\x01", 64)), '+/', '-_'), '='),
+                'auth' => rtrim(strtr(base64_encode(str_repeat("\x02", 16)), '+/', '-_'), '='),
             ],
         ])->assertUnauthorized();
     }
@@ -129,8 +129,8 @@ class WebPushSubscriptionApiTest extends TestCase
         $this->postJson('/api/v1/push-subscriptions', [
             'endpoint' => $endpoint,
             'keys' => [
-                'p256dh' => 'B'.str_repeat('a', 86),
-                'auth' => 'b'.str_repeat('c', 22),
+                'p256dh' => rtrim(strtr(base64_encode("\x04".str_repeat("\x01", 64)), '+/', '-_'), '='),
+                'auth' => rtrim(strtr(base64_encode(str_repeat("\x02", 16)), '+/', '-_'), '='),
             ],
         ], $this->auth('owner-token'))->assertCreated();
 
