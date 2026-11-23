@@ -1,0 +1,104 @@
+name: Build macOS (Xcode)
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - "lib/**"
+      - "assets/**"
+      - "macos/**"
+      - "test/**"
+      - "integration_test/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - ".github/workflows/macos.yml"
+  push:
+    branches: [main]
+    paths:
+      - "lib/**"
+      - "assets/**"
+      - "macos/**"
+      - "test/**"
+      - "integration_test/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - ".github/workflows/macos.yml"
+
+permissions:
+  contents: read
+
+# This workflow owns its runner lifecycle. It does not depend on, wait for,
+# or cancel Windows, Linux, Android, Web, or iOS workflows.
+concurrency:
+  group: macos-xcode-${{ github.workflow }}-${{ github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  build-macos:
+    name: macOS / Xcode / Unsigned Release
+    runs-on: ${{ vars.MACOS_RUNNER_LABEL || 'macos-15' }}
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 1
+
+      - name: Verify macOS and Xcode toolchain
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "Commit: ${GITHUB_SHA}"
+          echo "Runner architecture: $(uname -m)"
+          sw_vers
+          xcodebuild -version
+          xcodebuild -list -project macos/Runner.xcodeproj
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+
+      - name: Resolve Flutter dependencies
+        run: flutter pub get
+
+      - name: Build unsigned macOS application
+        run: flutter build macos --release --no-codesign
+
+      - name: Verify macOS application bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_PATH="build/macos/Build/Products/Release/phakphum_calendar.app"
+          test -d "$APP_PATH"
+          test -f "$APP_PATH/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PATH/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP_PATH/Contents/Info.plist"
+
+      - name: Package unsigned macOS application
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/macos
+          ditto -c -k --sequesterRsrc --keepParent \
+            build/macos/Build/Products/Release/phakphum_calendar.app \
+            dist/macos/phakphum-calendar-macos-unsigned.zip
+          shasum -a 256 dist/macos/phakphum-calendar-macos-unsigned.zip \
+            > dist/macos/phakphum-calendar-macos-unsigned.zip.sha256
+          test -s dist/macos/phakphum-calendar-macos-unsigned.zip
+          test -s dist/macos/phakphum-calendar-macos-unsigned.zip.sha256
+
+      - name: Upload macOS build artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: phakphum-calendar-macos-unsigned
+          path: |
+            dist/macos/phakphum-calendar-macos-unsigned.zip
+            dist/macos/phakphum-calendar-macos-unsigned.zip.sha256
+          if-no-files-found: error
+          retention-days: 14
