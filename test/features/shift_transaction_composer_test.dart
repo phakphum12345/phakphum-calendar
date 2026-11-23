@@ -269,13 +269,20 @@ Future<void> _selectComposerDropdown(
   int index,
   String label,
 ) async {
-  final finder = find.byType(DropdownButtonFormField<String>).at(index);
-  final field = tester.widget<DropdownButtonFormField<String>>(finder);
-  final item = field.items!.singleWhere((candidate) {
+  final fieldFinder = find.byType(DropdownButtonFormField<String>).at(index);
+  final dropdownFinder = find.descendant(
+    of: fieldFinder,
+    matching: find.byType(DropdownButton<String>),
+  );
+  final dropdown = tester.widget<DropdownButton<String>>(dropdownFinder);
+  final item = dropdown.items!.singleWhere((candidate) {
     final child = candidate.child;
     return child is Text && child.data == label;
   });
-  tester.state<FormFieldState<String>>(finder).didChange(item.value);
+
+  // Invoke the real DropdownButton callback so the Composer's onChanged
+  // handler updates its transaction type and dependent shift selection.
+  dropdown.onChanged!(item.value);
   await tester.pumpAndSettle();
 }
 
