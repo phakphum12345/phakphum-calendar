@@ -166,6 +166,36 @@ void main() {
     expect(page.nextBeforeId, 7);
   });
 
+  test('membership audit treats offset-free API timestamps as UTC', () async {
+    final client = MockClient((request) async => http.Response(
+      jsonEncode({
+        'data': [
+          {
+            'id': 8,
+            'action': 'role_changed',
+            'actor': {'user_id': '1', 'name': 'Owner'},
+            'subject': {'user_id': '2', 'name': 'Member'},
+            'created_at': '2026-11-23 10:00:00',
+          },
+        ],
+        'meta': {'limit': 50, 'next_before_id': null},
+      }),
+      200,
+      headers: {'content-type': 'application/json'},
+    ));
+    final gateway = HttpOrganizationAdminGateway(
+      baseUrl: 'https://api.example.com',
+      idToken: () async => 'test-id-token',
+      client: client,
+    );
+
+    final page = await gateway.membershipAudit('organization-id');
+    gateway.close();
+
+    expect(page.events.single.createdAt.isUtc, isTrue);
+    expect(page.events.single.createdAt, DateTime.utc(2026, 11, 23, 10));
+  });
+
   test('membership audit rejects invalid pagination bounds', () async {
     final gateway = HttpOrganizationAdminGateway(
       baseUrl: 'https://api.example.com',
