@@ -77,6 +77,7 @@ class WebPushSubscriptionController
         $host = strtolower((string) ($parts['host'] ?? ''));
 
         $isAllowedHost = in_array($host, self::ALLOWED_HOSTS, true)
+            || str_ends_with($host, '.push.services.mozilla.com')
             || str_ends_with($host, '.notify.windows.com');
 
         if (
