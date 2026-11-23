@@ -7,6 +7,33 @@ import 'package:http/testing.dart';
 import 'package:phakphum_calendar/features/shift_exchange/infrastructure/shift_transaction_api_client.dart';
 
 void main() {
+
+  test('rejects non-loopback HTTP API origins', () {
+    expect(
+      () => ShiftTransactionApiClient(
+        baseUrl: 'http://calendar.example.test',
+        idTokenProvider: () async => 'token',
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test('allows HTTP only for explicit loopback development origins', () {
+    for (final baseUrl in [
+      'http://localhost:8787',
+      'http://127.0.0.1:8787',
+      'http://[::1]:8787',
+    ]) {
+      final client = ShiftTransactionApiClient(
+        baseUrl: baseUrl,
+        idTokenProvider: () async => 'token',
+        httpClient: MockClient((request) async => http.Response('{}', 200)),
+      );
+      expect(client.isConfigured, isTrue);
+      client.close();
+    }
+  });
+
   test('generates a distinct correlation ID for every API request', () async {
     final requestIds = <String>[];
     final client = ShiftTransactionApiClient(
