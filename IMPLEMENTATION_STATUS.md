@@ -10,7 +10,7 @@ This section is the current evidence snapshot. The remainder of this file is ret
 |---|---|---|
 | Default branch | `main` | PASS |
 | Open PRs | 0 | PASS |
-| Issue tracker | Disabled on this repository (`has_issues: false)); reported open issue count is 0 | UNKNOWN |
+| Issue tracker | Disabled on this repository (`has_issues: false`); reported open issue count is 0 | UNKNOWN |
 | Main branch protection | GitHub reports `protected: false` | FAIL |
 | Local working tree | Not available through the GitHub API audit | UNKNOWN |
 | Current-SHA workflow runs | Auto Detect CI and Cross-platform Runtime both completed successfully | PASS |
