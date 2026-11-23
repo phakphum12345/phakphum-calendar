@@ -70,6 +70,18 @@ class OrganizationController
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
+                $this->recordMembershipAudit(
+                    $organizationId,
+                    $request->user()->id,
+                    $request->user()->id,
+                    'created',
+                    null,
+                    [
+                        'employee_id' => $validated['employee_id'],
+                        'role' => 'owner',
+                        'status' => 'active',
+                    ],
+                );
 
                 foreach (self::WORKFLOW_TYPES as $workflowType) {
                     DB::table('organization_shift_policies')->insert([
@@ -123,6 +135,69 @@ class OrganizationController
         return response()->json(['data' => $members]);
     }
 
+    public function membershipAudit(Request $request, string $organizationId): JsonResponse
+    {
+        $this->requireManager($request, $organizationId);
+        $validated = $request->validate([
+            'limit' => ['sometimes', 'integer', 'min:1', 'max:100'],
+            'before_id' => ['sometimes', 'integer', 'min:1'],
+        ]);
+        $limit = (int) ($validated['limit'] ?? 50);
+
+        $query = DB::table('organization_membership_audit_events as events')
+            ->join('users as actors', 'actors.id', '=', 'events.actor_user_id')
+            ->join('users as subjects', 'subjects.id', '=', 'events.subject_user_id')
+            ->where('events.organization_id', $organizationId);
+        if (isset($validated['before_id'])) {
+            $query->where('events.id', '<', $validated['before_id']);
+        }
+
+        $events = $query
+            ->orderByDesc('events.id')
+            ->limit($limit)
+            ->get([
+                'events.id',
+                'events.action',
+                'events.actor_user_id',
+                'actors.name as actor_name',
+                'events.subject_user_id',
+                'subjects.name as subject_name',
+                'events.before_state',
+                'events.after_state',
+                'events.created_at',
+            ]);
+
+        $data = $events->map(static fn (object $event): array => [
+            'id' => (int) $event->id,
+            'action' => $event->action,
+            'actor' => [
+                'user_id' => (string) $event->actor_user_id,
+                'name' => $event->actor_name,
+            ],
+            'subject' => [
+                'user_id' => (string) $event->subject_user_id,
+                'name' => $event->subject_name,
+            ],
+            'before' => $event->before_state === null
+                ? null
+                : json_decode($event->before_state, true, 512, JSON_THROW_ON_ERROR),
+            'after' => $event->after_state === null
+                ? null
+                : json_decode($event->after_state, true, 512, JSON_THROW_ON_ERROR),
+            'created_at' => $event->created_at,
+        ])->values();
+
+        return response()->json([
+            'data' => $data,
+            'meta' => [
+                'limit' => $limit,
+                'next_before_id' => $data->count() === $limit
+                    ? $data->last()['id']
+                    : null,
+            ],
+        ]);
+    }
+
     public function addMember(Request $request, string $organizationId): JsonResponse
     {
         $this->requireManager($request, $organizationId);
@@ -133,6 +208,7 @@ class OrganizationController
         ]);
 
         $email = strtolower(trim($validated['email']));
+        $actorUserId = $request->user()->id;
         $user = DB::table('users')
             ->where('email', $email)
             ->whereNotNull('google_subject')
@@ -152,6 +228,7 @@ class OrganizationController
                 $organizationId,
                 $user,
                 $validated,
+                $actorUserId,
             ): array {
                 $existing = DB::table('organization_memberships')
                     ->where('organization_id', $organizationId)
@@ -172,6 +249,22 @@ class OrganizationController
                             'status' => 'active',
                             'updated_at' => now(),
                         ]);
+                    $this->recordMembershipAudit(
+                        $organizationId,
+                        $actorUserId,
+                        $user->id,
+                        'reactivated',
+                        [
+                            'employee_id' => $existing->employee_id,
+                            'role' => $existing->role,
+                            'status' => $existing->status,
+                        ],
+                        [
+                            'employee_id' => $validated['employee_id'],
+                            'role' => $validated['role'],
+                            'status' => 'active',
+                        ],
+                    );
 
                     return ['conflict' => false, 'reactivated' => true];
                 }
@@ -185,6 +278,18 @@ class OrganizationController
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
+                $this->recordMembershipAudit(
+                    $organizationId,
+                    $actorUserId,
+                    $user->id,
+                    'added',
+                    null,
+                    [
+                        'employee_id' => $validated['employee_id'],
+                        'role' => $validated['role'],
+                        'status' => 'active',
+                    ],
+                );
 
                 return ['conflict' => false, 'reactivated' => false];
             });
@@ -230,11 +335,13 @@ class OrganizationController
         $validated = $request->validate([
             'role' => ['required', 'in:staff,incharge,manager,admin'],
         ]);
+        $actorUserId = $request->user()->id;
 
         $result = DB::transaction(function () use (
             $organizationId,
             $userId,
             $validated,
+            $actorUserId,
         ): array {
             $member = DB::table('organization_memberships')
                 ->where('organization_id', $organizationId)
@@ -249,6 +356,13 @@ class OrganizationController
             if ($member->role === 'owner') {
                 return ['error' => 'owner_membership_protected'];
             }
+            if ($member->role === $validated['role']) {
+                return [
+                    'user_id' => (string) $member->user_id,
+                    'role' => $member->role,
+                    'status' => 'active',
+                ];
+            }
 
             DB::table('organization_memberships')
                 ->where('id', $member->id)
@@ -256,6 +370,22 @@ class OrganizationController
                     'role' => $validated['role'],
                     'updated_at' => now(),
                 ]);
+            $this->recordMembershipAudit(
+                $organizationId,
+                $actorUserId,
+                $member->user_id,
+                'role_changed',
+                [
+                    'employee_id' => $member->employee_id,
+                    'role' => $member->role,
+                    'status' => $member->status,
+                ],
+                [
+                    'employee_id' => $member->employee_id,
+                    'role' => $validated['role'],
+                    'status' => $member->status,
+                ],
+            );
 
             return [
                 'user_id' => (string) $member->user_id,
@@ -286,10 +416,12 @@ class OrganizationController
         string $userId,
     ): JsonResponse {
         $this->requireManager($request, $organizationId);
+        $actorUserId = $request->user()->id;
 
         $result = DB::transaction(function () use (
             $organizationId,
             $userId,
+            $actorUserId,
         ): array {
             $member = DB::table('organization_memberships')
                 ->where('organization_id', $organizationId)
@@ -311,6 +443,22 @@ class OrganizationController
                     'status' => 'inactive',
                     'updated_at' => now(),
                 ]);
+            $this->recordMembershipAudit(
+                $organizationId,
+                $actorUserId,
+                $member->user_id,
+                'removed',
+                [
+                    'employee_id' => $member->employee_id,
+                    'role' => $member->role,
+                    'status' => $member->status,
+                ],
+                [
+                    'employee_id' => $member->employee_id,
+                    'role' => $member->role,
+                    'status' => 'inactive',
+                ],
+            );
 
             return [
                 'user_id' => (string) $member->user_id,
@@ -561,6 +709,25 @@ class OrganizationController
                         ]);
                 }
 
+                $this->recordMembershipAudit(
+                    $organizationId,
+                    $reviewer->user_id,
+                    $application->user_id,
+                    'join_request_approved',
+                    $membership === null
+                        ? null
+                        : [
+                            'employee_id' => $membership->employee_id,
+                            'role' => $membership->role,
+                            'status' => $membership->status,
+                        ],
+                    [
+                        'employee_id' => $application->employee_id,
+                        'role' => $validated['role'],
+                        'status' => 'active',
+                    ],
+                );
+
                 DB::table('organization_join_requests')
                     ->where('id', $requestId)
                     ->update([
@@ -713,6 +880,29 @@ class OrganizationController
         return str_contains($message, 'unique constraint') ||
             str_contains($message, 'duplicate entry') ||
             str_contains($message, 'unique violation');
+    }
+
+    private function recordMembershipAudit(
+        string $organizationId,
+        int|string $actorUserId,
+        int|string $subjectUserId,
+        string $action,
+        ?array $beforeState,
+        ?array $afterState,
+    ): void {
+        DB::table('organization_membership_audit_events')->insert([
+            'organization_id' => $organizationId,
+            'actor_user_id' => $actorUserId,
+            'subject_user_id' => $subjectUserId,
+            'action' => $action,
+            'before_state' => $beforeState === null
+                ? null
+                : json_encode($beforeState, JSON_THROW_ON_ERROR),
+            'after_state' => $afterState === null
+                ? null
+                : json_encode($afterState, JSON_THROW_ON_ERROR),
+            'created_at' => now(),
+        ]);
     }
 
     private function requireMembership(Request $request, string $organizationId): object
