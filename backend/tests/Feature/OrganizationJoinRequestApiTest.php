@@ -112,6 +112,12 @@ class OrganizationJoinRequestApiTest extends TestCase
             'status' => 'approved',
             'approved_role' => 'incharge',
         ]);
+        $this->assertDatabaseHas('organization_membership_audit_events', [
+            'organization_id' => $organization['id'],
+            'actor_user_id' => $this->userId('owner@example.com'),
+            'subject_user_id' => $this->userId('applicant@example.com'),
+            'action' => 'join_request_approved',
+        ]);
 
         $this->postJson('/api/v1/organization-join-requests', [
             'organization_slug' => $organization['slug'],
@@ -198,6 +204,124 @@ class OrganizationJoinRequestApiTest extends TestCase
             'organization_id' => $organization['id'],
             'user_id' => $this->userId('applicant@example.com'),
         ]);
+    }
+
+    public function test_removed_member_reapplication_preserves_the_approved_request_history(): void
+    {
+        $organization = $this->createOrganization();
+
+        $this->postJson('/api/v1/organization-join-requests', [
+            'organization_slug' => $organization['slug'],
+            'employee_id' => 'EMP-NEW',
+        ], $this->auth('applicant-token'))->assertCreated();
+
+        $request = $this->getJson(
+            "/api/v1/organizations/{$organization['id']}/join-requests",
+            $this->auth('owner-token'),
+        )->assertOk()->json('data.0');
+
+        $this->postJson(
+            "/api/v1/organizations/{$organization['id']}/join-requests/{$request['id']}/approve",
+            ['role' => 'staff'],
+            $this->auth('owner-token'),
+        )->assertOk();
+
+        $applicantId = (string) $this->userId('applicant@example.com');
+        $this->deleteJson(
+            "/api/v1/organizations/{$organization['id']}/members/{$applicantId}",
+            [],
+            $this->auth('owner-token'),
+        )->assertOk()->assertJsonPath('data.status', 'inactive');
+
+        $this->getJson(
+            "/api/v1/organizations/{$organization['id']}/members",
+            $this->auth('applicant-token'),
+        )->assertForbidden();
+
+        $this->postJson('/api/v1/organization-join-requests', [
+            'organization_slug' => $organization['slug'],
+            'employee_id' => 'EMP-REJOINED',
+        ], $this->auth('applicant-token'))
+            ->assertConflict()
+            ->assertJsonPath('error.code', 'membership_inactive');
+
+        $this->assertDatabaseHas('organization_join_requests', [
+            'id' => $request['id'],
+            'status' => 'approved',
+            'approved_role' => 'staff',
+        ]);
+        $this->assertDatabaseHas('organization_memberships', [
+            'organization_id' => $organization['id'],
+            'user_id' => $applicantId,
+            'employee_id' => 'EMP-NEW',
+            'role' => 'staff',
+            'status' => 'inactive',
+        ]);
+    }
+
+    public function test_approval_reactivates_an_inactive_membership_without_duplicate_rows(): void
+    {
+        $organization = $this->createOrganization();
+
+        $this->postJson('/api/v1/organization-join-requests', [
+            'organization_slug' => $organization['slug'],
+            'employee_id' => 'EMP-PENDING',
+        ], $this->auth('applicant-token'))->assertCreated();
+
+        $this->postJson("/api/v1/organizations/{$organization['id']}/members", [
+            'email' => 'applicant@example.com',
+            'employee_id' => 'EMP-ADMIN-ADD',
+            'role' => 'staff',
+        ], $this->auth('owner-token'))->assertCreated();
+
+        $applicantId = (string) $this->userId('applicant@example.com');
+        $this->deleteJson(
+            "/api/v1/organizations/{$organization['id']}/members/{$applicantId}",
+            [],
+            $this->auth('owner-token'),
+        )->assertOk();
+
+        $request = $this->getJson(
+            "/api/v1/organizations/{$organization['id']}/join-requests",
+            $this->auth('owner-token'),
+        )->assertOk()->json('data.0');
+
+        $this->postJson(
+            "/api/v1/organizations/{$organization['id']}/join-requests/{$request['id']}/approve",
+            ['role' => 'incharge'],
+            $this->auth('owner-token'),
+        )->assertOk()->assertJsonPath('data.role', 'incharge');
+
+        $this->assertDatabaseHas('organization_memberships', [
+            'organization_id' => $organization['id'],
+            'user_id' => $applicantId,
+            'employee_id' => 'EMP-PENDING',
+            'role' => 'incharge',
+            'status' => 'active',
+        ]);
+        $this->assertSame(
+            1,
+            DB::table('organization_memberships')
+                ->where('organization_id', $organization['id'])
+                ->where('user_id', $applicantId)
+                ->count(),
+        );
+
+        $audit = DB::table('organization_membership_audit_events')
+            ->where('organization_id', $organization['id'])
+            ->where('subject_user_id', $applicantId)
+            ->where('action', 'join_request_approved')
+            ->latest('id')
+            ->first();
+        $this->assertNotNull($audit);
+        $this->assertSame(
+            'inactive',
+            json_decode($audit->before_state, true, 512, JSON_THROW_ON_ERROR)['status'],
+        );
+        $this->assertSame(
+            'active',
+            json_decode($audit->after_state, true, 512, JSON_THROW_ON_ERROR)['status'],
+        );
     }
 
     private function createOrganization(): array

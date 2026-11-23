@@ -46,7 +46,9 @@ class ShiftTransactionController
             'transfers.*.starts_at' => ['required', 'date'],
             'transfers.*.ends_at' => ['required', 'date', 'after:transfers.*.starts_at'],
             'transfers.*.purpose' => ['required', Rule::in(['give_up', 'exchange', 'primary', 'return_shift'])],
-            'metadata' => ['sometimes', 'array'],
+            'metadata' => ['sometimes', 'array:note,schedule_id'],
+            'metadata.note' => ['sometimes', 'nullable', 'string', 'max:1000'],
+            'metadata.schedule_id' => ['sometimes', 'nullable', 'string', 'max:128'],
         ]);
         $key = (string) $request->header('Idempotency-Key', '');
         $result = $this->transactions->create($request->user(), $validated, $key);

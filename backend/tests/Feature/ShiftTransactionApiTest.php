@@ -188,6 +188,52 @@ class ShiftTransactionApiTest extends TestCase
         $this->assertStringContainsString('254', $errors[0]);
     }
 
+    public function test_transaction_metadata_accepts_only_bounded_note_and_schedule_id(): void
+    {
+        $this->signIn('alice-token');
+        $this->signIn('bob-token');
+        $payload = $this->giveUp();
+        $payload['metadata'] = [
+            'note' => 'Please exchange this shift.',
+            'schedule_id' => 'schedule-123',
+        ];
+
+        $created = $this->postJson('/api/v1/shift-transactions', $payload, [
+            'Authorization' => 'Bearer alice-token',
+            'Idempotency-Key' => 'metadata-allowlist',
+        ])->assertCreated()->json('data');
+
+        $this->assertSame('Please exchange this shift.', $created['metadata']['note']);
+        $this->assertSame('schedule-123', $created['metadata']['schedule_id']);
+    }
+
+    public function test_transaction_metadata_rejects_unknown_keys_and_oversized_values(): void
+    {
+        $this->signIn('alice-token');
+        $this->signIn('bob-token');
+
+        $payload = $this->giveUp();
+        $payload['metadata'] = ['access_token' => 'must-not-be-stored'];
+        $this->postJson('/api/v1/shift-transactions', $payload, [
+            'Authorization' => 'Bearer alice-token',
+            'Idempotency-Key' => 'metadata-unknown-key',
+        ])->assertUnprocessable()->assertJsonValidationErrors('metadata');
+
+        $payload = $this->giveUp();
+        $payload['metadata'] = ['note' => str_repeat('n', 1001)];
+        $this->postJson('/api/v1/shift-transactions', $payload, [
+            'Authorization' => 'Bearer alice-token',
+            'Idempotency-Key' => 'metadata-note-too-long',
+        ])->assertUnprocessable()->assertJsonValidationErrors('metadata.note');
+
+        $payload = $this->giveUp();
+        $payload['metadata'] = ['schedule_id' => str_repeat('s', 129)];
+        $this->postJson('/api/v1/shift-transactions', $payload, [
+            'Authorization' => 'Bearer alice-token',
+            'Idempotency-Key' => 'metadata-schedule-id-too-long',
+        ])->assertUnprocessable()->assertJsonValidationErrors('metadata.schedule_id');
+    }
+
     public function test_idempotency_replays_same_payload_and_rejects_key_reuse(): void
     {
         $this->signIn('alice-token');
@@ -201,7 +247,7 @@ class ShiftTransactionApiTest extends TestCase
         $this->assertSame($first['id'], $again['id']);
 
         $different = $this->giveUp();
-        $different['metadata'] = ['reason' => 'different'];
+        $different['metadata'] = ['note' => 'different'];
         $this->postJson('/api/v1/shift-transactions', $different, [
             'Authorization' => 'Bearer alice-token', 'Idempotency-Key' => 'same-key',
         ])->assertConflict();
