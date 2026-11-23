@@ -4,7 +4,9 @@
 
 This change adds the browser subscription foundation only. It does **not** yet send notifications while the browser is closed. Production delivery requires the follow-up VAPID sender, durable reminder queue/scheduler, and an in-app opt-in control.
 
-## Current flow
+## Intended flow
+
+The browser bridge and authenticated subscription API are implemented, but the app settings UI is not wired yet. Once that control is added:
 
 1. The user explicitly opts in from the application.
 2. The browser asks for notification permission.
@@ -25,7 +27,7 @@ This change adds the browser subscription foundation only. It does **not** yet s
 
 - Implement and test VAPID authentication and RFC 8291 payload encryption on the backend.
 - Add durable notification intents, idempotency, retry policy, expired-subscription cleanup, and a scheduler/worker execution strategy.
-- Add a user-facing notification settings control and explicit permission/connection status.
+- Wire the subscription client into a user-facing notification settings control with explicit permission/connection status.
 - Connect shift assignment changes and reminder preferences to scheduled notification intents.
 - Configure the backend VAPID private key and Flutter public-key build define without committing secrets.
 - Verify browser/OS behavior on supported Chrome, Edge, Firefox, and Safari versions. Closing a browser may prevent delivery on platforms that suspend or disable its push service.
