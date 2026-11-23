@@ -422,7 +422,11 @@ class ShiftTransactionApiClient {
       );
     }
     if (decoded is! Map) {
-      throw ShiftTransactionApiException(response.statusCode, 'The server returned an invalid response.');
+      throw ShiftTransactionApiException(
+        response.statusCode,
+        'The server returned an invalid response.',
+        correlationId: correlationId,
+      );
     }
     final body = decoded.map((key, value) => MapEntry(key.toString(), value));
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -450,6 +454,7 @@ class ShiftTransactionApiClient {
     if (token == null || token.trim().isEmpty) {
       throw const ShiftTransactionApiException(401, 'Please sign in with Google again.');
     }
+    final requestId = _requestIdProvider();
     final response = await _http.post(
       base.resolve(path),
       headers: {
@@ -461,14 +466,23 @@ class ShiftTransactionApiClient {
       },
       body: jsonEncode(body),
     );
+    final correlationId = response.headers['x-request-id'] ?? requestId;
     final Object? decoded;
     try {
       decoded = jsonDecode(response.body);
     } on FormatException {
-      throw ShiftTransactionApiException(response.statusCode, 'The server returned an invalid response.');
+      throw ShiftTransactionApiException(
+        response.statusCode,
+        'The server returned an invalid response.',
+        correlationId: correlationId,
+      );
     }
     if (decoded is! Map) {
-      throw ShiftTransactionApiException(response.statusCode, 'The server returned an invalid response.');
+      throw ShiftTransactionApiException(
+        response.statusCode,
+        'The server returned an invalid response.',
+        correlationId: correlationId,
+      );
     }
     final result = decoded.map((key, value) => MapEntry(key.toString(), value));
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -477,6 +491,7 @@ class ShiftTransactionApiClient {
       throw ShiftTransactionApiException(
         response.statusCode,
         message ?? 'Unable to update shift transaction.',
+        correlationId: correlationId,
       );
     }
     return result;
