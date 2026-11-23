@@ -6,7 +6,7 @@ The active build and delivery surface covers **Windows, Web, Android, iOS, and L
 - `windows.yml` — Windows x64 release ZIP + SHA-256 checksum.
 - `web.yml` — Flutter Web release + GitHub Pages deployment.
 - `android.yml` — Android release APK build artifact.
-- `ios.yml` — independent unsigned iOS release app build artifact.
+- `ios.yml` — independent iOS/Xcode unsigned release build + IPA/SHA-256 artifacts.
 - `linux.yml` — Linux x64 release bundle archive.
 - `pull-request-gate.yml` — core PR evidence gate for Auto Detect CI, Windows, Web, Android, and Linux.
 - `ios-evidence-gate.yml` — non-blocking PR advisory report for independent iOS evidence.
@@ -66,11 +66,30 @@ does not complete within 30 minutes. If the PR head changes while the gate is
 waiting, the old run reports itself as superseded; the new head is evaluated by
 its own gate run.
 
+## Independent iOS / Xcode build
+
+`ios.yml` owns the iOS build lifecycle. It starts on manual dispatch, iOS-relevant
+pull-request changes, and matching pushes to `main`. It does not declare
+`needs`, poll Windows/Linux/Android/Web/macOS workflows, or wait for their
+results. Its concurrency group is unique per run and does not cancel a build
+that is queued for a GitHub-hosted macOS runner.
+
+The iOS workflow checks out the exact PR head SHA (or the pushed commit),
+verifies the macOS/Xcode toolchain and iOS Runner project, resolves Flutter
+dependencies, builds the unsigned iOS release, verifies the app bundle, and
+publishes an IPA plus SHA-256 checksum as its own artifact. It uses
+`macos-15` by default; `IOS_RUNNER_LABEL` can override the runner label.
+
+GitHub may still queue the job while no matching macOS runner capacity is
+available. This is runner allocation, not a dependency on another workflow.
+The IPA is unsigned and is not ready for App Store distribution.
+
 ## Separate iOS advisory evidence
 
-`ios-evidence-gate.yml` independently observes `ios.yml` for the same PR number
-and exact head SHA. It waits up to 30 minutes, but never holds the core Pull
-Request Gate open. It reports one of these states in its job summary:
+`ios-evidence-gate.yml` is a separate, non-blocking observer for the iOS build
+of the same PR number and exact head SHA. It waits only for that PR's own iOS
+workflow (not for any other platform CI), and never holds the core Pull Request
+Gate open. It reports one of these states in its job summary:
 
 - `PASS`: the unsigned iOS build completed successfully.
 - `FAIL`: the iOS build ran and failed; the original `ios.yml` check remains
