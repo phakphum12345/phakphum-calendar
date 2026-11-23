@@ -6,6 +6,24 @@ use Tests\TestCase;
 
 class ApiCorsTest extends TestCase
 {
+
+    public function test_browser_clients_can_read_the_request_correlation_response_header(): void
+    {
+        $origin = 'https://phakphum12345.github.io';
+        $requestId = 'browser-correlation-123';
+
+        $response = $this->withHeaders([
+            'Origin' => $origin,
+            'X-Request-ID' => $requestId,
+        ])->getJson('/api/v1/me');
+
+        $response
+            ->assertUnauthorized()
+            ->assertHeader('Access-Control-Allow-Origin', $origin)
+            ->assertHeader('Access-Control-Expose-Headers', 'X-Request-ID')
+            ->assertHeader('X-Request-ID', $requestId);
+    }
+
     public function test_browser_preflight_allows_membership_patch_and_delete_requests(): void
     {
         $origin = 'https://phakphum12345.github.io';
