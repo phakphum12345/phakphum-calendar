@@ -243,6 +243,7 @@ class _OrganizationMembershipPanelState
         role: role.name,
       );
       await _refresh();
+      await _loadMembershipAudit();
     });
   }
 
@@ -428,6 +429,7 @@ class _OrganizationMembershipPanelState
         role: role.name,
       );
       await _refresh();
+      await _loadMembershipAudit();
     });
   }
 
@@ -458,6 +460,7 @@ class _OrganizationMembershipPanelState
         userId: member.userId,
       );
       await _refresh();
+      await _loadMembershipAudit();
     });
   }
 
