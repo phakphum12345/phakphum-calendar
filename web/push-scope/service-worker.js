@@ -28,10 +28,13 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
   const requested = event.notification.data && event.notification.data.url;
-  const target = new URL(
+  const candidate = new URL(
     typeof requested === 'string' ? requested : '../',
     self.registration.scope,
   );
+  const target = candidate.origin === self.location.origin
+    ? candidate
+    : new URL('../', self.registration.scope);
 
   event.waitUntil((async () => {
     const windows = await self.clients.matchAll({
