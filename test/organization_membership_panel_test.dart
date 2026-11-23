@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phakphum_calendar/features/access_control/domain/access_control.dart';
@@ -5,6 +7,60 @@ import 'package:phakphum_calendar/features/admin/domain/organization_admin_gatew
 import 'package:phakphum_calendar/features/admin/presentation/organization_membership_panel.dart';
 
 void main() {
+
+
+  testWidgets('stale membership audit responses cannot overwrite a newer selection', (
+    tester,
+  ) async {
+    final gateway = _RaceOrganizationAdminGateway();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: OrganizationMembershipPanel(
+            apiBaseUrl: 'https://api.example.com',
+            currentEmail: 'admin@example.com',
+            gateway: gateway,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final auditHeading = find.text('ประวัติการเปลี่ยนแปลงสมาชิก');
+    await tester.ensureVisible(auditHeading);
+    await tester.tap(auditHeading);
+    await tester.pump();
+    expect(gateway.auditCalls['organization-id'], hasLength(1));
+
+    Future<void> selectOrganization(String name) async {
+      await tester.tap(find.byType(DropdownButtonFormField<String>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.textContaining(name).last);
+      await tester.pumpAndSettle();
+    }
+
+    await selectOrganization('Cardiology');
+    await selectOrganization('Radiology');
+
+    await tester.tap(auditHeading);
+    await tester.pumpAndSettle();
+    await tester.tap(auditHeading);
+    await tester.pump();
+    expect(gateway.auditCalls['organization-id'], hasLength(2));
+
+    gateway.auditCalls['organization-id']!.last.complete(
+      _auditPage(actorName: 'New Owner'),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('ผู้ดำเนินการ: New Owner'), findsOneWidget);
+
+    gateway.auditCalls['organization-id']!.first.complete(
+      _auditPage(actorName: 'Old Owner'),
+    );
+    await tester.pumpAndSettle();
+    expect(find.textContaining('ผู้ดำเนินการ: New Owner'), findsOneWidget);
+    expect(find.textContaining('ผู้ดำเนินการ: Old Owner'), findsNothing);
+  });
 
   testWidgets('admin can change a member role and remove that member', (
     tester,
@@ -269,3 +325,55 @@ class _FakeOrganizationAdminGateway implements OrganizationAdminGateway {
   @override
   void close() {}
 }
+
+
+class _RaceOrganizationAdminGateway extends _FakeOrganizationAdminGateway {
+  final Map<String, List<Completer<OrganizationMembershipAuditPage>>>
+      auditCalls = {};
+
+  @override
+  Future<List<OrganizationMembership>> organizations() async => const [
+    OrganizationMembership(
+      id: 'organization-id',
+      name: 'Radiology',
+      slug: 'radiology',
+      employeeId: 'EMP-OWNER',
+      role: 'admin',
+    ),
+    OrganizationMembership(
+      id: 'cardiology-id',
+      name: 'Cardiology',
+      slug: 'cardiology',
+      employeeId: 'EMP-OWNER',
+      role: 'admin',
+    ),
+  ];
+
+  @override
+  Future<OrganizationMembershipAuditPage> membershipAudit(
+    String organizationId, {
+    int limit = 50,
+    int? beforeId,
+  }) {
+    final completer = Completer<OrganizationMembershipAuditPage>();
+    auditCalls.putIfAbsent(organizationId, () => []).add(completer);
+    return completer.future;
+  }
+}
+
+OrganizationMembershipAuditPage _auditPage({required String actorName}) =>
+    OrganizationMembershipAuditPage(
+      events: [
+        OrganizationMembershipAuditEvent(
+          id: actorName == 'New Owner' ? 2 : 1,
+          action: 'role_changed',
+          actorUserId: 'owner-id',
+          actorName: actorName,
+          subjectUserId: 'member-id',
+          subjectName: 'Member',
+          before: const {'role': 'staff'},
+          after: const {'role': 'manager'},
+          createdAt: DateTime.utc(2026, 11, 23, 10),
+        ),
+      ],
+    );
