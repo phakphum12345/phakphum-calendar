@@ -33,6 +33,38 @@ void main() {
     }
   });
 
+
+  test('surfaces the server correlation ID with API errors', () async {
+    final client = ShiftTransactionApiClient(
+      baseUrl: 'https://calendar.example.test',
+      idTokenProvider: () async => 'google-id-token',
+      httpClient: MockClient((request) async {
+        return http.Response(
+          jsonEncode({
+            'error': {
+              'code': 'unauthenticated',
+              'message': 'A valid Google ID token is required.',
+            },
+          }),
+          401,
+          headers: {'x-request-id': 'server-correlation-123'},
+        );
+      }),
+    );
+
+    await expectLater(
+      client.listTransactions(),
+      throwsA(
+        isA<ShiftTransactionApiException>().having(
+          (error) => error.correlationId,
+          'correlationId',
+          'server-correlation-123',
+        ),
+      ),
+    );
+    client.close();
+  });
+
   test('generates a distinct correlation ID for every API request', () async {
     final requestIds = <String>[];
     final client = ShiftTransactionApiClient(
