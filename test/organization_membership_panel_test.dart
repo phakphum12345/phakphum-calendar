@@ -39,13 +39,20 @@ void main() {
       // ListView lazily disposes children that are far outside the viewport.
       // Jump directly to the top; pumpAndSettle can time out while scroll or
       // other repeating animations remain active in the panel.
-      final listView = find.byType(ListView);
-      final scrollable = find.descendant(
+      final listView = find.byType(ListView).first;
+      final verticalScrollables = find.descendant(
         of: listView,
-        matching: find.byType(Scrollable),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Scrollable &&
+              widget.axisDirection == AxisDirection.down,
+        ),
       );
-      expect(scrollable, findsOneWidget);
-      tester.state<ScrollableState>(scrollable).position.jumpTo(0);
+      expect(verticalScrollables, findsAtLeastNWidgets(1));
+      tester
+          .state<ScrollableState>(verticalScrollables.first)
+          .position
+          .jumpTo(0);
       await tester.pump();
 
       final organizationField = find.byWidgetPredicate(
