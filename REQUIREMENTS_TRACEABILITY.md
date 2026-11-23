@@ -1,7 +1,7 @@
 # Requirements Traceability
 
 **Review date:** 2026-11-22  
-**Repository snapshot:** `168559498de58a071ac43a81e410227f0f83ec4b`  
+**Repository snapshot:** `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5`  
 **Status:** Partial inventory; rows marked PARTIAL, MISSING or NEEDS REVIEW remain open work.
 
 | Requirement | Primary implementation | Test / evidence | Status and gap |
@@ -17,9 +17,9 @@
 | Shift / duty management | `lib/features/shift_parser/`, `lib/features/shift_exchange/`, `backend/app/Services/ShiftTransactions/` | parser, schedule and transaction tests | PARTIAL — broader end-to-end personnel and cancellation scenarios remain |
 | Shift exchange / replacement | `lib/features/shift_exchange/`, `ShiftTransactionService.php` | `backend/tests/Feature/ShiftTransactionApiTest.php`, Flutter API-client tests | IMPLEMENTED FOUNDATION — full live multi-account workflow still requires environment verification |
 | Synchronization engine | `CalendarSyncCoordinator`, `ResilientCalendarSyncExecutor`, `ResumeSyncService`, Google Calendar gateway | sync executor, resume and gateway tests | POST-MERGE VERIFICATION — PR #148 idempotency and PR #144 selected-month preservation are merged; exact-head tests passed, but main post-merge CI evidence remains UNKNOWN |
-| Day / week / month / year calendar | daily, weekly and monthly schedule pages; `ScheduleWorkspacePage`; year overview proposed in PR #165 | schedule page, week-boundary and year-overview tests | IN_PROGRESS — PR #162's seven-day cross-month behavior is merged; PR #165 adds the 12-month year view on current main and awaits exact-head CI. Original PR #163 is superseded and conflict-blocked |
+| Day / week / month / year calendar | daily, weekly and monthly schedule pages; `ScheduleWorkspacePage` | schedule page and month-boundary tests | IN_PROGRESS — Day/Week/Month views exist; PR #162 fixes weeks crossing month boundaries; PR #163 adds a 12-month year overview and is stacked on #162 |
 | Date / time / timezone | `RosterSyncPeriodFilter`, `GoogleCalendarSyncGateway` | date parsing and Calendar gateway tests | PARTIAL — Bangkok wall-time conversion exists; cross-device timezone matrix needs verification |
-| Organization member management | `OrganizationController.php`, `OrganizationAdminGateway`, membership panel | Laravel API and Flutter gateway/widget tests | IMPLEMENTED FOUNDATION — PR #164 is merged; owner/admin role changes and soft removal preserve membership rows, protect owner membership and support reactivation. Dedicated append-only audit history remains unimplemented |
+| Organization member management | `OrganizationController.php`, `OrganizationAdminGateway`, membership panel | Laravel API and Flutter gateway/widget tests | IN_PROGRESS — PR #164 adds owner/admin role changes and soft removal, protects owner membership, and supports reactivation without deleting membership rows |
 | Authentication / authorization | `AuthenticateGoogleAccount.php`, Google identity-token verifier | Google token and middleware tests | IMPLEMENTED FOUNDATION — continue issuer/audience/expiry and authorization regression tests |
 | Notifications / reminders | `lib/domain/services/notification_service.dart`, `ShiftAlertService` | shift alert tests; no concrete scheduled delivery tests | PARTIAL — in-app shift/conflict alerts exist, but scheduled platform notifications are not wired to a concrete implementation |
 | Import / export | `lib/features/shift_parser/`, Excel import, Drive archive and PDF/report services | parser, import and report tests | PARTIAL — import paths exist; export format and recovery matrix needs inventory |
@@ -36,15 +36,15 @@
 
 - A complete restore workflow for a historical roster assignment. Google OAuth currently uses Drive read-only scopes; a restore that writes back to Drive requires explicit approval to expand OAuth scopes.
 - Whether blank/unassigned cells and removed roster positions are represented as timeline versions.
-- PR #162's cross-month weekly view fix is merged. A refreshed year overview implementation is under PR #165; its CI and post-merge behavior remain to be verified.
+- A year overview is proposed in PR #163; it remains unmerged. PR #162's cross-month weekly view fix also remains unmerged.
 - Concrete notification scheduling and cancellation on supported platforms; the current notification interface is not a delivery implementation. The target platforms and background-delivery requirement still need to be decided.
-- Member role changes and soft removal from PR #164 are merged; detailed append-only membership audit history remains unimplemented.
+- Member role changes and soft removal are proposed in PR #164; detailed membership audit history remains unimplemented.
 - Encrypted local storage for cached roster revisions and failed sync payloads.
 - Performance under large multi-sheet workbooks and long calendar histories.
-- Live Google integration behavior and runtime workflows requiring user OAuth consent remain unverified. GitHub Pages deployment and the published-SHA smoke test passed for main merge commit `168559498de58a071ac43a81e410227f0f83ec4b`; the next post-merge SHA must be checked separately.
+- Production deployment and live Google integration behavior after the current code changes. The audited main Web build passed, but the Pages deployment job was SKIPPED; live URL and deployed SHA remain UNKNOWN.
 - Branch protection is UNKNOWN because the connected GitHub integration could not read the protection endpoint (HTTP 403); the rulesets endpoint returned an empty list.
 - PR #160's previously audited head `a79af5dab3a5a619fd37138b1764811ba8118626` passed 2 workflow runs and 7 checks; subsequent documentation commits moved the branch to `06a9bc7bcf5a0b8b2d2a508c6bd52fa4efadc92e`, whose checks were also reverified successful before this refresh.
-- For current main SHA `168559498de58a071ac43a81e410227f0f83ec4b`, the Pages deploy job and exact-SHA HTTP smoke test passed; 6 of 8 observed workflow runs were still queued or in progress at the audit checkpoint. Do not mark the whole main CI matrix PASS until all required runs complete.
+- The legacy combined commit-status endpoint returned no status entries, but GitHub Actions check-runs show 10 successful workflow runs for main SHA `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5`; the Pages deployment job was SKIPPED.
 
 ## Evidence rules
 
