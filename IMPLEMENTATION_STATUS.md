@@ -9,7 +9,7 @@ This is a source-backed snapshot of the current default branch. It supersedes ea
 | Item | Current observation | Status |
 |---|---|---|
 | Default branch | `main` at `dcb51b6ad7db3540eea7152949556465ea67256c` | PASS |
-| Open pull requests | #150, #163, #171 and #172 observed open | IN_PROGRESS |
+| Open pull requests | #171 (membership audit) and #172 (this documentation reconciliation) | IN_PROGRESS |
 | Open issue tracker | Repository issue tracking is disabled; an empty issue search is not proof of no work | UNKNOWN |
 | Main branch protection | Not re-verified in this reconciliation | UNKNOWN |
 | Exact-main-SHA PR workflow evidence | No PR-triggered workflow runs were returned for this merge commit | UNKNOWN |
@@ -20,8 +20,8 @@ This is a source-backed snapshot of the current default branch. It supersedes ea
 
 | PR | Current observation | Decision |
 |---|---|---|
-| #150 | Open; latest diff changes only `DOCUMENTATION_INDEX.md`, `IMPLEMENTATION_STATUS.md` and `REQUIREMENTS_TRACEABILITY.md`, including removal of current status material. API and database guides already exist on main. | Do not merge this stale/reverting documentation diff. |
-| #163 | Open; GitHub compare reports zero changed files against current main. The year overview and selector are already present in `ScheduleWorkspacePage` and `ScheduleYearOverview` on main. | No-op PR; do not merge. |
+| #150 | Closed without merge; its remaining diff reverted current status material. API and database guides already exist on main. | Superseded; branch preserved. |
+| #163 | Closed without merge; GitHub compare reported zero changed files against current main. The year overview and selector are already present in `ScheduleWorkspacePage` and `ScheduleYearOverview` on main. | No-op; branch preserved. |
 | #171 | Open; membership-audit Flutter gateway/UI and tests are proposed. Main exact-head CI evidence is not complete; Build iOS remains queued in the observed run. | Keep open pending exact-head checks and final review. |
 | #172 | This documentation refresh branch. Its earlier snapshot referenced main SHA `9efb98c`, which is superseded by `dcb51b6`. | Refresh this snapshot and validate its exact head. |
 
