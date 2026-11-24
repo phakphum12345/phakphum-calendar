@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:phakphum_calendar/domain/entities/department.dart';
 import 'package:phakphum_calendar/domain/entities/employee.dart';
 import 'package:phakphum_calendar/domain/entities/schedule.dart';
+import 'package:phakphum_calendar/domain/entities/shift_template.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/grid_roster_canonical_converter.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/grid_roster_review_session.dart';
 import 'package:phakphum_calendar/features/shift_parser/domain/monthly_roster_section.dart';
@@ -55,6 +56,55 @@ void main() {
     );
     expect(committed.lifecycle.name, 'committed');
     expect(committed.acceptedScheduleFingerprint, 'sha256:accepted-1');
+  });
+
+
+  test('uses the selected active configured shift template', () {
+    const template = ShiftTemplate(
+      id: 'template-gen',
+      code: 'GEN',
+      name: 'GEN clinic',
+      shortName: 'GEN',
+      startTime: Duration(hours: 7, minutes: 30),
+      endTime: Duration(hours: 12),
+      color: 0xff123456,
+      workingHours: 4.5,
+      location: 'Clinic A',
+    );
+    final session = _session(builder, shiftTemplates: const [template]);
+    final source = session.assignments.single.source;
+    final sourceId = GridRosterCanonicalConverter.assignmentId(
+      session.sourceFingerprint,
+      source,
+    );
+    final result = converter.convert(
+      session: session,
+      targetSchedule: Schedule(id: 'schedule-1', name: 'November 2026'),
+      employees: [_employee],
+      shiftTemplates: const [template],
+      decisions: {
+        sourceId: GridRosterAssignmentDecision(
+          include: true,
+          employeeId: _employee.id,
+          reviewerId: 'reviewer-1',
+          reviewedAtUtc: createdAt,
+        ),
+      },
+      importRunId: 'run-template',
+      parserVersion: 'grid-parser/1',
+      createdAtUtc: createdAt,
+    );
+
+    final assignment = result.schedule
+        .month(DateTime(2026, 11, 1))!
+        .day(DateTime(2026, 11, 1))!
+        .assignments.single;
+    expect(assignment.shift.id, 'template-gen');
+    expect(assignment.location, 'Clinic A');
+    expect(
+      result.preparedProvenance.assignments.single.shiftTemplateId,
+      'template-gen',
+    );
   });
 
   test('requires a decision for every source assignment', () {
@@ -175,6 +225,7 @@ void main() {
 GridRosterReviewSession _session(
   GridRosterReviewSessionBuilder builder, {
   bool blocked = false,
+  List<ShiftTemplate> shiftTemplates = const [],
 }) {
   final report = MonthlyRosterParseReport(
     sections: [
@@ -210,7 +261,7 @@ GridRosterReviewSession _session(
   return builder.build(
     report: report,
     employees: [_employee],
-    shiftTemplates: const [],
+    shiftTemplates: shiftTemplates,
     sourceFingerprint: 'sha256:source-1',
     targetScheduleId: 'schedule-1',
     targetScheduleRevision: 'revision-1',
