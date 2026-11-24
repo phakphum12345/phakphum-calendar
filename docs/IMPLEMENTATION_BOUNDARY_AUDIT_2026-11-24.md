@@ -470,3 +470,20 @@ These tests establish that the generator's core domain behavior has test cases. 
 - Roster-grid parsing: parser/scanner tests exist, but production route and provenance-preserving persistence remain UNKNOWN.
 - Staffing generation: core assignment tests exist, but production workflow and persistence remain UNKNOWN.
 - Provenance bundle persistence: still UNKNOWN; current canonical Schedule codec does not encode the source/review envelope described in §14.
+
+
+## 16. Grid conversion identity and shift-rule risk
+
+The section-aware grid parser does have a conversion adapter: `MonthlyRosterShiftAdapter` is defined alongside `MonthlyRosterSectionParser` in `lib/features/shift_parser/application/monthly_roster_section_parser.dart`. It converts non-blocked section assignments to legacy `Shift` values for selected target names and optional shift templates. `MonthlyRosterConversionDiagnostics` reports unsupported assignments that the adapter did not convert.
+
+Two behavior constraints require deliberate handling before this adapter is exposed as a production import workflow:
+
+1. **Target-name matching is substring-based.** The adapter compacts names and accepts a worker when `targets.any(normalizedWorker.contains)`. Existing tests intentionally pass name fragments (for example, separate first/last-name fragments) and expect a full display name to match. Replacing this with strict exact matching would regress existing behavior; retaining it without an ambiguity review can select multiple people with overlapping names. A future workflow must surface all candidates and require canonical employee selection before committing, while preserving the legacy adapter behavior for existing callers.
+2. **Shift-template alias ambiguity is fail-closed, but fallback rules remain.** If multiple active templates match a row label, the adapter returns no rule for that row. When no configured template matches, built-in label rules map known labels to fixed time intervals. The conversion diagnostics can expose unconverted rows, but the reviewed workflow must show which configured template or built-in rule produced each shift and allow correction before persistence.
+
+Existing test-source evidence:
+- `test/monthly_roster_section_parser_test.dart` covers section discovery, independent ranges, invalid date isolation, selected-worker conversion, cross-month dates and legacy name-fragment matching.
+- `test/monthly_roster_conversion_diagnostics_test.dart` checks unsupported shift labels remain visible.
+- `test/smart_roster_analyze_generator_test.dart` checks legacy/monthly deduplication and duplicate candidates.
+
+No production route or persisted review record was established for these adapter outputs. Treat conversion output as a review candidate, not an approved canonical schedule.
