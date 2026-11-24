@@ -16,6 +16,7 @@ return new class extends Migration
             $table->char('request_hash', 64);
             $table->string('mode', 16);
             $table->string('source', 16)->nullable();
+            $table->string('engine_version', 24)->default('1.0.0');
             $table->unsignedInteger('personal_profile_version')->default(0);
             $table->unsignedInteger('organization_profile_version')->default(0);
             $table->json('input_snapshot');
