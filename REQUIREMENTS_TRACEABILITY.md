@@ -156,13 +156,13 @@ Important distinction: PASS in this table means the source path or test case exi
 | Conversion diagnostics | `MonthlyRosterConversionDiagnostics` reports converted/unconverted assignments and blocking date anomalies | PASS — diagnostic API exists; production review route UNKNOWN |
 | Safe canonical employee resolution | Existing adapter uses substring matching for compatibility; no verified Grid-specific canonical identity review/commit route | UNKNOWN — must add explicit unique identity review before persistence |
 | Shift-template resolution evidence | Adapter supports templates and built-in label rules; review display and durable decision record not established | UNKNOWN |
-| Grid review UI and orchestration | No production route/call site established for scanner/parser → review → canonical save | MISSING — specified in `docs/GRID_IMPORT_REVIEW_WORKFLOW.md` |
-| Schedule + provenance atomic/recoverable commit | Canonical schedule repository saves Schedule; separate provenance transaction not established | UNKNOWN — requires bundle repository or durable recovery journal |
-| Grid end-to-end persistence and reload | No Grid-specific production E2E path established | MISSING |
+| Grid review UI and orchestration | `ImportExcelPage` Grid action → `GridRosterReviewPage` → `GridRosterImportWorkflow` → journal + canonical ScheduleRepository | PASS — source integrated; runtime SKIPPED |
+| Schedule + provenance recoverable commit | `GridRosterBundleJournal` plus guarded canonical repository save/recovery replay | PASS — source/test added; runtime SKIPPED; not a cross-store atomic transaction |
+| Grid service/UI persistence and recovery | UI invokes scan → review → conversion → journal → ScheduleRepository save; recovery runs before a new Grid scan | PASS — source integrated; runtime SKIPPED |
 | Tabular import backward compatibility | Existing tabular UI review/staging/save/reload path and integration-test sources inspected | PASS — source/test-case evidence only; runtime execution SKIPPED |
 | Calendar sync after Grid commit | Existing Calendar workflow is separately authorized; Grid-specific post-commit integration not established | SKIPPED — must remain disabled until explicit review and authorization |
 
-**Evidence interpretation:** PASS in this section means source behavior or test cases were inspected, not that tests were executed. The Grid workflow document is a design specification and must not be represented as implemented functionality.
+**Evidence interpretation:** PASS in this section means implementation source is present and linked into the local XLSX import UI; it does not mean runtime tests passed. Google Sheets Grid import, verified reviewer identity, strict concurrent-writer CAS and Calendar sync remain unimplemented.
 
 
 ## 2026-11-24 Schedule generation workflow design update
@@ -192,7 +192,7 @@ Important distinction: PASS in this table means the source path or test case exi
 | Missing worker/shift label requires review | `needsReview` with source-cell reason codes | PASS — source added; runtime test SKIPPED |
 | Assignment outside declared range requires review | `ASSIGNMENT_OUTSIDE_SECTION_RANGE` | PASS — source added; runtime test SKIPPED |
 | Assessment authorizes persistence | `canCommit` is always false | PASS — fail-closed boundary |
-| Production Grid UI integration | No route/controller connected in this change | MISSING |
+| Production Grid UI integration | `ImportExcelPage` Grid action and `GridRosterReviewPage` call the workflow coordinator | PASS — source integrated; runtime SKIPPED |
 | Dart formatting, analysis and Flutter test execution | No runtime environment available through repository connector | SKIPPED |
 
 **Interpretation:** PASS means implementation source was committed to the working branch. The accompanying test source has not been executed. The classifier is deliberately not wired into the legacy adapter or UI yet; it does not change current import behavior.
@@ -209,7 +209,7 @@ Important distinction: PASS in this table means the source path or test case exi
 | Exclude inactive employees | Active-only candidate scan | PASS — source added |
 | Require explicit human confirmation | No selected ID; `canCommit == false` | PASS — fail-closed source contract |
 | Persist reviewer identity decisions / reusable aliases | No review-session or alias repository yet | MISSING |
-| Production Grid UI integration | Not connected to a route/controller | MISSING |
+| Production Grid UI integration | `GridRosterReviewPage` now presents explicit employee/shift decisions and calls the workflow coordinator | PASS — source integrated; runtime SKIPPED |
 | Runtime execution of resolver tests | Not run | SKIPPED |
 
 **Compatibility:** The legacy `MonthlyRosterShiftAdapter` matching implementation and its fragment-matching tests were not changed. The new resolver is a separate proposal-only component.
@@ -273,11 +273,17 @@ Important distinction: PASS in this table means the source path or test case exi
 | Stale target revision guard | Commit requires caller-supplied current revision to equal provenance target revision | PASS — source contract; live repository revalidation remains caller responsibility |
 | Idempotent retry and conflicting run-ID protection | Same run + identical Schedule/fingerprint returns existing bundle; conflicting reuse rejected | PASS — source/test added; runtime SKIPPED |
 | Atomic/durable cross-key transaction | SharedPreferences has no documented cross-key transaction or durable atomic-write guarantee | UNKNOWN — not claimed |
-| Local XLSX multi-sheet Grid scanner | SHA-256 source fingerprint, per-sheet parsing/summaries and per-sheet read-error isolation | PASS — source/test added; runtime SKIPPED |\n| Reviewed Grid-to-canonical conversion | Pure converter requires explicit per-assignment reviewer decisions; preserves target Schedule and returns PREPARED provenance | PASS — source/test added; runtime SKIPPED |
+| Local XLSX multi-sheet Grid scanner | SHA-256 source fingerprint, per-sheet parsing/summaries and per-sheet read-error isolation | PASS — source/test added; runtime SKIPPED | 
+| Reviewed Grid-to-canonical conversion | Pure converter requires explicit per-assignment reviewer decisions; preserves target Schedule and returns PREPARED provenance | PASS — source/test added; runtime SKIPPED |
 | Blocked sections and out-of-range assignments | Blocked sections can only be excluded; out-of-range assignments cannot be included | PASS — source/test added; runtime SKIPPED |
 | Existing Schedule preservation and collision handling | Existing months/assignments retained; duplicate employee+shift/day collision fails closed | PASS — source/test added; runtime SKIPPED |
-| Strict concurrent-writer compare-and-set | Repository interface has no atomic CAS; coordinator uses repeated read-before-save checks only | MISSING — race remains |\n| Grid workflow coordinator | Scan report → live target load/revision → review → conversion → journal → canonical repository save/recovery replay | PASS — source/test added; runtime SKIPPED |\n| Production Grid UI/controller invokes conversion | Converter is not yet wired to a production route/controller | MISSING |
+| Strict concurrent-writer compare-and-set | Repository interface has no atomic CAS; coordinator uses repeated read-before-save checks only | MISSING — race remains | 
+| Grid workflow coordinator | Scan report → live target load/revision → review → conversion → journal → canonical repository save/recovery replay | PASS — source/test added; runtime SKIPPED |\n| Production Grid UI/controller invokes conversion | `ImportExcelPage` → `GridRosterReviewPage` → workflow coordinator → canonical repository | PASS — source integrated; runtime SKIPPED |
 | Calendar sync after explicit approval | Not wired by this change | MISSING |
 | Dart format, analyze and Flutter tests | Not executed in connector environment | SKIPPED |
 
-**Interpretation:** PASS means source/test contract exists, not that runtime tests passed. The journal is a recoverable two-slot persistence primitive, not a database transaction. Platform durability remains unverified. Production Grid UI, live target-revision reload/revalidation, journal invocation from the production workflow, startup recovery, and Calendar handoff remain separate E2E gates.
+| Verified reviewer identity | Reviewer label is typed by the operator and stored as reviewer evidence; no identity provider validates it | MISSING |
+| Google Sheets Grid adapter | Grid scanner currently accepts local XLSX only | MISSING |
+| Excel hidden-sheet and background-color evidence | Current ExcelReaderService does not expose these fields | UNKNOWN |
+
+**Interpretation:** PASS means source/test contract exists, not that runtime tests passed. The journal is a recoverable two-slot persistence primitive, not a database transaction. Platform durability remains unverified. The UI calls recovery before a new Grid scan, but recovery is not yet an app-startup hook. Strict compare-and-set is missing, and Calendar handoff remains separate.
