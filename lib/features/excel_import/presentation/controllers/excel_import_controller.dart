@@ -130,6 +130,22 @@ class ExcelImportController extends ChangeNotifier implements ControllerState {
     notifyListeners();
   }
 
+  /// Reads every row from a worksheet in the currently opened local workbook.
+  ///
+  /// This is used by source-neutral Grid scanning, which must inspect complete
+  /// worksheets rather than the 50-row UI preview. The selected workbook remains
+  /// owned by this controller and is never modified by this read operation.
+  List<ExcelRow> readAllRows(WorksheetInfo worksheet) {
+    final openedWorkbook = workbook;
+    if (openedWorkbook == null ||
+        !openedWorkbook.worksheets.any(
+          (candidate) => candidate.name == worksheet.name,
+        )) {
+      throw StateError('Worksheet does not belong to the opened workbook.');
+    }
+    return _reader.readWorksheetForImport(worksheet);
+  }
+
   /// Suggests mappings from the full selected worksheet, not only its preview.
   ColumnMapping suggestMapping() {
     return _importEngine.suggestMapping(
