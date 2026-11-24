@@ -1,0 +1,17 @@
+name: schedule_cas_spike
+description: Isolated Drift/SQLite conditional-write prototype; not used by production.
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.12.2
+
+dependencies:
+  crypto: ^3.0.7
+  drift: ^2.35.4
+  drift_flutter: ^0.3.1
+
+dev_dependencies:
+  build_runner: ^2.10.4
+  drift_dev: ^2.35.4
+  test: ^1.26.3
