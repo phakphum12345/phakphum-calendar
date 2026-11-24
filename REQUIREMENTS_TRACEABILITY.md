@@ -338,3 +338,12 @@ The [Schedule Persistence Writer Inventory](docs/SCHEDULE_PERSISTENCE_WRITER_INV
 | Requirement | Scope | Evidence | Status | Remaining proof |
 |---|---|---|---|---|
 | RI-037 | Screen transaction-capable storage candidates against active release platforms | Drift, sqflite companion packages, Sembast and existing SharedPreferences documented in the persistence ADR | PARTIAL — package-documentation screen only; no package selected | Prototype and execute atomicity, crash, migration and Web multi-tab tests on all five active targets |
+
+
+## 2026-11-24 — Isolated Drift/SQLite CAS spike
+
+| Requirement | Scope | Evidence | Status | Remaining proof |
+|---|---|---|---|---|
+| RI-038 | Prototype atomic conditional create/update/delete with monotonic revisions and tombstones | Isolated package under `tool/schedule_cas_spike`; one-statement UPSERT/UPDATE; tests for stale writes, ABA, same-content generation, tombstones, stale resurrection and two independent database instances | IMPLEMENTED — source only; execution UNKNOWN | Generate Drift code and run tests; prove native OS matrix, Android/iOS device integration, Web multi-tab and crash recovery |
+
+The spike has its own `pubspec.yaml` and is not a root application dependency. The root `pubspec.yaml`, root lockfile, production SharedPreferences repository, production Schedule schema and all production writer paths remain unchanged. The new workflow tests native SQLite behavior on Windows, Linux and macOS runners; this does not by itself prove Android/iOS runtime behavior or Web multi-tab behavior.
