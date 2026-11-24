@@ -166,3 +166,17 @@ Required test families:
 ## 11. Exit criteria
 
 This work is accepted only when focused tests reproduce the reported behavior, regression tests cover existing parser contracts, integration tests verify the complete import path, and the preview accurately displays source evidence and section-level outcomes. Original workbook inspection is required to certify raw Excel coordinates and merged/hidden-cell provenance, but is not a prerequisite for adding the supplied transcription as synthetic parser-level tests.
+
+
+## Implementation note — explicit range precedence (2026-11-24)
+
+The parser implementation now prioritizes adjacent date tokens connected by an explicit range separator (`-`, `ถึง`, or `to`) over unrelated earlier date-like tokens in a heading. This prevents numeric unit identifiers (for example `ภปร. 4`) from displacing the actual parenthesized roster period.
+
+If a heading contains multiple explicit ranges, parsing fails as ambiguous. The section parser must not silently convert that failure into a month-only period. Month-only fallback is retained only for headings without an explicit range expression.
+
+Regression coverage added:
+- Numbered unit identifier before a parenthesized month range.
+- Ambiguous heading with multiple explicit date ranges.
+- Section-level GEN heading resolution to the explicit range.
+
+Execution status: regression tests have been added but have **not yet been executed** in this environment. Formatting and static analysis remain unverified.
