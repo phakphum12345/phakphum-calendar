@@ -104,14 +104,17 @@ class GridRosterEmployeeIdentityResolver {
     }
 
     if (exact.isNotEmpty) {
-      final candidates = exact.values.toList()
-        ..sort(_compareCandidates);
+      final ranked = exact.values.toList()..sort(_compareCandidates);
+      final bestRank = _rank(ranked.first.matchKind);
+      final bestCandidates = ranked
+          .where((candidate) => _rank(candidate.matchKind) == bestRank)
+          .toList(growable: false);
       return EmployeeIdentityResolution(
         sourceName: sourceName,
-        status: candidates.length == 1
+        status: bestCandidates.length == 1
             ? EmployeeIdentityResolutionStatus.exactUniqueCandidate
             : EmployeeIdentityResolutionStatus.ambiguousExactCandidates,
-        candidates: candidates,
+        candidates: bestCandidates,
       );
     }
 
