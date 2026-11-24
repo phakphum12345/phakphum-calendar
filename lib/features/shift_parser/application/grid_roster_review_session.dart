@@ -45,7 +45,7 @@ class GridRosterReviewSession {
     required this.targetScheduleRevision,
     required List<GridRosterSectionReview> sections,
     this.sourceSheetCount = 0,
-    this.warnings = const [],
+    List<String> warnings = const [],
   }) : sections = List.unmodifiable(sections),
        warnings = List.unmodifiable(warnings);
 
