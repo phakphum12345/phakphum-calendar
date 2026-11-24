@@ -6,6 +6,7 @@ import '../../../../domain/entities/schedule.dart';
 import '../../../../domain/entities/shift_template.dart';
 import '../application/grid_roster_canonical_converter.dart';
 import '../application/grid_roster_import_workflow.dart';
+import '../application/grid_roster_review_session.dart';
 
 /// Human review screen for a parsed multi-sheet Grid workbook.
 ///
@@ -177,7 +178,7 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
 
   Widget _buildAssignmentCard(
     BuildContext context,
-    dynamic review,
+    GridRosterAssignmentReview review,
   ) {
     final source = review.source;
     final sourceId = GridRosterCanonicalConverter.assignmentId(
@@ -185,10 +186,10 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
       source,
     );
     final included = _included[sourceId] ?? false;
-    final blocked = review.sectionBlocked as bool;
+    final blocked = review.sectionBlocked;
     final rule = review.shiftRule;
-    final candidateNames = (review.identity.candidates as List)
-        .map((candidate) => candidate.employee.displayName as String)
+    final candidateNames = review.identity.candidates
+        .map((candidate) => candidate.employee.displayName)
         .join(', ');
 
     return Container(
