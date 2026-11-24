@@ -1,0 +1,43 @@
+name: Schedule CAS Storage Spike
+
+on:
+  push:
+    branches:
+      - "**"
+    paths:
+      - "tool/schedule_cas_spike/**"
+      - ".github/workflows/schedule-cas-spike.yml"
+  pull_request:
+    paths:
+      - "tool/schedule_cas_spike/**"
+      - ".github/workflows/schedule-cas-spike.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-sqlite-contract:
+    name: Native SQLite CAS contract (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+    defaults:
+      run:
+        working-directory: tool/schedule_cas_spike
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+      - name: Resolve isolated spike dependencies
+        run: dart pub get
+      - name: Generate Drift database code
+        run: dart run build_runner build --delete-conflicting-outputs
+      - name: Run CAS and concurrency contract tests
+        run: dart test --reporter expanded
