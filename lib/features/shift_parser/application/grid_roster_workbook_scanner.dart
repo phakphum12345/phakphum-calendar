@@ -133,6 +133,7 @@ class GridRosterWorkbookScanner {
       warnings: List.unmodifiable(warnings),
       sourceSheetCount: workbook.worksheets.length,
       sheetSummaries: List.unmodifiable(summaries),
+      sourceFingerprint: fingerprint,
     );
   }
 }
