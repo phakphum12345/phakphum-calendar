@@ -145,3 +145,21 @@ See [Module Catalog and Ownership Map](docs/MODULE_CATALOG.md). Directory presen
 | Universal Generator Calendar execution | `GeneratorCalendarAdapter`, `GeneratorAdapterPreview` | SKIPPED — adapter explicitly preview-only | Separate authorized Calendar execution project/contract |
 
 Important distinction: PASS in this table means the source path or test case exists and was inspected; it does not mean tests were executed or the full production behavior was runtime-verified. UNKNOWN and SKIPPED remain open.
+
+
+## 2026-11-24 Grid import workflow design update
+
+| Requirement | Existing evidence | Status / next gate |
+|---|---|---|
+| Section-aware Grid parsing | `MonthlyRosterSectionParser`, `MonthlyRosterParseReport`, section/date anomaly tests | PASS — source implementation and test cases inspected; runtime execution SKIPPED |
+| Preserve source-cell evidence | `MonthlyRosterAssignment` carries sheet/spreadsheet IDs, A1 cell, row, section and date | PASS — in-memory source evidence exists; durable retention UNKNOWN |
+| Conversion diagnostics | `MonthlyRosterConversionDiagnostics` reports converted/unconverted assignments and blocking date anomalies | PASS — diagnostic API exists; production review route UNKNOWN |
+| Safe canonical employee resolution | Existing adapter uses substring matching for compatibility; no verified Grid-specific canonical identity review/commit route | UNKNOWN — must add explicit unique identity review before persistence |
+| Shift-template resolution evidence | Adapter supports templates and built-in label rules; review display and durable decision record not established | UNKNOWN |
+| Grid review UI and orchestration | No production route/call site established for scanner/parser → review → canonical save | MISSING — specified in `docs/GRID_IMPORT_REVIEW_WORKFLOW.md` |
+| Schedule + provenance atomic/recoverable commit | Canonical schedule repository saves Schedule; separate provenance transaction not established | UNKNOWN — requires bundle repository or durable recovery journal |
+| Grid end-to-end persistence and reload | No Grid-specific production E2E path established | MISSING |
+| Tabular import backward compatibility | Existing tabular UI review/staging/save/reload path and integration-test sources inspected | PASS — source/test-case evidence only; runtime execution SKIPPED |
+| Calendar sync after Grid commit | Existing Calendar workflow is separately authorized; Grid-specific post-commit integration not established | SKIPPED — must remain disabled until explicit review and authorization |
+
+**Evidence interpretation:** PASS in this section means source behavior or test cases were inspected, not that tests were executed. The Grid workflow document is a design specification and must not be represented as implemented functionality.
