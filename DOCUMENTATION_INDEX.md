@@ -23,6 +23,7 @@ This file is the central map of project documentation. Prefer updating an existi
 - [Coding standards](docs/wiki/CODING_STANDARDS.md)
 - [Contribution guide](docs/wiki/CONTRIBUTING.md)
 - [Architecture Decision Records](docs/adr/) — accepted decisions and their rationale.
+- [Conditional Schedule persistence and journal discovery ADR](docs/adr/CONDITIONAL_SCHEDULE_PERSISTENCE_AND_JOURNAL_DISCOVERY.md) — proposed cross-platform CAS capability, storage evaluation, migration sequence and startup journal index requirements; not yet accepted.
 - [SCE 3.0 system design](docs/SCE_3_0_SYSTEM_DESIGN.md)
 - [SCE 3.0 implementation map](docs/SCE_3_0_IMPLEMENTATION_MAP.md)
 
