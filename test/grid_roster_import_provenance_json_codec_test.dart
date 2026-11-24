@@ -153,4 +153,64 @@ void main() {
       throwsArgumentError,
     );
   });
+
+  test('included assignments require canonical identity and resolved rule', () {
+    expect(
+      () => GridRosterAssignmentProvenance(
+        sourceAssignmentId: 'a2',
+        sectionId: 's1',
+        reviewDecision: GridRosterReviewDecision.include,
+        shiftRuleKind: GridRosterShiftRuleKind.builtInRule,
+        reviewerId: 'reviewer',
+        reviewedAtUtc: DateTime.utc(2026, 11, 24),
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => GridRosterAssignmentProvenance(
+        sourceAssignmentId: 'a3',
+        sectionId: 's1',
+        canonicalEmployeeId: 'employee',
+        reviewDecision: GridRosterReviewDecision.include,
+        shiftRuleKind: GridRosterShiftRuleKind.ambiguousTemplate,
+        reviewerId: 'reviewer',
+        reviewedAtUtc: DateTime.utc(2026, 11, 24),
+      ),
+      throwsArgumentError,
+    );
+  });
+
+  test('committed envelope cannot retain pending assignments', () {
+    expect(
+      () => GridRosterImportProvenance(
+        importRunId: 'run',
+        sourceFingerprint: 'source',
+        parserVersion: '1',
+        createdAtUtc: DateTime.utc(2026),
+        targetScheduleId: 'schedule',
+        targetScheduleRevision: 'rev',
+        lifecycle: GridRosterImportLifecycle.committed,
+        acceptedScheduleFingerprint: 'accepted',
+        sections: [
+          GridRosterProvenanceSection(
+            sectionId: 's1',
+            title: 'Section',
+            readinessCode: 'ready',
+            reasonCodes: const [],
+          ),
+        ],
+        assignments: [
+          GridRosterAssignmentProvenance(
+            sourceAssignmentId: 'a1',
+            sectionId: 's1',
+            reviewDecision: GridRosterReviewDecision.pending,
+            shiftRuleKind: GridRosterShiftRuleKind.unresolved,
+          ),
+        ],
+        diagnostics: const [],
+      ),
+      throwsArgumentError,
+    );
+  });
+
 }
