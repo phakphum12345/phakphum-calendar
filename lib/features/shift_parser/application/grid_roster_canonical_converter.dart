@@ -7,6 +7,7 @@ import '../../../domain/entities/shift_template.dart';
 import '../../../domain/entities/shift_type.dart';
 import '../../../models/shift.dart' show ShiftCategory;
 import '../domain/grid_roster_import_provenance.dart';
+import '../domain/monthly_roster_section.dart';
 import 'grid_roster_review_session.dart';
 import 'monthly_roster_section_safety.dart';
 
@@ -92,6 +93,7 @@ class GridRosterCanonicalConverter {
     required Map<String, GridRosterAssignmentDecision> decisions,
     required String importRunId,
     required String parserVersion,
+    required DateTime createdAtUtc,
   }) {
     _requireText(importRunId, 'importRunId');
     _requireText(parserVersion, 'parserVersion');
@@ -173,6 +175,14 @@ class GridRosterCanonicalConverter {
         if (review.sectionBlocked && decision.include) {
           throw GridRosterCanonicalConversionException(
             'Assignment $sourceId belongs to a blocked section and cannot be included.',
+          );
+        }
+        if (decision.include &&
+            assessment.reasonCodes.contains(
+              'ASSIGNMENT_OUTSIDE_SECTION_RANGE:${source.sourceCell}',
+            )) {
+          throw GridRosterCanonicalConversionException(
+            'Assignment $sourceId falls outside its declared section date range.',
           );
         }
 
@@ -359,7 +369,7 @@ class GridRosterCanonicalConverter {
       importRunId: importRunId,
       sourceFingerprint: session.sourceFingerprint,
       parserVersion: parserVersion,
-      createdAtUtc: DateTime.now().toUtc(),
+      createdAtUtc: createdAtUtc.toUtc(),
       targetScheduleId: targetSchedule.id,
       targetScheduleRevision: session.targetScheduleRevision,
       lifecycle: GridRosterImportLifecycle.prepared,
@@ -378,18 +388,18 @@ class GridRosterCanonicalConverter {
 
   static String assignmentId(
     String sourceFingerprint,
-    dynamic sourceAssignment,
+    MonthlyRosterAssignment sourceAssignment,
   ) {
     _requireText(sourceFingerprint, 'sourceFingerprint');
-    final sectionTitle = sourceAssignment.sectionTitle as String;
-    final sourceCell = sourceAssignment.sourceCell as String;
-    final spreadsheetId = sourceAssignment.spreadsheetId as String?;
-    final sheetId = sourceAssignment.sheetId as int?;
+    final sectionTitle = sourceAssignment.sectionTitle;
+    final sourceCell = sourceAssignment.sourceCell;
+    final spreadsheetId = sourceAssignment.spreadsheetId;
+    final sheetId = sourceAssignment.sheetId;
     return '$sourceFingerprint|$sectionTitle|${spreadsheetId ?? ''}|'
         '${sheetId ?? ''}|${sourceCell.toUpperCase()}';
   }
 
-  static String _sectionId(String fingerprint, dynamic section) =>
+  static String _sectionId(String fingerprint, MonthlyRosterSection section) =>
       '$fingerprint|section|${section.headerRowIndex}|${section.title}';
 
   static String _builtInShiftId(String code, Duration start, Duration end) =>
@@ -441,7 +451,7 @@ class _ReviewedAssignment {
 
   final String sectionId;
   final String sourceId;
-  final dynamic source;
+  final MonthlyRosterAssignment source;
   final GridRosterAssignmentDecision decision;
   final Employee? employee;
   final ShiftType? shift;
