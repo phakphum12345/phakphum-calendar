@@ -82,7 +82,7 @@ jobs:
           /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PATH/Contents/Info.plist"
           /usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP_PATH/Contents/Info.plist"
 
-      - name: Package unsigned macOS application
+      - name: Package ad-hoc macOS application
         shell: bash
         run: |
           set -euo pipefail
