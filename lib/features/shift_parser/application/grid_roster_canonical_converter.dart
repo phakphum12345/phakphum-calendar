@@ -232,16 +232,8 @@ class GridRosterCanonicalConverter {
               'Selected employee $employeeId is missing or inactive.',
             );
           }
-          if (!rule.isResolved ||
-              rule.startTime == null ||
-              rule.endTime == null ||
-              rule.code == null) {
-            throw GridRosterCanonicalConversionException(
-              'Included assignment $sourceId has no resolved shift rule.',
-            );
-          }
           if (templateId != null) {
-            final template = templateById[templateId!];
+            final template = templateById[templateId];
             if (template == null) {
               throw GridRosterCanonicalConversionException(
                 'Configured shift template for $sourceId is missing or inactive.',
