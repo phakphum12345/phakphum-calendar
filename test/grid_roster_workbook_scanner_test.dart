@@ -81,11 +81,11 @@ List<ExcelRow> _validRows() {
       cells: [
         const ExcelCell(rowIndex: 2, columnIndex: 0, value: 'GEN'),
         for (var day = 1; day <= 7; day++)
-          const ExcelCell(
+          ExcelCell(
             rowIndex: 2,
-            columnIndex: 1,
+            columnIndex: day,
             value: 'สมชาย ใจดี',
-          ).copyWith(columnIndex: day),
+          ),
       ],
     ),
   ];
