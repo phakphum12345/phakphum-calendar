@@ -162,3 +162,19 @@ Validation errors use Laravel's standard JSON validation response. The API may a
 - The optional `metadata` field is restricted to bounded `note` and `schedule_id` values. Keep both minimal and non-sensitive.
 - Organization membership and transaction reads are authorized server-side; client-side role visibility is not an authorization boundary.
 - The route list is not a promise that every workflow is production-enabled. Verify exact-head CI and live integration configuration before release.
+
+
+## Shift Pay profiles and rule sources
+
+The additive Shift Pay API persists user mode/preferences separately from organization-owned rules. It does not change existing shift-transaction request/response contracts or retroactively calculate historical payments.
+
+- `GET /shift-pay/profile`: returns the authenticated user's mode, selected organization, hybrid precedence, currency precision, personal rules and (when an active membership exists) the selected organization's rules.
+- `PUT /shift-pay/profile`: updates the user's `personal`, `organization` or `hybrid` mode, selected organization, precedence and personal rule set. Organization and hybrid modes require an organization ID; organization access is checked server-side.
+- `GET /organizations/{organizationId}/shift-pay-rules`: reads organization-owned rules for an active member.
+- `PUT /organizations/{organizationId}/shift-pay-rules`: replaces the organization's rule set and is restricted to active owners/admins.
+
+Rule definitions use the existing Flutter calculator vocabulary: employment type, day category, shift type, optional department/location/work point, assignment purpose, pay component, treatment, fixed amount/hourly rate, multiplier, active state and compensatory-time metadata. IDs must be unique within a source. Additional-pay rules require a fixed amount or hourly rate unless salary-included; compensatory-time rules require a compensated shift type.
+
+The profile response keeps personal and organization rules in separate arrays. Consumers must apply the selected mode and hybrid precedence and must never add both source amounts. An unresolved hybrid conflict remains a source-selection requirement, not a payable amount. This API persists configuration only; server-side calculation snapshots and payroll posting are separate future work.
+
+All endpoints use the existing Google account middleware and rate limit. No production migration or deployment is implied by adding this migration to source control.
