@@ -308,3 +308,23 @@ The scanner:
 **Current source limitation:** the existing `ExcelReaderService` exposes cell values but not Excel background formatting or hidden-sheet metadata. The scanner records `hidden: false` as an unavailable/default field, not as verified evidence that a worksheet is visible; it does not infer colors. The adapter currently supports the local XLSX row model. Google Sheets and other source adapters still need to supply their actual source metadata and formatting evidence.
 
 **Runtime status: SKIPPED** — scanner tests were added but not executed in this connector session. The scanner is not yet connected to an ImportExcelPage action or production review controller.
+
+
+## 20. Grid import orchestration and canonical repository recovery
+
+Added:
+- `lib/features/shift_parser/application/grid_roster_import_workflow.dart`
+- `test/grid_roster_import_workflow_test.dart`
+
+The workflow coordinator now composes the implemented pieces:
+1. Scan all workbook worksheets and carry the XLSX SHA-256 fingerprint on the parse report.
+2. Load the target Schedule through `ScheduleRepository.findById`; create an empty candidate only when the target is genuinely absent.
+3. Bind the review session to either the canonical Schedule content fingerprint or an explicit `absent:<scheduleId>` revision token.
+4. Convert only explicit per-assignment reviewer decisions.
+5. Re-read the live Schedule immediately before commit and reject a changed revision.
+6. Commit the Schedule + provenance bundle to the journal, then save the canonical Schedule through the existing repository API.
+7. If the canonical repository save fails after the journal reaches COMMITTED, `recover(scheduleId)` replays the bundle only if the live repository is still at the recorded base revision. If a newer Schedule exists, recovery fails with a conflict instead of overwriting it.
+
+The workflow does not synchronize Calendar. The caller still needs to present the review and explicit approval in a production UI. The journal and canonical repository use separate persistence writes; recovery is a replay protocol, not a cross-store atomic transaction.
+
+Test source covers the complete service-level scan/review-convert-commit-save flow, replay after repository save failure, and stale-target rejection. **Runtime status: SKIPPED** — Flutter/Dart tests, analyzer and formatter were not executed in this connector session.
