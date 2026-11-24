@@ -112,6 +112,9 @@ class MonthlyRosterSectionParser {
             assignments: const [],
             startDate: null,
             endDate: null,
+            sourceSpreadsheetId: input.spreadsheetId,
+            sourceSheetId: input.sheetId,
+            sourceSheetTitle: input.sheetTitle,
             dateAnomalies: const [
               MonthlyRosterDateAnomaly(
                 code: 'unresolved_period',
@@ -200,6 +203,9 @@ class MonthlyRosterSectionParser {
           rosterRows: List.unmodifiable(rosterRows),
           startDate: start,
           endDate: end,
+          sourceSpreadsheetId: input.spreadsheetId,
+          sourceSheetId: input.sheetId,
+          sourceSheetTitle: input.sheetTitle,
           dateAnomalies: List.unmodifiable(dateAnomalies),
         ),
       );
@@ -270,6 +276,9 @@ class MonthlyRosterSectionParser {
           startDate: section.startDate,
           endDate: section.endDate,
           dateAnomalies: section.dateAnomalies,
+          sourceSpreadsheetId: section.sourceSpreadsheetId,
+          sourceSheetId: section.sourceSheetId,
+          sourceSheetTitle: section.sourceSheetTitle,
         ),
       );
     }
