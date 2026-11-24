@@ -100,7 +100,11 @@ class ConditionalScheduleStore {
         INSERT INTO schedule_records
           (schedule_id, generation, state, payload, fingerprint)
         SELECT ?, ?, 'live', ?, ?
-        WHERE ? = 0 AND ? = 'absent'
+        WHERE (? = 0 AND ? = 'absent')
+           OR EXISTS (
+             SELECT 1 FROM schedule_records
+             WHERE schedule_id = ?
+           )
         ON CONFLICT(schedule_id) DO UPDATE SET
           generation = schedule_records.generation + 1,
           state = 'live',
@@ -118,6 +122,7 @@ class ConditionalScheduleStore {
           Variable.withString(fingerprint),
           Variable.withInt(expected.generation),
           Variable.withString(expected.state.name),
+          Variable.withString(scheduleId),
           Variable.withInt(expected.generation),
           Variable.withString(expected.state.name),
           Variable.withString(expected.fingerprint ?? ''),
