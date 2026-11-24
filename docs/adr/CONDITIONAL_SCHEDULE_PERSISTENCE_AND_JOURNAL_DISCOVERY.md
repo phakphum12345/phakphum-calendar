@@ -131,6 +131,17 @@ An isolated spike now exists at `tool/schedule_cas_spike/`. It uses Drift with a
 
 A dedicated workflow (`.github/workflows/schedule-cas-spike.yml`) runs the native SQLite contract on Windows, Linux and macOS hosts. This is **source implementation only until a workflow run completes**. Android/iOS device integration, Web multi-tab storage, process-kill recovery, and browser quota/fallback behavior remain unproven. The spike's separate package manifest intentionally leaves the production dependency graph and root lockfile unchanged.
 
+### Independent SQL semantics spot-check (not Drift runtime evidence)
+
+The exact UPSERT/conditional-UPDATE SQL shape was separately exercised against SQLite 3.46.1 using two independent Python SQLite connections to one temporary database. The spot-check observed:
+- create from absent token succeeds; a second stale absent-token create returns no row;
+- expected-revision update succeeds; replaying the stale revision returns no row;
+- delete writes the next-generation tombstone;
+- a pre-delete live token cannot recreate the record; the current tombstone token can;
+- two simultaneous independent writers using the same revision produced one `saved` outcome and one `conflict`, with one final committed payload.
+
+This is **not** evidence that the Dart Drift adapter, the generated database, Drift's `customSelect` handling of SQLite `RETURNING`, or any of the five app targets work. It only reduces uncertainty about the SQL statement semantics. The Drift package workflow must still run before the prototype receives any runtime PASS.
+
 The prototype currently hashes the payload supplied by its caller; it does not yet use `ScheduleJsonCodec`. This is deliberate isolation, not permission to substitute it into production. The prototype cannot justify accepting this ADR until exact-SHA test results and the complete active-platform matrix are attached.
 
 ## Migration sequence
