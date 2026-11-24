@@ -114,7 +114,7 @@ class ShiftPayProfileApiTest extends TestCase
     private function rule(string $id, float $amount): array
     {
         return [
-            'id' => $id, 'employment_type' => 'daily_paid',
+            'id' => $id, 'employment_type' => 'dailyPaid',
             'day_category' => 'regularWeekday', 'shift_type_id' => 'night',
             'fixed_amount' => $amount, 'active' => true,
         ];
