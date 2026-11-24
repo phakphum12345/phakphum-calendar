@@ -265,3 +265,27 @@ A failed attempt to write the new COMMITTED record leaves the prior committed sl
 Test source covers successful commit/recovery, stale revision rejection, idempotency, interruption before committed write with previous-generation recovery, and PREPARED-only rejection. **Runtime status: SKIPPED** — no Dart formatter, analyzer or Flutter test command has been executed in this connector session.
 
 **Still not integrated:** no production Grid import UI/controller invokes this journal yet; no canonical Grid conversion is wired to it; no Calendar side effect is performed. Treat this as an additive persistence primitive, not a completed production E2E path.
+
+
+## 18. Reviewed Grid-to-canonical conversion — 2026-11-24
+
+Added:
+- `lib/features/shift_parser/application/grid_roster_canonical_converter.dart`
+- `test/grid_roster_canonical_converter_test.dart`
+
+The converter consumes an immutable `GridRosterReviewSession`, the target canonical Schedule, current active employee/template snapshots, and an explicit reviewer decision for every source assignment. Decision IDs are derived from the source fingerprint plus section/source-cell identity; missing or unknown decisions fail closed.
+
+Conversion rules:
+1. Target Schedule ID must match the review session, and duplicate/invalid target month/day structures are rejected.
+2. Every source assignment requires an explicit include/exclude decision with reviewer identity and timestamp.
+3. A blocked date/unsupported section cannot contribute included assignments; its source assignments may only be explicitly excluded.
+4. Assignments outside their declared section date range cannot be included.
+5. Included assignments require an active selected employee and a resolved shift rule. Configured templates must still exist and be active; built-in rules create deterministic canonical ShiftType identifiers.
+6. Existing Schedule months and assignments are preserved. A duplicate employee + shift assignment on the same day is rejected instead of silently deduplicated or overwritten.
+7. The output is a Schedule candidate plus PREPARED provenance. A separate helper creates COMMITTED provenance only when the caller supplies an accepted Schedule fingerprint.
+
+This conversion is intentionally pure: it does not save the Schedule, invoke the Bundle Journal, update the existing ScheduleRepository, or trigger Calendar synchronization. The converter checks the target revision carried by the review session only indirectly through the resulting provenance; the production orchestrator must reload the actual target Schedule/revision immediately before commit.
+
+Test source covers reviewed conversion, required decisions, preservation/collision handling, and blocked-section exclusion. **Runtime status: SKIPPED** — formatter, analyzer and Flutter tests have not been run in this connector session.
+
+**Remaining E2E work:** connect the converter to a production import controller/review UI, obtain the live target revision from the repository, commit the bundle through the journal, recover on startup, and only then offer an explicit Calendar-sync handoff.
