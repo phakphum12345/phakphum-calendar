@@ -165,3 +165,64 @@ If the operation partially fails, preserve successful outcomes and resume only o
 ## 13. Acceptance
 
 Production reconciliation requires stable identity mapping to existing entities, source snapshot/version handling, field-level change sets, safe REMOVE semantics, human review, transactional application, audit history and regression/E2E proof. Until those are verified, retain UNKNOWN/PARTIAL statuses in the capability matrix.
+
+
+## 14. Current Flutter model and persistence compatibility constraints
+
+The active implementation has two materially different source representations:
+- Tabular import uses `ShiftRecord`, including source worksheet row number and optional reviewed `Employee` / `ShiftTemplate` references.
+- Section-aware grid parsing uses `MonthlyRosterSection` / `MonthlyRosterAssignment`, including section title, row label/index, date, source cell, optional spreadsheet/sheet identity, background color, date columns and blocking date anomalies. The downstream legacy `Shift` also carries category, excluded/generated flags, linked shift key, source color, custom title and Calendar color.
+
+The canonical `Schedule` contains months and assignments, not source snapshot, section, cell, review actor, rule version or date-anomaly evidence. `LegacyScheduleAdapter` returns source metadata separately from the canonical schedule. `ImportedScheduleAdapter` converts reviewed tabular records but does not retain the original `ShiftRecord` objects in the canonical aggregate.
+
+The current durable canonical schedule format is `shift-tools.canonical-schedule`, schema version 1, encoded by `ScheduleJsonCodec` and stored through the alternating-slot `SharedPreferencesScheduleRepository`. The codec serializes schedule, departments, employees, shift types, months and assignments. It does not serialize import provenance or review decisions.
+
+### 14.1 Compatibility decision
+
+Do not add provider-specific provenance fields directly to `Schedule` or silently change canonical schedule schema version 1.
+
+Introduce a separate, versioned import/review envelope at the application boundary. The envelope should reference (not duplicate) the canonical schedule ID and contain:
+- envelope format discriminator and schema version;
+- import run ID and source snapshot reference/fingerprint;
+- source kind and parser/reader version;
+- section and source coordinate evidence;
+- normalized candidate-to-canonical assignment links;
+- identity/shift resolution decisions and review state;
+- blocking and non-blocking diagnostics;
+- included/excluded row/section decisions;
+- accepted schedule revision/fingerprint and timestamp;
+- a status lifecycle such as DRAFT, REVIEW_REQUIRED, APPROVED, COMMITTED, or FAILED.
+
+Do not store raw workbook bytes, raw cell payloads or secrets inside the envelope by default. Keep source evidence minimal and privacy-reviewed.
+
+### 14.2 Atomicity and repository boundary
+
+The existing `ScheduleRepository.save` commits one canonical `Schedule`; it has no transaction method that atomically saves a schedule and a separate provenance record. Writing a schedule first and provenance second can leave a committed schedule with missing audit evidence if the second write fails.
+
+Before implementation, choose and test one of these explicit strategies:
+1. A new import-commit repository/use case that persists a versioned bundle containing both schedule and provenance as one durable unit, while preserving existing schedule reads and schema-v1 data; or
+2. A staged two-phase protocol with durable PREPARED/COMMITTED states, recovery on restart, and idempotent repair of incomplete commits.
+
+Do not claim atomicity from two independent SharedPreferences writes. Do not replace or migrate existing canonical schedules without a tested rollback and compatibility path.
+
+### 14.3 Identity and lineage rules
+
+- A source cell locator is evidence, not a canonical assignment ID.
+- A reviewed employee ID and shift-template ID must be preserved; never resolve identity from a display name after approval.
+- A source revision may move a record to another cell without changing the real-world assignment; retain both lineage references.
+- A malformed or blocked section cannot generate REMOVE proposals for assignments that are absent from that section.
+- An excluded row remains visible in the review/audit envelope; it must not be silently discarded.
+- Re-importing the same accepted source revision must be idempotent and must not duplicate canonical assignments.
+
+### 14.4 Required tests before production acceptance
+
+- Decode existing schema-v1 schedule fixtures before and after introducing the envelope; existing schedules remain readable.
+- Round-trip an envelope with both tabular and grid source evidence.
+- Simulate failure between staged and committed writes; recover without losing the prior accepted schedule.
+- Retry the same import-run ID and source fingerprint; do not duplicate assignments.
+- Preserve employee/shift review decisions and excluded-row reasons after restart.
+- Verify source-cell/section lineage survives canonical conversion and reload.
+- Verify malformed section blocks only its own proposed changes and never creates mass removals.
+- Verify concurrent/stale target revision is rejected and requires a refreshed preview.
+
+Until these tests execute on the exact candidate commit, provenance persistence remains **UNKNOWN** and must not be represented as implemented.
