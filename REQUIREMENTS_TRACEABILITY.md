@@ -252,3 +252,23 @@ Important distinction: PASS in this table means the source path or test case exi
 | Keep section visible to safety classifier/review builder | Classifier sees blocking anomaly; session builder retains section review | PASS — source path inspected |
 | Conflicting explicit ranges regression | Existing parser test now expects retained blocked section and no assignments | PASS — test source updated; runtime SKIPPED |
 | Raw unresolved cell-level assignment evidence | No unresolved-cell model added yet | MISSING |
+
+## 2026-11-24 Grid provenance envelope and JSON codec
+
+| Requirement | Evidence | Status |
+|---|---|---|
+| Store import-run, source fingerprint, parser version and target Schedule revision | `GridRosterImportProvenance` envelope | PASS — source added |
+| Preserve section-level readiness, date bounds and reason codes | `GridRosterProvenanceSection` | PASS — source added |
+| Link source assignment/cell to canonical employee/template and review decision | `GridRosterAssignmentProvenance` | PASS — source added |
+| Preserve reviewer identity/time for final include/exclude decisions | Model requires reviewer ID and UTC timestamp as a pair | PASS — source invariant |
+| Preserve diagnostics without copying raw workbook values | Code/severity and optional section/cell references only | PASS — source contract |
+| Reject duplicate IDs, dangling section links and invalid committed state | Envelope constructor invariants | PASS — source added |
+| Versioned strict JSON round-trip | `GridRosterImportProvenanceJsonCodec`, format discriminator and schema v1 | PASS — source added; runtime SKIPPED |
+| Reject unknown versions/enums and malformed required fields | Codec exceptions and tests | PASS — source/test added; runtime SKIPPED |
+| Preserve canonical Schedule schema v1 | No changes to `ScheduleJsonCodec` or canonical repository | PASS — files unchanged in this work |
+| Durable provenance storage and recovery | No repository/journal added | MISSING |
+| Atomic Schedule + provenance commit | Existing repository only alternates Schedule slots; no cross-object transaction | MISSING |
+| Grid UI, canonical conversion and Calendar sync | Not wired by this change | MISSING |
+| Dart format, analyze and Flutter tests | Not executed in connector environment | SKIPPED |
+
+**Interpretation:** PASS means the source contract or static boundary was added/inspected, not that runtime tests passed. The provenance codec is not persistence. The next implementation gate is a recoverable bundle journal with exact target revision checks and crash-recovery tests.
