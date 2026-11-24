@@ -65,10 +65,52 @@ class OrganizationJoinRequest {
   final DateTime? createdAt;
 }
 
+@immutable
+class OrganizationMembershipAuditEvent {
+  const OrganizationMembershipAuditEvent({
+    required this.id,
+    required this.action,
+    required this.actorUserId,
+    required this.actorName,
+    required this.subjectUserId,
+    required this.subjectName,
+    required this.createdAt,
+    this.before,
+    this.after,
+  });
+
+  final int id;
+  final String action;
+  final String actorUserId;
+  final String actorName;
+  final String subjectUserId;
+  final String subjectName;
+  final DateTime createdAt;
+  final Map<String, Object?>? before;
+  final Map<String, Object?>? after;
+}
+
+@immutable
+class OrganizationMembershipAuditPage {
+  const OrganizationMembershipAuditPage({
+    required this.events,
+    this.nextBeforeId,
+  });
+
+  final List<OrganizationMembershipAuditEvent> events;
+  final int? nextBeforeId;
+}
+
 abstract interface class OrganizationAdminGateway {
   Future<List<OrganizationMembership>> organizations();
 
   Future<List<OrganizationMember>> members(String organizationId);
+
+  Future<OrganizationMembershipAuditPage> membershipAudit(
+    String organizationId, {
+    int limit = 50,
+    int? beforeId,
+  });
 
   Future<void> updateMemberRole({
     required String organizationId,

@@ -35,6 +35,41 @@ class HttpOrganizationAdminGateway implements OrganizationAdminGateway {
   }
 
   @override
+  Future<OrganizationMembershipAuditPage> membershipAudit(
+    String organizationId, {
+    int limit = 50,
+    int? beforeId,
+  }) async {
+    if (limit < 1 || limit > 100) {
+      throw ArgumentError.value(limit, 'limit', 'Must be between 1 and 100.');
+    }
+    if (beforeId != null && beforeId < 1) {
+      throw ArgumentError.value(beforeId, 'beforeId', 'Must be positive.');
+    }
+    final envelope = _map(
+      await _request(
+        'GET',
+        ['organizations', organizationId, 'membership-audit'],
+        queryParameters: {
+          'limit': '$limit',
+          if (beforeId != null) 'before_id': '$beforeId',
+        },
+        unwrapData: false,
+      ),
+    );
+    final meta = _map(envelope['meta']);
+    final nextBeforeId = meta['next_before_id'];
+    return OrganizationMembershipAuditPage(
+      events: _list(envelope['data'])
+          .map<OrganizationMembershipAuditEvent>(_membershipAuditEvent)
+          .toList(growable: false),
+      nextBeforeId: nextBeforeId == null
+          ? null
+          : _integer({'value': nextBeforeId}, 'value'),
+    );
+  }
+
+  @override
   Future<void> updateMemberRole({
     required String organizationId,
     required String userId,
@@ -138,13 +173,18 @@ class HttpOrganizationAdminGateway implements OrganizationAdminGateway {
     String method,
     List<String> pathSegments, {
     Map<String, Object?>? body,
+    Map<String, String>? queryParameters,
+    bool unwrapData = true,
   }) async {
     final token = (await idToken())?.trim();
     if (token == null || token.isEmpty) {
       throw StateError('กรุณาเข้าสู่ระบบ Google เพื่อจัดการสมาชิกองค์กร');
     }
 
-    final request = http.Request(method, _endpoint(pathSegments))
+    final request = http.Request(
+      method,
+      _endpoint(pathSegments, queryParameters: queryParameters),
+    )
       ..headers['Accept'] = 'application/json'
       ..headers['Authorization'] = 'Bearer $token';
     if (body != null) {
@@ -180,10 +220,13 @@ class HttpOrganizationAdminGateway implements OrganizationAdminGateway {
     if (decoded is! Map<String, dynamic> || !decoded.containsKey('data')) {
       throw const FormatException('Organization API returned an invalid response.');
     }
-    return decoded['data'];
+    return unwrapData ? decoded['data'] : decoded;
   }
 
-  Uri _endpoint(List<String> pathSegments) {
+  Uri _endpoint(
+    List<String> pathSegments, {
+    Map<String, String>? queryParameters,
+  }) {
     final configured = baseUrl.trim();
     if (configured.isEmpty) {
       throw StateError(
@@ -211,7 +254,7 @@ class HttpOrganizationAdminGateway implements OrganizationAdminGateway {
     }
     return origin.replace(
       pathSegments: ['api', 'v1', ...pathSegments],
-      query: null,
+      queryParameters: queryParameters,
       fragment: null,
     );
   }
@@ -262,6 +305,37 @@ class HttpOrganizationAdminGateway implements OrganizationAdminGateway {
     );
   }
 
+  OrganizationMembershipAuditEvent _membershipAuditEvent(Object? value) {
+    final item = _map(value);
+    final actor = _map(item['actor']);
+    final subject = _map(item['subject']);
+    final rawCreatedAt = _string(item, 'created_at').trim();
+    final hasTimezone = rawCreatedAt.endsWith('Z') ||
+        rawCreatedAt.endsWith('z') ||
+        (rawCreatedAt.length >= 6 &&
+            (rawCreatedAt[rawCreatedAt.length - 6] == '+' ||
+                rawCreatedAt[rawCreatedAt.length - 6] == '-') &&
+            rawCreatedAt[rawCreatedAt.length - 3] == ':');
+    final createdAtInput = hasTimezone ? rawCreatedAt : '${rawCreatedAt}Z';
+    final createdAt = DateTime.tryParse(createdAtInput);
+    if (createdAt == null) {
+      throw const FormatException(
+        'Organization membership audit timestamp is invalid.',
+      );
+    }
+    return OrganizationMembershipAuditEvent(
+      id: _integer(item, 'id'),
+      action: _string(item, 'action'),
+      actorUserId: _string(actor, 'user_id'),
+      actorName: _optionalString(actor, 'name') ?? 'ไม่ทราบชื่อ',
+      subjectUserId: _string(subject, 'user_id'),
+      subjectName: _optionalString(subject, 'name') ?? 'ไม่ทราบชื่อ',
+      before: _optionalMap(item, 'before'),
+      after: _optionalMap(item, 'after'),
+      createdAt: createdAt,
+    );
+  }
+
   OrganizationJoinRequest _joinRequest(Object? value) {
     final item = _map(value);
     final createdAt = item['created_at'];
@@ -294,6 +368,18 @@ class HttpOrganizationAdminGateway implements OrganizationAdminGateway {
       throw FormatException('Organization API field "$key" is invalid.');
     }
     return value;
+  }
+
+  Map<String, Object?>? _optionalMap(
+    Map<String, dynamic> item,
+    String key,
+  ) {
+    final value = item[key];
+    if (value == null) return null;
+    if (value is! Map) {
+      throw FormatException('Organization API field "$key" is invalid.');
+    }
+    return Map<String, Object?>.from(value);
   }
 
   int _integer(Map<String, dynamic> item, String key) {

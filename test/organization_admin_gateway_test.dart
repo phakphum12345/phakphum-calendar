@@ -113,6 +113,106 @@ void main() {
     );
   });
 
+  test('membership audit uses authenticated cursor pagination and parses states', () async {
+    final client = MockClient((request) async {
+      expect(request.method, 'GET');
+      expect(
+        request.url.path,
+        '/api/v1/organizations/organization-id/membership-audit',
+      );
+      expect(request.url.queryParameters, {
+        'limit': '1',
+        'before_id': '9',
+      });
+      expect(request.headers['Authorization'], 'Bearer test-id-token');
+      return http.Response(
+        jsonEncode({
+          'data': [
+            {
+              'id': 8,
+              'action': 'role_changed',
+              'actor': {'user_id': '1', 'name': 'Owner'},
+              'subject': {'user_id': '2', 'name': 'Member'},
+              'before': {'role': 'staff', 'status': 'active'},
+              'after': {'role': 'manager', 'status': 'active'},
+              'created_at': '2026-11-23T10:00:00.000000Z',
+            },
+          ],
+          'meta': {'limit': 1, 'next_before_id': 7},
+        }),
+        200,
+        headers: {'content-type': 'application/json'},
+      );
+    });
+    final gateway = HttpOrganizationAdminGateway(
+      baseUrl: 'https://api.example.com',
+      idToken: () async => 'test-id-token',
+      client: client,
+    );
+
+    final page = await gateway.membershipAudit(
+      'organization-id',
+      limit: 1,
+      beforeId: 9,
+    );
+    gateway.close();
+
+    expect(page.events, hasLength(1));
+    expect(page.events.single.action, 'role_changed');
+    expect(page.events.single.actorName, 'Owner');
+    expect(page.events.single.subjectName, 'Member');
+    expect(page.events.single.before?['role'], 'staff');
+    expect(page.events.single.after?['role'], 'manager');
+    expect(page.nextBeforeId, 7);
+  });
+
+  test('membership audit treats offset-free API timestamps as UTC', () async {
+    final client = MockClient((request) async => http.Response(
+      jsonEncode({
+        'data': [
+          {
+            'id': 8,
+            'action': 'role_changed',
+            'actor': {'user_id': '1', 'name': 'Owner'},
+            'subject': {'user_id': '2', 'name': 'Member'},
+            'created_at': '2026-11-23 10:00:00',
+          },
+        ],
+        'meta': {'limit': 50, 'next_before_id': null},
+      }),
+      200,
+      headers: {'content-type': 'application/json'},
+    ));
+    final gateway = HttpOrganizationAdminGateway(
+      baseUrl: 'https://api.example.com',
+      idToken: () async => 'test-id-token',
+      client: client,
+    );
+
+    final page = await gateway.membershipAudit('organization-id');
+    gateway.close();
+
+    expect(page.events.single.createdAt.isUtc, isTrue);
+    expect(page.events.single.createdAt, DateTime.utc(2026, 11, 23, 10));
+  });
+
+  test('membership audit rejects invalid pagination bounds', () async {
+    final gateway = HttpOrganizationAdminGateway(
+      baseUrl: 'https://api.example.com',
+      idToken: () async => 'test-id-token',
+      client: MockClient((_) async => http.Response('', 204)),
+    );
+    await expectLater(
+      gateway.membershipAudit('organization-id', limit: 101),
+      throwsArgumentError,
+    );
+    await expectLater(
+      gateway.membershipAudit('organization-id', beforeId: 0),
+      throwsArgumentError,
+    );
+    gateway.close();
+  });
+
   test('remote organization API URLs must use HTTPS', () async {
     final gateway = HttpOrganizationAdminGateway(
       baseUrl: 'http://api.example.com',
