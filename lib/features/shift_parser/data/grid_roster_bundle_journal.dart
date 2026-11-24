@@ -135,13 +135,35 @@ class GridRosterBundleJournal {
     }
 
     final records = await _readRecords(schedule.id);
-    final latest = records.isEmpty
-        ? null
-        : (records..sort(
-            (left, right) => right.generation.compareTo(left.generation),
-          )).first;
-    final generation = (latest?.generation ?? 0) + 1;
-    final targetSlot = latest?.slot == 'a' ? 'b' : 'a';
+    final latestGeneration = records.fold<int>(
+      0,
+      (highest, record) =>
+          record.generation > highest ? record.generation : highest,
+    );
+    final latestCommitted = records
+        .where((record) => record.state == 'committed')
+        .fold<_JournalRecord?>(
+          null,
+          (latest, record) => latest == null ||
+                  record.generation > latest.generation
+              ? record
+              : latest,
+        );
+    final latestPrepared = records
+        .where((record) => record.state == 'prepared')
+        .fold<_JournalRecord?>(
+          null,
+          (latest, record) => latest == null ||
+                  record.generation > latest.generation
+              ? record
+              : latest,
+        );
+    final generation = latestGeneration + 1;
+    // Never overwrite the last committed slot before a replacement has
+    // itself been committed. Reuse an orphan PREPARED slot when present.
+    final targetSlot = latestCommitted != null
+        ? (latestCommitted.slot == 'a' ? 'b' : 'a')
+        : (latestPrepared?.slot ?? 'a');
 
     final preparedRecord = _encodeRecord(
       state: 'prepared',
