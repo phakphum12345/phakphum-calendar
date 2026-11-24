@@ -282,7 +282,6 @@ Important distinction: PASS in this table means the source path or test case exi
 | Production Grid UI/controller invokes conversion | `ImportExcelPage` → `GridRosterReviewPage` → workflow coordinator → canonical repository | PASS — source integrated; runtime SKIPPED |
 | Calendar sync after explicit approval | Not wired by this change | MISSING |
 | Dart format, analyze and Flutter tests | Not executed in connector environment | SKIPPED |
-
 | Verified reviewer identity | Reviewer label is typed by the operator and stored as reviewer evidence; no identity provider validates it | MISSING |
 | Google Sheets Grid adapter | Grid scanner currently accepts local XLSX only | MISSING |
 | Excel hidden-sheet and background-color evidence | Current ExcelReaderService does not expose these fields | UNKNOWN |
