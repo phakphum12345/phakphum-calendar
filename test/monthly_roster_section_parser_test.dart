@@ -87,6 +87,32 @@ void main() {
     expect(report.dateRanges.single.end, DateTime(2026, 9, 15));
   });
 
+  test('uses the explicit GEN section range instead of the unit number', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, [
+          'GEN คลินิคพิเศษ ภปร. 4 พฤศจิกายน พ.ศ. 2569 '
+          '(1 พฤศจิกายน 2569 - 30 พฤศจิกายน 2569)',
+        ]),
+        ..._row(1, ['วันที่', 1, 2, 3, 4, 5, 6, 7]),
+        ..._row(2, ['GEN', 'บุคลากร A']),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, hasLength(1));
+    expect(report.sections.single.startDate, DateTime(2026, 11, 1));
+    expect(report.sections.single.endDate, DateTime(2026, 11, 30));
+    expect(report.assignments.single.date, DateTime(2026, 11, 1));
+    expect(report.assignments.single.workerName, 'บุคลากร A');
+  });
+
   test('generates independent section dates before populating worker names', () {
     final input = ShiftParserInput(
       spreadsheetId: 'spreadsheet',
