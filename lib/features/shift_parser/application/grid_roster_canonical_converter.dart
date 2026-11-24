@@ -18,10 +18,12 @@ class GridRosterAssignmentDecision {
     required this.reviewerId,
     required this.reviewedAtUtc,
     this.employeeId,
+    this.shiftTemplateId,
   });
 
   final bool include;
   final String? employeeId;
+  final String? shiftTemplateId;
   final String reviewerId;
   final DateTime reviewedAtUtc;
 }
@@ -191,7 +193,7 @@ class GridRosterCanonicalConverter {
         ShiftType? shift;
         String? templateId;
         final rule = review.shiftRule;
-        final ruleKind = switch (rule.status) {
+        var ruleKind = switch (rule.status) {
           MonthlyRosterShiftRuleStatus.configuredTemplate =>
             GridRosterShiftRuleKind.configuredTemplate,
           MonthlyRosterShiftRuleStatus.builtInRule =>
@@ -205,6 +207,16 @@ class GridRosterCanonicalConverter {
         };
         if (rule.status == MonthlyRosterShiftRuleStatus.configuredTemplate) {
           templateId = rule.templateId;
+        }
+        if (decision.shiftTemplateId != null) {
+          final selectedTemplate = templateById[decision.shiftTemplateId!];
+          if (selectedTemplate == null) {
+            throw GridRosterCanonicalConversionException(
+              'Selected shift template ${decision.shiftTemplateId} is missing or inactive.',
+            );
+          }
+          templateId = selectedTemplate.id;
+          ruleKind = GridRosterShiftRuleKind.configuredTemplate;
         }
 
         if (decision.include) {
@@ -228,25 +240,31 @@ class GridRosterCanonicalConverter {
               'Included assignment $sourceId has no resolved shift rule.',
             );
           }
-          if (rule.status == MonthlyRosterShiftRuleStatus.configuredTemplate) {
-            templateId = rule.templateId;
-            final template = templateId == null
-                ? null
-                : templateById[templateId];
+          if (templateId != null) {
+            final template = templateById[templateId!];
             if (template == null) {
               throw GridRosterCanonicalConversionException(
                 'Configured shift template for $sourceId is missing or inactive.',
               );
             }
-            if (template.code != rule.code ||
-                template.startTime != rule.startTime ||
-                template.endTime != rule.endTime) {
+            if (template.id == rule.templateId &&
+                (template.code != rule.code ||
+                    template.startTime != rule.startTime ||
+                    template.endTime != rule.endTime)) {
               throw GridRosterCanonicalConversionException(
                 'Configured shift template changed after the review snapshot.',
               );
             }
             shift = template.toShiftType();
           } else {
+            if (!rule.isResolved ||
+                rule.startTime == null ||
+                rule.endTime == null ||
+                rule.code == null) {
+              throw GridRosterCanonicalConversionException(
+                'Included assignment $sourceId has no resolved shift rule or explicit template selection.',
+              );
+            }
             final start = rule.startTime!;
             final end = rule.endTime!;
             final endForDuration = end <= start
