@@ -256,7 +256,7 @@ The journal stores the canonical Schedule JSON and versioned Grid provenance JSO
 2. Write the next inactive slot as PREPARED and read it back through both codecs.
 3. Replace that same inactive slot with COMMITTED and read it back again.
 4. Recovery chooses the highest-generation valid COMMITTED record and never returns PREPARED-only content.
-5. Repeating the same committed import run with identical Schedule content and accepted fingerprint is idempotent; conflicting reuse of a run ID is rejected.
+5. The journal verifies that COMMITTED provenance preserves the exact prepared review decisions, apart from lifecycle and accepted Schedule fingerprint. Repeating the same committed import run with identical Schedule content and accepted fingerprint is idempotent; conflicting reuse of a run ID is rejected.
 
 A failed attempt to write the new COMMITTED record leaves the prior committed slot available. The implementation deliberately does not change canonical Schedule schema v1 or the existing ScheduleRepository API.
 
