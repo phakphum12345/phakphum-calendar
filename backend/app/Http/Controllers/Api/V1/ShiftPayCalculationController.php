@@ -7,6 +7,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Database\QueryException;
 use Illuminate\Validation\Rule;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
@@ -114,7 +115,7 @@ class ShiftPayCalculationController
                 'result_snapshot' => json_encode($result, JSON_THROW_ON_ERROR),
                 'calculated_at' => $now,
             ]);
-        } catch (\Illuminate\Database\QueryException $exception) {
+        } catch (QueryException $exception) {
             $existing = DB::table('shift_pay_calculation_snapshots')
                 ->where('user_id', $userId)->where('idempotency_key', $idempotencyKey)->first();
             if ($existing !== null && hash_equals($existing->request_hash, $requestHash)) {
