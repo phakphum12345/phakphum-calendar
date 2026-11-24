@@ -1,69 +1,75 @@
 # Repository Implementation Status
 
-## Current main snapshot — 2026-11-23 (supersedes the historical snapshot below)
+## Current main snapshot — 2026-11-24
 
-**Verified main SHA:** `78a1ef7c1436ccfd0495778987b97a9ebd9ac2d1`
+**Verified main SHA:** `d143449d47c8df3dee4ea6053258a84bb28d4e5e`
 
-This section is the current evidence snapshot. The remainder of this file is retained as the 2026-11-22 historical baseline and must not be used as the current PR or release status.
+This snapshot reflects the merged shift-transaction work in PR #173 and the organization membership-audit UI in PR #171. Historical sections below are retained for audit history only and must not be treated as current status.
 
 | Item | Current observation | Status |
 |---|---|---|
-| Default branch | `main` | PASS |
-| Open PRs | 0 | PASS |
-| Issue tracker | Disabled on this repository (`has_issues: false`); reported open issue count is 0 | UNKNOWN |
-| Main branch protection | GitHub reports `protected: false` | FAIL |
-| Local working tree | Not available through the GitHub API audit | UNKNOWN |
-| Current-SHA workflow runs | Auto Detect CI and Cross-platform Runtime both completed successfully | PASS |
-| Current-SHA check runs | 7 of 7 completed with conclusion `success` | PASS |
-| Current-SHA Web deployment | No Web workflow run was observed for this documentation-only SHA | UNKNOWN |
-| Exact current-SHA production metadata | Not verified | UNKNOWN |
+| Default branch | `main` at `d143449d47c8df3dee4ea6053258a84bb28d4e5e` | PASS |
+| PR #171 | Merged; membership-audit gateway, UI, pagination and regression tests included | MERGED |
+| PR #173 | Merged; exchange-and-return composition and transaction-history filters included | MERGED |
+| PR #172 | Documentation snapshot is stale because it predates PR #171; this refreshed branch supersedes it while preserving the original branch | SUPERSEDED |
+| PR #174 | Independent macOS/Xcode workflow; rerun exposed Xcode project inspection before Flutter plugin generation; workflow fix committed, rerun evidence pending | IN_PROGRESS |
+| PR #175 | Independent iOS/Xcode workflow; same generated-plugin ordering issue; workflow fix committed, rerun evidence pending | IN_PROGRESS |
+| Older open PRs | Several branches explicitly describe themselves as superseded; preserve branches and reconcile each against current main before any merge | NEEDS REVIEW |
+| Main branch protection | Prior audit reported `protected: false`; re-check repository settings before relying on server-enforced merge gates | NEEDS REVIEW |
+| PR #171 exact-head CI | 11 workflow runs completed successfully on head `16f57fc562d15a04abdaa5fc3bd6f017d9d89137` | PASS |
+| Post-merge main CI | Exact current-main workflow evidence for merge commit `d143449d47c8df3dee4ea6053258a84bb28d4e5e` has not been established in this audit | UNKNOWN |
+| Production deployment | Latest observed successful deployment source SHA remains `4618ab98b0fc371f32f08d3299365f577fa81674`; current main includes later application changes | UNKNOWN |
 
-### Exact-SHA CI evidence
+### Current pull-request reconciliation
 
-Current main `78a1ef7c1436ccfd0495778987b97a9ebd9ac2d1`:
-- Auto Detect CI run [45129850947](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45129850947): SUCCESS.
-- Cross-platform Runtime run [45129850973](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45129850973): SUCCESS.
-- Seven check runs completed successfully: Dart/Flutter quality, platform activation, capability detection, Linux POSIX full quality, Linux PowerShell smoke test, Windows PowerShell full quality, and Windows CMD smoke test.
-
-These results do not mean every platform build, Laravel workflow, Pages deployment, or Final Gate ran on this exact SHA.
-
-### Deployment relationship
-
-The latest observed successful Web deployment is run [45129035935](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45129035935) on application-source SHA `4618ab98b0fc371f32f08d3299365f577fa81674`. Both the GitHub Pages deployment job and its exact-SHA published-site verification step succeeded. Final Gate run [45129036049](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45129036049) also succeeded for that SHA.
-
-A GitHub compare of `4618ab98...` to current main `78a1ef7c1436ccfd0495778987b97a9ebd9ac2d1` reports only three changed files: `IMPLEMENTATION_STATUS.md`, `REQUIREMENTS_TRACEABILITY.md`, and `docs/REPOSITORY_AUDIT.md`. Therefore the application source tree is unchanged from the deployed application-source SHA, but the published deployment metadata has not been verified against the newer documentation-only main SHA. Strict exact-main-SHA deployment status remains UNKNOWN.
-
-The Web and Final Gate workflows are path-filtered to application/platform/workflow files; a documentation-only change does not trigger them.
-
-### Current source-level findings
-
-| Area | Current evidence | Status |
+| PR | Current observation | Decision |
 |---|---|---|
-| Roster date validation | Parser detects duplicate days, missing dates, out-of-order dates and date-sequence mismatches; conversion skips sections with blocking date anomalies | PASS (guard exists; source-specific workbook outcomes remain unverified) |
-| X-OPD November 2569 | Reported malformed header requires original workbook/cell layout to confirm intended dates | UNKNOWN |
-| US Clinic ภปร.4 | Markdown header alone does not reproduce the reported offset; original workbook is required | UNKNOWN |
-| Calendar sync | Existing planner/executor/reconciliation and regression-test files are present; live authorized Google account behavior is not verified in this audit | UNKNOWN |
-| Historical roster restore | Revision/timeline support exists, but a complete safe restore workflow was not found in the current source inventory | PARTIAL |
-| Web Push | Browser subscription and authenticated API storage exist; VAPID sender, RFC 8291 encryption, durable queue/scheduler, retry and user-facing opt-in controls are not implemented | PARTIAL |
-| Membership audit | Backend migration, write events, manager-protected read endpoint and cursor pagination exist; Flutter gateway and organization UI do not expose this endpoint | PARTIAL |
-| Responsive UI | Requires screen-by-screen device-width verification | UNKNOWN |
-| Performance | No repository-wide baseline verified | UNKNOWN |
-| Security / tenant isolation | Requires focused test and runtime review beyond this source inventory | UNKNOWN |
+| #171 | Merged as `d143449d47c8df3dee4ea6053258a84bb28d4e5e`; exact PR-head workflows passed | Complete; retain post-merge verification |
+| #172 | Its snapshot says #171 is open and uses the pre-merge base; unique documentation is retained in this refreshed branch | Supersede only after replacement PR is validated |
+| #174 | macOS workflow failed because `xcodebuild -list` ran before `flutter pub get` generated the Flutter plugin Swift package; fix committed to the PR branch | Keep open pending exact-head rerun |
+| #175 | iOS workflow failed for the same generated-plugin ordering issue; fix committed to the PR branch | Keep open pending exact-head rerun |
+| #170, #146, #143, #142, #141, #140 and older open PRs | Their PR descriptions identify replacement PRs or stale work; no branch is deleted | Reconcile individually; do not merge superseded diffs |
 
-### Immediate next work
+### Source-level gap register
 
-1. Obtain the original X-OPD and US Clinic ภปร.4 workbook/export. Do not infer or silently repair date headers.
-2. Add the membership-audit API method, typed model, organization-scoped UI, pagination and permission/error tests.
-3. Complete Web Push delivery only after backend VAPID configuration and supported scheduler/worker strategy are available; do not invent credentials.
-4. Define safe historical restore preview/confirmation. Any Drive write-scope expansion requires separate explicit approval.
-5. Complete targeted security/tenant-isolation, responsive UI, performance and critical E2E audits.
-6. Verify a production deployment whose published metadata exactly matches the main SHA before claiming strict release readiness.
+| Area | Evidence on current main | Status | Required next work |
+|---|---|---|---|
+| Calendar day/week/month/year views | `ScheduleWorkspacePage` and `ScheduleYearOverview` implement the four modes and responsive year overview | IMPLEMENTED FOUNDATION | Verify widget coverage, narrow-width layout, year navigation and month-selection regressions |
+| Organization membership audit | Backend endpoint and audit writes exist; PR #171 adds authenticated Flutter gateway, organization-scoped UI, cursor pagination, stale-response protection and tenant-isolation tests | IMPLEMENTED; POST-MERGE VERIFICATION | Verify behavior on current main and retain authorization/tenant-isolation regression coverage |
+| Shift transactions | PR #173 adds exchange-and-return composition and history filters on top of existing transaction APIs | IMPLEMENTED FOUNDATION | Verify live multi-account/provider behavior without mutating real calendars in tests |
+| Notifications/reminders | `NotificationService` remains an abstract interface; no concrete scheduled platform delivery implementation was found | MISSING | Decide supported platforms/background behavior; add permission-aware implementation, scheduling/cancellation, tests and user controls |
+| Historical roster restoration | `RosterRevisionService` reads Drive revisions only and does not write to Drive/Sheets | PARTIAL | Define preview, conflict handling, confirmation, audit and recovery; any Drive write-scope expansion requires separate approval |
+| Web Push | Subscription/API groundwork exists; VAPID sender, RFC 8291 encryption, durable queue/scheduler, retry and opt-in controls remain unimplemented | PARTIAL | Verify backend source and implement only with configured secrets and a supported worker/scheduler |
+| Calendar sync live integration | Planner/executor/reconciliation and regression tests exist | UNKNOWN | Verify authorized Google account behavior, idempotency and recovery without modifying real calendars during tests |
+| Workbook edge cases | Date validation blocks malformed sections; reported workbook anomalies need original workbooks to confirm intended layouts | UNKNOWN | Obtain original source workbooks; never infer or silently repair dates |
+| Responsive UI | Year overview adapts columns at breakpoints; full device verification is not established | NEEDS REVIEW | Test mobile, tablet and desktop layouts across critical workflows |
+| Performance | No repository-wide benchmark baseline is established | UNKNOWN | Add reproducible large-workbook, event-volume, memory and long-history benchmarks |
+| Local data protection | Timeline/revision snapshots use local persistence; encryption and retention behavior need focused review | NEEDS REVIEW | Document data classification, retention, encryption and recovery requirements |
+| API/database documentation | API and schema guides exist; migrations remain authoritative | IMPLEMENTED FOUNDATION | Keep route, authorization and constraint descriptions synchronized with source/migrations |
 
-**Snapshot date:** 2026-11-22  
-**Snapshot base:** `main` at `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5`  
-**Scope:** Whole repository, Flutter client, Laravel API, persistence, synchronization, CI/CD, security and documentation.
+### CI and release qualification
 
-> This is a point-in-time engineering inventory, not a declaration that the repository is complete or production-ready. Source code, migrations, exact-head CI and observed runtime behavior take precedence over this document. `SKIPPED` and `UNKNOWN` are never treated as `PASS`.
+- CI states must be tied to the exact head SHA. Queued, in-progress, cancelled, skipped or missing checks are not PASS.
+- PR #171 had 11 successful workflow runs on exact head `16f57fc562d15a04abdaa5fc3bd6f017d9d89137`; this is PR-head evidence, not a substitute for post-merge checks on `d143449d47c8df3dee4ea6053258a84bb28d4e5e`.
+- PR #174 and #175 had reproducible Xcode failures because project inspection resolved the generated Flutter plugin package before Flutter dependency resolution. The workflow order was corrected; the new exact-head runs must pass before those PRs are merge candidates.
+- The latest observed successful Web deployment is on application-source SHA `4618ab98b0fc371f32f08d3299365f577fa81674`. Current main includes later application changes from PRs #173 and #171; exact current-main deployment metadata and live smoke tests remain UNKNOWN.
+- Unsigned iOS/macOS artifacts are not store-ready or signed/notarized release packages.
+- No deployment, repository-setting change, OAuth-scope expansion or real-calendar write was performed in this reconciliation.
+
+### Immediate execution order
+
+1. Complete exact-head macOS and iOS reruns for PRs #174 and #175; inspect logs and verify all required jobs before merge.
+2. Publish this refreshed documentation from a branch based on the post-#171 main commit; supersede stale PR #172 only after the replacement is validated.
+3. Reconcile remaining open PRs against current main; preserve branches and do not merge superseded/no-op diffs.
+4. Complete concrete notification delivery with platform and background-delivery requirements.
+5. Design safe historical restore as a separate reviewed workflow; do not expand OAuth scopes or write to user calendars without explicit approval.
+6. Add responsive, performance, data-protection and critical E2E evidence.
+7. Verify the Pages deployment metadata and live health against the exact approved main SHA before claiming production readiness.
+
+**Snapshot date:** 2026-11-24  
+**Snapshot base:** `main` at `d143449d47c8df3dee4ea6053258a84bb28d4e5e`
+
+> This inventory is not a declaration that the repository is complete or production-ready. Source code, tests, exact-head CI and observed runtime behavior take precedence. `SKIPPED` and `UNKNOWN` are never treated as `PASS`.
 
 ## Repository evidence
 
