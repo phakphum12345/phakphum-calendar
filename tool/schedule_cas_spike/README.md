@@ -17,7 +17,7 @@ The revision token is opaque to callers. The fingerprint is SHA-256 of the canon
 From this directory:
 
 ```sh
-dart pub get
+flutter pub get
 dart run build_runner build --delete-conflicting-outputs
 dart test
 ```
