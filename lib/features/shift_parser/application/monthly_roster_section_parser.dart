@@ -70,7 +70,8 @@ class MonthlyRosterSectionParser {
         cellsByRow: cellsByRow,
         headerRow: row,
       );
-      return _tryParsePeriod(title) != null;
+      return _tryParsePeriod(title) != null ||
+          _hasExplicitRangeExpression(title);
     });
 
     for (var index = 0; index < headerRows.length; index++) {
@@ -86,15 +87,15 @@ class MonthlyRosterSectionParser {
       );
 
       final explicitPeriod = _tryParsePeriod(title);
-      // A worksheet month may fill in dates for genuinely split, undated
-      // sections only when no section declares its own period. If one section
-      // has an explicit range, other undated sections must not borrow the tab
-      // month: they may represent a different roster period.
-      // Each inferred section must still have a strictly increasing sequence
-      // of days contained within the worksheet's single month.
-      final canUseSheetFallback = headerRows.length == 1 ||
-          (!hasExplicitSectionPeriod &&
-              _canUseSingleMonthTabFallback(tabPeriod, daysByColumn));
+      final hasExplicitRange = _hasExplicitRangeExpression(title);
+      // A worksheet month may fill in dates for genuinely undated sections
+      // only when no section declares (or attempts to declare) its own range.
+      // An invalid/ambiguous explicit range must never silently fall back to
+      // the worksheet month, even when the sheet contains only one section.
+      final canUseSheetFallback = !hasExplicitRange &&
+          (headerRows.length == 1 ||
+              (!hasExplicitSectionPeriod &&
+                  _canUseSingleMonthTabFallback(tabPeriod, daysByColumn)));
       final period = explicitPeriod ?? (canUseSheetFallback ? tabPeriod : null);
       if (period == null) {
         warnings.add(
@@ -312,6 +313,12 @@ class MonthlyRosterSectionParser {
     } on FormatException {
       return null;
     }
+  }
+
+  bool _hasExplicitRangeExpression(String text) {
+    return RegExp(
+      r'\d{1,2}\s*[ก-๙.]+(?:\s*\d{2,4})?\s*(?:-|ถึง)\s*\d{1,2}\s*[ก-๙.]+' ,
+    ).hasMatch(text);
   }
 
   bool _canUseSingleMonthTabFallback(
