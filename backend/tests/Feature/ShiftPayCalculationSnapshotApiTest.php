@@ -107,6 +107,31 @@ class ShiftPayCalculationSnapshotApiTest extends TestCase
             ->assertJsonPath('data.rule.id', 'organization-night');
     }
 
+
+    public function test_hybrid_personal_first_uses_personal_rule_without_combining_organization_amount(): void
+    {
+        $organization = $this->postJson('/api/v1/organizations', [
+            'name' => 'Outpatient', 'employee_id' => 'EMP-OWNER',
+        ], $this->auth('owner-token'))->assertCreated()->json('data');
+
+        $this->putJson('/api/v1/shift-pay/profile', [
+            'mode' => 'hybrid',
+            'organization_id' => $organization['id'],
+            'hybrid_priority' => 'personalFirst',
+            'personal_rules' => [$this->rule('personal-night', 650)],
+        ], $this->auth('owner-token'))->assertOk();
+        $this->putJson("/api/v1/organizations/{$organization['id']}/shift-pay-rules", [
+            'rules' => [$this->rule('organization-night', 950)],
+        ], $this->auth('owner-token'))->assertOk();
+
+        $this->postJson('/api/v1/shift-pay/calculations', $this->input(), $this->auth('owner-token') + [
+            'Idempotency-Key' => 'hybrid-personal-first-001',
+        ])->assertCreated()
+            ->assertJsonPath('data.result.source', 'personal')
+            ->assertJsonPath('data.result.amount', 650)
+            ->assertJsonPath('data.rule.id', 'personal-night');
+    }
+
     public function test_missing_rule_is_not_silently_reported_as_zero_and_idempotency_is_enforced(): void
     {
         $this->putJson('/api/v1/shift-pay/profile', [
