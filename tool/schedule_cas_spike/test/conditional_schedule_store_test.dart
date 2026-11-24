@@ -150,6 +150,23 @@ void main() {
     expect(stale.current.revision.state, RevisionState.absent);
   });
 
+  test('committed revision survives database close and reopen', () async {
+    final saved = await store.compareAndSet(
+      scheduleId: 'schedule-reopen',
+      expected: ScheduleRevision.absent,
+      replacementPayload: '{"value":"durable"}',
+    );
+    expect(saved.status, ConditionalWriteStatus.saved);
+
+    await database.close();
+    database = SpikeDatabase(NativeDatabase.createInBackground(databaseFile));
+    store = ConditionalScheduleStore(database);
+
+    final reopened = await store.read('schedule-reopen');
+    expect(reopened.payload, '{"value":"durable"}');
+    expect(reopened.revision.token, saved.current.revision.token);
+  });
+
   test('two independent instances have one CAS winner', () async {
     final secondDatabase = SpikeDatabase(NativeDatabase.createInBackground(databaseFile));
     try {
