@@ -92,15 +92,15 @@ jobs:
             dist/macos/phakphum-calendar-macos-adhoc.zip
           shasum -a 256 dist/macos/phakphum-calendar-macos-adhoc.zip \
             > dist/macos/phakphum-calendar-macos-adhoc.zip.sha256
-          test -s dist/macos/phakphum-calendar-macos-unsigned.zip
-          test -s dist/macos/phakphum-calendar-macos-unsigned.zip.sha256
+          test -s dist/macos/phakphum-calendar-macos-adhoc.zip
+          test -s dist/macos/phakphum-calendar-macos-adhoc.zip.sha256
 
       - name: Upload macOS build artifacts
         uses: actions/upload-artifact@v7
         with:
-          name: phakphum-calendar-macos-unsigned
+          name: phakphum-calendar-macos-adhoc
           path: |
-            dist/macos/phakphum-calendar-macos-unsigned.zip
-            dist/macos/phakphum-calendar-macos-unsigned.zip.sha256
+            dist/macos/phakphum-calendar-macos-adhoc.zip
+            dist/macos/phakphum-calendar-macos-adhoc.zip.sha256
           if-no-files-found: error
           retention-days: 14
