@@ -244,3 +244,24 @@ The envelope deliberately does not retain workbook bytes, raw cell values, sourc
 This implementation does not modify `shift-tools.canonical-schedule` schema v1 or its codec/repository. Tests were added for round-trip evidence, include/exclude decisions, committed lifecycle, unsupported versions, missing fields, unknown enum values, privacy-minimizing serialization and model invariants. **Runtime status: SKIPPED** — tests, formatter and analyzer have not been run.
 
 **Persistence remains MISSING.** The existing Schedule repository uses alternating slots for the Schedule payload only. It does not provide a transaction across Schedule and provenance. The new codec is not wired to storage and must not be described as atomic or production commit support. Next design step is a versioned bundle journal with explicit PREPARED/COMMITTED recovery semantics and crash-injection tests; do not implement it as two unrelated preference writes.
+
+## 17. Recoverable Schedule + provenance bundle journal — 2026-11-24
+
+Added:
+- `lib/features/shift_parser/data/grid_roster_bundle_journal.dart`
+- `test/grid_roster_bundle_journal_test.dart`
+
+The journal stores the canonical Schedule JSON and versioned Grid provenance JSON together inside one versioned record, using two alternating slots per Schedule ID. Commit protocol:
+1. Validate Schedule identity, matching import-run/source/target revision evidence, PREPARED/COMMITTED lifecycle and caller-supplied current target revision.
+2. Write the next inactive slot as PREPARED and read it back through both codecs.
+3. Replace that same inactive slot with COMMITTED and read it back again.
+4. Recovery chooses the highest-generation valid COMMITTED record and never returns PREPARED-only content.
+5. Repeating the same committed import run with identical Schedule content and accepted fingerprint is idempotent; conflicting reuse of a run ID is rejected.
+
+A failed attempt to write the new COMMITTED record leaves the prior committed slot available. The implementation deliberately does not change canonical Schedule schema v1 or the existing ScheduleRepository API.
+
+**Important storage guarantee:** this is a recoverable two-slot protocol, not a database transaction. SharedPreferences does not provide a documented cross-key transaction or a durable atomic-write guarantee. The journal validates read-back and preserves the previous committed slot during the staged protocol, but power-loss durability and platform-specific storage behavior still require runtime testing. The caller must reload/revalidate the live Schedule revision immediately before invoking commit; the journal checks the revision supplied by the caller and cannot independently query the ScheduleRepository.
+
+Test source covers successful commit/recovery, stale revision rejection, idempotency, interruption before committed write with previous-generation recovery, and PREPARED-only rejection. **Runtime status: SKIPPED** — no Dart formatter, analyzer or Flutter test command has been executed in this connector session.
+
+**Still not integrated:** no production Grid import UI/controller invokes this journal yet; no canonical Grid conversion is wired to it; no Calendar side effect is performed. Treat this as an additive persistence primitive, not a completed production E2E path.
