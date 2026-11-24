@@ -581,3 +581,15 @@ The envelope records import/source/parser/target revision evidence, section read
 The JSON codec uses its own format discriminator and schema version 1. It validates required field types, timestamps, date-only values and enum values; unknown schema versions fail explicitly. This is separate from the canonical Schedule codec and does not alter the `shift-tools.canonical-schedule` version-1 payload.
 
 **Boundary:** this is a data model and codec only. No provenance repository, atomic bundle write, crash recovery, Grid UI, canonical conversion or Calendar sync was added. Existing alternating Schedule slots protect only the Schedule payload and cannot prove a two-object transaction. **Runtime status: SKIPPED** — new tests are source-only and were not executed; Dart format/analyze also not run.
+
+## 23. Reviewed Grid-to-canonical conversion
+
+Added:
+- `lib/features/shift_parser/application/grid_roster_canonical_converter.dart`
+- `test/grid_roster_canonical_converter_test.dart`
+
+The converter requires explicit reviewer decisions for every parsed source assignment, validates active employee and configured-template references, rejects included assignments from blocked sections or outside section date bounds, preserves existing canonical Schedule months/assignments, and rejects duplicate employee/shift/day collisions. It returns a Schedule candidate with PREPARED provenance; it does not persist, call the Bundle Journal, or trigger Calendar sync.
+
+The converter uses stable source IDs from source fingerprint + section + source sheet/cell coordinates. A separate helper derives COMMITTED provenance only when an accepted Schedule fingerprint is provided. The target Schedule ID must match the review session. The actual live revision must still be reloaded by a future production orchestrator before journal commit.
+
+**Runtime status: SKIPPED** — conversion test source was added but not executed; Dart format/analyze and Flutter tests remain unrun.
