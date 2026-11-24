@@ -213,3 +213,17 @@ Important distinction: PASS in this table means the source path or test case exi
 | Runtime execution of resolver tests | Not run | SKIPPED |
 
 **Compatibility:** The legacy `MonthlyRosterShiftAdapter` matching implementation and its fragment-matching tests were not changed. The new resolver is a separate proposal-only component.
+
+
+## 2026-11-24 Grid shift-rule evidence API
+
+| Requirement | Evidence | Status |
+|---|---|---|
+| Identify configured active template mapping | `resolveRuleForLabel` returns `configuredTemplate`, template ID and time range | PASS — source added |
+| Identify built-in legacy mapping | Returns `builtInRule` and resolved code/time range without a fabricated template ID | PASS — source added |
+| Reject duplicate active template aliases | Returns `ambiguousTemplate`; no arbitrary choice | PASS — source added |
+| Keep unsupported and empty labels visible | Explicit `unsupportedLabel` and `emptyLabel` statuses | PASS — source added |
+| Preserve legacy conversion mapping behavior | New API reuses existing private mapping implementation; conversion path unchanged | PASS — static source comparison |
+| Require human review before commit | `requiresHumanConfirmation == true`, `canCommit == false` | PASS — fail-closed source contract |
+| Runtime shift mapping tests | Test source added; not executed | SKIPPED |
+| Durable mapping decision and Grid UI | Not implemented | MISSING |
