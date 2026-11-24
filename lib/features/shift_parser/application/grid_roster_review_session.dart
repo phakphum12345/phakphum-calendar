@@ -44,12 +44,17 @@ class GridRosterReviewSession {
     required this.targetScheduleId,
     required this.targetScheduleRevision,
     required List<GridRosterSectionReview> sections,
-  }) : sections = List.unmodifiable(sections);
+    this.sourceSheetCount = 0,
+    this.warnings = const [],
+  }) : sections = List.unmodifiable(sections),
+       warnings = List.unmodifiable(warnings);
 
   final String sourceFingerprint;
   final String targetScheduleId;
   final String targetScheduleRevision;
   final List<GridRosterSectionReview> sections;
+  final int sourceSheetCount;
+  final List<String> warnings;
 
   List<GridRosterAssignmentReview> get assignments => [
     for (final section in sections) ...section.assignments,
@@ -125,6 +130,8 @@ class GridRosterReviewSessionBuilder {
       targetScheduleId: targetScheduleId,
       targetScheduleRevision: targetScheduleRevision,
       sections: sections,
+      sourceSheetCount: report.sourceSheetCount,
+      warnings: report.warnings,
     );
   }
 
