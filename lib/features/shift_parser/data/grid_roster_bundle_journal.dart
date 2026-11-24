@@ -112,6 +112,26 @@ class GridRosterBundleJournal {
         'Prepared and committed provenance do not describe the same import run.',
       );
     }
+    final expectedCommittedProvenance = GridRosterImportProvenance(
+      importRunId: preparedProvenance.importRunId,
+      sourceFingerprint: preparedProvenance.sourceFingerprint,
+      parserVersion: preparedProvenance.parserVersion,
+      createdAtUtc: preparedProvenance.createdAtUtc,
+      targetScheduleId: preparedProvenance.targetScheduleId,
+      targetScheduleRevision: preparedProvenance.targetScheduleRevision,
+      lifecycle: GridRosterImportLifecycle.committed,
+      acceptedScheduleFingerprint:
+          committedProvenance.acceptedScheduleFingerprint,
+      sections: preparedProvenance.sections,
+      assignments: preparedProvenance.assignments,
+      diagnostics: preparedProvenance.diagnostics,
+    );
+    if (provenanceCodec.encode(expectedCommittedProvenance) !=
+        provenanceCodec.encode(committedProvenance)) {
+      throw const GridRosterBundleJournalException(
+        'Committed provenance must preserve every prepared review decision.',
+      );
+    }
     if (currentTargetRevision !=
         preparedProvenance.targetScheduleRevision) {
       throw const GridRosterBundleJournalException(
