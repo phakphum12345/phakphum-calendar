@@ -35,7 +35,7 @@ void main() {
   });
 
   test('blocks a missing or reversed date range', () {
-    final missing = classifier.assess(_section(startDate: null));
+    final missing = classifier.assess(_section(omitStartDate: true));
     final reversed = classifier.assess(
       _section(
         startDate: DateTime(2026, 11, 30),
@@ -102,8 +102,9 @@ void main() {
 
 MonthlyRosterSection _section({
   String title = 'MRI November 2026',
-  DateTime? startDate = const DateTime(2026, 11, 1),
-  DateTime? endDate = const DateTime(2026, 11, 30),
+  DateTime? startDate,
+  DateTime? endDate,
+  bool omitStartDate = false,
   List<MonthlyRosterAssignment>? assignments,
   List<MonthlyRosterDateAnomaly> dateAnomalies = const [],
 }) {
@@ -111,8 +112,8 @@ MonthlyRosterSection _section({
     title: title,
     headerRowIndex: 1,
     assignments: assignments ?? [_assignment()],
-    startDate: startDate,
-    endDate: endDate,
+    startDate: omitStartDate ? null : (startDate ?? DateTime(2026, 11, 1)),
+    endDate: endDate ?? DateTime(2026, 11, 30),
     dateAnomalies: dateAnomalies,
   );
 }
