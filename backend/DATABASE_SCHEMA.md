@@ -130,3 +130,12 @@ Review the exact files under `backend/database/migrations/` before changing the 
 - Existing `organization_shift_policies` and their approval semantics remain unchanged.
 
 Both tables are new and additive. Existing users, organizations, policies, shift transactions, participants, transfers and event history are not rewritten. The JSON rule payload is validated against the shared Flutter Shift Pay vocabulary by the API. The tables persist configuration only; no historical payroll snapshot is inferred or backfilled.
+
+
+### shift_pay_calculation_snapshots
+
+- UUID primary key; references the calculating user and optional selected organization with restricted deletion.
+- Stores an idempotency key and request hash unique per user.
+- Stores mode, selected source, personal/organization configuration versions, exact input JSON, selected rule JSON, result JSON and calculation timestamp.
+- Has no update timestamp or update endpoint; application flow inserts snapshots and only reads them afterward.
+- Snapshots preserve historical inputs and selected rule data; changing a profile does not rewrite prior results.
