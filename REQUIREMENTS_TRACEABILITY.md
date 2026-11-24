@@ -344,6 +344,6 @@ The [Schedule Persistence Writer Inventory](docs/SCHEDULE_PERSISTENCE_WRITER_INV
 
 | Requirement | Scope | Evidence | Status | Remaining proof |
 |---|---|---|---|---|
-| RI-038 | Prototype atomic conditional create/update/delete with monotonic revisions and tombstones | Isolated Drift package source and six Dart test cases; independent SQLite 3.46.1 SQL spot-check with two connections observed one save and one conflict | PARTIAL — SQL semantics spot-checked; Dart/Drift runtime UNKNOWN | Generate Drift code and run tests; prove native OS matrix, Android/iOS device integration, Web multi-tab and crash recovery |
+| RI-038 | Prototype atomic conditional create/update/delete with monotonic revisions and tombstones | Isolated Drift package source and seven Dart test cases; independent SQLite 3.46.1 SQL spot-check with two connections observed one save and one conflict | PARTIAL — SQL semantics spot-checked; Dart/Drift runtime UNKNOWN | Generate Drift code and run tests; prove native OS matrix, Android/iOS device integration, Web multi-tab and crash recovery |
 
 The spike has its own `pubspec.yaml` and is not a root application dependency. The root `pubspec.yaml`, root lockfile, production SharedPreferences repository, production Schedule schema and all production writer paths remain unchanged. The new workflow tests native SQLite behavior on Windows, Linux and macOS runners; this does not by itself prove Android/iOS runtime behavior or Web multi-tab behavior.
