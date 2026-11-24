@@ -4,10 +4,6 @@ namespace App\Services\ShiftPay;
 
 class ShiftPayCalculationService
 {
-    private const DAY_CATEGORIES = ['regularWeekday', 'officialHoliday', 'weeklyDayOff', 'festival'];
-    private const EMPLOYMENT_TYPES = ['salaried', 'dailyPaid'];
-    private const PURPOSES = ['regularCoverage', 'breakRelief', 'premiumDuty', 'replacement', 'other'];
-
     public function calculate(array $input, array $personalRules, array $organizationRules, array $profile): array
     {
         $dayCategory = $this->classifyDay($input);
@@ -134,8 +130,8 @@ class ShiftPayCalculationService
                 ! in_array((int) date('N', strtotime($input['date'])), $rule['compensatory_weekdays'] ?? [], true)) {
                 continue;
             }
-            if (!$this->matchesOptional($rule['department'] ?? null, $input['department'] ?? null) ||
-                !$this->matchesOptional($rule['location'] ?? null, $input['location'] ?? null) ||
+            if (! $this->matchesOptional($rule['department'] ?? null, $input['department'] ?? null) ||
+                ! $this->matchesOptional($rule['location'] ?? null, $input['location'] ?? null) ||
                 !$this->matchesOptional($rule['work_point'] ?? null, $input['work_point'] ?? null)) {
                 continue;
             }
