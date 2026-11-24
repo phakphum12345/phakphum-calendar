@@ -211,6 +211,7 @@ class MonthlyRosterParseReport {
     return MonthlyRosterParseReport(
       sections: List.unmodifiable([...sections, ...imported.sections]),
       warnings: warnings,
+      sourceFingerprint: sourceFingerprint,
     );
   }
 
