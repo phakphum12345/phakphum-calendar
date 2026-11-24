@@ -51,11 +51,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          echo "Source commit: ${GITHUB_SHA}"
+          echo "Checked-out commit: $(git rev-parse HEAD)"
           echo "Runner architecture: $(uname -m)"
           sw_vers
           xcodebuild -version
-          xcodebuild -list -project ios/Runner.xcodeproj
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -66,6 +65,9 @@ jobs:
 
       - name: Resolve Flutter dependencies
         run: flutter pub get
+
+      - name: Verify generated iOS Xcode project
+        run: xcodebuild -list -project ios/Runner.xcodeproj
 
       - name: Configure optional Google iOS OAuth
         shell: bash
