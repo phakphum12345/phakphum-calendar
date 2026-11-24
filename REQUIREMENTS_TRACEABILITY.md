@@ -53,3 +53,36 @@
 - A skipped workflow is not a passing workflow.
 - A build does not prove live integration, security or data integrity.
 - Re-run this matrix after each major merge and update the implementation status snapshot.
+
+
+---
+
+## 2026-11-24 — Universal Roster Intelligence expansion requirements
+
+**Planning baseline:** `main@c847d70b98c2693a11c1063e989c55f2ab825d04`  
+**Status:** Initial planning inventory only. This addendum does not replace or retroactively validate the historical snapshot above.
+
+| Requirement | Scope | Existing evidence to inspect | Initial status | Required proof |
+|---|---|---|---|---|
+| RI-001 | Multiple independent roster sections per worksheet | Monthly roster section parser and tests | EXISTS — VERIFY | Distinct periods/layouts in one workbook |
+| RI-002 | Section-local period resolution | Thai period parser and monthly parser | UNKNOWN | Explicit range, title tokens and conflicting period tests |
+| RI-003 | Thai BE/Gregorian and cross-month/year dates | Thai period/date tests | EXISTS — VERIFY | Complete locale, leap and year-boundary matrix |
+| RI-004 | Preserve source row/column and merged-cell evidence | Excel reader and normalized cell model | EXISTS — VERIFY | Evidence survives preview and conversion |
+| RI-005 | Duplicate/missing/out-of-order day diagnostics | Monthly section parser diagnostics | EXISTS — VERIFY | Exact-column diagnostics without column shifting |
+| RI-006 | Configurable shift semantics | Shift templates and business rules | EXISTS — VERIFY | Multiple independent profiles and overnight shifts |
+| RI-007 | Safe person identity and alias resolution | Roster/person models and organization membership | PARTIAL | Collision and wrong-person negative tests |
+| RI-008 | Canonical normalized roster contract | Existing parser adapters and roster models | PARTIAL | All supported providers map without loss |
+| RI-009 | Source revision and non-destructive reconciliation | Import/history/comparison services | UNKNOWN | Re-import, changed-source and duplicate tests |
+| RI-010 | Evidence/confidence and human correction | Analyzer, import preview and mapping UI | PARTIAL | Inspectable evidence and auditable user decisions |
+| RI-011 | Partial import by independent section | Conversion diagnostics and import workflow | EXISTS — VERIFY | One invalid section does not corrupt valid sections |
+| RI-012 | Template-driven generation | Generator/adapter docs and output services | PARTIAL | Deterministic preview and output comparison |
+| RI-013 | Import-to-Calendar provenance | Import history, timeline and Calendar sync | PARTIAL | Trace a record end-to-end using stable identifiers |
+| RI-014 | Large-input performance and resilience | No repository-wide benchmark baseline identified | UNKNOWN | Reproducible time/memory and failure-recovery tests |
+| RI-015 | Privacy and tenant isolation | Backend authorization and security tests | PARTIAL | Cross-tenant negative tests and redaction review |
+
+Detailed acceptance is maintained in:
+- [Universal Roster Intelligence master plan](docs/UNIVERSAL_ROSTER_INTELLIGENCE_MASTER_PLAN.md)
+- [Roster parser reliability specification](docs/ROSTER_PARSER_RELIABILITY_SPEC.md)
+- [Roster intelligence capability matrix](docs/ROSTER_INTELLIGENCE_CAPABILITY_MATRIX.md)
+
+Statuses must be updated only after source inspection and executed tests on an identified commit. File existence or a planning document is not implementation proof.

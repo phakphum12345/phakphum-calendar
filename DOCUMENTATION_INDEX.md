@@ -10,6 +10,8 @@ This file is the central map of project documentation. Prefer updating an existi
 - [Requirements traceability](REQUIREMENTS_TRACEABILITY.md) — requirement-to-code/test evidence map.
 - [Delivery status and merge policy](docs/DELIVERY_STATUS.md) — delivery gates and evidence policy.
 - [Integration status](docs/INTEGRATION_STATUS.md) — integration progress.
+- [Universal Roster Intelligence master plan](docs/UNIVERSAL_ROSTER_INTELLIGENCE_MASTER_PLAN.md) — cross-domain product, architecture, phases and acceptance.
+- [Roster intelligence capability matrix](docs/ROSTER_INTELLIGENCE_CAPABILITY_MATRIX.md) — capability inventory and evidence requirements.
 - [Historical project audit](docs/PROJECT_AUDIT.md) — audit snapshot dated 2026-07-24; not current status.
 
 ## Architecture and engineering
@@ -23,6 +25,11 @@ This file is the central map of project documentation. Prefer updating an existi
 
 ## Calendar, roster import and synchronization
 
+- [Parser foundation](docs/PARSER_FOUNDATION.md)
+- [Roster parser reliability specification](docs/ROSTER_PARSER_RELIABILITY_SPEC.md) — section isolation, date evidence, malformed-header behavior and regression criteria.
+- [AI roster analyzer logic](docs/AI_ROSTER_ANALYZER_LOGIC_TH.md)
+- [Hybrid roster AI](docs/HYBRID_ROSTER_AI.md)
+- [Roster knowledge base architecture](docs/ROSTER_KNOWLEDGE_BASE_ARCHITECTURE_TH.md)
 - [Calendar preview and sync](docs/CALENDAR_PREVIEW_AND_SYNC.md)
 - [Synchronization reliability](docs/SYNC_RELIABILITY.md)
 - [Durable history and resume](docs/DURABLE_HISTORY_AND_RESUME.md)
