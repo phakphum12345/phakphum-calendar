@@ -11,9 +11,9 @@ This snapshot reflects the merged shift-transaction work in PR #173 and the orga
 | Default branch | `main` at `d143449d47c8df3dee4ea6053258a84bb28d4e5e` | PASS |
 | PR #171 | Merged; membership-audit gateway, UI, pagination and regression tests included | MERGED |
 | PR #173 | Merged; exchange-and-return composition and transaction-history filters included | MERGED |
-| PR #172 | Documentation snapshot is stale because it predates PR #171; this refreshed branch supersedes it while preserving the original branch | SUPERSEDED |
-| PR #174 | Independent macOS/Xcode workflow; rerun exposed Xcode project inspection before Flutter plugin generation; workflow fix committed, rerun evidence pending | IN_PROGRESS |
-| PR #175 | Independent iOS/Xcode workflow; same generated-plugin ordering issue; workflow fix committed, rerun evidence pending | IN_PROGRESS |
+| PR #172 | Closed without merge; refreshed documentation is proposed in PR #178, based on post-#171 main | SUPERSEDED |
+| PR #174 | Closed without merge; clean-mainline combined workflow replacement is PR #179 | SUPERSEDED |
+| PR #175 | Closed without merge; clean-mainline combined workflow replacement is PR #179 | SUPERSEDED |
 | Older open PRs | Several branches explicitly describe themselves as superseded; preserve branches and reconcile each against current main before any merge | NEEDS REVIEW |
 | Main branch protection | Prior audit reported `protected: false`; re-check repository settings before relying on server-enforced merge gates | NEEDS REVIEW |
 | PR #171 exact-head CI | 11 workflow runs completed successfully on head `16f57fc562d15a04abdaa5fc3bd6f017d9d89137` | PASS |
@@ -26,8 +26,9 @@ This snapshot reflects the merged shift-transaction work in PR #173 and the orga
 |---|---|---|
 | #171 | Merged as `d143449d47c8df3dee4ea6053258a84bb28d4e5e`; exact PR-head workflows passed | Complete; retain post-merge verification |
 | #172 | Its snapshot says #171 is open and uses the pre-merge base; unique documentation is retained in this refreshed branch | Supersede only after replacement PR is validated |
-| #174 | macOS workflow failed because `xcodebuild -list` ran before `flutter pub get` generated the Flutter plugin Swift package; fix committed to the PR branch | Keep open pending exact-head rerun |
-| #175 | iOS workflow failed for the same generated-plugin ordering issue; fix committed to the PR branch | Keep open pending exact-head rerun |
+| #174 | Closed as superseded by clean-mainline PR #179; original branch preserved | Do not merge |
+| #179 | Combined macOS/iOS workflow runs `flutter pub get` before `xcodebuild -list` and checks out exact PR head SHA | Keep open pending exact-head checks |
+| #175 | Closed as superseded by clean-mainline PR #179; original branch preserved | Do not merge |
 | #170, #146, #143, #142, #141, #140 and older open PRs | Their PR descriptions identify replacement PRs or stale work; no branch is deleted | Reconcile individually; do not merge superseded diffs |
 
 ### Source-level gap register
