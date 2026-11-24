@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phakphum_calendar/domain/entities/schedule.dart';
 import 'package:phakphum_calendar/features/schedule/data/shared_preferences_schedule_repository.dart';
@@ -172,25 +170,23 @@ void main() {
   });
 
   test('prepared-only record is never returned as committed', () async {
-    final prepared = _provenance(
-      runId: 'run-1',
-      lifecycle: GridRosterImportLifecycle.prepared,
-    );
-    final journalKey = store.values;
-    journalKey['${GridRosterBundleJournal.storageKeyPrefix}c2NoZWR1bGUtMQ.a'] =
-        jsonEncode({
-      'format': 'shift-tools.grid-roster-bundle-journal',
-      'version': 1,
-      'state': 'prepared',
-      'generation': 1,
-      'schedule': const _SchedulePayloadPlaceholder(),
-      'provenance': prepared.importRunId,
-    });
-
-    // A malformed PREPARED record is not accepted as a recovered bundle.
+    store.failCommittedWrite = true;
     await expectLater(
-      journal.recover('schedule-1'),
-      throwsA(isA<GridRosterBundleJournalException>()),
+      journal.commit(
+        schedule: schedule,
+        preparedProvenance: _provenance(
+          runId: 'run-1',
+          lifecycle: GridRosterImportLifecycle.prepared,
+        ),
+        committedProvenance: _provenance(
+          runId: 'run-1',
+          lifecycle: GridRosterImportLifecycle.committed,
+        ),
+        currentTargetRevision: 'revision-1',
+      ),
+      throwsA(isA<StateError>()),
     );
+
+    expect(await journal.recover('schedule-1'), isNull);
   });
 }
