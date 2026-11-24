@@ -195,7 +195,7 @@ The exact X-OPD duplicate-30 / missing-17–29 workbook case still needs a dedic
 | Full import/generator call graph | UNKNOWN | Not fully traced |
 | User-provided malformed workbook regression | UNKNOWN | No workbook fixture available in repository tree |
 | Automated tests executed | SKIPPED | Static connector inspection only; no local runner was invoked |
-| Source code changed | NO | Audit document only |
+| Source code changed | NO at initial audit; YES in §10 | Parser and regression-test changes were added after the initial static inspection |
 | Main branch changed | NO | All writes target this documentation branch |
 
 ## 9. Change-control rules
