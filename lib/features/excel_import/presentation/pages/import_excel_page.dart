@@ -27,6 +27,8 @@ import '../controllers/column_mapping_controller.dart';
 import '../controllers/excel_import_controller.dart';
 import 'column_mapping_page.dart';
 import 'import_summary_page.dart';
+import '../../../shift_parser/application/grid_roster_import_workflow.dart';
+import '../../../shift_parser/presentation/pages/grid_roster_review_page.dart';
 import '../widgets/empty_import_view.dart';
 import '../widgets/excel_import_button.dart';
 import '../widgets/excel_preview_table.dart';
@@ -52,6 +54,7 @@ class ImportExcelPage extends StatefulWidget {
     this.existingScheduleLoader,
     this.employeeRepository,
     this.shiftTemplateControllerFactory,
+    this.gridRosterWorkflow,
     super.key,
   });
 
@@ -74,6 +77,7 @@ class ImportExcelPage extends StatefulWidget {
   final Future<Result<Schedule?>> Function()? existingScheduleLoader;
   final EmployeeRepository? employeeRepository;
   final ShiftTemplateController Function()? shiftTemplateControllerFactory;
+  final GridRosterImportWorkflow? gridRosterWorkflow;
 
   @override
   State<ImportExcelPage> createState() => _ImportExcelPageState();
@@ -96,6 +100,7 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
   auth.AuthClient? googleSheetsClient;
   bool loadingGoogleSheets = false;
   String? googleSheetsError;
+  bool loadingGridRoster = false;
 
   @override
   void dispose() {
@@ -194,6 +199,26 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
                                 : context.l10n.nextColumnMapping,
                           ),
                         ),
+                        if (controller.workbook != null &&
+                            widget.gridRosterWorkflow != null &&
+                            widget.employeeRepository != null &&
+                            widget.shiftTemplateControllerFactory != null) ...[
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            onPressed: loadingGridRoster
+                                ? null
+                                : _openGridRosterReview,
+                            icon: loadingGridRoster
+                                ? const SizedBox.square(
+                                    dimension: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.grid_on),
+                            label: const Text('วิเคราะห์ตารางแบบ Grid ทุก Worksheet'),
+                          ),
+                        ],
                       ],
                       if (controller.error != null) ...[
                         const SizedBox(height: 16),
@@ -315,6 +340,97 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
     mappingController.applySuggestedMapping(controller.suggestMapping());
     if (mappingController.isValid) {
       await controller.importRows(mappingController.mapping);
+    }
+  }
+
+  Future<void> _openGridRosterReview() async {
+    final workbook = controller.workbook;
+    final workflow = widget.gridRosterWorkflow;
+    final employeeRepository = widget.employeeRepository;
+    final templateFactory = widget.shiftTemplateControllerFactory;
+    if (workbook == null ||
+        workflow == null ||
+        employeeRepository == null ||
+        templateFactory == null ||
+        loadingGridRoster) {
+      return;
+    }
+
+    setState(() => loadingGridRoster = true);
+    ShiftTemplateController? templateController;
+    try {
+      final report = workflow.scanWorkbook(
+        workbook: workbook,
+        readWorksheet: controller.readAllRows,
+      );
+
+      final employeeResult = await employeeRepository.findAll(
+        activeOnly: true,
+      );
+      if (!mounted) return;
+      if (employeeResult case Failure<List<Employee>>()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(employeeResult.message)),
+        );
+        return;
+      }
+      final employees =
+          (employeeResult as Success<List<Employee>>).value;
+
+      templateController = templateFactory();
+      await templateController.load();
+      if (!mounted) return;
+      if (templateController.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(templateController.error!)),
+        );
+        return;
+      }
+      final templates = templateController.templates
+          .where((template) => template.active)
+          .toList(growable: false);
+
+      final contextResult = await workflow.prepareReview(
+        report: report,
+        targetScheduleId: 'imported',
+        targetScheduleName: 'Imported Roster',
+        employees: employees,
+        shiftTemplates: templates,
+      );
+      if (!mounted) return;
+      if (contextResult case Failure<GridRosterImportReviewContext>()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(contextResult.message)),
+        );
+        return;
+      }
+      final reviewContext =
+          (contextResult as Success<GridRosterImportReviewContext>).value;
+      final saved = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (context) => GridRosterReviewPage(
+            workflow: workflow,
+            contextSnapshot: reviewContext,
+            employees: employees,
+            shiftTemplates: templates,
+          ),
+        ),
+      );
+      if (!mounted) return;
+      if (saved == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('บันทึกตารางเวรจาก Grid แล้ว')),
+        );
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('ไม่สามารถวิเคราะห์ Grid ได้: $error')),
+        );
+      }
+    } finally {
+      templateController?.dispose();
+      if (mounted) setState(() => loadingGridRoster = false);
     }
   }
 
