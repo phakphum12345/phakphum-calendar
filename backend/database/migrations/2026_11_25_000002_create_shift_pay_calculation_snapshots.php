@@ -25,6 +25,7 @@ return new class extends Migration
             $table->timestamp('calculated_at');
             $table->unique(['user_id', 'idempotency_key'], 'shift_pay_snapshot_user_idempotency_unique');
             $table->index(['organization_id', 'calculated_at'], 'shift_pay_snapshot_org_calculated_index');
+            $table->index(['user_id', 'calculated_at'], 'shift_pay_snapshot_user_calculated_index');
         });
     }
 
