@@ -156,6 +156,31 @@ void main() {
       final secondStore = ConditionalScheduleStore(secondDatabase);
       await secondDatabase.customStatement('PRAGMA busy_timeout = 5000');
 
+      final concurrentCreates = await Future.wait([
+        store.compareAndSet(
+          scheduleId: 'schedule-F',
+          expected: ScheduleRevision.absent,
+          replacementPayload: '{"creator":"one"}',
+        ),
+        secondStore.compareAndSet(
+          scheduleId: 'schedule-F',
+          expected: ScheduleRevision.absent,
+          replacementPayload: '{"creator":"two"}',
+        ),
+      ]);
+      expect(
+        concurrentCreates
+            .where((r) => r.status == ConditionalWriteStatus.saved)
+            .length,
+        1,
+      );
+      expect(
+        concurrentCreates
+            .where((r) => r.status == ConditionalWriteStatus.conflict)
+            .length,
+        1,
+      );
+
       final seed = await store.compareAndSet(
         scheduleId: 'schedule-E',
         expected: ScheduleRevision.absent,
