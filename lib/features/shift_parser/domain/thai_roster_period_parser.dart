@@ -102,7 +102,7 @@ class ThaiRosterPeriodParser {
     required String source,
   }) {
     final tokens = RegExp(
-      r'(?<!\\d)(0?[1-9]|[12]\\d|3[01])\\s*([ก-๙.]+)(?:\\s*(\\d{2,4}))?(?!\\d)',
+      r'(?<!\d)(0?[1-9]|[12]\d|3[01])\s*([ก-๙.]+)(?:\s*(\d{2,4}))?(?!\d)',
     ).allMatches(text).toList();
     final ranges = <(RegExpMatch, RegExpMatch)>[];
 
@@ -110,7 +110,7 @@ class ThaiRosterPeriodParser {
       final start = tokens[index];
       final end = tokens[index + 1];
       final between = text.substring(start.end, end.start);
-      if (RegExp(r'(?:-|ถึง|\\bto\\b)', caseSensitive: false)
+      if (RegExp(r'(?:-|ถึง|\bto\b)', caseSensitive: false)
           .hasMatch(between)) {
         ranges.add((start, end));
       }
