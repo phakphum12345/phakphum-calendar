@@ -327,7 +327,7 @@ The workflow coordinator now composes the implemented pieces:
 
 The workflow does not synchronize Calendar. The caller still needs to present the review and explicit approval in a production UI. The journal and canonical repository use separate persistence writes; recovery is a replay protocol, not a cross-store atomic transaction. The coordinator performs a final read-before-save check, but the repository has no atomic compare-and-set API; strict concurrent-writer exclusion remains MISSING.
 
-Test source covers the complete service-level scan/review-convert-commit-save flow, replay after repository save failure, and stale-target rejection. **Runtime status: SKIPPED** — Flutter/Dart tests, analyzer and formatter were not executed in this connector session.
+Test source covers a local workbook scan through review/convert/commit/save, replay after repository save failure, and stale-target rejection. **Runtime status: SKIPPED** — Flutter/Dart tests, analyzer and formatter were not executed in this connector session.
 
 
 ## 21. Import screen entry point and human review UI
