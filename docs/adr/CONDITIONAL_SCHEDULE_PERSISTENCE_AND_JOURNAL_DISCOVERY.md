@@ -39,6 +39,43 @@ The absent Schedule state must have an explicit revision token. It must not be c
 
 This interface is a capability boundary, not an implementation. A backend qualifies only if comparison and write are atomic at the storage boundary and every Schedule writer participates in the same revision protocol. A wrapper that performs `findById` followed by `save` does not qualify.
 
+## Proposed revision-token contract
+
+The writer inventory confirms that the existing Grid workflow already computes a deterministic content fingerprint from `ScheduleJsonCodec.encode(schedule)` and uses an explicit `absent:<scheduleId>` value for a missing target. Reuse that canonical encoding for integrity/fingerprint evidence, but do **not** use a content hash alone as the concurrency revision.
+
+A content hash alone has an ABA limitation: a Schedule can change from A to B and later return to byte-equivalent A. A stale editor holding the first A hash would then appear current even though intervening writes occurred. The concurrency token should therefore include a monotonically increasing per-Schedule generation.
+
+Proposed storage metadata (not part of canonical Schedule schema v1):
+
+- `generation`: non-negative integer, incremented by every successful conditional save or delete, including a save whose payload is unchanged;
+- `state`: `live` or `deleted`;
+- `contentFingerprint`: SHA-256 of the canonical `ScheduleJsonCodec.encode(schedule)` payload when state is live; absent for a tombstone;
+- `revisionToken`: opaque token derived from schema version, generation, state and (for live records) content fingerprint.
+
+The revision token is compared as an opaque value. A human-readable conceptual form may be `schedule-revision:v1:<generation>:<state>:<fingerprint>`; callers must not parse or manufacture it.
+
+### Read and conditional-write semantics
+
+The new capability should expose a read that returns both the current Schedule (nullable) and its revision token. The legacy `findById` remains source-compatible during migration, but it does not provide enough information for a stale-write-safe editor.
+
+- **Never-created Schedule:** return an explicit generation-zero absent token, distinct from a live empty Schedule.
+- **Conditional create:** compare against that absent token; atomically create generation one. Of two writers holding the same absent token, exactly one succeeds.
+- **Conditional update:** compare the exact current revision token; atomically write the new Schedule, incremented generation and fingerprint.
+- **Conditional delete:** compare the exact live token; atomically write a tombstone at the next generation instead of physically erasing the identity/revision record.
+- **Recreate after delete:** compare against the tombstone token and increment generation again. A stale token from before deletion must not recreate the Schedule.
+- **Conflict:** return the current revision (and, where appropriate, current Schedule) without mutating storage.
+- **Storage failure:** leave the previous live record or tombstone recoverable; never report a save before the storage transaction commits.
+
+Tombstones must not be physically purged during the first migration. Any later compaction needs a proven bound on stale-token lifetime or a coordinated epoch change; otherwise an old absent token could become valid again.
+
+### Storage atomicity requirement
+
+The payload, generation, state and fingerprint must be committed as one storage transaction or one atomic record replacement. Keeping them in separate keys is acceptable only if the chosen storage engine proves the complete compare-and-write operation is atomic across those keys. Two alternating payload slots plus an active pointer and read-back verification alone do not satisfy this requirement.
+
+The existing `GridRosterImportWorkflow.revisionFor` and `scheduleFingerprint` are useful source-level starting points, but the current read-then-save workflow is not CAS. Move revision ownership into the repository/storage boundary; do not duplicate slightly different revision algorithms in controllers or import workflows.
+
+Migration of existing SharedPreferences records must preserve the original slots, derive the initial fingerprint from the decoded canonical Schedule, assign an explicit initial generation, write an idempotent migration marker, read back and verify, and retain rollback data. Existing physically deleted IDs cannot be reconstructed from absent keys; after rollout, all deletes must use tombstones.
+
 ## Candidate evaluation matrix
 
 Evaluate each candidate on the exact platforms and deployment modes supported by this repository.
