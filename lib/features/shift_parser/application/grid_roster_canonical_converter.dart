@@ -238,6 +238,13 @@ class GridRosterCanonicalConverter {
                 'Configured shift template for $sourceId is missing or inactive.',
               );
             }
+            if (template.code != rule.code ||
+                template.startTime != rule.startTime ||
+                template.endTime != rule.endTime) {
+              throw GridRosterCanonicalConversionException(
+                'Configured shift template changed after the review snapshot.',
+              );
+            }
             shift = template.toShiftType();
           } else {
             final start = rule.startTime!;
