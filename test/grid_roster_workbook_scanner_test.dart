@@ -36,6 +36,8 @@ void main() {
     expect(report.sourceSheetCount, 2);
     expect(report.sourceFingerprint, startsWith('sha256:'));
     expect(report.sections, hasLength(1));
+    expect(report.sections.single.sourceSheetId, 0);
+    expect(report.sections.single.sourceSheetTitle, 'GEN');
     expect(report.assignments, hasLength(7));
     expect(report.sheetSummaries, hasLength(2));
     expect(report.sheetSummaries.first.assignmentCount, 7);
