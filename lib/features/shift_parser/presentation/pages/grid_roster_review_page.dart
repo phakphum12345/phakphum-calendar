@@ -70,6 +70,7 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           const SizedBox(height: 8),
+                          Text('จำนวน Worksheet ที่สแกน: ${session.sourceSheetCount}'),
                           Text('จำนวน Section: ${session.sections.length}'),
                           Text('จำนวนรายการ: $assignmentCount'),
                           Text(
@@ -95,6 +96,24 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
                       ),
                     ),
                   ),
+                  if (session.warnings.isNotEmpty)
+                    Card(
+                      color: Theme.of(context).colorScheme.errorContainer,
+                      child: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Worksheet ที่อ่านไม่ครบหรือมีคำเตือน',
+                              style: TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            for (final warning in session.warnings)
+                              Text('• $warning'),
+                          ],
+                        ),
+                      ),
+                    ),
                   for (final section in session.sections) ...[
                     const SizedBox(height: 12),
                     Card(
