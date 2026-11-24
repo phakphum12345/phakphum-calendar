@@ -606,3 +606,16 @@ The scanner fingerprints workbook bytes with SHA-256, adapts each worksheet to `
 The current Excel reader does not expose background colors or hidden-sheet metadata. The scanner does not infer these values; its hidden flag is only a default placeholder and must not be treated as verified visibility evidence. This adapter currently handles the local XLSX row model and is not wired into the import UI/controller.
 
 **Runtime status: SKIPPED** — scanner tests and Dart tooling have not been executed.
+
+
+## 25. Grid import workflow coordinator
+
+Added:
+- `lib/features/shift_parser/application/grid_roster_import_workflow.dart`
+- `test/grid_roster_import_workflow_test.dart`
+
+The coordinator binds a review session to a live canonical Schedule revision (or an explicit absent-target token), converts explicit decisions, re-reads the target before commit, writes the recoverable bundle journal, and saves through the existing ScheduleRepository. Recovery replays a committed bundle only when the live repository remains at the recorded base revision; an intervening Schedule change is a conflict and is never overwritten.
+
+The scanner now carries its SHA-256 workbook fingerprint on `MonthlyRosterParseReport`, including filtered reports. The coordinator does not invoke Calendar sync and is not yet called by a production screen or application startup hook.
+
+**Runtime status: SKIPPED** — service-level test source was added but not executed; Dart format/analyze and Flutter tests remain unrun.
