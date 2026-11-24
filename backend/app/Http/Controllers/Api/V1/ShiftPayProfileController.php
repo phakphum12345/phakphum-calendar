@@ -10,6 +10,7 @@ use Illuminate\Validation\Rule;
 class ShiftPayProfileController
 {
     private const MODES = ['personal', 'organization', 'hybrid'];
+
     private const PRIORITIES = ['organizationFirst', 'personalFirst', 'requireSelection'];
 
     public function show(Request $request): JsonResponse
