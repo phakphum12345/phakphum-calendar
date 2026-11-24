@@ -276,7 +276,7 @@ Important distinction: PASS in this table means the source path or test case exi
 | Local XLSX multi-sheet Grid scanner | SHA-256 source fingerprint, per-sheet parsing/summaries and per-sheet read-error isolation | PASS — source/test added; runtime SKIPPED |\n| Reviewed Grid-to-canonical conversion | Pure converter requires explicit per-assignment reviewer decisions; preserves target Schedule and returns PREPARED provenance | PASS — source/test added; runtime SKIPPED |
 | Blocked sections and out-of-range assignments | Blocked sections can only be excluded; out-of-range assignments cannot be included | PASS — source/test added; runtime SKIPPED |
 | Existing Schedule preservation and collision handling | Existing months/assignments retained; duplicate employee+shift/day collision fails closed | PASS — source/test added; runtime SKIPPED |
-| Production Grid UI/controller invokes conversion | Converter is not yet wired to a production route/controller | MISSING |
+| Grid workflow coordinator | Scan report → live target load/revision → review → conversion → journal → canonical repository save/recovery replay | PASS — source/test added; runtime SKIPPED |\n| Production Grid UI/controller invokes conversion | Converter is not yet wired to a production route/controller | MISSING |
 | Calendar sync after explicit approval | Not wired by this change | MISSING |
 | Dart format, analyze and Flutter tests | Not executed in connector environment | SKIPPED |
 
