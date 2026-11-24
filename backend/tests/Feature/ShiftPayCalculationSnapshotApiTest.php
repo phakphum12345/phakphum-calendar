@@ -183,9 +183,9 @@ class ShiftPayCalculationSnapshotApiTest extends TestCase
     {
         $this->putJson('/api/v1/shift-pay/profile', [
             'mode' => 'personal',
-            'personal_rules' => [$this->rule('holiday-night', 1200) + [
+            'personal_rules' => [array_merge($this->rule('holiday-night', 1200), [
                 'day_category' => 'officialHoliday',
-            ]],
+            ])],
         ], $this->auth('owner-token'))->assertOk();
 
         $input = $this->input();
