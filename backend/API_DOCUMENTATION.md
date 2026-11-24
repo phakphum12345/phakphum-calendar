@@ -192,4 +192,4 @@ Personal, organization and hybrid modes select at most one source. Hybrid preced
 
 The snapshot stores exact input, selected rule (when any), result, source, calculation engine version and profile configuration versions. Later rule edits do not recalculate or rewrite earlier snapshots. Reusing an idempotency key with the same request and same profile versions returns the original snapshot; reusing it for a different calculation returns HTTP 409.
 
-GET /api/v1/shift-pay/snapshots/{snapshotId} retrieves a snapshot only for the authenticated user who created it. Snapshots are audit records, not payroll postings, statutory wage determinations or payment instructions. No existing shift transaction or historical record is modified.
+GET /api/v1/shift-pay/snapshots lists the authenticated user's snapshots using cursor pagination (limit 1–100; default 50). GET /api/v1/shift-pay/snapshots/{snapshotId} retrieves one snapshot only for the authenticated user who created it. Snapshots are audit records, not payroll postings, statutory wage determinations or payment instructions. No existing shift transaction or historical record is modified.
