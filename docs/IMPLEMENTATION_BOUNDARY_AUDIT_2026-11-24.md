@@ -507,3 +507,30 @@ The pure `MonthlyRosterSectionSafetyClassifier` classifies an existing `MonthlyR
 The assessment exposes stable reason codes, `canEnterReview`, and a deliberately fail-closed `canCommit == false`. It does not mutate parser output, change the legacy adapter's substring matching, persist data, or enable Calendar sync. It is not yet wired to a production route/controller.
 
 Tests were added for each state, preservation of assignments in blocked sections, source-cell reason codes, and the no-commit invariant. **Runtime status: SKIPPED** — tests and Dart analyzer/formatter were not executed through the connector environment.
+
+
+## 18. Additive Grid employee identity candidate resolver
+
+**Implementation added after the section safety classifier.**
+
+Files added:
+- `lib/features/shift_parser/application/grid_roster_employee_identity_resolver.dart`
+- `test/grid_roster_employee_identity_resolver_test.dart`
+
+The resolver searches active canonical `Employee` records and returns ranked candidate evidence:
+1. exact employee code;
+2. exact full name;
+3. exact display name;
+4. exact nickname;
+5. substring suggestions.
+
+Exact employee-code evidence outranks weaker exact name/nickname matches. Duplicate candidates at the strongest exact-match rank remain ambiguous. Substring matches are suggestions only. Empty and unknown source labels have explicit statuses.
+
+Safety boundary:
+- the resolver never selects an employee ID;
+- every result requires human confirmation;
+- `canCommit` is always false;
+- no alias is saved or inferred;
+- the existing `MonthlyRosterShiftAdapter` substring behavior is unchanged.
+
+Tests were added for unique and duplicate exact names, employee-code priority, substring suggestions, inactive employees, blank and unknown labels. **Runtime status: SKIPPED** — test sources were not executed in this environment.
