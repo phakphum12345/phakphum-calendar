@@ -54,6 +54,8 @@ import '../../features/schedule/data/shared_preferences_schedule_repository.dart
 import '../../features/schedule/presentation/controllers/schedule_controller.dart';
 import '../../features/shift_exchange/presentation/controllers/shift_exchange_controller.dart';
 import '../../features/shift_templates/application/shift_template_controller.dart';
+import '../../features/shift_parser/application/grid_roster_import_workflow.dart';
+import '../../features/shift_parser/data/grid_roster_bundle_journal.dart';
 import '../../features/shift_templates/infrastructure/shared_preferences_shift_template_repository.dart';
 import '../../features/workflow/application/calendar_sync_coordinator.dart';
 import '../../features/workflow/application/shift_calendar_workflow_controller.dart';
@@ -300,6 +302,16 @@ class AppDependencies {
       ),
       repository: scheduleRepository,
       validationService: createScheduleValidationService(),
+    );
+  }
+
+  /// Creates the repository-backed Grid workbook import workflow.
+  GridRosterImportWorkflow createGridRosterImportWorkflow() {
+    return GridRosterImportWorkflow(
+      scheduleRepository: scheduleRepository,
+      journal: GridRosterBundleJournal(
+        store: SharedPreferencesScheduleKeyValueStore(),
+      ),
     );
   }
 
