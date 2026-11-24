@@ -113,6 +113,56 @@ void main() {
     expect(report.assignments.single.workerName, 'บุคลากร A');
   });
 
+  test('blocks malformed X-OPD dates without blocking a valid section', () {
+    final portableDays = [
+      ...List<int>.generate(15, (index) => index + 16),
+      ...List<int>.generate(15, (index) => index + 1),
+    ];
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['PORTABLE 16 พฤศจิกายน 2569 - 15 ธันวาคม 2569']),
+        ..._row(1, ['วันที่', ...portableDays]),
+        ..._row(2, ['ER', ...List<String>.filled(30, 'นาย ก')]),
+        ..._row(4, [
+          'X-OPD ประจำเดือน พฤศจิกายน พ.ศ. 2569 '
+          '(1 พฤศจิกายน 2569 - 30 พฤศจิกายน 2569)',
+        ]),
+        ..._row(5, [
+          'วันที่',
+          ...List<int>.generate(16, (index) => index + 1),
+          30,
+          30,
+        ]),
+        ..._row(6, ['X-OPD', ...List<String>.filled(18, 'นาย ข')]),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+    final portable = report.sections.singleWhere(
+      (section) => section.title.startsWith('PORTABLE'),
+    );
+    final xopd = report.sections.singleWhere(
+      (section) => section.title.startsWith('X-OPD'),
+    );
+
+    expect(portable.dateAnomalies, isEmpty);
+    expect(portable.dateColumns, hasLength(30));
+    expect(xopd.dateAnomalies.map((item) => item.code), contains('duplicate_day'));
+    expect(xopd.dateAnomalies, isNotEmpty);
+
+    final shifts = const MonthlyRosterShiftAdapter().parseForWorkers(
+      report,
+      targetNames: ['นาย ก', 'นาย ข'],
+    );
+    expect(shifts, hasLength(30));
+    expect(shifts.every((shift) => shift.assignedName == 'นาย ก'), isTrue);
+  });
+
   test('generates independent section dates before populating worker names', () {
     final input = ShiftParserInput(
       spreadsheetId: 'spreadsheet',
