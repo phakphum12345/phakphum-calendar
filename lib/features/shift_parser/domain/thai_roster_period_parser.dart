@@ -56,6 +56,12 @@ class ThaiRosterPeriodParser {
     );
     if (compactSameMonth != null) return compactSameMonth;
 
+    final explicitRange = _tryParseExplicitDateRange(
+      normalized,
+      source: text,
+    );
+    if (explicitRange != null) return explicitRange;
+
     final tokens = RegExp(
       r'(?<!\d)(0?[1-9]|[12]\d|3[01])\s*([ก-๙.]+)(?:\s*(\d{2,4}))?(?!\d)',
     ).allMatches(normalized).toList();
@@ -89,6 +95,39 @@ class ThaiRosterPeriodParser {
         .replaceAll('—', '-')
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
+  }
+
+  ThaiRosterPeriod? _tryParseExplicitDateRange(
+    String text, {
+    required String source,
+  }) {
+    final tokens = RegExp(
+      r'(?<!\\d)(0?[1-9]|[12]\\d|3[01])\\s*([ก-๙.]+)(?:\\s*(\\d{2,4}))?(?!\\d)',
+    ).allMatches(text).toList();
+    final ranges = <(RegExpMatch, RegExpMatch)>[];
+
+    for (var index = 0; index + 1 < tokens.length; index++) {
+      final start = tokens[index];
+      final end = tokens[index + 1];
+      final between = text.substring(start.end, end.start);
+      if (RegExp(r'(?:-|ถึง|\\bto\\b)', caseSensitive: false)
+          .hasMatch(between)) {
+        ranges.add((start, end));
+      }
+    }
+
+    if (ranges.isEmpty) return null;
+    if (ranges.length > 1) {
+      throw FormatException(
+        'ช่วงวันที่ "$source" มีช่วงวันที่ที่ระบุไว้อย่างชัดเจนมากกว่าหนึ่งช่วง',
+      );
+    }
+
+    return _buildPeriod(
+      startToken: _readToken(ranges.single.$1),
+      endToken: _readToken(ranges.single.$2),
+      source: source,
+    );
   }
 
   ThaiRosterPeriod? _tryParseCompactSameMonth(
