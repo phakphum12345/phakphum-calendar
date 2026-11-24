@@ -47,7 +47,8 @@ void main() {
           ],
         ),
       ],
-      warnings: const [],
+      warnings: const ['Broken worksheet could not be read.'],
+      sourceSheetCount: 2,
       sourceFingerprint: 'sha256:source-ui',
     );
     final session = const GridRosterReviewSessionBuilder().build(
@@ -88,6 +89,7 @@ void main() {
     expect(checkbox.value, isFalse);
     expect(find.text('รหัสหรือชื่อผู้ตรวจสอบ'), findsOneWidget);
     expect(find.text('นำรายการนี้เข้า Schedule'), findsOneWidget);
+    expect(find.text('Broken worksheet could not be read.'), findsOneWidget);
   });
 }
 
