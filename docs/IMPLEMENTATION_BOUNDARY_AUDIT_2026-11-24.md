@@ -625,6 +625,7 @@ The scanner now carries its SHA-256 workbook fingerprint on `MonthlyRosterParseR
 
 Added:
 - `lib/features/shift_parser/presentation/pages/grid_roster_review_page.dart`
+- `test/grid_roster_review_page_test.dart`
 - `ImportExcelPage` Grid action and `ExcelImportController.readAllRows()`
 - `AppDependencies.createGridRosterImportWorkflow()` and route wiring in `lib/app.dart`
 
