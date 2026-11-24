@@ -25,6 +25,7 @@ This file is the central map of project documentation. Prefer updating an existi
 - [Architecture Decision Records](docs/adr/) — accepted decisions and their rationale.
 - [Conditional Schedule persistence and journal discovery ADR](docs/adr/CONDITIONAL_SCHEDULE_PERSISTENCE_AND_JOURNAL_DISCOVERY.md) — proposed monotonic revision tokens, conditional save/delete, cross-platform CAS, storage evaluation, migration sequence and startup journal index requirements; not yet accepted.
 - [Schedule persistence writer inventory](docs/SCHEDULE_PERSISTENCE_WRITER_INVENTORY.md) — source-backed map of editor, legacy, import, Grid commit/recovery and delete persistence paths; static inspection only, no CAS implementation claimed.
+- [Schedule CAS Storage Spike](tool/schedule_cas_spike/README.md) — isolated Drift/SQLite prototype, atomic UPSERT contract tests and platform validation limits; not wired into production.
 - [SCE 3.0 system design](docs/SCE_3_0_SYSTEM_DESIGN.md)
 - [SCE 3.0 implementation map](docs/SCE_3_0_IMPLEMENTATION_MAP.md)
 
