@@ -201,3 +201,14 @@ The following additive, pure application helpers have now been added on the work
 - Unit-test source files cover section classification, blocked-section preservation, missing/out-of-range evidence, exact/ambiguous identity matches, stronger employee-code evidence, substring-only suggestions, inactive employees and unknown source names.
 
 These helpers are not connected to a production Grid route/controller, canonical Schedule conversion, provenance repository or persistence. Existing `MonthlyRosterShiftAdapter` substring behavior is unchanged. Runtime test status remains SKIPPED until tests are executed on an available Flutter/Dart runner.
+
+
+## 13. Shift-rule evidence implementation — 2026-11-24
+
+The existing `MonthlyRosterShiftAdapter` now exposes `resolveRuleForLabel`, a read-only description of the exact mapping rule already used by the legacy converter. It reports:
+- `configuredTemplate` with the canonical template ID and mapped time range;
+- `builtInRule` with code/time details and no fabricated template ID;
+- `ambiguousTemplate` when multiple active templates share an alias;
+- `unsupportedLabel` or `emptyLabel` when no safe mapping exists.
+
+This API reuses the adapter's existing rule implementation instead of introducing a second shift-time ruleset. Existing conversion behavior is retained. The returned mapping remains review-only (`requiresHumanConfirmation == true`, `canCommit == false`). Test sources cover configured, ambiguous, built-in, unsupported, empty and inactive-template cases; runtime execution remains SKIPPED.
