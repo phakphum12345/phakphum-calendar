@@ -326,4 +326,8 @@ The [Schedule Persistence Writer Inventory](docs/SCHEDULE_PERSISTENCE_WRITER_INV
 **Important:** PASS here means the relevant source path was identified and inspected. It does not mean the tests ran or that the persistence behavior is concurrency-safe. The AppController future queue is instance-local, and Grid's repeated reads do not close the final read/save race. No production CAS or startup journal discovery is claimed.
 
 
+## 2026-11-24 — Monotonic revision-token contract refinement
+
+| Requirement | Scope | Evidence | Status | Remaining proof |
+|---|---|---|---|---|
 | RI-036 | Monotonic Schedule revision tokens, ABA protection and tombstone-based conditional delete | Proposed ADR contract: generation + state + canonical content fingerprint; no implementation selected | PROPOSED — design only | Platform-backed atomic transaction, migration and interleaved-writer tests |
