@@ -130,6 +130,23 @@ class ShiftPayCalculationController
         return response()->json(['data' => $this->snapshotResponse($snapshot)], 201);
     }
 
+    public function index(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'limit' => ['sometimes', 'integer', 'min:1', 'max:100'],
+        ]);
+        $page = DB::table('shift_pay_calculation_snapshots')
+            ->where('user_id', $request->user()->id)
+            ->orderByDesc('calculated_at')
+            ->orderByDesc('id')
+            ->cursorPaginate((int) ($validated['limit'] ?? 50));
+
+        return response()->json([
+            'data' => array_map(fn (object $snapshot): array => $this->snapshotResponse($snapshot), $page->items()),
+            'next_cursor' => $page->nextCursor()?->encode(),
+        ]);
+    }
+
     public function show(Request $request, string $snapshotId): JsonResponse
     {
         $snapshot = DB::table('shift_pay_calculation_snapshots')
