@@ -12,7 +12,9 @@ class _MemoryStore implements ScheduleKeyValueStore {
   Future<String?> getString(String key) async => values[key];
 
   @override
-  Future<void> remove(String key) async => values.remove(key);
+  Future<void> remove(String key) async {
+    values.remove(key);
+  }
 
   @override
   Future<void> setString(String key, String value) async {
