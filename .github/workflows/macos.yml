@@ -69,8 +69,8 @@ jobs:
       - name: Verify generated macOS Xcode project
         run: xcodebuild -list -project macos/Runner.xcodeproj
 
-      - name: Build unsigned macOS application
-        run: flutter build macos --release --no-codesign
+      - name: Build macOS application with the project ad-hoc signing identity
+        run: flutter build macos --release
 
       - name: Verify macOS application bundle
         shell: bash
@@ -89,9 +89,9 @@ jobs:
           mkdir -p dist/macos
           ditto -c -k --sequesterRsrc --keepParent \
             build/macos/Build/Products/Release/phakphum_calendar.app \
-            dist/macos/phakphum-calendar-macos-unsigned.zip
-          shasum -a 256 dist/macos/phakphum-calendar-macos-unsigned.zip \
-            > dist/macos/phakphum-calendar-macos-unsigned.zip.sha256
+            dist/macos/phakphum-calendar-macos-adhoc.zip
+          shasum -a 256 dist/macos/phakphum-calendar-macos-adhoc.zip \
+            > dist/macos/phakphum-calendar-macos-adhoc.zip.sha256
           test -s dist/macos/phakphum-calendar-macos-unsigned.zip
           test -s dist/macos/phakphum-calendar-macos-unsigned.zip.sha256
 
