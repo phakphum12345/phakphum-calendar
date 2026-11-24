@@ -76,6 +76,14 @@ The existing `GridRosterImportWorkflow.revisionFor` and `scheduleFingerprint` ar
 
 Migration of existing SharedPreferences records must preserve the original slots, derive the initial fingerprint from the decoded canonical Schedule, assign an explicit initial generation, write an idempotent migration marker, read back and verify, and retain rollback data. Existing physically deleted IDs cannot be reconstructed from absent keys; after rollout, all deletes must use tombstones.
 
+## Repository platform baseline
+
+The current release support policy lists five active targets: Windows x64, Web, Android, iOS and Linux x64. macOS is preserved in the repository but currently paused with no active release workflow. See `docs/PLATFORM_SUPPORT.md`.
+
+The current `pubspec.yaml` declares `shared_preferences` and `crypto` for this persistence path; it does not currently declare a relational database/transaction package. The production Schedule repository uses `SharedPreferencesAsync`. No storage package is selected by this ADR.
+
+The storage prototype must pass the five active release targets. macOS compatibility should be recorded as a future reactivation gate rather than silently treated as a currently shipped target. The Web target is a first-class requirement; a mobile-only SQLite plugin is not sufficient.
+
 ## Candidate evaluation matrix
 
 Evaluate each candidate on the exact platforms and deployment modes supported by this repository.
