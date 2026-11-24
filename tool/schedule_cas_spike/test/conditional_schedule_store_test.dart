@@ -152,37 +152,40 @@ void main() {
 
   test('two independent database instances have exactly one CAS winner', () async {
     final secondDatabase = SpikeDatabase(NativeDatabase(databaseFile));
-    final secondStore = ConditionalScheduleStore(secondDatabase);
-    await secondDatabase.customStatement('PRAGMA busy_timeout = 5000');
+    try {
+      final secondStore = ConditionalScheduleStore(secondDatabase);
+      await secondDatabase.customStatement('PRAGMA busy_timeout = 5000');
 
-    final seed = await store.compareAndSet(
-      scheduleId: 'schedule-E',
-      expected: ScheduleRevision.absent,
-      replacementPayload: '{"value":"seed"}',
-    );
-    final sharedRevision = seed.current.revision;
-
-    final results = await Future.wait([
-      store.compareAndSet(
+      final seed = await store.compareAndSet(
         scheduleId: 'schedule-E',
-        expected: sharedRevision,
-        replacementPayload: '{"writer":"one"}',
-      ),
-      secondStore.compareAndSet(
-        scheduleId: 'schedule-E',
-        expected: sharedRevision,
-        replacementPayload: '{"writer":"two"}',
-      ),
-    ]);
+        expected: ScheduleRevision.absent,
+        replacementPayload: '{"value":"seed"}',
+      );
+      final sharedRevision = seed.current.revision;
 
-    expect(
-      results.where((r) => r.status == ConditionalWriteStatus.saved).length,
-      1,
-    );
-    expect(
-      results.where((r) => r.status == ConditionalWriteStatus.conflict).length,
-      1,
-    );
-    await secondDatabase.close();
+      final results = await Future.wait([
+        store.compareAndSet(
+          scheduleId: 'schedule-E',
+          expected: sharedRevision,
+          replacementPayload: '{"writer":"one"}',
+        ),
+        secondStore.compareAndSet(
+          scheduleId: 'schedule-E',
+          expected: sharedRevision,
+          replacementPayload: '{"writer":"two"}',
+        ),
+      ]);
+
+      expect(
+        results.where((r) => r.status == ConditionalWriteStatus.saved).length,
+        1,
+      );
+      expect(
+        results.where((r) => r.status == ConditionalWriteStatus.conflict).length,
+        1,
+      );
+    } finally {
+      await secondDatabase.close();
+    }
   });
 }
