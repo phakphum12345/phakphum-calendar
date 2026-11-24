@@ -222,8 +222,8 @@ Implementation:
 - The period parser now checks adjacent date tokens for an explicit range separator (`-`, `ถึง`, or `to`) before falling back to the first two date-like tokens.
 - This allows a title such as `GEN คลินิคพิเศษ ภปร. 4 พฤศจิกายน พ.ศ. 2569 (1 พฤศจิกายน 2569 - 30 พฤศจิกายน 2569)` to resolve to 1–30 November 2026 instead of treating the unit number 4 as the range start.
 - Multiple explicit ranges in one title are rejected as ambiguous.
-- The section parser no longer downgrades an invalid/ambiguous explicit date range to a month-only fallback. Month-only fallback remains available when no explicit date range is present.
-- Regression tests cover the numbered-unit heading, explicit parenthesized range, ambiguous multiple ranges, and isolation of a malformed X-OPD duplicate-day section while preserving a valid PORTABLE section. Existing parser tests remain in place.
+- The section parser no longer downgrades an invalid/ambiguous explicit date range to a month-only fallback or the worksheet-tab month, including single-section sheets. Month-only fallback remains available when no explicit date range is present.
+- Regression tests cover the numbered-unit heading, explicit parenthesized range, ambiguous multiple ranges, no worksheet-month fallback for conflicting ranges, and isolation of a malformed X-OPD duplicate-day section while preserving a valid PORTABLE section. Existing parser tests remain in place.
 
 Validation:
 - Source files and test additions were fetched back from GitHub after writing.
