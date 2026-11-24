@@ -36,6 +36,8 @@ This file is the central map of project documentation. Prefer updating an existi
 - [Grid canonical converter tests](test/grid_roster_canonical_converter_test.dart) — conversion, decision, collision and blocked-section test source.
 - [Grid workbook scanner](lib/features/shift_parser/application/grid_roster_workbook_scanner.dart) — local XLSX adapter, SHA-256 source fingerprint and per-worksheet scan isolation.
 - [Grid workbook scanner tests](test/grid_roster_workbook_scanner_test.dart) — multi-sheet parsing, read-error isolation and source identity tests.
+- [Grid import workflow](lib/features/shift_parser/application/grid_roster_import_workflow.dart) — repository-backed review, conversion, journal commit and guarded recovery orchestration.
+- [Grid import workflow tests](test/grid_roster_import_workflow_test.dart) — service-level save, recovery replay and stale-target test source.
 - [Universal Generator specification](docs/UNIVERSAL_GENERATOR_SPEC.md) — deterministic templates, immutable preview and safe output integration.
 - [Schedule generation review and commit](docs/SCHEDULE_GENERATION_REVIEW_AND_COMMIT.md) — current generation engine boundary, immutable preview, human approval, durable commit and separate Calendar authorization.
 - [AI roster analyzer logic](docs/AI_ROSTER_ANALYZER_LOGIC_TH.md)
