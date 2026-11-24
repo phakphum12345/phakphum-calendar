@@ -279,7 +279,8 @@ Important distinction: PASS in this table means the source path or test case exi
 | Existing Schedule preservation and collision handling | Existing months/assignments retained; duplicate employee+shift/day collision fails closed | PASS — source/test added; runtime SKIPPED |
 | Strict concurrent-writer compare-and-set | Repository interface has no atomic CAS; coordinator uses repeated read-before-save checks only | MISSING — race remains |
 | Grid workflow coordinator | Scan report → live target load/revision → review → conversion → journal → canonical repository save/recovery replay | PASS — source/test added; runtime SKIPPED | 
-| Grid review UI default safety | All assignments default to excluded; widget test asserts no implicit inclusion | PASS — source/test added; runtime SKIPPED |\n| Production Grid UI/controller invokes conversion | `ImportExcelPage` → `GridRosterReviewPage` → workflow coordinator → canonical repository | PASS — source integrated; runtime SKIPPED |
+| Grid review UI default safety | All assignments default to excluded; widget test asserts no implicit inclusion | PASS — source/test added; runtime SKIPPED |
+| Production Grid UI/controller invokes conversion | `ImportExcelPage` → `GridRosterReviewPage` → workflow coordinator → canonical repository | PASS — source integrated; runtime SKIPPED |
 | Calendar sync after explicit approval | Not wired by this change | MISSING |
 | Dart format, analyze and Flutter tests | Not executed in connector environment | SKIPPED |
 | Verified reviewer identity | Reviewer label is typed by the operator and stored as reviewer evidence; no identity provider validates it | MISSING |
