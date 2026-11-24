@@ -136,6 +136,6 @@ Both tables are new and additive. Existing users, organizations, policies, shift
 
 - UUID primary key; references the calculating user and optional selected organization with restricted deletion.
 - Stores an idempotency key and request hash unique per user.
-- Stores mode, selected source, personal/organization configuration versions, exact input JSON, selected rule JSON, result JSON and calculation timestamp.
+- Stores mode, selected source, calculation engine version, personal/organization configuration versions, exact input JSON, selected rule JSON, result JSON and calculation timestamp.
 - Has no update timestamp or update endpoint; application flow inserts snapshots and only reads them afterward.
 - Snapshots preserve historical inputs and selected rule data; changing a profile does not rewrite prior results.
