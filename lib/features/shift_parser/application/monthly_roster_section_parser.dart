@@ -98,9 +98,27 @@ class MonthlyRosterSectionParser {
                   _canUseSingleMonthTabFallback(tabPeriod, daysByColumn)));
       final period = explicitPeriod ?? (canUseSheetFallback ? tabPeriod : null);
       if (period == null) {
-        warnings.add(
-          'ไม่พบช่วงวันที่เฉพาะของส่วน "$title"; '
-          'ไม่ใช้เดือนจากชื่อชีตแทนเพื่อป้องกันวันที่ข้ามเดือนไม่ถูกต้อง',
+        const message =
+            'ไม่สามารถระบุช่วงวันที่ของส่วนนี้ได้อย่างปลอดภัย; '
+            'ไม่ใช้เดือนจากชื่อชีตแทน';
+        warnings.add('ส่วน "$title": $message');
+        // Preserve the section as blocked evidence instead of dropping it.
+        // No dates or assignments are invented when the declared period is
+        // invalid or ambiguous.
+        sections.add(
+          MonthlyRosterSection(
+            title: title,
+            headerRowIndex: headerRow,
+            assignments: const [],
+            startDate: null,
+            endDate: null,
+            dateAnomalies: const [
+              MonthlyRosterDateAnomaly(
+                code: 'unresolved_period',
+                message: message,
+              ),
+            ],
+          ),
         );
         continue;
       }
