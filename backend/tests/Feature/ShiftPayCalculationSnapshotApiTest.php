@@ -130,7 +130,6 @@ class ShiftPayCalculationSnapshotApiTest extends TestCase
         ])->assertConflict();
     }
 
-
     public function test_hourly_rate_multiplier_and_currency_precision_are_applied(): void
     {
         $this->putJson('/api/v1/shift-pay/profile', [
