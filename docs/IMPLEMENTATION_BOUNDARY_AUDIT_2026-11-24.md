@@ -616,6 +616,20 @@ Added:
 
 The coordinator binds a review session to a live canonical Schedule revision (or an explicit absent-target token), converts explicit decisions, re-reads the target before commit, writes the recoverable bundle journal, and saves through the existing ScheduleRepository. Recovery replays a committed bundle only when the live repository remains at the recorded base revision; observed intervening Schedule changes are conflicts. The coordinator re-reads before saving, but the ScheduleRepository contract has no atomic compare-and-set operation, so strict multi-writer exclusion is still missing.
 
-The scanner now carries its SHA-256 workbook fingerprint on `MonthlyRosterParseReport`, including filtered reports. The coordinator does not invoke Calendar sync and is not yet called by a production screen or application startup hook. It also cannot guarantee a race-free save against another concurrent writer until the repository exposes a conditional/CAS write.
+The scanner now carries its SHA-256 workbook fingerprint on `MonthlyRosterParseReport`, including filtered reports. The coordinator is now called by the local XLSX Grid review screen and recovery runs before a new Grid scan. It does not invoke Calendar sync. It cannot guarantee a race-free save against another concurrent writer until the repository exposes a conditional/CAS write.
 
 **Runtime status: SKIPPED** — service-level test source was added but not executed; Dart format/analyze and Flutter tests remain unrun.
+
+
+## 26. Production local-XLSX Grid review UI
+
+Added:
+- `lib/features/shift_parser/presentation/pages/grid_roster_review_page.dart`
+- `ImportExcelPage` Grid action and `ExcelImportController.readAllRows()`
+- `AppDependencies.createGridRosterImportWorkflow()` and route wiring in `lib/app.dart`
+
+The existing ImportExcelPage now exposes a separate Grid action for local XLSX workbooks. It scans all worksheets, attempts journal recovery, loads active employees/templates, and opens a review page. The review page defaults every assignment to excluded, requires a reviewer-supplied label and explicit employee selection for included rows, supports explicit shift-template overrides, blocks assignments from date-blocked sections, and invokes the repository-backed workflow. The legacy tabular import action remains present.
+
+Limitations: reviewer label is self-reported and not authenticated; Google Sheets Grid scanning is not connected; Excel cell colors/hidden worksheet metadata are not exposed; Calendar sync is not invoked; startup recovery runs when entering the Grid flow rather than at application launch; strict Schedule CAS remains missing.
+
+**Runtime status: SKIPPED** — the new UI and workflow sources have not been formatted, analyzed, or executed in Flutter tests.
