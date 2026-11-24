@@ -212,6 +212,21 @@ class GridRosterImportWorkflow {
         committedProvenance: committedProvenance,
         currentTargetRevision: liveRevision,
       );
+      final beforeSaveResult = await _scheduleRepository.findById(
+        context.session.targetScheduleId,
+      );
+      if (beforeSaveResult case Failure<Schedule?>()) {
+        return _copyFailure<Schedule?, Schedule>(beforeSaveResult);
+      }
+      final beforeSave =
+          (beforeSaveResult as Success<Schedule?>).value;
+      if (revisionFor(beforeSave, context.session.targetScheduleId) !=
+          liveRevision) {
+        return const ValidationFailure(
+          'Target Schedule changed while the bundle was being committed. '
+          'The journal is retained for conflict-aware recovery.',
+        );
+      }
       return await _scheduleRepository.save(journalled.schedule);
     } on Object catch (error, stackTrace) {
       return PersistenceFailure(
