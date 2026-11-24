@@ -12,7 +12,7 @@ return new class extends Migration
             $table->foreignId('user_id')->primary()->constrained('users')->restrictOnDelete();
             $table->string('mode', 16)->default('personal');
             $table->foreignUuid('organization_id')->nullable()->constrained('organizations')->restrictOnDelete();
-            $table->string('hybrid_priority', 24)->default('require_selection');
+            $table->string('hybrid_priority', 24)->default('requireSelection');
             $table->char('currency_code', 3)->default('THB');
             $table->unsignedTinyInteger('decimal_places')->default(2);
             $table->json('personal_rules')->nullable();
