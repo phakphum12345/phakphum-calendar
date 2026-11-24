@@ -487,3 +487,23 @@ Existing test-source evidence:
 - `test/smart_roster_analyze_generator_test.dart` checks legacy/monthly deduplication and duplicate candidates.
 
 No production route or persisted review record was established for these adapter outputs. Treat conversion output as a review candidate, not an approved canonical schedule.
+
+
+## 17. Additive Grid section safety classifier
+
+**Implementation added after the UI and persistence boundary trace.**
+
+Files added:
+- `lib/features/shift_parser/application/monthly_roster_section_safety.dart`
+- `test/monthly_roster_section_safety_test.dart`
+
+The pure `MonthlyRosterSectionSafetyClassifier` classifies an existing `MonthlyRosterSection` as:
+- `ready`: valid date range, no blocking date anomalies, populated assignments with worker and shift labels inside the declared range;
+- `blockedDate`: date anomalies, unresolved date range, or reversed range;
+- `empty`: valid section with no assignments;
+- `needsReview`: missing worker identity/shift label or an assignment outside the declared section range;
+- `unsupported`: missing section title.
+
+The assessment exposes stable reason codes, `canEnterReview`, and a deliberately fail-closed `canCommit == false`. It does not mutate parser output, change the legacy adapter's substring matching, persist data, or enable Calendar sync. It is not yet wired to a production route/controller.
+
+Tests were added for each state, preservation of assignments in blocked sections, source-cell reason codes, and the no-commit invariant. **Runtime status: SKIPPED** — tests and Dart analyzer/formatter were not executed through the connector environment.
