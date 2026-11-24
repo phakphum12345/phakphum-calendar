@@ -133,8 +133,14 @@ void main() {
 
     final report = const MonthlyRosterSectionParser().parse(input);
 
-    expect(report.sections, isEmpty);
+    expect(report.sections, hasLength(1));
     expect(report.assignments, isEmpty);
+    expect(
+      report.sections.single.dateAnomalies.single.code,
+      'unresolved_period',
+    );
+    expect(report.sections.single.startDate, isNull);
+    expect(report.sections.single.endDate, isNull);
     expect(report.warnings, hasLength(1));
     expect(report.warnings.single, contains('ไม่ใช้เดือนจากชื่อชีตแทน'));
   });
