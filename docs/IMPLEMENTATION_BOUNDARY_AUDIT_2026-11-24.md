@@ -546,3 +546,16 @@ Added test source:
 - `test/monthly_roster_shift_rule_resolution_test.dart`
 
 Coverage includes configured template, duplicate alias, built-in P1 morning rule, unsupported/empty labels and inactive templates. Existing conversion path and built-in mapping implementation remain in place. **Runtime status: SKIPPED** — tests were not executed.
+
+
+## 20. Immutable Grid review-session composition
+
+Files added:
+- `lib/features/shift_parser/application/grid_roster_review_session.dart`
+- `test/grid_roster_review_session_test.dart`
+
+`GridRosterReviewSessionBuilder` composes section assessments, identity candidate resolution and shift-rule mapping evidence into a read-only snapshot. It requires a source fingerprint, target Schedule ID and target revision from their owning sources; it does not generate these values. It preserves blocked sections and their assignment evidence, and explicitly marks those rows blocked.
+
+This is a preview composition boundary only. It does not save reviewer choices, revalidate a live target revision, create canonical Schedule assignments, persist provenance, expose a UI route or call Calendar services. Both session and assignment report `canCommit == false`.
+
+Tests cover composition, blocked-section preservation and required source/target evidence. **Runtime status: SKIPPED** — no Dart/Flutter test runner was executed.
