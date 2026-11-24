@@ -228,3 +228,19 @@ Test sources cover a valid composed preview, preservation of assignments from a 
 The parser previously emitted a warning and omitted a section when its explicit date period was invalid or ambiguous. It now retains a section shell with its original title/header row and a blocking `unresolved_period` anomaly. Start/end dates remain null, and no assignments or dates are fabricated. This lets the review layer show the blocked section instead of silently losing it.
 
 The conflicting-explicit-ranges regression now asserts that the section remains in the report, has no resolved date range or assignments, and carries the blocking anomaly. The source/test change is committed; runtime execution remains SKIPPED.
+
+## 16. Versioned provenance envelope and codec — 2026-11-24
+
+Added an additive, separate provenance data contract:
+- `GridRosterImportProvenance` is a version-1 envelope with import-run ID, source fingerprint, parser version, UTC creation time, target Schedule ID/revision, lifecycle and (only after commit) accepted Schedule fingerprint.
+- Section evidence stores stable section ID/title, readiness code, optional date bounds and reason codes.
+- Assignment evidence stores stable source assignment ID, section ID, optional source-cell reference/date, canonical employee/template IDs, rule kind, include/exclude/pending decision and paired reviewer evidence for final decisions.
+- Diagnostics store codes/severity and optional section/cell references.
+
+The envelope deliberately does not retain workbook bytes, raw cell values, source worker labels, secrets or arbitrary parser payloads. IDs and cell references are evidence pointers, not copied workbook content.
+
+`GridRosterImportProvenanceJsonCodec` encodes a separate format discriminator and schema version. It rejects malformed structures, missing/wrongly typed required fields, unknown enum values and unsupported versions. Model invariants reject duplicate IDs, dangling section references, invalid date pairs, reviewer-less final decisions, invalid template evidence and committed envelopes without an accepted Schedule fingerprint.
+
+This implementation does not modify `shift-tools.canonical-schedule` schema v1 or its codec/repository. Tests were added for round-trip evidence, include/exclude decisions, committed lifecycle, unsupported versions, missing fields, unknown enum values, privacy-minimizing serialization and model invariants. **Runtime status: SKIPPED** — tests, formatter and analyzer have not been run.
+
+**Persistence remains MISSING.** The existing Schedule repository uses alternating slots for the Schedule payload only. It does not provide a transaction across Schedule and provenance. The new codec is not wired to storage and must not be described as atomic or production commit support. Next design step is a versioned bundle journal with explicit PREPARED/COMMITTED recovery semantics and crash-injection tests; do not implement it as two unrelated preference writes.
