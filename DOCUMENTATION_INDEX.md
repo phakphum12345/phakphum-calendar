@@ -27,6 +27,8 @@ This file is the central map of project documentation. Prefer updating an existi
 
 - [Parser foundation](docs/PARSER_FOUNDATION.md)
 - [Roster parser reliability specification](docs/ROSTER_PARSER_RELIABILITY_SPEC.md) — section isolation, date evidence, malformed-header behavior and regression criteria.
+- [Roster provenance and reconciliation](docs/ROSTER_PROVENANCE_AND_RECONCILIATION.md) — source snapshots, cell evidence, person identity, revision diffs and safe removals.
+- [Universal Generator specification](docs/UNIVERSAL_GENERATOR_SPEC.md) — deterministic templates, immutable preview and safe output integration.
 - [AI roster analyzer logic](docs/AI_ROSTER_ANALYZER_LOGIC_TH.md)
 - [Hybrid roster AI](docs/HYBRID_ROSTER_AI.md)
 - [Roster knowledge base architecture](docs/ROSTER_KNOWLEDGE_BASE_ARCHITECTURE_TH.md)
@@ -56,6 +58,7 @@ The timeline services and shift documents above are the current implementation r
 - [Backend README](backend/README.md)
 - [Backend security notes](SECURITY.md)
 - [API documentation](backend/API_DOCUMENTATION.md)
+- [API and integration contracts](docs/API_AND_INTEGRATION_CONTRACTS.md) — dependency boundaries, auth, idempotency, errors and provider contracts.
 - [Database schema](backend/DATABASE_SCHEMA.md)
 - [API routes](backend/routes/api.php)
 - [Database migrations](backend/database/migrations/)
@@ -72,6 +75,7 @@ The Laravel migrations are the source of truth for schema structure; update the 
 ## Testing, CI and release
 
 - [Testing guide](docs/wiki/TESTING_GUIDE.md)
+- [Testing and release acceptance](docs/TESTING_AND_RELEASE_ACCEPTANCE.md) — evidence states, critical-path tests and exact-SHA release gates.
 - [CI auto-detection](docs/CI_AUTO_DETECTION.md)
 - [Release process](docs/wiki/RELEASE_PROCESS.md)
 - [GitHub Actions workflows](.github/workflows/)

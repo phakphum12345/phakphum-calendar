@@ -86,3 +86,28 @@ Detailed acceptance is maintained in:
 - [Roster intelligence capability matrix](docs/ROSTER_INTELLIGENCE_CAPABILITY_MATRIX.md)
 
 Statuses must be updated only after source inspection and executed tests on an identified commit. File existence or a planning document is not implementation proof.
+
+
+---
+
+## 2026-11-24 — Generator, provenance, API and release requirements
+
+| Requirement | Scope | Initial status | Required proof |
+|---|---|---|---|
+| RI-016 | Deterministic generator input/output contract | PARTIAL | Same snapshot/profile/template produces stable output and fingerprint |
+| RI-017 | Versioned templates and mapping precedence | PLANNED | Lifecycle, precedence, migration and stale-preview tests |
+| RI-018 | Immutable preview and explicit confirmation | PARTIAL | Exact preview fingerprint is revalidated before mutation |
+| RI-019 | Source snapshot and cell-level provenance | PARTIAL | Source evidence is traceable through canonical record and output |
+| RI-020 | Person identity and collision-safe alias resolution | PARTIAL | Similar-name negative tests and organization-scoped identity |
+| RI-021 | Revision reconciliation and safe removals | UNKNOWN | Malformed/partial source never proposes mass deletion |
+| RI-022 | API contract and idempotency policy | PARTIAL | Route/client contract, authorization and replay tests |
+| RI-023 | Provider capability and adapter isolation | PARTIAL | Unsupported provider/platform paths fail visibly without bypass |
+| RI-024 | Exact-SHA test/release evidence | PARTIAL | Every required check tied to current head; skipped deployment is not pass |
+
+Supporting specifications:
+- [Universal Generator specification](docs/UNIVERSAL_GENERATOR_SPEC.md)
+- [Roster provenance and reconciliation](docs/ROSTER_PROVENANCE_AND_RECONCILIATION.md)
+- [API and integration contracts](docs/API_AND_INTEGRATION_CONTRACTS.md)
+- [Testing and release acceptance](docs/TESTING_AND_RELEASE_ACCEPTANCE.md)
+
+These are target contracts, not claims that the features are complete. Update statuses only after auditing source and running the stated tests on an exact commit.
