@@ -241,3 +241,14 @@ Important distinction: PASS in this table means the source path or test case exi
 | Durable reviewer decisions, stale-revision revalidation and commit | Not part of this preview builder | MISSING |
 | Production UI route/controller | Not connected | MISSING |
 | Runtime builder tests | Test source added; not executed | SKIPPED |
+
+
+## 2026-11-24 Unresolved Grid section preservation
+
+| Requirement | Evidence | Status |
+|---|---|---|
+| Preserve invalid/ambiguous explicit-period section in parse report | Parser creates section shell with original title/header row | PASS — source changed |
+| Do not invent dates or assignments | Null start/end, empty assignments, blocking `unresolved_period` anomaly | PASS — fail-closed source behavior |
+| Keep section visible to safety classifier/review builder | Classifier sees blocking anomaly; session builder retains section review | PASS — source path inspected |
+| Conflicting explicit ranges regression | Existing parser test now expects retained blocked section and no assignments | PASS — test source updated; runtime SKIPPED |
+| Raw unresolved cell-level assignment evidence | No unresolved-cell model added yet | MISSING |
