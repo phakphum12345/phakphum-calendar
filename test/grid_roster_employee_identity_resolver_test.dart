@@ -9,7 +9,14 @@ void main() {
   test('returns one exact full-name candidate but never selects it', () {
     final result = resolver.resolve(
       sourceName: 'สมชาย ใจดี',
-      employees: [_employee('e1', firstName: 'สมชาย', lastName: 'ใจดี', nickname: 'ชาย')],
+      employees: [
+        _employee(
+          'e1',
+          firstName: 'สมชาย',
+          lastName: 'ใจดี',
+          nickname: 'ชาย',
+        ),
+      ],
     );
 
     expect(
@@ -17,7 +24,10 @@ void main() {
       EmployeeIdentityResolutionStatus.exactUniqueCandidate,
     );
     expect(result.candidates.single.employee.id, 'e1');
-    expect(result.candidates.single.matchKind, EmployeeIdentityMatchKind.fullName);
+    expect(
+      result.candidates.single.matchKind,
+      EmployeeIdentityMatchKind.fullName,
+    );
     expect(result.requiresHumanConfirmation, isTrue);
     expect(result.selectedEmployeeId, isNull);
     expect(result.canCommit, isFalse);
@@ -27,8 +37,20 @@ void main() {
     final result = resolver.resolve(
       sourceName: 'สมชาย ใจดี',
       employees: [
-        _employee('e1', firstName: 'สมชาย', lastName: 'ใจดี', nickname: 'ชาย', code: '001'),
-        _employee('e2', firstName: 'สมชาย', lastName: 'ใจดี', nickname: 'ชายน้อย', code: '002'),
+        _employee(
+          'e1',
+          firstName: 'สมชาย',
+          lastName: 'ใจดี',
+          nickname: 'ชาย',
+          code: '001',
+        ),
+        _employee(
+          'e2',
+          firstName: 'สมชาย',
+          lastName: 'ใจดี',
+          nickname: 'ชายน้อย',
+          code: '002',
+        ),
       ],
     );
 
@@ -40,12 +62,24 @@ void main() {
     expect(result.selectedEmployeeId, isNull);
   });
 
-  test('matches an exact employee code before ambiguous names', () {
+  test('uses exact employee code as stronger evidence than a nickname', () {
     final result = resolver.resolve(
       sourceName: '002',
       employees: [
-        _employee('e1', 'สมชาย', 'ใจดี', 'ชาย', code: '001'),
-        _employee('e2', 'สมชาย', 'ใจดี', 'ชายน้อย', code: '002'),
+        _employee(
+          'e1',
+          firstName: 'สมชาย',
+          lastName: 'ใจดี',
+          nickname: '002',
+          code: '001',
+        ),
+        _employee(
+          'e2',
+          firstName: 'มาลี',
+          lastName: 'รักดี',
+          nickname: 'ไหม',
+          code: '002',
+        ),
       ],
     );
 
@@ -64,8 +98,18 @@ void main() {
     final result = resolver.resolve(
       sourceName: 'สมชาย',
       employees: [
-        _employee('e1', 'สมชาย', 'ใจดี', 'ชาย'),
-        _employee('e2', firstName: 'สมชาย', lastName: 'รักดี', nickname: 'ชายน้อย'),
+        _employee(
+          'e1',
+          firstName: 'สมชาย',
+          lastName: 'ใจดี',
+          nickname: 'ชาย',
+        ),
+        _employee(
+          'e2',
+          firstName: 'สมชาย',
+          lastName: 'รักดี',
+          nickname: 'ชายน้อย',
+        ),
       ],
     );
 
@@ -84,7 +128,13 @@ void main() {
     final result = resolver.resolve(
       sourceName: 'สมชาย ใจดี',
       employees: [
-        _employee('e1', firstName: 'สมชาย', lastName: 'ใจดี', nickname: 'ชาย', active: false),
+        _employee(
+          'e1',
+          firstName: 'สมชาย',
+          lastName: 'ใจดี',
+          nickname: 'ชาย',
+          active: false,
+        ),
       ],
     );
 
@@ -93,7 +143,10 @@ void main() {
   });
 
   test('reports missing and unknown source names explicitly', () {
-    final missing = resolver.resolve(sourceName: '  ', employees: [_employee('e1')]);
+    final missing = resolver.resolve(
+      sourceName: '  ',
+      employees: [_employee('e1')],
+    );
     final unknown = resolver.resolve(
       sourceName: 'ไม่มีบุคลากรนี้',
       employees: [_employee('e1')],
