@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phakphum_calendar/core/result/result.dart';
 import 'package:phakphum_calendar/domain/entities/department.dart';
@@ -10,6 +12,11 @@ import 'package:phakphum_calendar/features/shift_parser/application/grid_roster_
 import 'package:phakphum_calendar/features/shift_parser/application/grid_roster_import_workflow.dart';
 import 'package:phakphum_calendar/features/shift_parser/data/grid_roster_bundle_journal.dart';
 import 'package:phakphum_calendar/features/shift_parser/domain/monthly_roster_section.dart';
+import 'package:phakphum_calendar/features/excel_import/domain/excel_cell.dart';
+import 'package:phakphum_calendar/features/excel_import/domain/excel_row.dart';
+import 'package:phakphum_calendar/features/excel_import/domain/import_file.dart';
+import 'package:phakphum_calendar/features/excel_import/domain/workbook_info.dart';
+import 'package:phakphum_calendar/features/excel_import/domain/worksheet_info.dart';
 
 class _MemoryStore implements ScheduleKeyValueStore {
   final values = <String, String>{};
@@ -68,6 +75,72 @@ void main() {
     workflow = GridRosterImportWorkflow(
       scheduleRepository: repository,
       journal: GridRosterBundleJournal(store: store),
+    );
+  });
+
+  test('scans a local workbook through review and canonical commit end-to-end', () async {
+    final workbook = WorkbookInfo(
+      file: ImportFile(
+        name: 'roster.xlsx',
+        bytes: Uint8List.fromList([1, 2, 3, 4]),
+      ),
+      worksheets: const [
+        WorksheetInfo(name: 'GEN', rowCount: 3, columnCount: 8),
+      ],
+    );
+    final report = workflow.scanWorkbook(
+      workbook: workbook,
+      readWorksheet: (_) => _validRows(),
+    );
+    expect(report.sourceFingerprint, startsWith('sha256:'));
+    expect(report.assignments, hasLength(7));
+
+    final reviewResult = await workflow.prepareReview(
+      report: report,
+      targetScheduleId: 'schedule-1',
+      targetScheduleName: 'November roster',
+      employees: [_employee],
+      shiftTemplates: const [],
+    );
+    expect(reviewResult, isA<Success<GridRosterImportReviewContext>>());
+    final context =
+        (reviewResult as Success<GridRosterImportReviewContext>).value;
+    final decisions = {
+      for (final review in context.session.assignments)
+        GridRosterCanonicalConverter.assignmentId(
+          context.session.sourceFingerprint,
+          review.source,
+        ): GridRosterAssignmentDecision(
+          include: true,
+          employeeId: _employee.id,
+          reviewerId: 'reviewer-1',
+          reviewedAtUtc: createdAt,
+        ),
+    };
+    final conversion = workflow.convert(
+      context: context,
+      employees: [_employee],
+      shiftTemplates: const [],
+      decisions: decisions,
+      importRunId: 'end-to-end-grid-run',
+      parserVersion: 'grid-parser/1',
+      createdAtUtc: createdAt,
+    );
+    expect(conversion, isA<Success<GridRosterCanonicalConversionResult>>());
+    final committed = await workflow.commit(
+      context: context,
+      conversion:
+          (conversion as Success<GridRosterCanonicalConversionResult>).value,
+    );
+
+    expect(committed, isA<Success<Schedule>>());
+    expect(repository.value?.months, hasLength(1));
+    expect(repository.value!.month(DateTime(2026, 11, 1))!.days, hasLength(7));
+    expect(
+      repository.value!.month(DateTime(2026, 11, 1))!
+          .day(DateTime(2026, 11, 7))!
+          .assignments,
+      hasLength(1),
     );
   });
 
@@ -203,3 +276,39 @@ const _employee = Employee(
   department: _department,
   position: 'Staff',
 );
+
+
+List<ExcelRow> _validRows() {
+  return [
+    ExcelRow(
+      index: 0,
+      cells: const [
+        ExcelCell(
+          rowIndex: 0,
+          columnIndex: 0,
+          value: 'GEN คลินิก 1 พฤศจิกายน 2569 - 7 พฤศจิกายน 2569',
+        ),
+      ],
+    ),
+    ExcelRow(
+      index: 1,
+      cells: [
+        const ExcelCell(rowIndex: 1, columnIndex: 0, value: 'วันที่'),
+        for (var day = 1; day <= 7; day++)
+          ExcelCell(rowIndex: 1, columnIndex: day, value: day),
+      ],
+    ),
+    ExcelRow(
+      index: 2,
+      cells: [
+        const ExcelCell(rowIndex: 2, columnIndex: 0, value: 'GEN'),
+        for (var day = 1; day <= 7; day++)
+          ExcelCell(
+            rowIndex: 2,
+            columnIndex: day,
+            value: 'Somchai Example',
+          ),
+      ],
+    ),
+  ];
+}
