@@ -8,6 +8,7 @@ import '../../../domain/entities/schedule.dart';
 import '../../../domain/entities/shift_template.dart';
 import '../../../domain/repositories/schedule_repository.dart';
 import '../../excel_import/domain/workbook_info.dart';
+import '../../schedule/data/schedule_json_codec.dart';
 import '../data/grid_roster_bundle_journal.dart';
 import '../data/grid_roster_workbook_scanner.dart';
 import '../domain/monthly_roster_section.dart';
@@ -73,6 +74,12 @@ class GridRosterImportWorkflow {
     required Iterable<Employee> employees,
     required Iterable<ShiftTemplate> shiftTemplates,
   }) async {
+    final sourceFingerprint = report.sourceFingerprint;
+    if (sourceFingerprint == null || sourceFingerprint.trim().isEmpty) {
+      return const ValidationFailure(
+        'Parsed workbook is missing its source fingerprint.',
+      );
+    }
     if (targetScheduleId.trim().isEmpty || targetScheduleName.trim().isEmpty) {
       return const ValidationFailure(
         'Target Schedule id and name are required.',
@@ -92,7 +99,7 @@ class GridRosterImportWorkflow {
         report: report,
         employees: employees,
         shiftTemplates: shiftTemplates,
-        sourceFingerprint: _sourceFingerprintFromReport(report),
+        sourceFingerprint: sourceFingerprint,
         targetScheduleId: targetScheduleId,
         targetScheduleRevision: revision,
       );
@@ -255,21 +262,6 @@ class GridRosterImportWorkflow {
       ? 'absent:$scheduleId'
       : scheduleFingerprint(schedule);
 
-  String _sourceFingerprintFromReport(MonthlyRosterParseReport report) {
-    // The scanner places source sheet identity in its source assignments, but
-    // the report itself intentionally does not carry raw workbook bytes.
-    // Callers must pass the scanner's source fingerprint in the next revision
-    // of this workflow; do not manufacture one from parsed values.
-    final fingerprints = report.assignments
-        .map((assignment) => assignment.spreadsheetId)
-        .whereType<String>()
-        .where((value) => value.startsWith('sha256:'))
-        .toSet();
-    if (fingerprints.length == 1) return fingerprints.single;
-    throw const FormatException(
-      'Source fingerprint is not attached to the parsed report.',
-    );
-  }
 }
 
 Result<TTarget> _copyFailure<TSource, TTarget>(Result<TSource> result) {
