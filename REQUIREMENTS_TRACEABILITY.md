@@ -324,3 +324,6 @@ The new [Grid import recovery and concurrency contract](docs/GRID_IMPORT_RECOVER
 The [Schedule Persistence Writer Inventory](docs/SCHEDULE_PERSISTENCE_WRITER_INVENTORY.md) records writer IDs W-01 through W-05, facade F-01, storage operation S-01, current guards, test-source evidence and migration order.
 
 **Important:** PASS here means the relevant source path was identified and inspected. It does not mean the tests ran or that the persistence behavior is concurrency-safe. The AppController future queue is instance-local, and Grid's repeated reads do not close the final read/save race. No production CAS or startup journal discovery is claimed.
+
+
+| RI-036 | Monotonic Schedule revision tokens, ABA protection and tombstone-based conditional delete | Proposed ADR contract: generation + state + canonical content fingerprint; no implementation selected | PROPOSED — design only | Platform-backed atomic transaction, migration and interleaved-writer tests |
