@@ -17,6 +17,7 @@ This file is the central map of project documentation. Prefer updating an existi
 ## Architecture and engineering
 
 - [Project architecture](docs/wiki/ARCHITECTURE.md)
+- [Module catalog and ownership map](docs/MODULE_CATALOG.md) — actual feature/service directory inventory, boundary risks and safe consolidation policy.
 - [Coding standards](docs/wiki/CODING_STANDARDS.md)
 - [Contribution guide](docs/wiki/CONTRIBUTING.md)
 - [Architecture Decision Records](docs/adr/) — accepted decisions and their rationale.

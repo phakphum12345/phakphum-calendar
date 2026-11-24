@@ -111,3 +111,16 @@ Supporting specifications:
 - [Testing and release acceptance](docs/TESTING_AND_RELEASE_ACCEPTANCE.md)
 
 These are target contracts, not claims that the features are complete. Update statuses only after auditing source and running the stated tests on an exact commit.
+
+
+---
+
+## 2026-11-24 — Module ownership and consolidation requirements
+
+| Requirement | Scope | Initial status | Required proof |
+|---|---|---|---|
+| RI-025 | One authoritative owner per capability across feature and legacy modules | UNKNOWN | Symbol-level call-site and dependency map |
+| RI-026 | Safe consolidation of overlapping feature areas | PLANNED | Behavior/test parity, migration and explicit approval |
+| RI-027 | Legacy workflow backward compatibility during modularization | PARTIAL | Existing public entry points and regression suite remain operational |
+
+See [Module Catalog and Ownership Map](docs/MODULE_CATALOG.md). Directory presence is inventory evidence only; it does not establish runtime registration or feature completeness.
