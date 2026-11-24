@@ -49,7 +49,7 @@ class ShiftPayCalculationSnapshotApiTest extends TestCase
         ], $this->auth('owner-token'))->assertOk();
 
         $stored = DB::table('shift_pay_calculation_snapshots')->where('id', $snapshotId)->first();
-        $this->assertSame(700.0, json_decode($stored->result_snapshot, true)['amount']);
+        $this->assertEquals(700, json_decode($stored->result_snapshot, true)['amount']);
         $this->getJson("/api/v1/shift-pay/snapshots/{$snapshotId}", $this->auth('owner-token'))
             ->assertOk()->assertJsonPath('data.result.amount', 700);
         $this->getJson("/api/v1/shift-pay/snapshots/{$snapshotId}", $this->auth('outsider-token'))
@@ -128,6 +128,74 @@ class ShiftPayCalculationSnapshotApiTest extends TestCase
         $this->postJson('/api/v1/shift-pay/calculations', $changed, $this->auth('owner-token') + [
             'Idempotency-Key' => 'no-rule-001',
         ])->assertConflict();
+    }
+
+
+    public function test_hourly_rate_multiplier_and_currency_precision_are_applied(): void
+    {
+        $this->putJson('/api/v1/shift-pay/profile', [
+            'mode' => 'personal',
+            'currency_code' => 'THB',
+            'decimal_places' => 2,
+            'personal_rules' => [[
+                'id' => 'hourly-night',
+                'employment_type' => 'dailyPaid',
+                'day_category' => 'regularWeekday',
+                'shift_type_id' => 'night',
+                'hourly_rate' => 100.125,
+                'multiplier' => 1.5,
+                'active' => true,
+            ]],
+        ], $this->auth('owner-token'))->assertOk();
+
+        $this->postJson('/api/v1/shift-pay/calculations', $this->input(), $this->auth('owner-token') + [
+            'Idempotency-Key' => 'hourly-rate-001',
+        ])->assertCreated()
+            ->assertJsonPath('data.result.amount', 1201.5)
+            ->assertJsonPath('data.result.currency_code', 'THB');
+    }
+
+    public function test_compensatory_time_records_zero_cash_and_compensated_shift_metadata(): void
+    {
+        $this->putJson('/api/v1/shift-pay/profile', [
+            'mode' => 'personal',
+            'personal_rules' => [[
+                'id' => 'comp-night',
+                'employment_type' => 'dailyPaid',
+                'day_category' => 'regularWeekday',
+                'shift_type_id' => 'night',
+                'treatment' => 'compensatoryTime',
+                'compensates_shift_type_id' => 'morning',
+                'compensatory_weekdays' => [2],
+                'active' => true,
+            ]],
+        ], $this->auth('owner-token'))->assertOk();
+
+        $this->postJson('/api/v1/shift-pay/calculations', $this->input(), $this->auth('owner-token') + [
+            'Idempotency-Key' => 'compensatory-001',
+        ])->assertCreated()
+            ->assertJsonPath('data.result.amount', 0)
+            ->assertJsonPath('data.result.is_compensatory_time', true)
+            ->assertJsonPath('data.result.compensates_shift_type_id', 'morning');
+    }
+
+    public function test_date_override_precedes_weekly_day_off_classification(): void
+    {
+        $this->putJson('/api/v1/shift-pay/profile', [
+            'mode' => 'personal',
+            'personal_rules' => [$this->rule('holiday-night', 1200) + [
+                'day_category' => 'officialHoliday',
+            ]],
+        ], $this->auth('owner-token'))->assertOk();
+
+        $input = $this->input();
+        $input['weekly_days_off'] = [2];
+        $input['date_overrides'] = ['2026-11-24' => 'officialHoliday'];
+        $this->postJson('/api/v1/shift-pay/calculations', $input, $this->auth('owner-token') + [
+            'Idempotency-Key' => 'date-override-001',
+        ])->assertCreated()
+            ->assertJsonPath('data.result.day_category', 'officialHoliday')
+            ->assertJsonPath('data.result.amount', 1200);
     }
 
     private function input(): array
