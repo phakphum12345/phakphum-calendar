@@ -593,3 +593,16 @@ The converter requires explicit reviewer decisions for every parsed source assig
 The converter uses stable source IDs from source fingerprint + section + source sheet/cell coordinates. A separate helper derives COMMITTED provenance only when an accepted Schedule fingerprint is provided. The target Schedule ID must match the review session. The actual live revision must still be reloaded by a future production orchestrator before journal commit.
 
 **Runtime status: SKIPPED** — conversion test source was added but not executed; Dart format/analyze and Flutter tests remain unrun.
+
+
+## 24. Local XLSX multi-sheet Grid scanner
+
+Added:
+- `lib/features/shift_parser/application/grid_roster_workbook_scanner.dart`
+- `test/grid_roster_workbook_scanner_test.dart`
+
+The scanner fingerprints workbook bytes with SHA-256, adapts each worksheet to `ShiftParserInput`, parses worksheets independently, aggregates section/assignment/warning summaries, and isolates a worksheet read error from other sheets. Local workbook IDs are not represented as Google spreadsheet IDs; source URL generation therefore remains unavailable rather than fabricated.
+
+The current Excel reader does not expose background colors or hidden-sheet metadata. The scanner does not infer these values; its hidden flag is only a default placeholder and must not be treated as verified visibility evidence. This adapter currently handles the local XLSX row model and is not wired into the import UI/controller.
+
+**Runtime status: SKIPPED** — scanner tests and Dart tooling have not been executed.
