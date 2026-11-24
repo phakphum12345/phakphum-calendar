@@ -152,10 +152,10 @@ Important distinction: PASS in this table means the source path or test case exi
 | Requirement | Existing evidence | Status / next gate |
 |---|---|---|
 | Section-aware Grid parsing | `MonthlyRosterSectionParser`, `MonthlyRosterParseReport`, section/date anomaly tests | PASS — source implementation and test cases inspected; runtime execution SKIPPED |
-| Preserve source-cell evidence | `MonthlyRosterAssignment` carries sheet/spreadsheet IDs, A1 cell, row, section and date | PASS — in-memory source evidence exists; durable retention UNKNOWN |
+| Preserve source-cell evidence | `MonthlyRosterAssignment` and versioned Grid provenance retain worksheet identity, A1 cell, row, section and date in the bundle journal | PASS — source/test added; runtime SKIPPED |
 | Conversion diagnostics | `MonthlyRosterConversionDiagnostics` reports converted/unconverted assignments and blocking date anomalies | PASS — diagnostic API exists; production review route UNKNOWN |
-| Safe canonical employee resolution | Existing adapter uses substring matching for compatibility; no verified Grid-specific canonical identity review/commit route | UNKNOWN — must add explicit unique identity review before persistence |
-| Shift-template resolution evidence | Adapter supports templates and built-in label rules; review display and durable decision record not established | UNKNOWN |
+| Safe canonical employee resolution | Grid identity resolver provides exact/suggestion candidates; `GridRosterReviewPage` requires explicit active employee selection | PASS — source/test added; runtime SKIPPED; reviewer identity is self-reported |
+| Shift-template resolution evidence | Review UI displays resolved rules and allows explicit active-template override; provenance records template decision | PASS — source/test added; runtime SKIPPED |
 | Grid review UI and orchestration | `ImportExcelPage` Grid action → `GridRosterReviewPage` → `GridRosterImportWorkflow` → journal + canonical ScheduleRepository | PASS — source integrated; runtime SKIPPED |
 | Schedule + provenance recoverable commit | `GridRosterBundleJournal` plus guarded canonical repository save/recovery replay | PASS — source/test added; runtime SKIPPED; not a cross-store atomic transaction |
 | Grid service/UI persistence and recovery | UI invokes scan → review → conversion → journal → ScheduleRepository save; recovery runs before a new Grid scan | PASS — source integrated; runtime SKIPPED |
@@ -270,7 +270,7 @@ Important distinction: PASS in this table means the source path or test case exi
 | PREPARED → read-back → COMMITTED protocol | Inactive slot staged and decoded before committed record replaces it | PASS — source contract; no platform durability guarantee |
 | Previous committed slot preserved during interrupted replacement | Alternating slot selection avoids overwriting the latest committed slot while staging | PASS — source/test added; runtime SKIPPED |
 | Recovery excludes PREPARED-only records | `recover` returns only highest-generation valid COMMITTED record | PASS — source/test added; runtime SKIPPED |
-| Stale target revision guard | Commit requires caller-supplied current revision to equal provenance target revision | PASS — source contract; live repository revalidation remains caller responsibility |
+| Stale target revision guard | Workflow reloads the live Schedule revision before journal commit and rechecks before repository save | PASS — source/test added; runtime SKIPPED; strict CAS remains MISSING |
 | Idempotent retry and conflicting run-ID protection | Same run + identical Schedule/fingerprint returns existing bundle; conflicting reuse rejected | PASS — source/test added; runtime SKIPPED |
 | Atomic/durable cross-key transaction | SharedPreferences has no documented cross-key transaction or durable atomic-write guarantee | UNKNOWN — not claimed |
 | Local XLSX multi-sheet Grid scanner | SHA-256 source fingerprint, per-sheet parsing/summaries and per-sheet read-error isolation | PASS — source/test added; runtime SKIPPED |
