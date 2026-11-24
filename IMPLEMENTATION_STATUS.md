@@ -14,7 +14,8 @@ This snapshot reflects the merged shift-transaction work in PR #173 and the orga
 | PR #172 | Closed without merge; refreshed documentation is proposed in PR #178, based on post-#171 main | SUPERSEDED |
 | PR #174 | Closed without merge; clean-mainline combined workflow replacement is PR #179 | SUPERSEDED |
 | PR #175 | Closed without merge; clean-mainline combined workflow replacement is PR #179 | SUPERSEDED |
-| Older open PRs | Several branches explicitly describe themselves as superseded; preserve branches and reconcile each against current main before any merge | NEEDS REVIEW |
+| PR #28 | Selected-roster-period sync safety change; branch is 3 commits behind current main and adds stale-roster invalidation, but needs a focused regression test and manifest regeneration | NEEDS REVIEW |
+| PR #2 | Bounded Google API timeout and repair-workflow cleanup; legacy branch requires current-main diff and exact-head CI review | NEEDS REVIEW |
 | Main branch protection | Prior audit reported `protected: false`; re-check repository settings before relying on server-enforced merge gates | NEEDS REVIEW |
 | PR #171 exact-head CI | 11 workflow runs completed successfully on head `16f57fc562d15a04abdaa5fc3bd6f017d9d89137` | PASS |
 | Post-merge main CI | Exact current-main workflow evidence for merge commit `d143449d47c8df3dee4ea6053258a84bb28d4e5e` has not been established in this audit | UNKNOWN |
@@ -29,7 +30,8 @@ This snapshot reflects the merged shift-transaction work in PR #173 and the orga
 | #174 | Closed as superseded by clean-mainline PR #179; original branch preserved | Do not merge |
 | #179 | Combined macOS/iOS workflow runs `flutter pub get` before `xcodebuild -list` and checks out exact PR head SHA | Keep open pending exact-head checks |
 | #175 | Closed as superseded by clean-mainline PR #179; original branch preserved | Do not merge |
-| #170, #146, #143, #142, #141, #140 and older open PRs | Their PR descriptions identify replacement PRs or stale work; no branch is deleted | Reconcile individually; do not merge superseded diffs |
+| #28 | Adds selected-period filtering and clears stale loaded roster state after month/year selection changes; the new helper overlaps existing `RosterSyncPeriodFilter`, and no focused controller regression test was added | Keep open; port only necessary behavior, add test and regenerate DISKPATH before merge |
+| #2 | Proposes bounded Google API request timeouts and removes obsolete embedded test generation | Keep open pending current-main diff review and exact-head CI |
 
 ### Source-level gap register
 
@@ -61,11 +63,13 @@ This snapshot reflects the merged shift-transaction work in PR #173 and the orga
 
 1. Complete exact-head macOS and iOS reruns for PRs #174 and #175; inspect logs and verify all required jobs before merge.
 2. Publish this refreshed documentation from a branch based on the post-#171 main commit; supersede stale PR #172 only after the replacement is validated.
-3. Reconcile remaining open PRs against current main; preserve branches and do not merge superseded/no-op diffs.
-4. Complete concrete notification delivery with platform and background-delivery requirements.
-5. Design safe historical restore as a separate reviewed workflow; do not expand OAuth scopes or write to user calendars without explicit approval.
-6. Add responsive, performance, data-protection and critical E2E evidence.
-7. Verify the Pages deployment metadata and live health against the exact approved main SHA before claiming production readiness.
+3. Review PR #28's stale-roster invalidation separately from the existing selected-period filter; add a controller regression test and regenerate DISKPATH before merge.
+4. Review PR #2's bounded Google API timeout against the current client implementation and run its exact-head tests.
+5. Preserve all legacy branches and do not merge superseded/no-op diffs.
+6. Complete concrete notification delivery with platform and background-delivery requirements.
+7. Design safe historical restore as a separate reviewed workflow; do not expand OAuth scopes or write to user calendars without explicit approval.
+8. Add responsive, performance, data-protection and critical E2E evidence.
+9. Verify the Pages deployment metadata and live health against the exact approved main SHA before claiming production readiness.
 
 **Snapshot date:** 2026-11-24  
 **Snapshot base:** `main` at `d143449d47c8df3dee4ea6053258a84bb28d4e5e`
