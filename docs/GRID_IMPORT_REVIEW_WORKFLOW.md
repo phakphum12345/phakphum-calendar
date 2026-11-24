@@ -328,3 +328,27 @@ The workflow coordinator now composes the implemented pieces:
 The workflow does not synchronize Calendar. The caller still needs to present the review and explicit approval in a production UI. The journal and canonical repository use separate persistence writes; recovery is a replay protocol, not a cross-store atomic transaction. The coordinator performs a final read-before-save check, but the repository has no atomic compare-and-set API; strict concurrent-writer exclusion remains MISSING.
 
 Test source covers the complete service-level scan/review-convert-commit-save flow, replay after repository save failure, and stale-target rejection. **Runtime status: SKIPPED** — Flutter/Dart tests, analyzer and formatter were not executed in this connector session.
+
+
+## 21. Import screen entry point and human review UI
+
+Added:
+- `lib/features/shift_parser/presentation/pages/grid_roster_review_page.dart`
+- Grid workflow composition in `AppDependencies.createGridRosterImportWorkflow()`
+- Grid review entry action in `ImportExcelPage`
+- Full-worksheet read access in `ExcelImportController.readAllRows()`
+
+The existing Excel import page now exposes a separate **Grid** action for local XLSX workbooks. It scans every worksheet, attempts journal recovery for target Schedule `imported`, loads active employees and shift templates, and opens the review page. The original column-mapping/tabular import path is left intact.
+
+Review UI behavior:
+- Every assignment starts excluded; no worker is auto-selected.
+- The reviewer must provide a reviewer label, explicitly opt assignments in, and select an employee.
+- Resolved built-in/configured shift rules are shown. An explicit active Shift Template can be selected to override an unsupported or ambiguous source label.
+- Date-blocked sections cannot be included; their source assignments remain visible and are excluded.
+- The save action requires at least one included assignment and calls the repository-backed workflow. Calendar sync is not invoked.
+
+**Identity limitation:** the reviewer label is self-reported input, not authenticated identity evidence. A future identity provider integration is required before treating reviewer attribution as verified.
+
+**Source limitation:** this entry point is for local XLSX workbooks. Google Sheets is not routed through this Grid scanner yet. Excel cell colors and hidden-sheet metadata are not exposed by the current reader and remain unavailable.
+
+**Runtime status: SKIPPED** — UI, scanner, workflow and converter tests have not been run; Dart format/analyze have not been run. The UI is source-integrated but not yet runtime-verified.
