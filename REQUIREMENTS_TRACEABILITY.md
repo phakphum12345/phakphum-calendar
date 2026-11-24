@@ -196,3 +196,20 @@ Important distinction: PASS in this table means the source path or test case exi
 | Dart formatting, analysis and Flutter test execution | No runtime environment available through repository connector | SKIPPED |
 
 **Interpretation:** PASS means implementation source was committed to the working branch. The accompanying test source has not been executed. The classifier is deliberately not wired into the legacy adapter or UI yet; it does not change current import behavior.
+
+
+## 2026-11-24 Grid identity candidate resolver implementation
+
+| Requirement | Evidence | Status |
+|---|---|---|
+| Discover exact employee-code candidates | `GridRosterEmployeeIdentityResolver` | PASS — source added |
+| Discover exact full/display-name and nickname candidates | Ranked exact matching with employee-ID deduplication | PASS — source added |
+| Preserve duplicate exact identities as ambiguous | `ambiguousExactCandidates` | PASS — source added |
+| Use substring matches only as suggestions | `suggestionsOnly` / `containsText` | PASS — source added |
+| Exclude inactive employees | Active-only candidate scan | PASS — source added |
+| Require explicit human confirmation | No selected ID; `canCommit == false` | PASS — fail-closed source contract |
+| Persist reviewer identity decisions / reusable aliases | No review-session or alias repository yet | MISSING |
+| Production Grid UI integration | Not connected to a route/controller | MISSING |
+| Runtime execution of resolver tests | Not run | SKIPPED |
+
+**Compatibility:** The legacy `MonthlyRosterShiftAdapter` matching implementation and its fragment-matching tests were not changed. The new resolver is a separate proposal-only component.
