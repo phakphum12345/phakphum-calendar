@@ -50,7 +50,7 @@ class ShiftPayProfileApiTest extends TestCase
         $organization = $this->organization();
         $this->putJson('/api/v1/shift-pay/profile', [
             'mode' => 'hybrid', 'organization_id' => $organization['id'],
-            'hybrid_priority' => 'require_selection',
+            'hybrid_priority' => 'requireSelection',
             'personal_rules' => [$this->rule('personal-night', 700)],
         ], $this->auth('owner-token'))->assertOk()
             ->assertJsonPath('data.mode', 'hybrid')
