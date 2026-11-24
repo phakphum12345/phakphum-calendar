@@ -212,3 +212,12 @@ The existing `MonthlyRosterShiftAdapter` now exposes `resolveRuleForLabel`, a re
 - `unsupportedLabel` or `emptyLabel` when no safe mapping exists.
 
 This API reuses the adapter's existing rule implementation instead of introducing a second shift-time ruleset. Existing conversion behavior is retained. The returned mapping remains review-only (`requiresHumanConfirmation == true`, `canCommit == false`). Test sources cover configured, ambiguous, built-in, unsupported, empty and inactive-template cases; runtime execution remains SKIPPED.
+
+
+## 14. Immutable review-session composition — 2026-11-24
+
+Added `GridRosterReviewSessionBuilder` to compose the existing parser report, section safety assessments, employee candidate results and shift-rule evidence into one immutable review snapshot. Each session is bound to caller-supplied source fingerprint, target Schedule ID and target revision; blank evidence is rejected rather than synthesized.
+
+Blocked-date and unsupported sections remain visible with their original assignments and are explicitly marked blocked. Identity and shift mappings remain proposals only. The session and every assignment expose `canCommit == false`; no repository, UI route, approval store or Calendar gateway is called.
+
+Test sources cover a valid composed preview, preservation of assignments from a blocked section, and rejection of missing source/target revision evidence. Runtime execution remains SKIPPED.
