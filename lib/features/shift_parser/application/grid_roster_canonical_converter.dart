@@ -426,7 +426,9 @@ class GridRosterCanonicalConverter {
   }
 
   static String _sectionId(String fingerprint, MonthlyRosterSection section) =>
-      '$fingerprint|section|${section.headerRowIndex}|${section.title}';
+      '$fingerprint|section|${section.sourceSpreadsheetId ?? ''}|'
+      '${section.sourceSheetId ?? ''}|${section.sourceSheetTitle ?? ''}|'
+      '${section.headerRowIndex}|${section.title}';
 
   static String _builtInShiftId(String code, Duration start, Duration end) =>
       'grid_builtin_${code}_${start.inMinutes}_${end.inMinutes}';
