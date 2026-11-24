@@ -534,3 +534,15 @@ Safety boundary:
 - the existing `MonthlyRosterShiftAdapter` substring behavior is unchanged.
 
 Tests were added for unique and duplicate exact names, employee-code priority, substring suggestions, inactive employees, blank and unknown labels. **Runtime status: SKIPPED** — test sources were not executed in this environment.
+
+
+## 19. Shift-rule mapping evidence without a parallel ruleset
+
+The existing `MonthlyRosterShiftAdapter` now exposes a read-only `resolveRuleForLabel` API. It delegates to the same private rule implementation used by legacy conversion and reports whether a mapping came from one active configured template or a built-in legacy rule. It also explicitly reports duplicate active template aliases, empty labels and unsupported labels.
+
+The API materializes the supplied template iterable once before inspection and resolution, so both passes use the same template snapshot. It returns template ID and resolved time range only when evidence supports them. It never chooses between ambiguous templates and never authorizes persistence.
+
+Added test source:
+- `test/monthly_roster_shift_rule_resolution_test.dart`
+
+Coverage includes configured template, duplicate alias, built-in P1 morning rule, unsupported/empty labels and inactive templates. Existing conversion path and built-in mapping implementation remain in place. **Runtime status: SKIPPED** — tests were not executed.
