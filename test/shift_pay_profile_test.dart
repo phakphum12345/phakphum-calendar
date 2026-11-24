@@ -114,6 +114,9 @@ void main() {
 
     expect(result.sourceSelectionRequired, isTrue);
     expect(result.hasRule, isFalse);
+    expect(result.source, isNull);
+    expect(result.calculation.rule, isNull);
+    expect(result.calculation.amount, isNull);
   });
 
   test('hybrid explicit source selection resolves only that source', () {

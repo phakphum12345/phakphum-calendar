@@ -137,8 +137,16 @@ class ShiftPayProfile {
         final organizationResult = calculate(organization);
         if (personalResult.hasRule && organizationResult.hasRule &&
             hybridPriority == HybridShiftPayPriority.requireSelection) {
+          // Do not expose either candidate amount while the source is
+          // ambiguous. Consumers must receive a non-payable result until the
+          // user explicitly selects one source.
           return ShiftPayResolvedCalculation(
-            calculation: personalResult,
+            calculation: ShiftPayCalculation(
+              dayCategory: personalResult.dayCategory,
+              rule: null,
+              amount: null,
+              isCoveredBySalary: false,
+            ),
             source: null,
             sourceSelectionRequired: true,
           );
