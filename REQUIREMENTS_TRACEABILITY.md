@@ -195,7 +195,7 @@ Important distinction: PASS in this table means the source path or test case exi
 | Production Grid UI integration | `ImportExcelPage` Grid action and `GridRosterReviewPage` call the workflow coordinator | PASS — source integrated; runtime SKIPPED |
 | Dart formatting, analysis and Flutter test execution | No runtime environment available through repository connector | SKIPPED |
 
-**Interpretation:** PASS means implementation source was committed to the working branch. The accompanying test source has not been executed. The classifier is deliberately not wired into the legacy adapter or UI yet; it does not change current import behavior.
+**Interpretation:** PASS means implementation source was committed to the working branch. The accompanying test source has not been executed. The classifier remains separate from the legacy adapter; the new Grid review workflow invokes it through `GridRosterReviewSessionBuilder`.
 
 
 ## 2026-11-24 Grid identity candidate resolver implementation
@@ -273,12 +273,13 @@ Important distinction: PASS in this table means the source path or test case exi
 | Stale target revision guard | Commit requires caller-supplied current revision to equal provenance target revision | PASS — source contract; live repository revalidation remains caller responsibility |
 | Idempotent retry and conflicting run-ID protection | Same run + identical Schedule/fingerprint returns existing bundle; conflicting reuse rejected | PASS — source/test added; runtime SKIPPED |
 | Atomic/durable cross-key transaction | SharedPreferences has no documented cross-key transaction or durable atomic-write guarantee | UNKNOWN — not claimed |
-| Local XLSX multi-sheet Grid scanner | SHA-256 source fingerprint, per-sheet parsing/summaries and per-sheet read-error isolation | PASS — source/test added; runtime SKIPPED | 
+| Local XLSX multi-sheet Grid scanner | SHA-256 source fingerprint, per-sheet parsing/summaries and per-sheet read-error isolation | PASS — source/test added; runtime SKIPPED |
 | Reviewed Grid-to-canonical conversion | Pure converter requires explicit per-assignment reviewer decisions; preserves target Schedule and returns PREPARED provenance | PASS — source/test added; runtime SKIPPED |
 | Blocked sections and out-of-range assignments | Blocked sections can only be excluded; out-of-range assignments cannot be included | PASS — source/test added; runtime SKIPPED |
 | Existing Schedule preservation and collision handling | Existing months/assignments retained; duplicate employee+shift/day collision fails closed | PASS — source/test added; runtime SKIPPED |
-| Strict concurrent-writer compare-and-set | Repository interface has no atomic CAS; coordinator uses repeated read-before-save checks only | MISSING — race remains | 
-| Grid workflow coordinator | Scan report → live target load/revision → review → conversion → journal → canonical repository save/recovery replay | PASS — source/test added; runtime SKIPPED |\n| Production Grid UI/controller invokes conversion | `ImportExcelPage` → `GridRosterReviewPage` → workflow coordinator → canonical repository | PASS — source integrated; runtime SKIPPED |
+| Strict concurrent-writer compare-and-set | Repository interface has no atomic CAS; coordinator uses repeated read-before-save checks only | MISSING — race remains |
+| Grid workflow coordinator | Scan report → live target load/revision → review → conversion → journal → canonical repository save/recovery replay | PASS — source/test added; runtime SKIPPED | 
+| Production Grid UI/controller invokes conversion | `ImportExcelPage` → `GridRosterReviewPage` → workflow coordinator → canonical repository | PASS — source integrated; runtime SKIPPED |
 | Calendar sync after explicit approval | Not wired by this change | MISSING |
 | Dart format, analyze and Flutter tests | Not executed in connector environment | SKIPPED |
 
