@@ -331,3 +331,10 @@ The [Schedule Persistence Writer Inventory](docs/SCHEDULE_PERSISTENCE_WRITER_INV
 | Requirement | Scope | Evidence | Status | Remaining proof |
 |---|---|---|---|---|
 | RI-036 | Monotonic Schedule revision tokens, ABA protection and tombstone-based conditional delete | Proposed ADR contract: generation + state + canonical content fingerprint; no implementation selected | PROPOSED — design only | Platform-backed atomic transaction, migration and interleaved-writer tests |
+
+
+## 2026-11-24 — Cross-platform persistence candidate screening
+
+| Requirement | Scope | Evidence | Status | Remaining proof |
+|---|---|---|---|---|
+| RI-037 | Screen transaction-capable storage candidates against active release platforms | Drift, sqflite companion packages, Sembast and existing SharedPreferences documented in the persistence ADR | PARTIAL — package-documentation screen only; no package selected | Prototype and execute atomicity, crash, migration and Web multi-tab tests on all five active targets |
