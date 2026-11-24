@@ -135,7 +135,7 @@ void main() {
 
     expect(committed, isA<Success<Schedule>>());
     expect(repository.value?.months, hasLength(1));
-    expect(repository.value!.month(DateTime(2026, 11, 1))!.days, hasLength(7));
+    expect(repository.value!.month(DateTime(2026, 11, 1))!.days, hasLength(30));
     expect(
       repository.value!.month(DateTime(2026, 11, 1))!
           .day(DateTime(2026, 11, 7))!
