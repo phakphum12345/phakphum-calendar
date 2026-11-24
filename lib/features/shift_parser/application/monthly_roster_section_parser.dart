@@ -274,6 +274,12 @@ class MonthlyRosterSectionParser {
         end: DateTime(period.end.year, period.end.month, period.end.day),
       );
     } on FormatException {
+      // Do not downgrade a malformed or ambiguous explicit range to a
+      // month-only period. That would silently discard the dates in the title.
+      if (RegExp(r'\\d{1,2}[^\\n]*(?:-|ถึง)\\s*\\d{1,2}').hasMatch(text)) {
+        rethrow;
+      }
+
       final monthPattern = _thaiMonths.keys.join('|');
       final match = RegExp(
         '($monthPattern)\\s*(?:พ\\.?\\s*ศ\\.?)?\\s*(\\d{2,4})',
