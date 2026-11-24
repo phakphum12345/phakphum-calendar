@@ -15,7 +15,7 @@ void main() {
   setUp(() async {
     tempDirectory = await Directory.systemTemp.createTemp('schedule-cas-');
     databaseFile = File('${tempDirectory.path}/schedule.sqlite');
-    database = SpikeDatabase(NativeDatabase(databaseFile));
+    database = SpikeDatabase(NativeDatabase.createInBackground(databaseFile));
     store = ConditionalScheduleStore(database);
     await database.customStatement('PRAGMA busy_timeout = 5000');
   });
@@ -151,7 +151,7 @@ void main() {
   });
 
   test('two independent instances have one CAS winner', () async {
-    final secondDatabase = SpikeDatabase(NativeDatabase(databaseFile));
+    final secondDatabase = SpikeDatabase(NativeDatabase.createInBackground(databaseFile));
     try {
       final secondStore = ConditionalScheduleStore(secondDatabase);
       await secondDatabase.customStatement('PRAGMA busy_timeout = 5000');
