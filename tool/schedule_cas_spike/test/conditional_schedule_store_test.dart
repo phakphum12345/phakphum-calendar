@@ -17,15 +17,6 @@ void main() {
     database = SpikeDatabase(NativeDatabase(databaseFile));
     store = ConditionalScheduleStore(database);
     await database.customStatement('PRAGMA busy_timeout = 5000');
-    await database.customStatement('''
-      CREATE TABLE IF NOT EXISTS schedule_records (
-        schedule_id TEXT PRIMARY KEY NOT NULL,
-        generation INTEGER NOT NULL,
-        state TEXT NOT NULL CHECK (state IN ('live', 'deleted')),
-        payload TEXT,
-        fingerprint TEXT
-      )
-    ''');
   });
 
   tearDown(() async {
@@ -136,6 +127,26 @@ void main() {
     );
     expect(recreated.status, ConditionalWriteStatus.saved);
     expect(recreated.current.revision.generation, 3);
+  });
+
+  test('a stale non-absent token cannot recreate a physically missing row', () async {
+    final created = await store.compareAndSet(
+      scheduleId: 'schedule-missing',
+      expected: ScheduleRevision.absent,
+      replacementPayload: '{"value":"created"}',
+    );
+    await database.customStatement(
+      'DELETE FROM schedule_records WHERE schedule_id = ?',
+      [Variable.withString('schedule-missing')],
+    );
+
+    final stale = await store.compareAndSet(
+      scheduleId: 'schedule-missing',
+      expected: created.current.revision,
+      replacementPayload: '{"value":"must-not-resurrect"}',
+    );
+    expect(stale.status, ConditionalWriteStatus.conflict);
+    expect(stale.current.revision.state, RevisionState.absent);
   });
 
   test('two independent database instances have exactly one CAS winner', () async {
