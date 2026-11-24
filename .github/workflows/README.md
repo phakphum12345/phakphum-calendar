@@ -7,7 +7,7 @@ The active build and delivery surface covers **Windows, Web, Android, iOS, and L
 - `web.yml` — Flutter Web release + GitHub Pages deployment.
 - `android.yml` — Android release APK build artifact.
 - `ios.yml` — independent unsigned iOS release app build artifact.
-- `macos.yml` — independent macOS/Xcode unsigned release app build + ZIP/SHA-256 artifacts.
+- `macos.yml` — independent macOS/Xcode ad-hoc-signed release app build + ZIP/SHA-256 artifacts.
 - `linux.yml` — Linux x64 release bundle archive.
 - `pull-request-gate.yml` — core PR evidence gate for Auto Detect CI, Windows, Web, Android, and Linux.
 - `ios-evidence-gate.yml` — non-blocking PR advisory report for independent iOS evidence.
@@ -32,7 +32,7 @@ For the current stabilization phase:
 | Post-merge final evidence gate | Supported | `final-gate.yml` |
 | Android | Build supported | `android.yml` |
 | iOS | Unsigned build supported | `ios.yml` |
-| macOS | Unsigned build supported | `macos.yml` (independent Xcode workflow) |
+| macOS | Ad-hoc-signed build supported | `macos.yml` (independent Xcode workflow) |
 | Linux x64 | Build supported | `linux.yml` |
 | Backend/Laravel | CI supported | `laravel.yml` (tests only; no deployment) |
 
@@ -179,8 +179,7 @@ artifact.
 The concurrency group is unique per run and does not cancel another macOS
 build. GitHub may still queue a run while no matching macOS runner capacity is
 available; that is runner allocation, not a dependency on another CI workflow.
-The artifact is unsigned and is not a Developer ID-signed or notarized
-distribution package. Signing and notarization require a separately approved
+The project uses the ad-hoc signing identity (`CODE_SIGN_IDENTITY = "-"`). The artifact is not Developer ID-signed or notarized and is not a distribution-ready package. Signing and notarization require a separately approved
 release configuration and credentials.
 
 This workflow reports its own result. Its existence does not silently add
