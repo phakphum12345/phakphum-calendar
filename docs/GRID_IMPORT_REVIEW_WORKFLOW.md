@@ -334,6 +334,7 @@ Test source covers the complete service-level scan/review-convert-commit-save fl
 
 Added:
 - `lib/features/shift_parser/presentation/pages/grid_roster_review_page.dart`
+- `test/grid_roster_review_page_test.dart`
 - Grid workflow composition in `AppDependencies.createGridRosterImportWorkflow()`
 - Grid review entry action in `ImportExcelPage`
 - Full-worksheet read access in `ExcelImportController.readAllRows()`
