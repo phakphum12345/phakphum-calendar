@@ -273,7 +273,7 @@ Important distinction: PASS in this table means the source path or test case exi
 | Stale target revision guard | Commit requires caller-supplied current revision to equal provenance target revision | PASS — source contract; live repository revalidation remains caller responsibility |
 | Idempotent retry and conflicting run-ID protection | Same run + identical Schedule/fingerprint returns existing bundle; conflicting reuse rejected | PASS — source/test added; runtime SKIPPED |
 | Atomic/durable cross-key transaction | SharedPreferences has no documented cross-key transaction or durable atomic-write guarantee | UNKNOWN — not claimed |
-| Reviewed Grid-to-canonical conversion | Pure converter requires explicit per-assignment reviewer decisions; preserves target Schedule and returns PREPARED provenance | PASS — source/test added; runtime SKIPPED |
+| Local XLSX multi-sheet Grid scanner | SHA-256 source fingerprint, per-sheet parsing/summaries and per-sheet read-error isolation | PASS — source/test added; runtime SKIPPED |\n| Reviewed Grid-to-canonical conversion | Pure converter requires explicit per-assignment reviewer decisions; preserves target Schedule and returns PREPARED provenance | PASS — source/test added; runtime SKIPPED |
 | Blocked sections and out-of-range assignments | Blocked sections can only be excluded; out-of-range assignments cannot be included | PASS — source/test added; runtime SKIPPED |
 | Existing Schedule preservation and collision handling | Existing months/assignments retained; duplicate employee+shift/day collision fails closed | PASS — source/test added; runtime SKIPPED |
 | Production Grid UI/controller invokes conversion | Converter is not yet wired to a production route/controller | MISSING |
