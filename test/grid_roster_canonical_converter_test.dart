@@ -108,6 +108,60 @@ void main() {
   });
 
 
+
+  test('accepts an explicit template choice for an unsupported source label', () {
+    const template = ShiftTemplate(
+      id: 'template-special',
+      code: 'SPECIAL',
+      name: 'Special Clinic',
+      shortName: 'SPC',
+      startTime: Duration(hours: 9),
+      endTime: Duration(hours: 13),
+      color: 0xff654321,
+      workingHours: 4,
+    );
+    final session = _session(
+      builder,
+      rowLabel: 'คลินิกพิเศษ',
+    );
+    expect(session.assignments.single.shiftRule.isResolved, isFalse);
+    final source = session.assignments.single.source;
+    final sourceId = GridRosterCanonicalConverter.assignmentId(
+      session.sourceFingerprint,
+      source,
+    );
+
+    final result = converter.convert(
+      session: session,
+      targetSchedule: Schedule(id: 'schedule-1', name: 'November 2026'),
+      employees: [_employee],
+      shiftTemplates: const [template],
+      decisions: {
+        sourceId: GridRosterAssignmentDecision(
+          include: true,
+          employeeId: _employee.id,
+          shiftTemplateId: template.id,
+          reviewerId: 'reviewer-1',
+          reviewedAtUtc: createdAt,
+        ),
+      },
+      importRunId: 'run-explicit-template-override',
+      parserVersion: 'grid-parser/1',
+      createdAtUtc: createdAt,
+    );
+
+    final assignment = result.schedule
+        .month(DateTime(2026, 11, 1))!
+        .day(DateTime(2026, 11, 1))!
+        .assignments.single;
+    expect(assignment.shift.id, template.id);
+    expect(assignment.shift.code, 'SPECIAL');
+    expect(
+      result.preparedProvenance.assignments.single.shiftRuleKind.name,
+      'configuredTemplate',
+    );
+  });
+
   test('rejects a configured template changed after the review snapshot', () {
     const reviewedTemplate = ShiftTemplate(
       id: 'template-gen',
@@ -279,6 +333,7 @@ void main() {
 GridRosterReviewSession _session(
   GridRosterReviewSessionBuilder builder, {
   bool blocked = false,
+  String rowLabel = 'GEN',
   List<ShiftTemplate> shiftTemplates = const [],
 }) {
   final report = MonthlyRosterParseReport(
@@ -301,7 +356,7 @@ GridRosterReviewSession _session(
         assignments: [
           MonthlyRosterAssignment(
             sectionTitle: 'GEN November 2026',
-            rowLabel: 'GEN',
+            rowLabel: rowLabel,
             rowIndex: 2,
             workerName: 'Somchai Example',
             date: DateTime(2026, 11, 1),
