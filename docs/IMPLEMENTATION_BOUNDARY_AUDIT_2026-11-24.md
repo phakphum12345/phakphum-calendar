@@ -231,3 +231,57 @@ Validation:
 - **Automated Flutter/Dart tests: SKIPPED** — this connector session cannot execute the repository's test runner. The self-hosted Windows workflow is manual-only and restricted to trusted `main`; no PR or main-branch workflow was triggered.
 - **Formatting/analyzer: UNKNOWN** — not executed.
 - No Calendar writes, data migration, deployment, PR creation or merge was performed.
+
+
+## 11. Import and generator pipeline refinement
+
+Additional source files inspected:
+- `lib/features/excel_import/presentation/controllers/excel_import_controller.dart`
+- `lib/features/excel_import/data/excel_reader_service.dart`
+- `lib/features/excel_import/application/import_engine.dart`
+- `lib/features/shift_parser/application/snapshot_normalizer.dart`
+- `lib/features/shift_parser/application/monthly_roster_workbook_scanner.dart`
+- `lib/features/shift_parser/application/hospital_roster_parser.dart`
+- `lib/features/schedule/data/imported_schedule_adapter.dart`
+- `lib/features/schedule/data/legacy_schedule_adapter.dart`
+- `lib/features/schedule_generation/application/schedule_generator.dart`
+- `lib/features/schedule_generation/application/monthly_roster_request_builder.dart`
+- `lib/features/universal_generator_adapter/application/generator_calendar_adapter.dart`
+
+### 11.1 Two import representations currently coexist
+
+**Tabular import path**
+`ExcelImportController → ExcelReaderService → ImportEngine → ShiftRecord → ImportedScheduleAdapter → canonical Schedule`
+
+- Reads XLSX worksheets as row/cell values.
+- Suggests column mappings and validates mapped records.
+- Produces `ShiftRecord` values, then the schedule adapter builds the canonical `Schedule` aggregate.
+- This path is generic column-oriented import, not section-aware monthly-grid parsing.
+
+**Roster-grid parsing path**
+`SpreadsheetSnapshot → SnapshotNormalizer → MonthlyRosterWorkbookScanner → MonthlyRosterSectionParser → MonthlyRosterShiftAdapter → legacy Shift`
+
+- Preserves worksheet identity, cell coordinates, raw values, colors and merged-cell metadata.
+- Scans worksheets independently and resolves section-local periods/date columns.
+- Produces legacy `Shift` values from selected workers after section-level date validation.
+- A compatibility adapter exists to convert legacy shifts into canonical schedule structures, but a complete production call graph from every scanner entry point to the canonical schedule writer was not proven in this inspection.
+
+These are distinct input contracts and should not be collapsed into one parser. A future shared canonical import result should preserve source coordinates, original cell values, review decisions, section boundaries, date anomalies and identity-resolution state.
+
+### 11.2 Generation has two separate meanings
+
+- `ScheduleGenerator` produces staffing assignments from a `GenerationRequest`, staff directory, monthly blueprint, staffing rules and coverage requirements.
+- `GeneratorCalendarAdapter` accepts already-created `GeneratorEventBatch` records and produces preview-only `CalendarEventCandidate` values. It has no Calendar gateway or sync executor.
+
+They are not the same generation stage. The adapter is an output-boundary bridge; it does not generate a roster or staffing plan.
+
+### 11.3 Integration gap to close
+
+The repository currently contains:
+1. Generic tabular import into `ShiftRecord`.
+2. Section-aware roster-grid interpretation into legacy `Shift`.
+3. Canonical `Schedule` domain and adapters.
+4. Staffing-rule-based schedule generation.
+5. Preview-only Universal Generator-to-Calendar adapter.
+
+The missing proof is a single documented, tested orchestration contract that shows which user workflow selects each path, how review/approval state is retained, and how generated or imported records enter the canonical schedule without losing provenance. Treat this as an integration backlog item, not a reason to delete one of the existing paths.
