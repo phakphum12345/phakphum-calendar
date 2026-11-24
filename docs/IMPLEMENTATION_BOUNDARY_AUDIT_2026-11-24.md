@@ -559,3 +559,12 @@ Files added:
 This is a preview composition boundary only. It does not save reviewer choices, revalidate a live target revision, create canonical Schedule assignments, persist provenance, expose a UI route or call Calendar services. Both session and assignment report `canCommit == false`.
 
 Tests cover composition, blocked-section preservation and required source/target evidence. **Runtime status: SKIPPED** — no Dart/Flutter test runner was executed.
+
+
+## 21. Preserve sections with invalid or ambiguous periods
+
+The `MonthlyRosterSectionParser.generateDateStructure` path no longer drops a section when its explicit period cannot be resolved. It retains a `MonthlyRosterSection` with original title and header row, null date bounds, no assignments, and a blocking `unresolved_period` anomaly. This gives downstream review a visible blocked section while avoiding fabricated dates or assignment rows.
+
+The conflicting-explicit-ranges test was updated to require this preserved section. The section safety classifier and review-session builder already preserve the section assessment. Raw unresolved date-cell/worker-cell associations are still not represented as assignments; a future review UI may need a separate unresolved-cell evidence model.
+
+**Runtime status: SKIPPED** — parser tests were not executed.
