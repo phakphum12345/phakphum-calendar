@@ -278,7 +278,7 @@ Important distinction: PASS in this table means the source path or test case exi
 | Blocked sections and out-of-range assignments | Blocked sections can only be excluded; out-of-range assignments cannot be included | PASS — source/test added; runtime SKIPPED |
 | Existing Schedule preservation and collision handling | Existing months/assignments retained; duplicate employee+shift/day collision fails closed | PASS — source/test added; runtime SKIPPED |
 | Strict concurrent-writer compare-and-set | Repository interface has no atomic CAS; coordinator uses repeated read-before-save checks only | MISSING — race remains |
-| Grid workflow coordinator | Scan report → live target load/revision → review → conversion → journal → canonical repository save/recovery replay | PASS — source/test added; runtime SKIPPED | 
+| Grid workflow coordinator | Local XLSX scan → review → conversion → journal → canonical repository save/recovery replay; E2E service test source added | PASS — source/test added; runtime SKIPPED | 
 | Grid review UI default safety | All assignments default to excluded; widget test asserts no implicit inclusion | PASS — source/test added; runtime SKIPPED |
 | Production Grid UI/controller invokes conversion | `ImportExcelPage` → `GridRosterReviewPage` → workflow coordinator → canonical repository | PASS — source integrated; runtime SKIPPED |
 | Calendar sync after explicit approval | Not wired by this change | MISSING |
