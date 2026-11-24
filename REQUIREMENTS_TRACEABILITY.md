@@ -227,3 +227,17 @@ Important distinction: PASS in this table means the source path or test case exi
 | Require human review before commit | `requiresHumanConfirmation == true`, `canCommit == false` | PASS — fail-closed source contract |
 | Runtime shift mapping tests | Test source added; not executed | SKIPPED |
 | Durable mapping decision and Grid UI | Not implemented | MISSING |
+
+
+## 2026-11-24 Immutable Grid review-session composition
+
+| Requirement | Evidence | Status |
+|---|---|---|
+| Compose section safety assessment, identity candidates and shift-rule evidence | `GridRosterReviewSessionBuilder` | PASS — source added |
+| Bind review snapshot to source fingerprint and target schedule revision | Required caller-supplied values; blank values rejected | PASS — source added |
+| Preserve blocked section and its source assignments | Section review retains assessment and assignment evidence; blocked flag attached | PASS — source added |
+| Keep review snapshot immutable | Session and section assignment collections wrapped unmodifiable | PASS — source added |
+| Prevent preview from authorizing persistence | Session and assignment `canCommit == false` | PASS — fail-closed source contract |
+| Durable reviewer decisions, stale-revision revalidation and commit | Not part of this preview builder | MISSING |
+| Production UI route/controller | Not connected | MISSING |
+| Runtime builder tests | Test source added; not executed | SKIPPED |
