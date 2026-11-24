@@ -9,6 +9,7 @@ import '../../../models/shift.dart' show ShiftCategory;
 import '../domain/grid_roster_import_provenance.dart';
 import '../domain/monthly_roster_section.dart';
 import 'grid_roster_review_session.dart';
+import 'monthly_roster_section_parser.dart';
 import 'monthly_roster_section_safety.dart';
 
 /// Explicit reviewer decision for one stable source assignment.
