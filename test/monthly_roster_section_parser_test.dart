@@ -113,6 +113,32 @@ void main() {
     expect(report.assignments.single.workerName, 'บุคลากร A');
   });
 
+  test('does not use worksheet month when a section declares conflicting ranges', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, [
+          'GEN ประจำเดือน พฤศจิกายน 2569 '
+          '(1 พฤศจิกายน 2569 - 30 พฤศจิกายน 2569) '
+          '(1 ธันวาคม 2569 - 31 ธันวาคม 2569)',
+        ]),
+        ..._row(1, ['วันที่', 1, 2, 3, 4, 5, 6, 7]),
+        ..._row(2, ['GEN', 'บุคลากร A']),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, isEmpty);
+    expect(report.assignments, isEmpty);
+    expect(report.warnings, hasLength(1));
+    expect(report.warnings.single, contains('ไม่ใช้เดือนจากชื่อชีตแทน'));
+  });
+
   test('blocks malformed X-OPD dates without blocking a valid section', () {
     final portableDays = [
       ...List<int>.generate(15, (index) => index + 16),
