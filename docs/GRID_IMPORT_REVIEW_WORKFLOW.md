@@ -342,6 +342,7 @@ Added:
 The existing Excel import page now exposes a separate **Grid** action for local XLSX workbooks. It scans every worksheet, attempts journal recovery for target Schedule `imported`, loads active employees and shift templates, and opens the review page. The original column-mapping/tabular import path is left intact.
 
 Review UI behavior:
+- Worksheet read/parse warnings are carried into the review session and shown before any decision.
 - Every assignment starts excluded; no worker is auto-selected.
 - The reviewer must provide a reviewer label, explicitly opt assignments in, and select an employee.
 - Resolved built-in/configured shift rules are shown. An explicit active Shift Template can be selected to override an unsupported or ambiguous source label.
