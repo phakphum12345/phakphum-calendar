@@ -107,7 +107,6 @@ class ShiftPayCalculationSnapshotApiTest extends TestCase
             ->assertJsonPath('data.rule.id', 'organization-night');
     }
 
-
     public function test_hybrid_personal_first_uses_personal_rule_without_combining_organization_amount(): void
     {
         $organization = $this->postJson('/api/v1/organizations', [
