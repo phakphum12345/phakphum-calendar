@@ -273,8 +273,11 @@ Important distinction: PASS in this table means the source path or test case exi
 | Stale target revision guard | Commit requires caller-supplied current revision to equal provenance target revision | PASS — source contract; live repository revalidation remains caller responsibility |
 | Idempotent retry and conflicting run-ID protection | Same run + identical Schedule/fingerprint returns existing bundle; conflicting reuse rejected | PASS — source/test added; runtime SKIPPED |
 | Atomic/durable cross-key transaction | SharedPreferences has no documented cross-key transaction or durable atomic-write guarantee | UNKNOWN — not claimed |
-| Production Grid UI/controller and canonical conversion | Journal not yet invoked by a production Grid workflow | MISSING |
+| Reviewed Grid-to-canonical conversion | Pure converter requires explicit per-assignment reviewer decisions; preserves target Schedule and returns PREPARED provenance | PASS — source/test added; runtime SKIPPED |
+| Blocked sections and out-of-range assignments | Blocked sections can only be excluded; out-of-range assignments cannot be included | PASS — source/test added; runtime SKIPPED |
+| Existing Schedule preservation and collision handling | Existing months/assignments retained; duplicate employee+shift/day collision fails closed | PASS — source/test added; runtime SKIPPED |
+| Production Grid UI/controller invokes conversion | Converter is not yet wired to a production route/controller | MISSING |
 | Calendar sync after explicit approval | Not wired by this change | MISSING |
 | Dart format, analyze and Flutter tests | Not executed in connector environment | SKIPPED |
 
-**Interpretation:** PASS means source/test contract exists, not that runtime tests passed. The journal is a recoverable two-slot persistence primitive, not a database transaction. Platform durability remains unverified. Production Grid UI, canonical conversion, live target-revision reload/revalidation, and Calendar handoff remain separate E2E gates.
+**Interpretation:** PASS means source/test contract exists, not that runtime tests passed. The journal is a recoverable two-slot persistence primitive, not a database transaction. Platform durability remains unverified. Production Grid UI, live target-revision reload/revalidation, journal invocation from the production workflow, startup recovery, and Calendar handoff remain separate E2E gates.
