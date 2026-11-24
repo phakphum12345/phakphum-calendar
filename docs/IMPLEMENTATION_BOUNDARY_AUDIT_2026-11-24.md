@@ -347,3 +347,92 @@ The separate `GeneratorCalendarAdapter.preview` remains a preview-only conversio
 4. Trace generation UI/controller callers. Define whether generated assignments augment an imported Schedule or produce a separate draft; require preview and human approval before persistence.
 5. Add integration tests for import → review → canonical conversion → save → reload and generation → preview → approval → save. Keep Calendar sync as a separate approved side-effect boundary.
 6. Only after call-site and regression evidence exists, consider adapters or orchestration refactors. Do not delete either import path or alter existing persisted data as part of this work.
+
+
+## 13. UI call-site and existing integration-test trace (follow-up correction)
+
+This section supersedes the narrower uncertainty in §12.1 for the tabular Excel import UI. The actual route and call sites were located on the active branch.
+
+### 13.1 Verified Excel import UI orchestration
+
+Source trace:
+- `lib/app.dart` registers `ImportExcelPage.routeName` and injects:
+  - `dependencies.createExcelImportController`
+  - `dependencies.createImportedSchedule`
+  - `dependencies.createImportedScheduleController`
+  - `dependencies.saveImportedSchedule`
+  - `dependencies.loadImportedSchedule`
+  - employee and shift-template repositories/controllers.
+- `ImportExcelPage._runImport` awaits `controller.importRows(mapping)`, obtains the records, builds a canonical schedule, then opens `ImportSummaryPage`.
+- `ImportSummaryPage._resolvedRecords` applies reviewed employee and shift-template selections to each `ShiftRecord`.
+- When staging is enabled, `_loadExistingSchedule` loads the existing imported schedule; `ImportStagingPlanner` builds the review plan; `_currentSchedule` applies the selected included rows through `ImportStagingApplier`.
+- `_saveSchedule` requires employee review, shift review, staging readiness, and no prior successful save before invoking the injected saver.
+- `AppDependencies.saveImportedSchedule` calls `ScheduleRepository.save`.
+- After a successful save, `_isSaved` becomes true; the Calendar page receives `enableCalendarSync: true` only in that state.
+
+This confirms an actual tabular import → review/staging → canonical schedule → repository-save UI path. It is not merely a set of disconnected composition-root methods.
+
+### 13.2 Existing integration-test evidence (test source inspected; execution not performed)
+
+`test/import_excel_page_test.dart` contains a widget-level flow that:
+1. Opens a generated XLSX workbook and selects its Roster worksheet.
+2. Uses column mapping to produce a ShiftRecord.
+3. Opens the ImportSummaryPage.
+4. Asserts that the imported schedule does not exist in the repository before explicit confirmation.
+5. Taps the confirmation/save action.
+6. Reloads schedule id `imported` from the repository and asserts that one month was persisted.
+
+`test/import_summary_employee_review_test.dart` includes widget tests that:
+- Keep Save disabled while employee identity is ambiguous.
+- Require an explicit employee selection before saving.
+- Verify the selected canonical employee identity and department on the saved assignment.
+- Lock employee/shift review controls after successful save.
+- Build a workflow preview from the saved schedule and verify the expected addition.
+
+These are substantive existing tests for import confirmation and review. Their presence is source-verified, but this connector session has not executed Flutter tests; runtime status remains **SKIPPED**, not PASS.
+
+### 13.3 Roster-grid parser integration remains unproven
+
+The repository contains:
+- `MonthlyRosterWorkbookScanner` and its unit tests.
+- `HospitalRosterParser` and date-first parser tests.
+- `SmartRosterAnalyzeGenerator`, which merges legacy and monthly candidates for review and explicitly does not sync or mutate the source roster.
+
+However, the inspected app route tree and composition root do not register a production UI flow that invokes `MonthlyRosterWorkbookScanner` or `HospitalRosterParser`. The tests call these parser classes directly. Therefore:
+- Parser behavior and unit/e2e test contracts exist.
+- Production UI selection, review, canonical conversion, provenance retention and repository persistence for the roster-grid path remain **UNKNOWN**.
+- Do not infer that the generic Excel tabular import route also invokes the section-aware roster-grid parser.
+
+### 13.4 Generation and Universal Generator integration boundary
+
+- `ScheduleGenerator.autoAssign` delegates to `AutoAssignmentService.generate`, which builds a new immutable Schedule value using `ScheduleAssignmentWriter` and returns a `GenerationResult` with conflicts and uncovered requirements.
+- The inspected app dependency registration exposes schedule editing and imported-schedule capabilities, but no production route/controller invocation of `MonthlyRosterRequestBuilder` or `ScheduleGenerator` was found in the route tree.
+- `GeneratorCalendarAdapter.preview` returns candidates and issues only. `GeneratorAdapterPreview` explicitly requires user confirmation and has no persistence or Calendar sync executor.
+- No production roster-generation → approval → persistence → Calendar execution workflow is established by the inspected source.
+
+### 13.5 Revised boundary matrix
+
+| Boundary | Updated evidence | Status |
+|---|---|---|
+| Excel UI route → import controller | `app.dart` dependency injection and `ImportExcelPage` | PASS (source trace) |
+| Import controller → ShiftRecord | Controller and ImportEngine contracts | PASS (source trace) |
+| ImportSummary review → resolved records | Employee/shift review selections applied in `_resolvedRecords` | PASS (source trace) |
+| Existing schedule load → staging plan | Injected loader and staging planner/applier | PASS (source trace) |
+| Explicit confirmation → repository save | `_saveSchedule` → injected saver → `ScheduleRepository.save` | PASS (source trace) |
+| Import UI → repository reload integration test | Test asserts absent before confirmation and present after save | PASS (test source); execution SKIPPED |
+| Employee identity review before save | Widget tests assert disabled-until-selected and saved identity | PASS (test source); execution SKIPPED |
+| Roster-grid parser → production UI | Direct parser tests found; production route not found in inspected tree | UNKNOWN |
+| Roster-grid provenance → canonical persisted record | Conversion metadata is separate; end-to-end persistence not found | UNKNOWN |
+| Monthly roster builder/generator → production UI | No route/controller invocation found in inspected tree | UNKNOWN |
+| Generation result → repository save | No owning orchestration call found | UNKNOWN |
+| Universal Generator preview → Calendar executor | Adapter is preview-only by explicit contract | SKIPPED (outside adapter scope) |
+| Flutter/Dart test execution | No execution performed in connector session | SKIPPED |
+
+### 13.6 Next safe implementation work
+
+1. Keep the verified tabular import workflow intact; do not duplicate its already-tested review/save sequence.
+2. Locate or define the intended user entry point for the roster-grid parser, then add an explicit reviewed conversion result that retains source sheet/cell, section, date anomaly and review-decision metadata.
+3. Define whether generated rosters are new drafts or augmentations of imported schedules. Do not silently merge generated assignments into a saved schedule.
+4. Add a generation orchestration controller with preview, conflict/uncovered-coverage review, explicit approval, and repository save only after approval.
+5. Add end-to-end tests for roster-grid parse → review → canonical conversion → save/reload, and generation → preview → approval → save/reload.
+6. Keep Calendar sync as a separate, explicit user-authorized side effect. No Calendar write is implied by parsing, generation, preview or repository save.
