@@ -124,3 +124,24 @@ These are target contracts, not claims that the features are complete. Update st
 | RI-027 | Legacy workflow backward compatibility during modularization | PARTIAL | Existing public entry points and regression suite remain operational |
 
 See [Module Catalog and Ownership Map](docs/MODULE_CATALOG.md). Directory presence is inventory evidence only; it does not establish runtime registration or feature completeness.
+
+
+## 2026-11-24 — UI integration trace refresh
+
+**Inspected branch:** `docs/universal-roster-intelligence-masterplan-2026-11-24`  
+**Inspection commit at start of this refresh:** `ab48dc2217cd6ee27bce639dcd00187983ea8293`  
+**Evidence type:** source and test-source inspection only; Flutter/Dart execution was not performed.
+
+| Requirement | Exact source / test evidence | Updated status | Remaining proof |
+|---|---|---|---|
+| RI-008 Tabular import into canonical Schedule | `app.dart`, `ImportExcelPage`, `ImportSummaryPage`, `ImportedScheduleAdapter` | PASS — source path traced | Execute exact-head widget/integration tests |
+| RI-010 Human identity and shift review | `ImportSummaryPage._resolvedRecords`; `test/import_summary_employee_review_test.dart` | PASS — source/test cases exist | Execute tests; add restart durability coverage |
+| RI-011 Existing-schedule staging and explicit confirmation | `_loadExistingSchedule`, `ImportStagingPlanner`, `ImportStagingApplier`, `_saveSchedule` | PASS — source path traced | Execute staging tests and stale-revision/failure cases |
+| RI-013 Tabular import save and reload | `AppDependencies.saveImportedSchedule`; `test/import_excel_page_test.dart` | PASS — integration test source exists | Runtime execution remains SKIPPED |
+| Grid parser production workflow | `MonthlyRosterWorkbookScanner`, `HospitalRosterParser`, direct parser tests | UNKNOWN — no production UI route/caller established in inspected route tree | Identify product entry point and trace conversion/review/save |
+| Provenance durability for both import paths | `ShiftRecord`, `MonthlyRosterSection`, `LegacyScheduleAdapter`, `ScheduleJsonCodec` | UNKNOWN — canonical schema v1 omits source/review evidence | Implement versioned envelope and atomic/recoverable commit |
+| Staffing generation UI orchestration | `MonthlyRosterRequestBuilder`, `ScheduleGenerator`, `AutoAssignmentService` | UNKNOWN — no production route/controller invocation found in inspected tree | Define draft workflow, approval and persistence use case |
+| Generated schedule persistence | `GenerationResult` and `ScheduleRepository` inspected separately | UNKNOWN — no generation-to-save orchestration found | Add approved commit use case and reload tests |
+| Universal Generator Calendar execution | `GeneratorCalendarAdapter`, `GeneratorAdapterPreview` | SKIPPED — adapter explicitly preview-only | Separate authorized Calendar execution project/contract |
+
+Important distinction: PASS in this table means the source path or test case exists and was inspected; it does not mean tests were executed or the full production behavior was runtime-verified. UNKNOWN and SKIPPED remain open.
