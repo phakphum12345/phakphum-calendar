@@ -112,3 +112,21 @@ erDiagram
 ## Migration inventory
 
 Review the exact files under `backend/database/migrations/` before changing the schema. Every schema change must include a migration, feature tests for constraints and relationships, and an explicit rollback/data-preservation assessment.
+
+
+## Shift Pay configuration tables (additive)
+
+### `user_shift_pay_profiles`
+
+- One row per user, keyed by `user_id` with a restrictive user foreign key.
+- Stores mode (`personal`, `organization`, `hybrid`), selected organization ID, hybrid precedence, currency code, decimal precision, personal rule JSON and a monotonically incremented configuration version.
+- Organization selection is checked against active membership by the API.
+
+### `organization_shift_pay_profiles`
+
+- One row per organization, with a restrictive organization foreign key.
+- Stores organization-owned rule JSON, currency code, decimal precision and configuration version.
+- Read access requires active membership; writes require owner/admin role.
+- Existing `organization_shift_policies` and their approval semantics remain unchanged.
+
+Both tables are new and additive. Existing users, organizations, policies, shift transactions, participants, transfers and event history are not rewritten. The JSON rule payload is validated against the shared Flutter Shift Pay vocabulary by the API. The tables persist configuration only; no historical payroll snapshot is inferred or backfilled.
