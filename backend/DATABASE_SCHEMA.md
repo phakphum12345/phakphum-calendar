@@ -138,4 +138,5 @@ Both tables are new and additive. Existing users, organizations, policies, shift
 - Stores an idempotency key and request hash unique per user.
 - Stores mode, selected source, calculation engine version, personal/organization configuration versions, exact input JSON, selected rule JSON, result JSON and calculation timestamp.
 - Has no update timestamp or update endpoint; application flow inserts snapshots and only reads them afterward.
+- User/calculation-time and organization/calculation-time indexes support scoped history retrieval.
 - Snapshots preserve historical inputs and selected rule data; changing a profile does not rewrite prior results.
