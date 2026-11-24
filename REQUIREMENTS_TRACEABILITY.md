@@ -288,3 +288,16 @@ Important distinction: PASS in this table means the source path or test case exi
 | Excel hidden-sheet and background-color evidence | Current ExcelReaderService does not expose these fields | UNKNOWN |
 
 **Interpretation:** PASS means source/test contract exists, not that runtime tests passed. The journal is a recoverable two-slot persistence primitive, not a database transaction. Platform durability remains unverified. The UI calls recovery before a new Grid scan, but recovery is not yet an app-startup hook. Strict compare-and-set is missing, and Calendar handoff remains separate.
+
+---
+
+## 2026-11-24 — Grid import recovery and concurrency follow-up
+
+| Requirement | Scope | Current source evidence | Status | Remaining proof |
+|---|---|---|---|---|
+| RI-025 | Reject recovery when canonical Schedule advanced after the journal base revision | `GridRosterImportWorkflow.recover`; `test/grid_roster_import_workflow_test.dart` | SOURCE + TEST ADDED; NOT EXECUTED | Run focused Flutter test on exact head |
+| RI-026 | Idempotent recovery when canonical Schedule already matches accepted fingerprint | `GridRosterImportWorkflow.recover`; workflow regression test | SOURCE + TEST ADDED; NOT EXECUTED | Run focused Flutter test on exact head |
+| RI-027 | Atomic conditional Schedule persistence across concurrent writers | `ScheduleRepository` currently has no conditional write contract; SharedPreferences uses read/write/pointer steps | MISSING | Implement transaction-backed CAS and interleaved-writer tests |
+| RI-028 | Startup discovery/recovery for all journaled Schedule IDs | Journal currently accepts a Schedule ID; no durable index/enumeration contract | MISSING | Add versioned index, rebuild/recovery semantics and startup conflict reporting |
+
+The new [Grid import recovery and concurrency contract](docs/GRID_IMPORT_RECOVERY_AND_CONCURRENCY.md) defines the safe implementation boundary and release gates. The two new workflow tests are source additions only; they have not been executed in a Flutter-capable environment. No atomic concurrency guarantee is claimed.
