@@ -128,6 +128,17 @@ class ShiftPayCalculationController
         return response()->json(['data' => $this->snapshotResponse($snapshot)], 201);
     }
 
+    public function show(Request $request, string $snapshotId): JsonResponse
+    {
+        $snapshot = DB::table('shift_pay_calculation_snapshots')
+            ->where('id', $snapshotId)
+            ->where('user_id', $request->user()->id)
+            ->first();
+        abort_unless($snapshot !== null, 404, 'Shift Pay snapshot not found.');
+
+        return response()->json(['data' => $this->snapshotResponse($snapshot)]);
+    }
+
     private function snapshotResponse(object $snapshot): array
     {
         return [
