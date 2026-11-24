@@ -164,7 +164,9 @@ class GridRosterImportWorkflow {
   ///
   /// If repository save fails after the journal commit, recover() can replay
   /// the committed Schedule only when the live repository is still at the
-  /// original target revision. It will not overwrite a newer Schedule.
+  /// original target revision. A final read-before-save guard rejects any
+  /// newer revision it observes; ScheduleRepository does not expose CAS, so
+  /// a concurrent write in the remaining read/save window is not eliminated.
   Future<Result<Schedule>> commit({
     required GridRosterImportReviewContext context,
     required GridRosterCanonicalConversionResult conversion,
@@ -268,6 +270,20 @@ class GridRosterImportWorkflow {
         );
       }
 
+      final beforeRecoverySave = await _scheduleRepository.findById(scheduleId);
+      if (beforeRecoverySave case Failure<Schedule?>()) {
+        return beforeRecoverySave;
+      }
+      final latest = (beforeRecoverySave as Success<Schedule?>).value;
+      if (revisionFor(latest, scheduleId) != snapshot.provenance.targetScheduleRevision) {
+        if (latest != null &&
+            scheduleFingerprint(latest) == acceptedFingerprint) {
+          return Success(latest);
+        }
+        return const ValidationFailure(
+          'Recovery target changed during replay. No Schedule was overwritten.',
+        );
+      }
       final saved = await _scheduleRepository.save(snapshot.schedule);
       return switch (saved) {
         Success<Schedule>(value: final schedule) => Success(schedule),
