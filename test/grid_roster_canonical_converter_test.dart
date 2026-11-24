@@ -215,6 +215,82 @@ void main() {
     );
   });
 
+
+  test('keeps identical section titles from separate worksheets distinct', () {
+    final report = MonthlyRosterParseReport(
+      sections: [
+        for (var sheet = 0; sheet < 2; sheet++)
+          MonthlyRosterSection(
+            title: 'GEN November 2026',
+            headerRowIndex: 1,
+            startDate: DateTime(2026, 11, 1),
+            endDate: DateTime(2026, 11, 30),
+            sourceSpreadsheetId: '',
+            sourceSheetId: sheet,
+            sourceSheetTitle: 'Sheet $sheet',
+            assignments: [
+              MonthlyRosterAssignment(
+                sectionTitle: 'GEN November 2026',
+                rowLabel: 'GEN',
+                rowIndex: 2,
+                workerName: 'Somchai Example',
+                date: DateTime(2026, 11, 1),
+                sourceCell: 'B3',
+                spreadsheetId: '',
+                sheetId: sheet,
+                sheetTitle: 'Sheet $sheet',
+              ),
+            ],
+          ),
+      ],
+      warnings: const [],
+    );
+    final session = builder.build(
+      report: report,
+      employees: [_employee],
+      shiftTemplates: const [],
+      sourceFingerprint: 'sha256:two-sheets',
+      targetScheduleId: 'schedule-1',
+      targetScheduleRevision: 'revision-1',
+    );
+    final firstId = GridRosterCanonicalConverter.assignmentId(
+      session.sourceFingerprint,
+      session.assignments[0].source,
+    );
+    final secondId = GridRosterCanonicalConverter.assignmentId(
+      session.sourceFingerprint,
+      session.assignments[1].source,
+    );
+
+    final result = converter.convert(
+      session: session,
+      targetSchedule: Schedule(id: 'schedule-1', name: 'November 2026'),
+      employees: [_employee],
+      shiftTemplates: const [],
+      decisions: {
+        firstId: GridRosterAssignmentDecision(
+          include: true,
+          employeeId: _employee.id,
+          reviewerId: 'reviewer-1',
+          reviewedAtUtc: createdAt,
+        ),
+        secondId: GridRosterAssignmentDecision(
+          include: false,
+          reviewerId: 'reviewer-1',
+          reviewedAtUtc: createdAt,
+        ),
+      },
+      importRunId: 'run-two-sheets',
+      parserVersion: 'grid-parser/1',
+      createdAtUtc: createdAt,
+    );
+
+    expect(firstId, isNot(secondId));
+    expect(result.preparedProvenance.sections, hasLength(2));
+    expect(result.includedAssignmentCount, 1);
+    expect(result.excludedAssignmentCount, 1);
+  });
+
   test('requires a decision for every source assignment', () {
     final session = _session(builder);
     expect(
