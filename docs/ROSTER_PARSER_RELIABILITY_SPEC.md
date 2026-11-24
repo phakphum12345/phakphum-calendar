@@ -172,11 +172,11 @@ This work is accepted only when focused tests reproduce the reported behavior, r
 
 The parser implementation now prioritizes adjacent date tokens connected by an explicit range separator (`-`, `ถึง`, or `to`) over unrelated earlier date-like tokens in a heading. This prevents numeric unit identifiers (for example `ภปร. 4`) from displacing the actual parenthesized roster period.
 
-If a heading contains multiple explicit ranges, parsing fails as ambiguous. The section parser must not silently convert that failure into a month-only period. Month-only fallback is retained only for headings without an explicit range expression.
+If a heading contains multiple explicit ranges, parsing fails as ambiguous. The section parser must not silently convert that failure into a month-only period or borrow the worksheet-tab month, including when the worksheet contains only one section. Month-only fallback is retained only for headings without an explicit range expression.
 
 Regression coverage added:
 - Numbered unit identifier before a parenthesized month range.
-- Ambiguous heading with multiple explicit date ranges.
+- Ambiguous heading with multiple explicit date ranges, including proof that a single-section worksheet does not fall back to its tab month.
 - Section-level GEN heading resolution to the explicit range.
 - A malformed X-OPD duplicate-day header is blocked while a valid PORTABLE section in the same worksheet remains convertible.
 
