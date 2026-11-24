@@ -568,3 +568,16 @@ The `MonthlyRosterSectionParser.generateDateStructure` path no longer drops a se
 The conflicting-explicit-ranges test was updated to require this preserved section. The section safety classifier and review-session builder already preserve the section assessment. Raw unresolved date-cell/worker-cell associations are still not represented as assignments; a future review UI may need a separate unresolved-cell evidence model.
 
 **Runtime status: SKIPPED** — parser tests were not executed.
+
+## 22. Separate Grid provenance envelope and JSON codec
+
+Added:
+- `lib/features/shift_parser/domain/grid_roster_import_provenance.dart`
+- `lib/features/shift_parser/data/grid_roster_import_provenance_json_codec.dart`
+- `test/grid_roster_import_provenance_json_codec_test.dart`
+
+The envelope records import/source/parser/target revision evidence, section readiness and reason codes, source-cell references, canonical employee/template links, review decisions and reviewer evidence, diagnostics and lifecycle. It avoids copying workbook bytes or raw cell values. Model invariants reject duplicate IDs, dangling section references, incomplete reviewer evidence, invalid template IDs and committed state without an accepted Schedule fingerprint.
+
+The JSON codec uses its own format discriminator and schema version 1. It validates required field types, timestamps, date-only values and enum values; unknown schema versions fail explicitly. This is separate from the canonical Schedule codec and does not alter the `shift-tools.canonical-schedule` version-1 payload.
+
+**Boundary:** this is a data model and codec only. No provenance repository, atomic bundle write, crash recovery, Grid UI, canonical conversion or Calendar sync was added. Existing alternating Schedule slots protect only the Schedule payload and cannot prove a two-object transaction. **Runtime status: SKIPPED** — new tests are source-only and were not executed; Dart format/analyze also not run.
