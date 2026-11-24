@@ -1,202 +1,160 @@
-# Master Documentation Index — Phakphum Calendar\n\n**Entry points:** [Documentation README](README.md) · [Master documentation index](DOCUMENTATION_MASTER_INDEX.md)
+# Master Documentation Index — Phakphum Calendar
 
-- Repository: `phakphum12345/phakphum-calendar`
-- Inventory ref: documentation tree at PR #180 head before this update
-- Purpose: one navigable catalog of the documentation set, grouped by domain with nested work topics.
-- Rule: file existence is not implementation evidence; historical documents must be reconciled against current source and exact commit SHA.
+This index defines the documentation architecture, not a fixed implementation sequence. Workstreams progress according to verified dependencies and readiness.
 
-## 1. Current delivery and governance
-- [End-to-end completion plan](END_TO_END_COMPLETION_PLAN_2026-11-24.md)
-  - Product mission and baseline
-  - Workstreams, dependencies, delivery sequence
-  - Release definition and exclusions
-- [Remaining work index](REMAINING_WORK_INDEX.md)
-  - P0 feature, auth, AI, and release blockers
-  - P1 reconciliation and release hardening
-  - Existing backlog outside immediate release
-- [End-to-end acceptance matrix](END_TO_END_ACCEPTANCE_MATRIX.md)
-  - Shift-pay, authentication, AI, installation, CI gates
-- [PR delivery tracker](PR_DELIVERY_TRACKER_2026-11-24.md)
-  - PR states, exact SHA snapshots, CI/review refresh rules
-- [End-to-end completion audit 2026-11-23](END_TO_END_COMPLETION_AUDIT_2026-11-23.md)
-  - Historical repository audit and observed gaps
-- [End-to-end repository audit](END_TO_END_REPOSITORY_AUDIT.md)
-  - Repository-level findings and reconciliation
-- [Repository audit](REPOSITORY_AUDIT.md)
-  - Earlier audit baseline
-- [Project audit](PROJECT_AUDIT.md)
-  - Project structure and quality audit
-- [End-to-end workflow](END_TO_END_WORKFLOW.md)
-  - Read, analyze, modify, test, verify, deliver workflow
+- Repository: phakphum12345/phakphum-calendar
+- Delivery: PR #180 documentation restructuring
+- Rule: document presence is not implementation evidence; every status needs source/runtime evidence and exact SHA.
 
-## 2. AI Assistant and intelligent roster capabilities
-- [AI Assistant end-to-end completion](AI_ASSISTANT_END_TO_END_COMPLETION.md)
-  - Current reality: local-only support, no live provider, no roster AI backend endpoint
-  - AI Support, roster analysis, external research, reports
-  - Backend trust boundary, provider configuration, zero-cost fallback
-  - Privacy, permissions, tools, confirmation, audit
-  - Phased implementation and 20 acceptance tests
-- [AI Support Chat](AI_SUPPORT_CHAT.md)
-  - Thai support screen and local deterministic guidance
-  - Pasted CSV/TSV analysis
-  - Current limits and integration gaps
-- [AI Provider Research Foundation](AI_PROVIDER_RESEARCH_FOUNDATION.md)
-  - Provider-neutral design and proposed providers
-  - Support/research/roster analysis/report capability boundaries
-  - Server-side credentials, tenant authorization, privacy
-- [Hybrid Roster AI](HYBRID_ROSTER_AI.md)
-  - Rule-first parsing and AI proposals for unresolved fields
-  - Allowlist, confidence, review, and no-write policy
-- [AI Roster Analyzer Logic TH](AI_ROSTER_ANALYZER_LOGIC_TH.md)
-  - Input frames, analysis records, daily roster plans
-  - Duty classifications, warnings, source adapters
-- [Smart Roster Analyze Generator](SMART_ROSTER_ANALYZE_GENERATOR.md)
-  - Legacy/monthly parser comparison
-  - Candidate recovery and duplicate review
-- [Roster Knowledge Base Architecture TH](ROSTER_KNOWLEDGE_BASE_ARCHITECTURE_TH.md)
-  - Organization profiles and shared knowledge
-  - Provenance, privacy, confidence, manual mapping
-- [Synthetic Roster Test Corpus](SYNTHETIC_ROSTER_TEST_CORPUS.md)
-  - Synthetic fixtures and parser/analysis validation
-- [Roster Phase 0 Source Audit](ROSTER_PHASE_0_SOURCE_AUDIT.md)
-  - Source-format audit and parser prerequisites
+## 1. Documentation tree
 
-## 3. Shift pay, workforce, and organization
-- [Three-mode shift-pay implementation](SHIFT_PAY_THREE_MODES_IMPLEMENTATION.md)
-  - Personal, Organization, Hybrid
-  - Rule identity, source precedence, persistence, authorization
-  - Actual assignment integration and monthly statement
-- [Three modes and public auth requirements](SHIFT_PAY_THREE_MODES_AND_PUBLIC_AUTH.md)
-  - Product-level requirements and public-user boundaries
-- [Shift-pay rules](SHIFT_PAY_RULES.md)
-  - Day classification, rule dimensions, salary-included and compensatory treatment
-  - Configurable shift types and break-relief behavior
-- Flexible workforce documentation:
-  - [README](flexible-workforce/README.md)
-  - [Requirements](flexible-workforce/REQUIREMENTS.md)
-  - [Architecture](flexible-workforce/ARCHITECTURE.md)
-  - [Data model](flexible-workforce/DATA_MODEL.md)
-  - [Roadmap](flexible-workforce/ROADMAP.md)
-  - [Traceability matrix](flexible-workforce/TRACEABILITY_MATRIX.md)
-  - [Acceptance tests](flexible-workforce/ACCEPTANCE_TESTS.md)
-- [Organization member management](ORGANIZATION_MEMBER_MANAGEMENT.md)
-  - Roles, membership lifecycle, audit and access controls
+```text
+docs/
+├── README.md
+├── DOCUMENTATION_MASTER_INDEX.md
+├── architecture/       # system context, module boundaries, runtime topology
+├── product/            # product scope, user modes, journeys
+├── workforce/          # shift-pay lifecycle, rule conflict, statements
+├── ai-assistant/       # capability, provider/backend, privacy/tools, research
+├── identity/           # public authentication and account lifecycle
+├── platform/           # platform support, install, signing, release
+├── data/               # ownership, persistence and migrations
+├── engineering/        # CI policy and change delivery
+├── quality/            # test strategy and acceptance evidence
+├── operations/         # zero-cost operations and observability
+├── governance/         # document control and status policy
+├── adr/                # existing architecture decision records
+├── ci/                 # existing CI/runner operations
+├── flexible-workforce/ # existing workforce subproject docs
+└── wiki/               # existing technical wiki and v2 references
+```
 
-## 4. Roster, parser, and schedule workflow
-- [Roster configuration and sync roadmap](ROSTER_CONFIGURATION_AND_SYNC_ROADMAP.md)
-  - Configuration, source selection, mapping, preview, sync
-- [Roster date-first generation](ROSTER_DATE_FIRST_GENERATION.md)
-  - Date-first extraction and period handling
-- [Real roster profile](REAL_ROSTER_PROFILE.md)
-  - Real-world roster profile and configuration
-- [Parser foundation](PARSER_FOUNDATION.md)
-  - Structural parsing, normalization, date and shift handling
-- [SCE 3.0 system design](SCE_3_0_SYSTEM_DESIGN.md)
-  - System boundaries and workflow design
-- [SCE 3.0 implementation map](SCE_3_0_IMPLEMENTATION_MAP.md)
-  - Module map and implementation coverage
-- [SCE 3.0 delivery roadmap](SCE_3_0_DELIVERY_ROADMAP.md)
-  - Delivery increments and dependencies
-- [Comparison foundation](COMPARISON_FOUNDATION.md)
-  - Source comparison and difference model
-- [Calendar preview and sync](CALENDAR_PREVIEW_AND_SYNC.md)
-  - Preview, confirmation, event creation/update
-- [Roster shift transactions and timeline](ROSTER_SHIFT_TRANSACTIONS_AND_TIMELINE.md)
-  - Assignment transaction history and timeline
-- [Shift transaction calendar sync E2E](SHIFT_TRANSACTION_CALENDAR_SYNC_E2E.md)
-  - Transaction-to-calendar integration and end-to-end validation
-- [Durable history and resume](DURABLE_HISTORY_AND_RESUME.md)
-  - Persistence, history, resume and recovery
-- [Sync reliability](SYNC_RELIABILITY.md)
-  - Retry, duplicate prevention, and failure recovery
+Legacy root-level documents are retained and catalogued below. New canonical work belongs in domain folders; no historical files are bulk-moved or deleted by this change.
 
-## 5. Authentication, Google integrations, APIs
-- [Public Google authentication readiness](PUBLIC_GOOGLE_AUTH_READINESS.md)
-  - Public OAuth audience, client IDs, redirect URIs, verification
-  - Platform support, normal-user tests, external owner actions
-- [Google setup](GOOGLE_SETUP.md)
-  - OAuth setup and Google project configuration
-- [API foundation](API_FOUNDATION.md)
-  - Authorized Google client, Drive/Sheets/Calendar API contracts
-- [Integration status](INTEGRATION_STATUS.md)
-  - Active app shell and integrated feature modules
-- [Research OS calendar bridge](RESEARCH_OS_CALENDAR_BRIDGE.md)
-  - Research OS integration boundary
-- [Google Workspace setup HTML](google-workspace-setup.html)
-  - Setup walkthrough page
+## 2. Architecture
+- [Architecture home](architecture/README.md)
+  - [System context and bounded contexts](architecture/SYSTEM_CONTEXT_AND_BOUNDED_CONTEXTS.md)
+  - [Module boundaries and dependency rules](architecture/MODULE_BOUNDARIES_AND_DEPENDENCY_RULES.md)
+  - [Runtime and deployment topology](architecture/RUNTIME_AND_DEPLOYMENT_TOPOLOGY.md)
+- Existing decisions: [ADR directory](adr/); technical reference: [wiki](wiki/README.md).
 
-## 6. Platform, installation, UX, and release
-- [Installation and user guide](INSTALLATION_AND_USER_GUIDE.md)
-  - First-run, install and user guidance
-- [Installation release readiness](INSTALLATION_RELEASE_READINESS.md)
-  - Signing, packaging, clean install and release criteria
-- [Platform support](PLATFORM_SUPPORT.md)
-  - Supported targets and limitations
-- [Delivery status](DELIVERY_STATUS.md)
-  - Required and optional CI/build workflows
-- [Web push notifications](WEB_PUSH_NOTIFICATIONS.md)
-  - Push subscription and notification workflow
-- [App-wide UX redesign](APP_WIDE_UX_REDESIGN.md)
-  - Navigation, responsive UX and visual consistency
-- [New app structure TH](NEW_APP_STRUCTURE_TH.md)
-  - Application structure proposal and module organization
+## 3. Product
+- [Product home](product/README.md)
+  - [Product scope and Personal/Organization/Hybrid modes](product/PRODUCT_SCOPE_AND_USER_MODES.md)
+  - [User journeys and capability boundaries](product/USER_JOURNEYS_AND_CAPABILITY_BOUNDARIES.md)
+- Existing UX references: [APP_WIDE_UX_REDESIGN.md](APP_WIDE_UX_REDESIGN.md), [NEW_APP_STRUCTURE_TH.md](NEW_APP_STRUCTURE_TH.md).
 
-## 7. API, architecture, and universal generator integration
-- [Universal generator calendar adapter](universal-generator-calendar-adapter.md)
-  - Adapter boundary and calendar integration
-- Wiki:
-  - [Wiki index](wiki/README.md)
-  - [Architecture](wiki/ARCHITECTURE.md)
-  - [Version 3 architecture](wiki/VERSION_3_ARCHITECTURE.md)
-  - [Public API V3](wiki/PUBLIC_API_V3.md)
-  - [Plugin SDK V3](wiki/PLUGIN_SDK_V3.md)
-  - [Rule engine specification](wiki/RULE_ENGINE_SPEC.md)
-  - [Security and privacy](wiki/SECURITY_AND_PRIVACY.md)
-  - [Coding standards](wiki/CODING_STANDARDS.md)
-  - [Contributing](wiki/CONTRIBUTING.md)
-  - [Testing guide](wiki/TESTING_GUIDE.md)
-  - [Release process](wiki/RELEASE_PROCESS.md)
-  - [Version 2 wiki index](wiki/v2/README.md)
+## 4. Workforce, roster and shift pay
+- [Workforce home](workforce/README.md)
+  - [Shift-pay lifecycle](workforce/SHIFT_PAY_LIFECYCLE.md)
+  - [Rule conflict and precedence](workforce/RULE_CONFLICT_AND_PRECEDENCE_POLICY.md)
+  - [Assignment calculation and monthly statement](workforce/ASSIGNMENT_CALCULATION_AND_MONTHLY_STATEMENT.md)
+- Existing specifications: [SHIFT_PAY_RULES.md](SHIFT_PAY_RULES.md), [SHIFT_PAY_THREE_MODES_IMPLEMENTATION.md](SHIFT_PAY_THREE_MODES_IMPLEMENTATION.md), [SHIFT_PAY_THREE_MODES_AND_PUBLIC_AUTH.md](SHIFT_PAY_THREE_MODES_AND_PUBLIC_AUTH.md), [ORGANIZATION_MEMBER_MANAGEMENT.md](ORGANIZATION_MEMBER_MANAGEMENT.md).
+- Roster pipeline: [PARSER_FOUNDATION.md](PARSER_FOUNDATION.md), [REAL_ROSTER_PROFILE.md](REAL_ROSTER_PROFILE.md), [ROSTER_CONFIGURATION_AND_SYNC_ROADMAP.md](ROSTER_CONFIGURATION_AND_SYNC_ROADMAP.md), [ROSTER_DATE_FIRST_GENERATION.md](ROSTER_DATE_FIRST_GENERATION.md), [ROSTER_PHASE_0_SOURCE_AUDIT.md](ROSTER_PHASE_0_SOURCE_AUDIT.md), [ROSTER_SHIFT_TRANSACTIONS_AND_TIMELINE.md](ROSTER_SHIFT_TRANSACTIONS_AND_TIMELINE.md).
+- [Flexible workforce subproject](flexible-workforce/README.md): requirements, architecture, data model, roadmap, traceability and acceptance.
 
-## 8. Architecture decision records
-- [ADR-0001 Project structure](adr/ADR-0001-project-structure.md)
-- [ADR-0002 State management](adr/ADR-0002-state-management.md)
-- [ADR-0003 Local storage](adr/ADR-0003-local-storage.md)
-- [ADR-0004 Calendar sync](adr/ADR-0004-calendar-sync.md)
-- [ADR-0005 Google authentication](adr/ADR-0005-google-authentication.md)
-- [ADR-0006 Drive file selection](adr/ADR-0006-drive-file-selection.md)
-- [ADR-0007 Sheet normalization](adr/ADR-0007-sheet-normalization.md)
-- [ADR-0008 Comparison before sync](adr/ADR-0008-comparison-before-sync.md)
-- [ADR-0009 Managed calendar events](adr/ADR-0009-managed-calendar-events.md)
-- [ADR-0010 Sync reliability](adr/ADR-0010-sync-reliability.md)
-- [ADR-0011 Durable history storage](adr/ADR-0011-durable-history-storage.md)
-- [ADR-0012 Text-first roster comparison](adr/ADR-0012-text-first-roster-comparison.md)
-- [ADR-0012 Timeline persistence and Drive backup](adr/ADR-0012-timeline-persistence-and-drive-backup.md)
-- [ADR-0013 Block on unknown shift time](adr/ADR-0013-block-on-unknown-shift-time.md)
-- [ADR-0013 Shift transactions](adr/ADR-0013-shift-transactions.md)
-- [ADR-0014 Multi-source multi-period review](adr/ADR-0014-multi-source-multi-period-review.md)
+## 5. AI Assistant
+- [AI Assistant home](ai-assistant/README.md)
+  - [Capability matrix](ai-assistant/AI_ASSISTANT_CAPABILITY_MATRIX.md)
+  - [Provider and backend contract](ai-assistant/AI_PROVIDER_AND_BACKEND_CONTRACT.md)
+  - [Privacy and tool governance](ai-assistant/AI_PRIVACY_AND_TOOL_GOVERNANCE.md)
+  - [Research and reports](ai-assistant/AI_RESEARCH_AND_REPORTS.md)
+- Master plan: [AI_ASSISTANT_END_TO_END_COMPLETION.md](AI_ASSISTANT_END_TO_END_COMPLETION.md).
+- Existing foundations: [AI_SUPPORT_CHAT.md](AI_SUPPORT_CHAT.md), [AI_PROVIDER_RESEARCH_FOUNDATION.md](AI_PROVIDER_RESEARCH_FOUNDATION.md), [HYBRID_ROSTER_AI.md](HYBRID_ROSTER_AI.md), [AI_ROSTER_ANALYZER_LOGIC_TH.md](AI_ROSTER_ANALYZER_LOGIC_TH.md), [SMART_ROSTER_ANALYZE_GENERATOR.md](SMART_ROSTER_ANALYZE_GENERATOR.md), [ROSTER_KNOWLEDGE_BASE_ARCHITECTURE_TH.md](ROSTER_KNOWLEDGE_BASE_ARCHITECTURE_TH.md), [SYNTHETIC_ROSTER_TEST_CORPUS.md](SYNTHETIC_ROSTER_TEST_CORPUS.md).
 
-## 9. CI, engineering and contributor operations
-- [CI auto detection](CI_AUTO_DETECTION.md)
-  - Capability detection and workflow routing
-- [Self-hosted Windows runner](ci/SELF_HOSTED_WINDOWS_RUNNER.md)
-  - Runner setup, operation, and troubleshooting
-- [Wiki contributing](wiki/CONTRIBUTING.md)
-  - Contribution workflow
-- [Wiki coding standards](wiki/CODING_STANDARDS.md)
-  - Formatting and code quality
-- [Wiki testing guide](wiki/TESTING_GUIDE.md)
-  - Unit, integration, and release tests
-- [Wiki release process](wiki/RELEASE_PROCESS.md)
-  - Versioning and release procedure
+## 6. Identity and integrations
+- [Identity home](identity/README.md)
+  - [Public authentication and account lifecycle](identity/PUBLIC_AUTHENTICATION_AND_ACCOUNT_LIFECYCLE.md)
+- Existing: [PUBLIC_GOOGLE_AUTH_READINESS.md](PUBLIC_GOOGLE_AUTH_READINESS.md), [GOOGLE_SETUP.md](GOOGLE_SETUP.md), [API_FOUNDATION.md](API_FOUNDATION.md), [INTEGRATION_STATUS.md](INTEGRATION_STATUS.md), [RESEARCH_OS_CALENDAR_BRIDGE.md](RESEARCH_OS_CALENDAR_BRIDGE.md).
 
-## 10. Document maintenance rules
-- Every new feature must update its domain specification, traceability, acceptance tests, and this index.
-- Every status must identify scope and evidence; distinguish PASS, FAIL, BLOCKED, IN PROGRESS, and UNKNOWN.
-- Historical audit snapshots must retain their date and must not be presented as current status.
-- Avoid duplicate specifications; link to the canonical document instead.
-- Do not delete historical documents merely to simplify navigation.
-- Reconcile this inventory against the repository tree during each documentation audit.
+## 7. Platform and release
+- [Platform home](platform/README.md)
+  - [Installation and release matrix](platform/INSTALLATION_AND_RELEASE_MATRIX.md)
+- Existing: [PLATFORM_SUPPORT.md](PLATFORM_SUPPORT.md), [INSTALLATION_RELEASE_READINESS.md](INSTALLATION_RELEASE_READINESS.md), [INSTALLATION_AND_USER_GUIDE.md](INSTALLATION_AND_USER_GUIDE.md), [DELIVERY_STATUS.md](DELIVERY_STATUS.md), [WEB_PUSH_NOTIFICATIONS.md](WEB_PUSH_NOTIFICATIONS.md).
 
-## 11. Repository documentation inventory
-This index covers the documentation tree observed for the PR #180 documentation branch, including nested `adr/`, `ci/`, `flexible-workforce/`, and `wiki/` documents. New files added by this update are linked above. Re-run a recursive tree inventory before declaring the list current on main.
+## 8. Data and persistence
+- [Data home](data/README.md)
+  - [Data model and migration policy](data/DATA_MODEL_AND_MIGRATION_POLICY.md)
+- Existing: [DURABLE_HISTORY_AND_RESUME.md](DURABLE_HISTORY_AND_RESUME.md), [SYNC_RELIABILITY.md](SYNC_RELIABILITY.md).
+
+## 9. Engineering and quality
+- [Engineering home](engineering/README.md)
+  - [CI and quality policy](engineering/CI_AND_QUALITY_POLICY.md)
+  - [Change delivery protocol](engineering/CHANGE_DELIVERY_PROTOCOL.md)
+- [Quality home](quality/README.md)
+  - [End-to-end test strategy](quality/END_TO_END_TEST_STRATEGY.md)
+- Existing: [CI_AUTO_DETECTION.md](CI_AUTO_DETECTION.md), [ci/SELF_HOSTED_WINDOWS_RUNNER.md](ci/SELF_HOSTED_WINDOWS_RUNNER.md), [END_TO_END_WORKFLOW.md](END_TO_END_WORKFLOW.md), [COMPARISON_FOUNDATION.md](COMPARISON_FOUNDATION.md), [CALENDAR_PREVIEW_AND_SYNC.md](CALENDAR_PREVIEW_AND_SYNC.md), [SHIFT_TRANSACTION_CALENDAR_SYNC_E2E.md](SHIFT_TRANSACTION_CALENDAR_SYNC_E2E.md).
+
+## 10. Operations and governance
+- [Operations home](operations/README.md)
+  - [Zero-cost operations and observability](operations/ZERO_COST_OPERATIONS_AND_OBSERVABILITY.md)
+- [Governance home](governance/README.md)
+  - [Document control and status policy](governance/DOCUMENT_CONTROL_AND_STATUS_POLICY.md)
+
+## 11. Delivery and audit
+- [END_TO_END_COMPLETION_PLAN_2026-11-24.md](END_TO_END_COMPLETION_PLAN_2026-11-24.md)
+- [REMAINING_WORK_INDEX.md](REMAINING_WORK_INDEX.md)
+- [END_TO_END_ACCEPTANCE_MATRIX.md](END_TO_END_ACCEPTANCE_MATRIX.md)
+- [PR_DELIVERY_TRACKER_2026-11-24.md](PR_DELIVERY_TRACKER_2026-11-24.md)
+- Audit history: [REPOSITORY_AUDIT.md](REPOSITORY_AUDIT.md), [PROJECT_AUDIT.md](PROJECT_AUDIT.md), [END_TO_END_REPOSITORY_AUDIT.md](END_TO_END_REPOSITORY_AUDIT.md), [END_TO_END_COMPLETION_AUDIT_2026-11-23.md](END_TO_END_COMPLETION_AUDIT_2026-11-23.md).
+
+## 12. Complete root-level Markdown inventory
+- [AI_ASSISTANT_END_TO_END_COMPLETION.md](AI_ASSISTANT_END_TO_END_COMPLETION.md)
+- [AI_PROVIDER_RESEARCH_FOUNDATION.md](AI_PROVIDER_RESEARCH_FOUNDATION.md)
+- [AI_ROSTER_ANALYZER_LOGIC_TH.md](AI_ROSTER_ANALYZER_LOGIC_TH.md)
+- [AI_SUPPORT_CHAT.md](AI_SUPPORT_CHAT.md)
+- [API_FOUNDATION.md](API_FOUNDATION.md)
+- [APP_WIDE_UX_REDESIGN.md](APP_WIDE_UX_REDESIGN.md)
+- [CALENDAR_PREVIEW_AND_SYNC.md](CALENDAR_PREVIEW_AND_SYNC.md)
+- [CI_AUTO_DETECTION.md](CI_AUTO_DETECTION.md)
+- [COMPARISON_FOUNDATION.md](COMPARISON_FOUNDATION.md)
+- [DELIVERY_STATUS.md](DELIVERY_STATUS.md)
+- [DOCUMENTATION_MASTER_INDEX.md](DOCUMENTATION_MASTER_INDEX.md)
+- [DURABLE_HISTORY_AND_RESUME.md](DURABLE_HISTORY_AND_RESUME.md)
+- [END_TO_END_ACCEPTANCE_MATRIX.md](END_TO_END_ACCEPTANCE_MATRIX.md)
+- [END_TO_END_COMPLETION_AUDIT_2026-11-23.md](END_TO_END_COMPLETION_AUDIT_2026-11-23.md)
+- [END_TO_END_COMPLETION_PLAN_2026-11-24.md](END_TO_END_COMPLETION_PLAN_2026-11-24.md)
+- [END_TO_END_REPOSITORY_AUDIT.md](END_TO_END_REPOSITORY_AUDIT.md)
+- [END_TO_END_WORKFLOW.md](END_TO_END_WORKFLOW.md)
+- [GOOGLE_SETUP.md](GOOGLE_SETUP.md)
+- [HYBRID_ROSTER_AI.md](HYBRID_ROSTER_AI.md)
+- [INSTALLATION_AND_USER_GUIDE.md](INSTALLATION_AND_USER_GUIDE.md)
+- [INSTALLATION_RELEASE_READINESS.md](INSTALLATION_RELEASE_READINESS.md)
+- [INTEGRATION_STATUS.md](INTEGRATION_STATUS.md)
+- [NEW_APP_STRUCTURE_TH.md](NEW_APP_STRUCTURE_TH.md)
+- [ORGANIZATION_MEMBER_MANAGEMENT.md](ORGANIZATION_MEMBER_MANAGEMENT.md)
+- [PARSER_FOUNDATION.md](PARSER_FOUNDATION.md)
+- [PLATFORM_SUPPORT.md](PLATFORM_SUPPORT.md)
+- [PROJECT_AUDIT.md](PROJECT_AUDIT.md)
+- [PR_DELIVERY_TRACKER_2026-11-24.md](PR_DELIVERY_TRACKER_2026-11-24.md)
+- [PUBLIC_GOOGLE_AUTH_READINESS.md](PUBLIC_GOOGLE_AUTH_READINESS.md)
+- [README.md](README.md)
+- [REAL_ROSTER_PROFILE.md](REAL_ROSTER_PROFILE.md)
+- [REMAINING_WORK_INDEX.md](REMAINING_WORK_INDEX.md)
+- [REPOSITORY_AUDIT.md](REPOSITORY_AUDIT.md)
+- [RESEARCH_OS_CALENDAR_BRIDGE.md](RESEARCH_OS_CALENDAR_BRIDGE.md)
+- [ROSTER_CONFIGURATION_AND_SYNC_ROADMAP.md](ROSTER_CONFIGURATION_AND_SYNC_ROADMAP.md)
+- [ROSTER_DATE_FIRST_GENERATION.md](ROSTER_DATE_FIRST_GENERATION.md)
+- [ROSTER_KNOWLEDGE_BASE_ARCHITECTURE_TH.md](ROSTER_KNOWLEDGE_BASE_ARCHITECTURE_TH.md)
+- [ROSTER_PHASE_0_SOURCE_AUDIT.md](ROSTER_PHASE_0_SOURCE_AUDIT.md)
+- [ROSTER_SHIFT_TRANSACTIONS_AND_TIMELINE.md](ROSTER_SHIFT_TRANSACTIONS_AND_TIMELINE.md)
+- [SCE_3_0_DELIVERY_ROADMAP.md](SCE_3_0_DELIVERY_ROADMAP.md)
+- [SCE_3_0_IMPLEMENTATION_MAP.md](SCE_3_0_IMPLEMENTATION_MAP.md)
+- [SCE_3_0_SYSTEM_DESIGN.md](SCE_3_0_SYSTEM_DESIGN.md)
+- [SHIFT_PAY_RULES.md](SHIFT_PAY_RULES.md)
+- [SHIFT_PAY_THREE_MODES_AND_PUBLIC_AUTH.md](SHIFT_PAY_THREE_MODES_AND_PUBLIC_AUTH.md)
+- [SHIFT_PAY_THREE_MODES_IMPLEMENTATION.md](SHIFT_PAY_THREE_MODES_IMPLEMENTATION.md)
+- [SHIFT_TRANSACTION_CALENDAR_SYNC_E2E.md](SHIFT_TRANSACTION_CALENDAR_SYNC_E2E.md)
+- [SMART_ROSTER_ANALYZE_GENERATOR.md](SMART_ROSTER_ANALYZE_GENERATOR.md)
+- [SYNC_RELIABILITY.md](SYNC_RELIABILITY.md)
+- [SYNTHETIC_ROSTER_TEST_CORPUS.md](SYNTHETIC_ROSTER_TEST_CORPUS.md)
+- [WEB_PUSH_NOTIFICATIONS.md](WEB_PUSH_NOTIFICATIONS.md)
+- [universal-generator-calendar-adapter.md](universal-generator-calendar-adapter.md)
+
+## 13. Maintenance rules
+- New documents belong in their domain folder; update its README and this index.
+- A feature change updates requirements, architecture/data contracts, implementation/dependency map, acceptance tests and traceability.
+- Avoid duplicate specifications; link to canonical documents.
+- Retain historical documents until a dedicated migration review.
+- Reconcile the recursive docs tree before claiming the inventory is current.
+- Skipped, missing, cancelled, queued or unknown checks are never PASS.
