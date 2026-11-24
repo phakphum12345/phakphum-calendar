@@ -102,6 +102,29 @@ Evaluate each candidate on the exact platforms and deployment modes supported by
 
 Do not infer atomicity from a package name, a local mutex, a successful single-writer test, or a read-back check. Record package versions and test environment in the final accepted ADR.
 
+## Preliminary storage candidate screening (not a selection)
+
+This is a package-documentation screen only. It does not establish that any candidate satisfies the repository's required concurrency, crash-recovery or migration behavior.
+
+| Candidate | Active-target fit | Useful documented properties | Risks / proof still required | Preliminary disposition |
+|---|---|---|---|---|
+| [Drift](https://pub.dev/packages/drift) + [drift_flutter](https://pub.dev/packages/drift_flutter) | Package documentation lists Android, iOS, Windows, Linux and Web support; macOS is also listed. | SQLite-backed; built-in transactions and schema migrations. Web support uses WebAssembly and browser storage with a shared-worker fallback. | Web assets/setup, browser storage behavior, COOP/COEP edge cases, native database path/backup, independent-instance/process behavior and two-writer CAS tests must be proven in this app. | **First prototype candidate**, not approved. |
+| [sqflite](https://pub.dev/packages/sqflite) + platform companion packages | Native Android/iOS plus Windows/Linux FFI; Web uses a separate package documented as experimental. | Familiar SQLite transaction API shared across companion packages. | Multiple package/factory configurations; Web experimental status and setup assets raise release risk for an active Web target. | **Secondary prototype candidate** only if Drift integration fails a concrete requirement. |
+| [Sembast](https://pub.dev/packages/sembast) + [sembast_web](https://pub.dev/packages/sembast_web) | Native VM/Flutter and Web package support are documented. | Pure-Dart embedded document store with common API; can be backed by sqflite through an adapter. | The package describes its IO database as single-process. Cross-process safety depends on a different backing adapter; transaction/isolation semantics and multi-tab Web behavior must be independently proven. | **Do not select as-is** for global writer safety; retain only as a comparison candidate. |
+| Existing SharedPreferences repository | Already integrated on current targets through the Flutter plugin. | Small dependency surface and existing two-slot/read-back recovery behavior. | No storage-level atomic compare-and-set or multi-key transaction in the current repository contract. | Retain during migration; **not sufficient** for the target CAS guarantee. |
+
+### Prototype gate before choosing
+
+1. Build a small storage-only spike with no production Schedule migration.
+2. Run the same contract suite on Windows, Web, Android, iOS and Linux; record exact OS/browser/runtime and package versions.
+3. Open two independent database/repository instances against the same store. Start both from one revision and force an interleaving; exactly one update must commit.
+4. Repeat for create-if-absent, update, delete-to-tombstone, recreate-after-delete and same-content save (generation must still advance).
+5. Kill/restart at each commit boundary and verify that readers see either the complete old record or complete new record, never mixed payload/revision metadata.
+6. On Web, test two tabs, reload, browser restart, quota failure and supported browser storage fallback.
+7. Compare backup/export, migration rollback, package maintenance and bundle/setup cost. Do not add a dependency to production until the prototype passes.
+
+Package documentation references: Drift transaction and platform feature summary; Drift Web storage behavior; sqflite platform companion matrix and experimental Web package; Sembast platform factories and single-process IO description. The links above are starting evidence, not a substitute for app-specific integration tests.
+
 ## Migration sequence
 
 1. Inventory every production Schedule write path, including editor, imports, restore, sync, migration, delete and test fakes.
