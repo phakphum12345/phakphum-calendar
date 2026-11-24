@@ -5,6 +5,7 @@ import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 import '../../../../core/google/authorized_google_client_factory.dart';
 import '../../../../core/result/result.dart';
 import '../../../../core/utils/excel_column_name.dart';
+import '../../../../domain/entities/employee.dart';
 import '../../../../domain/entities/schedule.dart';
 import '../../../../domain/repositories/employee_repository.dart';
 import '../../../../l10n/l10n.dart';
