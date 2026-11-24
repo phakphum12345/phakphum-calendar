@@ -187,6 +187,44 @@ void main() {
     );
   });
 
+  test('recovery refuses to overwrite a newer canonical Schedule', () async {
+    final context = await _prepare();
+    final conversion = _convert(context);
+    repository.failNextSave = true;
+
+    final commit = await workflow.commit(
+      context: context,
+      conversion: conversion,
+    );
+    expect(commit, isA<PersistenceFailure<Schedule>>());
+    final newerSchedule = Schedule(
+      id: 'schedule-1',
+      name: 'Edited by another workflow',
+    );
+    repository.value = newerSchedule;
+
+    final recovered = await workflow.recover('schedule-1');
+
+    expect(recovered, isA<ValidationFailure<Schedule?>>());
+    expect(repository.value, same(newerSchedule));
+  });
+
+  test('recovery is idempotent when canonical Schedule already matches journal', () async {
+    final context = await _prepare();
+    final conversion = _convert(context);
+    final committed = await workflow.commit(
+      context: context,
+      conversion: conversion,
+    );
+    expect(committed, isA<Success<Schedule>>());
+    final accepted = repository.value;
+
+    final recovered = await workflow.recover('schedule-1');
+
+    expect(recovered, isA<Success<Schedule?>>());
+    expect(repository.value, same(accepted));
+  });
+
   test('commit rejects a Schedule changed after the review snapshot', () async {
     final context = await _prepare();
     final conversion = _convert(context);
