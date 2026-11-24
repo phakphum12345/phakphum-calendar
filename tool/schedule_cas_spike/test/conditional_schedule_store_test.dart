@@ -25,7 +25,7 @@ void main() {
     await tempDirectory.delete(recursive: true);
   });
 
-  test('creates from explicit absent revision and rejects stale create', () async {
+  test('creates from absent and rejects stale create', () async {
     final absent = await store.read('schedule-A');
     expect(absent.revision.token, ScheduleRevision.absent.token);
 
@@ -70,7 +70,7 @@ void main() {
     expect(stale.current.payload, '{"value":"two"}');
   });
 
-  test('generation prevents ABA and advances for same-content saves', () async {
+  test('generation prevents ABA and advances on same-content save', () async {
     final a1 = await store.compareAndSet(
       scheduleId: 'schedule-C',
       expected: ScheduleRevision.absent,
@@ -100,7 +100,7 @@ void main() {
     expect(sameContent.current.revision.generation, 4);
   });
 
-  test('tombstone blocks stale recreation and permits current-token recreation', () async {
+  test('tombstone blocks stale recreation', () async {
     final created = await store.compareAndSet(
       scheduleId: 'schedule-D',
       expected: ScheduleRevision.absent,
@@ -130,7 +130,7 @@ void main() {
     expect(recreated.current.revision.generation, 3);
   });
 
-  test('a stale non-absent token cannot recreate a physically missing row', () async {
+  test('stale token cannot recreate a missing row', () async {
     final created = await store.compareAndSet(
       scheduleId: 'schedule-missing',
       expected: ScheduleRevision.absent,
@@ -150,7 +150,7 @@ void main() {
     expect(stale.current.revision.state, RevisionState.absent);
   });
 
-  test('two independent database instances have exactly one CAS winner', () async {
+  test('two independent instances have one CAS winner', () async {
     final secondDatabase = SpikeDatabase(NativeDatabase(databaseFile));
     try {
       final secondStore = ConditionalScheduleStore(secondDatabase);
