@@ -788,6 +788,67 @@ class MonthlyRosterShiftAdapter {
       ..sort((left, right) => left.start.compareTo(right.start));
   }
 
+  /// Exposes the source of a row-label mapping without changing the
+  /// legacy conversion behavior. A resolved rule is still review-only.
+  MonthlyRosterShiftRuleResolution resolveRuleForLabel(
+    String label, {
+    Iterable<ShiftTemplate> shiftTemplates = const [],
+  }) {
+    final normalizedLabel = _compact(label);
+    if (normalizedLabel.isEmpty) {
+      return const MonthlyRosterShiftRuleResolution(
+        status: MonthlyRosterShiftRuleStatus.emptyLabel,
+      );
+    }
+
+    final matchingTemplates = shiftTemplates.where((template) {
+      if (!template.active) return false;
+      return [
+        template.code,
+        template.name,
+        template.shortName,
+      ].any(
+        (alias) =>
+            alias.trim().isNotEmpty && _compact(alias) == normalizedLabel,
+      );
+    }).toList(growable: false);
+
+    if (matchingTemplates.length > 1) {
+      return const MonthlyRosterShiftRuleResolution(
+        status: MonthlyRosterShiftRuleStatus.ambiguousTemplate,
+      );
+    }
+
+    final rule = _ruleForLabel(
+      label,
+      shiftTemplates: shiftTemplates,
+    );
+    if (rule == null) {
+      return const MonthlyRosterShiftRuleResolution(
+        status: MonthlyRosterShiftRuleStatus.unsupportedLabel,
+      );
+    }
+
+    return MonthlyRosterShiftRuleResolution(
+      status: matchingTemplates.isEmpty
+          ? MonthlyRosterShiftRuleStatus.builtInRule
+          : MonthlyRosterShiftRuleStatus.configuredTemplate,
+      code: rule.code,
+      startTime: Duration(
+        hours: rule.startHour,
+        minutes: rule.startMinute,
+      ),
+      endTime: Duration(
+        hours: rule.endHour,
+        minutes: rule.endMinute,
+      ),
+      category: rule.category,
+      templateId: matchingTemplates.isEmpty
+          ? null
+          : matchingTemplates.single.id,
+    );
+  }
+
   _MonthlyShiftRule? _ruleForLabel(
     String label, {
     required Iterable<ShiftTemplate> shiftTemplates,
@@ -950,4 +1011,41 @@ class _MonthlyShiftRule {
   final int endHour;
   final int endMinute;
   final ShiftCategory category;
+}
+
+
+enum MonthlyRosterShiftRuleStatus {
+  configuredTemplate,
+  builtInRule,
+  ambiguousTemplate,
+  unsupportedLabel,
+  emptyLabel,
+}
+
+/// Review-only description of the existing monthly-grid shift mapping rule.
+class MonthlyRosterShiftRuleResolution {
+  const MonthlyRosterShiftRuleResolution({
+    required this.status,
+    this.code,
+    this.startTime,
+    this.endTime,
+    this.category,
+    this.templateId,
+  });
+
+  final MonthlyRosterShiftRuleStatus status;
+  final String? code;
+  final Duration? startTime;
+  final Duration? endTime;
+  final ShiftCategory? category;
+  final String? templateId;
+
+  bool get isResolved =>
+      status == MonthlyRosterShiftRuleStatus.configuredTemplate ||
+      status == MonthlyRosterShiftRuleStatus.builtInRule;
+
+  bool get requiresHumanConfirmation => true;
+
+  /// Mapping evidence alone never authorizes persistence.
+  bool get canCommit => false;
 }
