@@ -203,6 +203,9 @@ class GridRosterCanonicalConverter {
           MonthlyRosterShiftRuleStatus.emptyLabel =>
             GridRosterShiftRuleKind.unresolved,
         };
+        if (rule.status == MonthlyRosterShiftRuleStatus.configuredTemplate) {
+          templateId = rule.templateId;
+        }
 
         if (decision.include) {
           final employeeId = decision.employeeId;
