@@ -24,6 +24,8 @@ Route::prefix('v1')->group(function (): void {
             ->name('api.v1.me');
         Route::post('/shift-pay/calculations', [ShiftPayCalculationController::class, 'store'])
             ->name('api.v1.shift-pay.calculations.store');
+        Route::get('/shift-pay/snapshots', [ShiftPayCalculationController::class, 'index'])
+            ->name('api.v1.shift-pay.snapshots.index');
         Route::get('/shift-pay/snapshots/{snapshotId}', [ShiftPayCalculationController::class, 'show'])
             ->whereUuid('snapshotId')
             ->name('api.v1.shift-pay.snapshots.show');
