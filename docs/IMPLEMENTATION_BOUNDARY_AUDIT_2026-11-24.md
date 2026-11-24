@@ -436,3 +436,37 @@ However, the inspected app route tree and composition root do not register a pro
 4. Add a generation orchestration controller with preview, conflict/uncovered-coverage review, explicit approval, and repository save only after approval.
 5. Add end-to-end tests for roster-grid parse → review → canonical conversion → save/reload, and generation → preview → approval → save/reload.
 6. Keep Calendar sync as a separate, explicit user-authorized side effect. No Calendar write is implied by parsing, generation, preview or repository save.
+
+
+## 15. Staging, deduplication and generator test inventory refinement
+
+Further test-source inspection found additional coverage beyond the UI tests listed in §13.
+
+### 15.1 Import staging and re-import safety
+
+- `ImportStagingPlanner` classifies create/update/skip/blocked rows, detects identical duplicate source rows, conflicting duplicate source rows and duplicate assignments already in the schedule.
+- `ImportStagingApplier` applies only selected entries and throws if a CREATE would duplicate an existing assignment.
+- `test/import_staging_persistence_e2e_test.dart` includes a persistence scenario that saves an original schedule, plans/applies selected changes, saves the staged result, then re-imports and verifies duplicate rows are skipped.
+- `test/import_staging_review_integration_test.dart` checks that only selected rows are saved and that blocking review prevents the saver from being called.
+- `test/import_staging_legacy_adapter_test.dart` covers conflicting source rows, missing date/identity, duplicate existing keys and delimiter-safe identities.
+
+This means the tabular staging path has stronger source-level and test-source coverage than the initial boundary inventory implied. Runtime execution remains **SKIPPED** in this audit.
+
+### 15.2 Staffing generator test coverage
+
+`test/schedule_generator_test.dart` contains direct tests for:
+- manual assignment;
+- rejecting an unavailable employee;
+- automatic assignment to satisfy coverage;
+- insufficient coverage when capacity is reached;
+- duplicate-assignment conflict detection;
+- uncovered-coverage reporting.
+
+These tests establish that the generator's core domain behavior has test cases. They do not establish a production UI workflow, approved persistence, or a Calendar handoff. No generation-specific persistence/orchestration test was identified in the inspected test inventory.
+
+### 15.3 Updated interpretation
+
+- Tabular import staging/re-import: substantial implementation and test-source coverage exists; execute exact-head tests before calling it runtime-verified.
+- Roster-grid parsing: parser/scanner tests exist, but production route and provenance-preserving persistence remain UNKNOWN.
+- Staffing generation: core assignment tests exist, but production workflow and persistence remain UNKNOWN.
+- Provenance bundle persistence: still UNKNOWN; current canonical Schedule codec does not encode the source/review envelope described in §14.
