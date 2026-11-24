@@ -801,7 +801,8 @@ class MonthlyRosterShiftAdapter {
       );
     }
 
-    final matchingTemplates = shiftTemplates.where((template) {
+    final templates = shiftTemplates.toList(growable: false);
+    final matchingTemplates = templates.where((template) {
       if (!template.active) return false;
       return [
         template.code,
@@ -821,7 +822,7 @@ class MonthlyRosterShiftAdapter {
 
     final rule = _ruleForLabel(
       label,
-      shiftTemplates: shiftTemplates,
+      shiftTemplates: templates,
     );
     if (rule == null) {
       return const MonthlyRosterShiftRuleResolution(
