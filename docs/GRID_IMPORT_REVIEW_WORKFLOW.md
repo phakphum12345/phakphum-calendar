@@ -190,3 +190,14 @@ A test source file is not a passing test result. Acceptance requires executing t
 8. Add separate Calendar preview integration only after commit and authorization gates are proven.
 
 Do not collapse these stages into one large change. Each stage must preserve existing tabular import behavior and have its own evidence.
+
+
+## 12. Implementation progress — 2026-11-24
+
+The following additive, pure application helpers have now been added on the working branch:
+
+- `MonthlyRosterSectionSafetyClassifier` classifies a section as ready, blocked by date evidence, empty, requiring review, or unsupported. It retains the original section and returns stable reason codes. Its assessment never authorizes commit.
+- `GridRosterEmployeeIdentityResolver` ranks active employee candidates by exact employee code, exact full name, exact display name, exact nickname, then substring suggestions. It returns candidate evidence only; it never selects an employee ID or authorizes commit.
+- Unit-test source files cover section classification, blocked-section preservation, missing/out-of-range evidence, exact/ambiguous identity matches, stronger employee-code evidence, substring-only suggestions, inactive employees and unknown source names.
+
+These helpers are not connected to a production Grid route/controller, canonical Schedule conversion, provenance repository or persistence. Existing `MonthlyRosterShiftAdapter` substring behavior is unchanged. Runtime test status remains SKIPPED until tests are executed on an available Flutter/Dart runner.
