@@ -276,7 +276,7 @@ class MonthlyRosterSectionParser {
     } on FormatException {
       // Do not downgrade a malformed or ambiguous explicit range to a
       // month-only period. That would silently discard the dates in the title.
-      if (RegExp(r'\d{1,2}[^\n]*(?:-|ถึง)\s*\d{1,2}').hasMatch(text)) {
+      if (RegExp(r'\d{1,2}\s*[ก-๙.]+(?:\s*\d{2,4})?\s*(?:-|ถึง)\s*\d{1,2}\s*[ก-๙.]+').hasMatch(text)) {
         rethrow;
       }
 
