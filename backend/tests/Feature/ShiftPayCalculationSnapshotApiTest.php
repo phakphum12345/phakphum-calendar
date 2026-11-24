@@ -57,6 +57,29 @@ class ShiftPayCalculationSnapshotApiTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_organization_mode_uses_only_organization_rules(): void
+    {
+        $organization = $this->postJson('/api/v1/organizations', [
+            'name' => 'Surgery', 'employee_id' => 'EMP-OWNER',
+        ], $this->auth('owner-token'))->assertCreated()->json('data');
+
+        $this->putJson('/api/v1/shift-pay/profile', [
+            'mode' => 'organization',
+            'organization_id' => $organization['id'],
+            'personal_rules' => [$this->rule('personal-night', 700)],
+        ], $this->auth('owner-token'))->assertOk();
+        $this->putJson("/api/v1/organizations/{$organization['id']}/shift-pay-rules", [
+            'rules' => [$this->rule('organization-night', 875)],
+        ], $this->auth('owner-token'))->assertOk();
+
+        $this->postJson('/api/v1/shift-pay/calculations', $this->input(), $this->auth('owner-token') + [
+            'Idempotency-Key' => 'organization-only-001',
+        ])->assertCreated()
+            ->assertJsonPath('data.result.source', 'organization')
+            ->assertJsonPath('data.result.amount', 875)
+            ->assertJsonPath('data.rule.id', 'organization-night');
+    }
+
     public function test_hybrid_require_selection_never_returns_or_adds_candidate_amounts(): void
     {
         $organization = $this->postJson('/api/v1/organizations', [
