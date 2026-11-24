@@ -163,3 +163,19 @@ Important distinction: PASS in this table means the source path or test case exi
 | Calendar sync after Grid commit | Existing Calendar workflow is separately authorized; Grid-specific post-commit integration not established | SKIPPED — must remain disabled until explicit review and authorization |
 
 **Evidence interpretation:** PASS in this section means source behavior or test cases were inspected, not that tests were executed. The Grid workflow document is a design specification and must not be represented as implemented functionality.
+
+
+## 2026-11-24 Schedule generation workflow design update
+
+| Requirement | Existing evidence | Status / next gate |
+|---|---|---|
+| Deterministic generation core | `ScheduleGenerator`, `AutoAssignmentService`, `ScheduleAssignmentWriter` | PASS — source implementation and unit-test cases inspected; runtime execution SKIPPED |
+| Coverage/conflict reporting | `GenerationResult` exposes conflicts, uncovered requirements and assignment count | PASS — source-level behavior exists; full policy coverage remains PARTIAL |
+| Availability/capacity input | `GenerationRequest` supports availability and department capacities; request builder does not expose them as parameters | PARTIAL — orchestration must load/pass required constraints |
+| Generation preview and immutable fingerprint | No production preview lifecycle/fingerprint/approval call path established | MISSING |
+| Human review and exact approval | No production generation review/approval route established | MISSING |
+| Generation persistence and provenance | Candidate Schedule is returned in memory; generation commit and provenance recovery not established | MISSING |
+| Calendar execution | `GeneratorCalendarAdapter` explicitly returns preview data only and has no sync gateway | SKIPPED — separate authorization and existing Calendar sync workflow required |
+| Generation review/commit specification | `docs/SCHEDULE_GENERATION_REVIEW_AND_COMMIT.md` | PASS — design documented; implementation remains MISSING |
+
+**Evidence interpretation:** PASS indicates inspected source behavior or design documentation only. No Dart/Flutter test or runtime execution was performed for this update.
