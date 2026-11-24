@@ -57,6 +57,22 @@ class ConditionalScheduleStore {
   static String fingerprintOf(String payload) =>
       sha256.convert(utf8.encode(payload)).toString();
 
+  Future<ScheduleSnapshot> _readAfterFailure(
+    String scheduleId,
+    ScheduleRevision lastKnownRevision,
+  ) async {
+    try {
+      return await read(scheduleId);
+    } catch (_) {
+      // The status remains storageFailure; this is only the last known token,
+      // not a claim that storage currently contains this revision.
+      return ScheduleSnapshot(
+        payload: null,
+        revision: lastKnownRevision,
+      );
+    }
+  }
+
   Future<ScheduleSnapshot> read(String scheduleId) async {
     final rows = await database.customSelect(
       'SELECT generation, state, payload, fingerprint '
@@ -151,7 +167,7 @@ class ConditionalScheduleStore {
     } catch (error) {
       return ConditionalWriteResult(
         status: ConditionalWriteStatus.storageFailure,
-        current: await read(scheduleId),
+        current: await _readAfterFailure(scheduleId, expected),
         error: error.toString(),
       );
     }
@@ -205,7 +221,7 @@ class ConditionalScheduleStore {
     } catch (error) {
       return ConditionalWriteResult(
         status: ConditionalWriteStatus.storageFailure,
-        current: await read(scheduleId),
+        current: await _readAfterFailure(scheduleId, expected),
         error: error.toString(),
       );
     }
