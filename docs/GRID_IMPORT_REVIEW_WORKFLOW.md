@@ -289,3 +289,22 @@ This conversion is intentionally pure: it does not save the Schedule, invoke the
 Test source covers reviewed conversion, required decisions, preservation/collision handling, and blocked-section exclusion. **Runtime status: SKIPPED** — formatter, analyzer and Flutter tests have not been run in this connector session.
 
 **Remaining E2E work:** connect the converter to a production import controller/review UI, obtain the live target revision from the repository, commit the bundle through the journal, recover on startup, and only then offer an explicit Calendar-sync handoff.
+
+
+## 19. Local XLSX workbook-to-Grid scanner
+
+Added:
+- `lib/features/shift_parser/application/grid_roster_workbook_scanner.dart`
+- `test/grid_roster_workbook_scanner_test.dart`
+
+The scanner:
+- fingerprints the original XLSX bytes with SHA-256;
+- adapts each worksheet's complete `ExcelRow` set to the source-neutral `ShiftParserInput`;
+- scans every worksheet independently using a stable workbook-local worksheet index;
+- aggregates sections, assignments, warnings and per-sheet scan summaries;
+- isolates a worksheet read failure so successfully read sheets remain available for review;
+- leaves the local spreadsheet ID empty, preventing source links from being fabricated as Google Sheets URLs.
+
+**Current source limitation:** the existing `ExcelReaderService` exposes cell values but not Excel background formatting or hidden-sheet metadata. The scanner records `hidden: false` as an unavailable/default field, not as verified evidence that a worksheet is visible; it does not infer colors. The adapter currently supports the local XLSX row model. Google Sheets and other source adapters still need to supply their actual source metadata and formatting evidence.
+
+**Runtime status: SKIPPED** — scanner tests were added but not executed in this connector session. The scanner is not yet connected to an ImportExcelPage action or production review controller.
