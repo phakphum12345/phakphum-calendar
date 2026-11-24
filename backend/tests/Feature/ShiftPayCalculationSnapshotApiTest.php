@@ -38,6 +38,7 @@ class ShiftPayCalculationSnapshotApiTest extends TestCase
         ])->assertCreated()
             ->assertJsonPath('data.result.status', 'calculated')
             ->assertJsonPath('data.result.amount', 700)
+            ->assertJsonPath('data.engine_version', '1.0.0')
             ->assertJsonPath('data.result.source', 'personal')
             ->assertJsonPath('data.rule.id', 'night');
 
