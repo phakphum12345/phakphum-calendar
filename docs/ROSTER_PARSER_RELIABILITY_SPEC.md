@@ -178,5 +178,6 @@ Regression coverage added:
 - Numbered unit identifier before a parenthesized month range.
 - Ambiguous heading with multiple explicit date ranges.
 - Section-level GEN heading resolution to the explicit range.
+- A malformed X-OPD duplicate-day header is blocked while a valid PORTABLE section in the same worksheet remains convertible.
 
 Execution status: regression tests have been added but have **not yet been executed** in this environment. Formatting and static analysis remain unverified.
