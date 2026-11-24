@@ -3,64 +3,55 @@ name: Build iOS
 on:
   workflow_dispatch:
   pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - "lib/**"
       - "assets/**"
-      - "android/**"
       - "ios/**"
-      - "linux/**"
-      - "windows/**"
-      - "web/**"
       - "test/**"
       - "integration_test/**"
       - "pubspec.yaml"
       - "pubspec.lock"
-      - "DISKPATH.json"
-      - "DISKPATH.md"
-      - ".github/workflows/**"
+      - ".github/workflows/ios.yml"
   push:
     branches: [main]
     paths:
       - "lib/**"
       - "assets/**"
-      - "android/**"
       - "ios/**"
-      - "linux/**"
-      - "windows/**"
-      - "web/**"
       - "test/**"
       - "integration_test/**"
       - "pubspec.yaml"
       - "pubspec.lock"
-      - "DISKPATH.json"
-      - "DISKPATH.md"
-      - ".github/workflows/**"
+      - ".github/workflows/ios.yml"
 
 permissions:
   contents: read
 
-# Keep each iOS run independent. A newer PR update must not cancel a build
-# that is still waiting for a GitHub-hosted macOS runner.
+# iOS owns its own runner lifecycle. No dependency on other platform workflows.
+# Unique run IDs ensure that queued builds are not cancelled by later PR updates.
 concurrency:
-  group: ios-${{ github.workflow }}-${{ github.run_id }}
+  group: ios-xcode-${{ github.workflow }}-${{ github.run_id }}
   cancel-in-progress: false
 
 jobs:
   build-ios:
-    name: iOS unsigned release build
-    # Override with repository variable IOS_RUNNER_LABEL when needed.
-    # The default macos-15 label selects GitHub's supported ARM64 hosted image
-    # instead of pinning the workflow to the Intel-only runner pool.
+    name: iOS / Xcode / Unsigned Release
     runs-on: ${{ vars.IOS_RUNNER_LABEL || 'macos-15' }}
-    timeout-minutes: 50
+    timeout-minutes: 60
 
     steps:
-      - name: Checkout repository
+      - name: Checkout exact source revision
         uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 1
 
-      - name: Verify macOS runner allocation
+      - name: Verify macOS and Xcode toolchain
+        shell: bash
         run: |
           set -euo pipefail
+          echo "Checked-out commit: $(git rev-parse HEAD)"
           echo "Runner architecture: $(uname -m)"
           sw_vers
           xcodebuild -version
@@ -72,10 +63,14 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Install dependencies
+      - name: Resolve Flutter dependencies
         run: flutter pub get
 
+      - name: Verify generated iOS Xcode project
+        run: xcodebuild -list -project ios/Runner.xcodeproj
+
       - name: Configure optional Google iOS OAuth
+        shell: bash
         env:
           GOOGLE_IOS_CLIENT_ID: ${{ secrets.GOOGLE_IOS_CLIENT_ID }}
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
@@ -96,33 +91,49 @@ jobs:
               ios/Runner/Info.plist
           fi
 
-      - name: Build unsigned iOS app
+      - name: Build unsigned iOS application
+        shell: bash
         env:
           GOOGLE_IOS_CLIENT_ID: ${{ secrets.GOOGLE_IOS_CLIENT_ID }}
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
           ORGANIZATION_API_BASE_URL: ${{ vars.ORGANIZATION_API_BASE_URL }}
-        run: >-
-          flutter build ios --release --no-codesign
-          --dart-define=GOOGLE_IOS_CLIENT_ID="$GOOGLE_IOS_CLIENT_ID"
-          --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID"
-          --dart-define=ORGANIZATION_API_BASE_URL="$ORGANIZATION_API_BASE_URL"
-
-      - name: Verify iOS app
-        run: test -d build/ios/iphoneos/Runner.app
-
-      - name: Package unsigned IPA
         run: |
+          set -euo pipefail
+          flutter build ios --release --no-codesign \
+            --dart-define=GOOGLE_IOS_CLIENT_ID="$GOOGLE_IOS_CLIENT_ID" \
+            --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID" \
+            --dart-define=ORGANIZATION_API_BASE_URL="$ORGANIZATION_API_BASE_URL"
+
+      - name: Verify iOS application bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP_PATH="build/ios/iphoneos/Runner.app"
+          test -d "$APP_PATH"
+          test -f "$APP_PATH/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP_PATH/Info.plist"
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP_PATH/Info.plist"
+
+      - name: Package unsigned iOS artifact
+        shell: bash
+        run: |
+          set -euo pipefail
           mkdir -p dist/ios/Payload
           cp -R build/ios/iphoneos/Runner.app dist/ios/Payload/Runner.app
           ditto -c -k --sequesterRsrc --keepParent \
             dist/ios/Payload \
             dist/ios/phakphum-calendar-unsigned.ipa
-          test -f dist/ios/phakphum-calendar-unsigned.ipa
+          shasum -a 256 dist/ios/phakphum-calendar-unsigned.ipa \
+            > dist/ios/phakphum-calendar-unsigned.ipa.sha256
+          test -s dist/ios/phakphum-calendar-unsigned.ipa
+          test -s dist/ios/phakphum-calendar-unsigned.ipa.sha256
 
-      - name: Upload unsigned IPA
+      - name: Upload unsigned iOS artifact
         uses: actions/upload-artifact@v7
         with:
-          name: phakphum-calendar-ios-unsigned-ipa
-          path: dist/ios/phakphum-calendar-unsigned.ipa
+          name: phakphum-calendar-ios-unsigned
+          path: |
+            dist/ios/phakphum-calendar-unsigned.ipa
+            dist/ios/phakphum-calendar-unsigned.ipa.sha256
           if-no-files-found: error
           retention-days: 14

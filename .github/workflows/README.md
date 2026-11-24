@@ -7,13 +7,14 @@ The active build and delivery surface covers **Windows, Web, Android, iOS, and L
 - `web.yml` — Flutter Web release + GitHub Pages deployment.
 - `android.yml` — Android release APK build artifact.
 - `ios.yml` — independent unsigned iOS release app build artifact.
+- `macos.yml` — independent macOS/Xcode ad-hoc-signed release app build + ZIP/SHA-256 artifacts.
 - `linux.yml` — Linux x64 release bundle archive.
 - `pull-request-gate.yml` — core PR evidence gate for Auto Detect CI, Windows, Web, Android, and Linux.
 - `ios-evidence-gate.yml` — non-blocking PR advisory report for independent iOS evidence.
 - `final-gate.yml` — post-merge gate for the same `main` commit; Auto Detect CI, Windows, and Web are required, while Android, iOS, and Linux remain best-effort on `main`.
 
-macOS, broad repository validation, coverage gates, and integration-test gates
-are not active delivery gates. Laravel Backend CI is active for backend changes
+macOS is an independent ad-hoc-signed artifact workflow, not a required core PR gate. Broad repository validation, coverage gates, and integration-test gates
+are also not required delivery gates. Laravel Backend CI is active for backend changes
 but does not deploy the API. The Android, iOS, and Linux workflows build
 artifacts; mobile store distribution and signing are not configured.
 
@@ -31,7 +32,7 @@ For the current stabilization phase:
 | Post-merge final evidence gate | Supported | `final-gate.yml` |
 | Android | Build supported | `android.yml` |
 | iOS | Unsigned build supported | `ios.yml` |
-| macOS | Paused | No active workflow |
+| macOS | Ad-hoc-signed build supported | `macos.yml` (independent Xcode workflow) |
 | Linux x64 | Build supported | `linux.yml` |
 | Backend/Laravel | CI supported | `laravel.yml` (tests only; no deployment) |
 
@@ -160,3 +161,28 @@ The platform build workflows remain independent:
 
 Keep each platform in a separate workflow so a native build failure is clearly
 attributed and artifacts can be downloaded independently.
+
+## Independent macOS / Xcode workflow
+
+`macos.yml` is a standalone macOS build pipeline. It starts on its own
+`workflow_dispatch`, relevant pull-request changes, and relevant pushes to
+`main`. It does not use `needs`, poll other workflow runs, or wait for the
+Windows, Linux, Android, Web, or iOS pipelines.
+
+The workflow uses a GitHub-hosted macOS runner (default `macos-15`; optionally
+overridable with the repository variable `MACOS_RUNNER_LABEL`), verifies the
+Xcode installation and Runner project scheme, installs Flutter dependencies,
+and runs a release build through Flutter/Xcode using the project's ad-hoc signing identity. It verifies the
+application bundle and publishes an ad-hoc ZIP plus SHA-256 checksum as a standalone
+artifact.
+
+The concurrency group is unique per run and does not cancel another macOS
+build. GitHub may still queue a run while no matching macOS runner capacity is
+available; that is runner allocation, not a dependency on another CI workflow.
+The project uses the ad-hoc signing identity (`CODE_SIGN_IDENTITY = "-"`). The artifact is not Developer ID-signed or notarized and is not a distribution-ready package. Signing and notarization require a separately approved
+release configuration and credentials.
+
+This workflow reports its own result. Its existence does not silently add
+macOS to the repository's required merge checks; branch protection/rulesets
+must be configured separately if macOS success is to become a required merge
+condition.
