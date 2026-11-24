@@ -17,7 +17,7 @@ This is a point-in-time snapshot. Always refresh live PR metadata and exact-head
 | #171 | Organization membership audit history | MERGED | Retain as completed work; post-merge evidence is historical |
 | #179 | Independent macOS/iOS Xcode workflows | MERGED into main | Use current main as base for new work |
 | #178 | Reconcile implementation status after PR #171 | OPEN, non-Draft; base SHA is older than current main | Reconcile/rebase against current main; inspect its three documentation files and current evidence |
-| #180 | Three-mode shift pay and public-user readiness specification | OPEN, Draft; head `637c7e71f61d69823c6404462709570ffc068655` before this documentation batch | Keep as documentation delivery package; validate all added docs and update its head after one batch commit |
+| #180 | Three-mode shift pay, public-user readiness, AI Assistant readiness, and complete documentation index | OPEN, Draft; head `1659ce37c5f7a99b3825605c36667cacedc3fad9` at this snapshot | Review 11 documentation files (1,375 additions, 0 deletions); wait for exact-head CI and review |
 | #181 | Three-mode rule-source resolution | OPEN, Draft; last recorded head `0951187431faf7db5331809b23ec48c84eaf88e6` | Finish exact-head checks and review before converting from Draft |
 
 ## Documentation package extension — AI Assistant and master index
@@ -29,7 +29,7 @@ The documentation package was extended on the same PR branch after the initial b
 - The AI Assistant is explicitly marked NOT READY for real-world live use; current documented functionality is local-only support and deterministic roster analysis foundations.
 - No application source, secrets, paid service, workflow, or deployment target is changed by this documentation extension.
 
-## PR #181 workflow snapshot
+## PR #180 documentation batch snapshot\n\n- Current head at this snapshot: `1659ce37c5f7a99b3825605c36667cacedc3fad9`.\n- Changed files: 11 documentation files; 1,375 additions; 0 deletions.\n- Current head checks at last poll: Cross-platform Runtime and Auto Detect CI were IN_PROGRESS.\n- PR remains OPEN and Draft; no merge or deployment performed.\n\n## PR #181 workflow snapshot
 
 At the latest recorded inspection, these runs were observed:
 - Dart Format Baseline Audit — completed SUCCESS.

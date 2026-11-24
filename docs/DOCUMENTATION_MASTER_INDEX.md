@@ -1,4 +1,4 @@
-# Master Documentation Index — Phakphum Calendar
+# Master Documentation Index — Phakphum Calendar\n\n**Entry points:** [Documentation README](README.md) · [Master documentation index](DOCUMENTATION_MASTER_INDEX.md)
 
 - Repository: `phakphum12345/phakphum-calendar`
 - Inventory ref: documentation tree at PR #180 head before this update
