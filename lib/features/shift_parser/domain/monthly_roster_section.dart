@@ -129,12 +129,14 @@ class MonthlyRosterParseReport {
     required this.warnings,
     this.sourceSheetCount = 0,
     this.sheetSummaries = const [],
+    this.sourceFingerprint,
   });
 
   final List<MonthlyRosterSection> sections;
   final List<String> warnings;
   final int sourceSheetCount;
   final List<MonthlyRosterSheetScanSummary> sheetSummaries;
+  final String? sourceFingerprint;
 
   List<MonthlyRosterDateAnomaly> get blockingDateAnomalies => [
     for (final section in sections) ...section.dateAnomalies,
@@ -307,6 +309,7 @@ class MonthlyRosterParseReport {
       warnings: warnings,
       sourceSheetCount: sourceSheetCount,
       sheetSummaries: sheetSummaries,
+      sourceFingerprint: sourceFingerprint,
     );
   }
 }
