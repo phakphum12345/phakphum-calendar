@@ -9,7 +9,7 @@ void main() {
   test('returns one exact full-name candidate but never selects it', () {
     final result = resolver.resolve(
       sourceName: 'สมชาย ใจดี',
-      employees: [_employee('e1', 'สมชาย', 'ใจดี', 'ชาย')],
+      employees: [_employee('e1', firstName: 'สมชาย', lastName: 'ใจดี', nickname: 'ชาย')],
     );
 
     expect(
@@ -27,8 +27,8 @@ void main() {
     final result = resolver.resolve(
       sourceName: 'สมชาย ใจดี',
       employees: [
-        _employee('e1', 'สมชาย', 'ใจดี', 'ชาย', code: '001'),
-        _employee('e2', 'สมชาย', 'ใจดี', 'ชายน้อย', code: '002'),
+        _employee('e1', firstName: 'สมชาย', lastName: 'ใจดี', nickname: 'ชาย', code: '001'),
+        _employee('e2', firstName: 'สมชาย', lastName: 'ใจดี', nickname: 'ชายน้อย', code: '002'),
       ],
     );
 
@@ -65,7 +65,7 @@ void main() {
       sourceName: 'สมชาย',
       employees: [
         _employee('e1', 'สมชาย', 'ใจดี', 'ชาย'),
-        _employee('e2', 'สมชาย', 'รักดี', 'ชายน้อย'),
+        _employee('e2', firstName: 'สมชาย', lastName: 'รักดี', nickname: 'ชายน้อย'),
       ],
     );
 
@@ -84,7 +84,7 @@ void main() {
     final result = resolver.resolve(
       sourceName: 'สมชาย ใจดี',
       employees: [
-        _employee('e1', 'สมชาย', 'ใจดี', 'ชาย', active: false),
+        _employee('e1', firstName: 'สมชาย', lastName: 'ใจดี', nickname: 'ชาย', active: false),
       ],
     );
 
@@ -110,13 +110,13 @@ void main() {
 const _department = Department(id: 'd1', code: 'D1', name: 'Department');
 
 Employee _employee(
-  String id, [
+  String id, {
   String firstName = 'Employee',
   String lastName = 'One',
   String nickname = 'One',
   String code = '001',
   bool active = true,
-]) {
+}) {
   return Employee(
     id: id,
     employeeCode: code,
