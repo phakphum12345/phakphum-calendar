@@ -107,6 +107,60 @@ void main() {
     );
   });
 
+
+  test('rejects a configured template changed after the review snapshot', () {
+    const reviewedTemplate = ShiftTemplate(
+      id: 'template-gen',
+      code: 'GEN',
+      name: 'GEN clinic',
+      shortName: 'GEN',
+      startTime: Duration(hours: 7, minutes: 30),
+      endTime: Duration(hours: 12),
+      color: 0xff123456,
+      workingHours: 4.5,
+    );
+    const changedTemplate = ShiftTemplate(
+      id: 'template-gen',
+      code: 'GEN',
+      name: 'GEN clinic',
+      shortName: 'GEN',
+      startTime: Duration(hours: 8),
+      endTime: Duration(hours: 12),
+      color: 0xff123456,
+      workingHours: 4,
+    );
+    final session = _session(
+      builder,
+      shiftTemplates: const [reviewedTemplate],
+    );
+    final source = session.assignments.single.source;
+    final sourceId = GridRosterCanonicalConverter.assignmentId(
+      session.sourceFingerprint,
+      source,
+    );
+
+    expect(
+      () => converter.convert(
+        session: session,
+        targetSchedule: Schedule(id: 'schedule-1', name: 'November 2026'),
+        employees: [_employee],
+        shiftTemplates: const [changedTemplate],
+        decisions: {
+          sourceId: GridRosterAssignmentDecision(
+            include: true,
+            employeeId: _employee.id,
+            reviewerId: 'reviewer-1',
+            reviewedAtUtc: createdAt,
+          ),
+        },
+        importRunId: 'run-template-drift',
+        parserVersion: 'grid-parser/1',
+        createdAtUtc: createdAt,
+      ),
+      throwsA(isA<GridRosterCanonicalConversionException>()),
+    );
+  });
+
   test('requires a decision for every source assignment', () {
     final session = _session(builder);
     expect(
