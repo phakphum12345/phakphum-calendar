@@ -77,6 +77,15 @@ class GridRosterAssignmentProvenance {
         (reviewerId == null || reviewedAtUtc == null)) {
       throw ArgumentError('Final decisions require reviewer evidence.');
     }
+    if (reviewDecision == GridRosterReviewDecision.include &&
+        canonicalEmployeeId == null) {
+      throw ArgumentError('Included assignments require a canonical employee id.');
+    }
+    if (reviewDecision == GridRosterReviewDecision.include &&
+        shiftRuleKind != GridRosterShiftRuleKind.configuredTemplate &&
+        shiftRuleKind != GridRosterShiftRuleKind.builtInRule) {
+      throw ArgumentError('Included assignments require a resolved shift rule.');
+    }
     if (shiftRuleKind == GridRosterShiftRuleKind.configuredTemplate &&
         shiftTemplateId == null) {
       throw ArgumentError('Configured template decisions require a template id.');
@@ -166,6 +175,12 @@ class GridRosterImportProvenance {
     if (lifecycle == GridRosterImportLifecycle.committed &&
         acceptedScheduleFingerprint == null) {
       throw ArgumentError('Committed provenance requires an accepted schedule fingerprint.');
+    }
+    if (lifecycle == GridRosterImportLifecycle.committed &&
+        this.assignments.any(
+          (item) => item.reviewDecision == GridRosterReviewDecision.pending,
+        )) {
+      throw ArgumentError('Committed provenance cannot contain pending assignments.');
     }
     if (lifecycle != GridRosterImportLifecycle.committed &&
         acceptedScheduleFingerprint != null) {
