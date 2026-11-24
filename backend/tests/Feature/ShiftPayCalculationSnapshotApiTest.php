@@ -24,6 +24,23 @@ class ShiftPayCalculationSnapshotApiTest extends TestCase
         }
     }
 
+    public function test_snapshot_history_is_cursor_paginated_and_private_to_its_owner(): void
+    {
+        $this->putJson('/api/v1/shift-pay/profile', [
+            'mode' => 'personal',
+            'personal_rules' => [$this->rule('night', 700)],
+        ], $this->auth('owner-token'))->assertOk();
+        $this->postJson('/api/v1/shift-pay/calculations', $this->input(), $this->auth('owner-token') + [
+            'Idempotency-Key' => 'history-list-001',
+        ])->assertCreated();
+
+        $this->getJson('/api/v1/shift-pay/snapshots?limit=10', $this->auth('owner-token'))
+            ->assertOk()->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.result.amount', 700);
+        $this->getJson('/api/v1/shift-pay/snapshots', $this->auth('outsider-token'))
+            ->assertOk()->assertJsonCount(0, 'data');
+    }
+
     public function test_personal_calculation_is_snapshotted_and_remains_unchanged_after_rule_edit(): void
     {
         $this->putJson('/api/v1/shift-pay/profile', [
