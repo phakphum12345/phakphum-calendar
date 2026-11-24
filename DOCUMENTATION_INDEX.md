@@ -30,7 +30,7 @@ This file is the central map of project documentation. Prefer updating an existi
 
 - [Parser foundation](docs/PARSER_FOUNDATION.md)
 - [Roster parser reliability specification](docs/ROSTER_PARSER_RELIABILITY_SPEC.md) — section isolation, date evidence, malformed-header behavior and regression criteria.
-- [Roster provenance and reconciliation](docs/ROSTER_PROVENANCE_AND_RECONCILIATION.md) — source snapshots, cell evidence, person identity, revision diffs and safe removals.
+- [Roster provenance and reconciliation](docs/ROSTER_PROVENANCE_AND_RECONCILIATION.md) — source snapshots, cell evidence, person identity, revision diffs and safe removals.\n- [Grid import review workflow](docs/GRID_IMPORT_REVIEW_WORKFLOW.md) — target section-level review, canonical identity/shift mapping, safe commit and recovery gates; design only.
 - [Universal Generator specification](docs/UNIVERSAL_GENERATOR_SPEC.md) — deterministic templates, immutable preview and safe output integration.
 - [AI roster analyzer logic](docs/AI_ROSTER_ANALYZER_LOGIC_TH.md)
 - [Hybrid roster AI](docs/HYBRID_ROSTER_AI.md)
