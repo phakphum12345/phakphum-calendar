@@ -132,7 +132,7 @@ class ShiftPayCalculationService
             }
             if (! $this->matchesOptional($rule['department'] ?? null, $input['department'] ?? null) ||
                 ! $this->matchesOptional($rule['location'] ?? null, $input['location'] ?? null) ||
-                !$this->matchesOptional($rule['work_point'] ?? null, $input['work_point'] ?? null)) {
+                ! $this->matchesOptional($rule['work_point'] ?? null, $input['work_point'] ?? null)) {
                 continue;
             }
             $specificity = (($rule['department'] ?? null) !== null ? 4 : 0)
@@ -140,9 +140,11 @@ class ShiftPayCalculationService
                 + (($rule['work_point'] ?? null) !== null ? 1 : 0);
             $candidates[] = ['rule' => $rule, 'specificity' => $specificity, 'index' => $index];
         }
-        usort($candidates, static fn (array $a, array $b): int =>
-            ($b['specificity'] <=> $a['specificity']) ?: ($a['index'] <=> $b['index'])
-        );
+        usort($candidates, static function (array $a, array $b): int {
+            $specificity = $b['specificity'] <=> $a['specificity'];
+
+            return $specificity !== 0 ? $specificity : ($a['index'] <=> $b['index']);
+        });
 
         return $candidates[0]['rule'] ?? null;
     }
