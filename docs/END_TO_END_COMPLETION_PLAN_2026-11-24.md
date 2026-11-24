@@ -178,3 +178,23 @@ The requested user journey is complete only when an ordinary user can:
 8. retain data across restart, update, and supported backup/restore paths.
 
 A platform or capability that has not passed its acceptance tests must be labelled unsupported, blocked, or unknown rather than complete.
+
+
+### Workstream I — AI Assistant real-world readiness
+
+- [ ] Re-audit the current AI Support UI, provider interfaces, backend routes, auth, organization roles, deployment configuration, and tests; trace one message end-to-end.
+- [ ] Replace the “chat screen equals AI” assumption with explicit capability states: local help, live chat, roster analysis, external research, reports, and tool-assisted actions.
+- [ ] Deliver a useful offline/local assistant using versioned app documentation and deterministic help; clearly label local mode.
+- [ ] Implement backend provider readiness/configuration; never infer availability from a client-side provider selection.
+- [ ] Keep provider credentials server-side and do not add paid providers or paid infrastructure without explicit approval.
+- [ ] Add authenticated chat execution, tenant authorization, quotas, timeouts, bounded payloads, cancellation, safe errors, and redacted diagnostics.
+- [ ] Connect only user-selected roster context; minimize fields and obtain explicit consent before remote transmission.
+- [ ] Keep deterministic roster parsing authoritative; use AI only to explain/propose unresolved interpretations with source-cell evidence.
+- [ ] Implement real research retrieval and source provenance before advertising AI Research; no fabricated citations.
+- [ ] Add typed, allowlisted, least-privilege tools; begin read-only and require preview/confirmation for any mutation.
+- [ ] Preserve existing calendar preview/confirmation guard; AI must never bypass it.
+- [ ] Define conversation/report retention, clear-history, deletion, privacy notice, and prompt-injection defenses.
+- [ ] Test offline fallback, real provider, non-owner account, tenant isolation, provider failure, no-write guarantees, research citations, and each advertised platform.
+- [ ] Record exact deployed SHA and runtime evidence before marking AI Assistant usable.
+
+See [AI Assistant end-to-end completion](AI_ASSISTANT_END_TO_END_COMPLETION.md) for the detailed gap register, architecture, phases, user journeys, and acceptance matrix.

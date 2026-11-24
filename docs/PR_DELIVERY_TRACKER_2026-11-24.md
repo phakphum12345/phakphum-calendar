@@ -20,6 +20,15 @@ This is a point-in-time snapshot. Always refresh live PR metadata and exact-head
 | #180 | Three-mode shift pay and public-user readiness specification | OPEN, Draft; head `637c7e71f61d69823c6404462709570ffc068655` before this documentation batch | Keep as documentation delivery package; validate all added docs and update its head after one batch commit |
 | #181 | Three-mode rule-source resolution | OPEN, Draft; last recorded head `0951187431faf7db5331809b23ec48c84eaf88e6` | Finish exact-head checks and review before converting from Draft |
 
+## Documentation package extension — AI Assistant and master index
+
+The documentation package was extended on the same PR branch after the initial batch:
+- Full documentation catalog with nested domain/task topics: `docs/DOCUMENTATION_MASTER_INDEX.md`.
+- AI Assistant gap register, target architecture, privacy/security, phased delivery, user journeys, and acceptance matrix: `docs/AI_ASSISTANT_END_TO_END_COMPLETION.md`.
+- Updated README, master completion plan, remaining-work checklist, and acceptance matrix.
+- The AI Assistant is explicitly marked NOT READY for real-world live use; current documented functionality is local-only support and deterministic roster analysis foundations.
+- No application source, secrets, paid service, workflow, or deployment target is changed by this documentation extension.
+
 ## PR #181 workflow snapshot
 
 At the latest recorded inspection, these runs were observed:

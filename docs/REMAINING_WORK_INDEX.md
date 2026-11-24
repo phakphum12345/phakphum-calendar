@@ -14,6 +14,21 @@ This is the concise execution checklist. The detailed design and test criteria a
 - [ ] Add monthly pay statement and assignment-level reconciliation.
 - [ ] Add full end-to-end tests for all three modes.
 
+## P0 — Required for a genuinely usable AI Assistant
+
+- [ ] Re-audit current AI Support wiring and prove the complete request path.
+- [ ] Implement reliable local/offline help grounded in versioned app documentation.
+- [ ] Add real server-side provider readiness and at least one owner-approved live provider integration if live AI is advertised.
+- [ ] Add authenticated backend execution, organization/roster authorization, tenant isolation, quotas, timeouts, and safe errors.
+- [ ] Connect only user-selected roster context with explicit consent and data minimization.
+- [ ] Keep deterministic parsing authoritative; AI suggestions require source evidence and user review.
+- [ ] Implement real external research retrieval and verifiable citations before advertising AI Research.
+- [ ] Add bounded read-only tools, then preview/confirmation for any write action; never bypass calendar sync confirmation.
+- [ ] Define conversation/report retention, deletion, privacy, audit, and prompt-injection defenses.
+- [ ] Pass normal-user, offline, provider-failure, security, no-write, and deployed-runtime tests.
+
+Detailed plan: [AI Assistant end-to-end completion](AI_ASSISTANT_END_TO_END_COMPLETION.md).
+
 ## P0 — Required for public-user access
 
 - [ ] Consolidate duplicate Google authentication services.

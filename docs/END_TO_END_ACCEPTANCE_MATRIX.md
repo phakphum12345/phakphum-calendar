@@ -100,3 +100,25 @@ Specific:
 - Do not merge a Draft PR.
 - Do not push directly to main.
 - Do not deploy as part of verification unless explicitly authorized.
+
+## 8. AI Assistant real-world readiness
+
+- Offline/local help works without network and never fabricates a live provider response.
+- Documentation-grounded answers identify the relevant versioned help source.
+- A real configured provider works through the backend; fake-provider tests do not count as live proof.
+- Provider secrets never appear in app bundles, source, logs, or API responses.
+- Unauthenticated private requests are denied.
+- Cross-user and cross-organization roster access is denied at the server boundary.
+- Only explicitly selected and necessary roster fields are transmitted, with consent.
+- Uncertain roster fields remain unresolved and display raw source evidence.
+- AI output cannot mutate canonical roster, Google Sheets, or Google Calendar without explicit preview and confirmation.
+- Existing calendar sync confirmation remains enforced.
+- External research claims have valid retrieved sources; unavailable retrieval produces an honest unavailable state.
+- Provider timeout, quota, revoked key, malformed output, and outage have safe actionable error states.
+- Rate limits, request-size limits, concurrency limits, and prompt-injection defenses are tested.
+- Conversation and report retention/deletion match the published privacy policy.
+- A normal non-owner user completes the advertised AI journeys.
+- Personal mode works without organization membership for the assistant capabilities it advertises.
+- Every advertised platform passes install, auth, chat, and failure-state tests.
+- Evidence records app version, environment, and exact deployed SHA.
+- Core calendar/roster workflows remain usable without a paid AI provider.
