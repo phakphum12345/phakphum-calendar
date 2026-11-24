@@ -10,7 +10,7 @@ use Illuminate\Validation\Rule;
 class ShiftPayProfileController
 {
     private const MODES = ['personal', 'organization', 'hybrid'];
-    private const PRIORITIES = ['organization_first', 'personal_first', 'require_selection'];
+    private const PRIORITIES = ['organizationFirst', 'personalFirst', 'requireSelection'];
 
     public function show(Request $request): JsonResponse
     {
@@ -36,7 +36,7 @@ class ShiftPayProfileController
         return response()->json(['data' => [
             'mode' => $mode,
             'organization_id' => $organizationId,
-            'hybrid_priority' => $profile->hybrid_priority ?? 'require_selection',
+            'hybrid_priority' => $profile->hybrid_priority ?? 'requireSelection',
             'currency_code' => $profile->currency_code ?? 'THB',
             'decimal_places' => (int) ($profile->decimal_places ?? 2),
             'version' => (int) ($profile->version ?? 0),
@@ -58,7 +58,7 @@ class ShiftPayProfileController
             'personal_rules' => ['sometimes', 'array', 'max:200'],
             'personal_rules.*' => ['array:id,employment_type,day_category,shift_type_id,department,location,work_point,assignment_purpose,pay_component,salary_included,treatment,compensates_shift_type_id,compensatory_weekdays,fixed_amount,hourly_rate,multiplier,active'],
             'personal_rules.*.id' => ['required_with:personal_rules', 'string', 'max:128'],
-            'personal_rules.*.employment_type' => ['required_with:personal_rules', Rule::in(['salaried', 'daily_paid'])],
+            'personal_rules.*.employment_type' => ['required_with:personal_rules', Rule::in(['salaried', 'dailyPaid'])],
             'personal_rules.*.day_category' => ['required_with:personal_rules', Rule::in(['regularWeekday', 'officialHoliday', 'weeklyDayOff', 'festival'])],
             'personal_rules.*.shift_type_id' => ['required_with:personal_rules', 'string', 'max:128'],
             'personal_rules.*.department' => ['nullable', 'string', 'max:120'],
@@ -101,7 +101,7 @@ class ShiftPayProfileController
             $values = [
                 'mode' => $validated['mode'],
                 'organization_id' => $organizationId,
-                'hybrid_priority' => $validated['hybrid_priority'] ?? ($existing->hybrid_priority ?? 'require_selection'),
+                'hybrid_priority' => $validated['hybrid_priority'] ?? ($existing->hybrid_priority ?? 'requireSelection'),
                 'currency_code' => $validated['currency_code'] ?? ($existing->currency_code ?? 'THB'),
                 'decimal_places' => $validated['decimal_places'] ?? ($existing->decimal_places ?? 2),
                 'version' => (int) ($existing->version ?? 0) + 1,
@@ -148,7 +148,7 @@ class ShiftPayProfileController
             'rules' => ['required', 'array', 'max:200'],
             'rules.*' => ['array:id,employment_type,day_category,shift_type_id,department,location,work_point,assignment_purpose,pay_component,salary_included,treatment,compensates_shift_type_id,compensatory_weekdays,fixed_amount,hourly_rate,multiplier,active'],
             'rules.*.id' => ['required', 'string', 'max:128'],
-            'rules.*.employment_type' => ['required', Rule::in(['salaried', 'daily_paid'])],
+            'rules.*.employment_type' => ['required', Rule::in(['salaried', 'dailyPaid'])],
             'rules.*.day_category' => ['required', Rule::in(['regularWeekday', 'officialHoliday', 'weeklyDayOff', 'festival'])],
             'rules.*.shift_type_id' => ['required', 'string', 'max:128'],
             'rules.*.department' => ['nullable', 'string', 'max:120'],
