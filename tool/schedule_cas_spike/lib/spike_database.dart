@@ -11,7 +11,7 @@ class ScheduleRecords extends Table {
   TextColumn get fingerprint => text().nullable()();
 
   @override
-  Set<Column<Object>> get primaryKey => {scheduleId};
+  Set<Column> get primaryKey => {scheduleId};
 }
 
 @DriftDatabase(tables: [ScheduleRecords])
@@ -32,4 +32,11 @@ class SpikeDatabase extends _$SpikeDatabase {
 
   @override
   int get schemaVersion => 1;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) async {
+          await m.createAll();
+        },
+      );
 }
