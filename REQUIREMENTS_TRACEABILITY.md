@@ -266,9 +266,15 @@ Important distinction: PASS in this table means the source path or test case exi
 | Versioned strict JSON round-trip | `GridRosterImportProvenanceJsonCodec`, format discriminator and schema v1 | PASS — source added; runtime SKIPPED |
 | Reject unknown versions/enums and malformed required fields | Codec exceptions and tests | PASS — source/test added; runtime SKIPPED |
 | Preserve canonical Schedule schema v1 | No changes to `ScheduleJsonCodec` or canonical repository | PASS — files unchanged in this work |
-| Durable provenance storage and recovery | No repository/journal added | MISSING |
-| Atomic Schedule + provenance commit | Existing repository only alternates Schedule slots; no cross-object transaction | MISSING |
-| Grid UI, canonical conversion and Calendar sync | Not wired by this change | MISSING |
+| Recoverable Schedule + provenance journal | `GridRosterBundleJournal` stores both encoded payloads in a versioned two-slot record | PASS — source added; runtime SKIPPED |
+| PREPARED → read-back → COMMITTED protocol | Inactive slot staged and decoded before committed record replaces it | PASS — source contract; no platform durability guarantee |
+| Previous committed slot preserved during interrupted replacement | Alternating slot selection avoids overwriting the latest committed slot while staging | PASS — source/test added; runtime SKIPPED |
+| Recovery excludes PREPARED-only records | `recover` returns only highest-generation valid COMMITTED record | PASS — source/test added; runtime SKIPPED |
+| Stale target revision guard | Commit requires caller-supplied current revision to equal provenance target revision | PASS — source contract; live repository revalidation remains caller responsibility |
+| Idempotent retry and conflicting run-ID protection | Same run + identical Schedule/fingerprint returns existing bundle; conflicting reuse rejected | PASS — source/test added; runtime SKIPPED |
+| Atomic/durable cross-key transaction | SharedPreferences has no documented cross-key transaction or durable atomic-write guarantee | UNKNOWN — not claimed |
+| Production Grid UI/controller and canonical conversion | Journal not yet invoked by a production Grid workflow | MISSING |
+| Calendar sync after explicit approval | Not wired by this change | MISSING |
 | Dart format, analyze and Flutter tests | Not executed in connector environment | SKIPPED |
 
-**Interpretation:** PASS means the source contract or static boundary was added/inspected, not that runtime tests passed. The provenance codec is not persistence. The next implementation gate is a recoverable bundle journal with exact target revision checks and crash-recovery tests.
+**Interpretation:** PASS means source/test contract exists, not that runtime tests passed. The journal is a recoverable two-slot persistence primitive, not a database transaction. Platform durability remains unverified. Production Grid UI, canonical conversion, live target-revision reload/revalidation, and Calendar handoff remain separate E2E gates.
