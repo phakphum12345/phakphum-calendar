@@ -125,6 +125,14 @@ This is a package-documentation screen only. It does not establish that any cand
 
 Package documentation references: Drift transaction and platform feature summary; Drift Web storage behavior; sqflite platform companion matrix and experimental Web package; Sembast platform factories and single-process IO description. The links above are starting evidence, not a substitute for app-specific integration tests.
 
+## Isolated prototype status (2026-11-24)
+
+An isolated spike now exists at `tool/schedule_cas_spike/`. It uses Drift with a SQLite single-statement conditional UPSERT for create/update and a conditional UPDATE for tombstone deletion. Its test source covers explicit absent-token creation, stale create/update rejection, ABA protection, same-content generation advancement, tombstone recreation rules, stale-token resurrection protection and two independent database instances.
+
+A dedicated workflow (`.github/workflows/schedule-cas-spike.yml`) runs the native SQLite contract on Windows, Linux and macOS hosts. This is **source implementation only until a workflow run completes**. Android/iOS device integration, Web multi-tab storage, process-kill recovery, and browser quota/fallback behavior remain unproven. The spike's separate package manifest intentionally leaves the production dependency graph and root lockfile unchanged.
+
+The prototype currently hashes the payload supplied by its caller; it does not yet use `ScheduleJsonCodec`. This is deliberate isolation, not permission to substitute it into production. The prototype cannot justify accepting this ADR until exact-SHA test results and the complete active-platform matrix are attached.
+
 ## Migration sequence
 
 1. Inventory every production Schedule write path, including editor, imports, restore, sync, migration, delete and test fakes.
