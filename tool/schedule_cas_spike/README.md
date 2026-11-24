@@ -22,7 +22,7 @@ dart run build_runner build --delete-conflicting-outputs
 dart test
 ```
 
-The native test opens two independent Drift database instances against one temporary SQLite file. It checks stale writes, same-content generation advancement, ABA protection, tombstones and the two-writer outcome.
+The native test opens two independent Drift database instances, each hosted by its own executor isolate, against one temporary SQLite file. It checks stale writes, same-content generation advancement, ABA protection, tombstones and the two-writer outcome.
 
 ## Web adapter
 
