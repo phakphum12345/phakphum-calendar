@@ -103,6 +103,7 @@ class GridRosterCanonicalConverter {
       );
     }
 
+    _validateTargetSchedule(targetSchedule);
     final employeeById = <String, Employee>{
       for (final employee in employees)
         if (employee.active) employee.id: employee,
@@ -260,6 +261,11 @@ class GridRosterCanonicalConverter {
         } else if (decision.employeeId != null &&
             decision.employeeId!.trim().isNotEmpty) {
           employee = employeeById[decision.employeeId!];
+          if (employee == null) {
+            throw GridRosterCanonicalConversionException(
+              'Selected employee ${decision.employeeId} is missing or inactive.',
+            );
+          }
         }
 
         assignmentReviews[sourceId] = _ReviewedAssignment(
@@ -408,6 +414,28 @@ class GridRosterCanonicalConverter {
   static String _monthKey(DateTime date) =>
       '${date.year.toString().padLeft(4, '0')}-'
       '${date.month.toString().padLeft(2, '0')}';
+
+  static void _validateTargetSchedule(Schedule schedule) {
+    final monthKeys = <String>{};
+    for (final month in schedule.months) {
+      if (!monthKeys.add(_monthKey(month.month))) {
+        throw const GridRosterCanonicalConversionException(
+          'Target Schedule contains duplicate months.',
+        );
+      }
+      final dayKeys = <String>{};
+      for (final day in month.days) {
+        final key = '${day.date.year}-${day.date.month}-${day.date.day}';
+        if (day.date.year != month.month.year ||
+            day.date.month != month.month.month ||
+            !dayKeys.add(key)) {
+          throw const GridRosterCanonicalConversionException(
+            'Target Schedule contains an invalid or duplicate day.',
+          );
+        }
+      }
+    }
+  }
 
   static void _ensureCompatibleShiftType(Schedule target, ShiftType shift) {
     for (final month in target.months) {
