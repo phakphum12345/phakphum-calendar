@@ -285,3 +285,65 @@ The repository currently contains:
 5. Preview-only Universal Generator-to-Calendar adapter.
 
 The missing proof is a single documented, tested orchestration contract that shows which user workflow selects each path, how review/approval state is retained, and how generated or imported records enter the canonical schedule without losing provenance. Treat this as an integration backlog item, not a reason to delete one of the existing paths.
+
+
+## 12. Composition-root and persistence boundary verification
+
+Additional exact source evidence:
+- `lib/core/di/app_dependencies.dart`
+- `lib/features/excel_import/presentation/controllers/excel_import_controller.dart`
+- `lib/features/schedule/data/imported_schedule_adapter.dart`
+- `lib/features/schedule/data/legacy_schedule_adapter.dart`
+- `lib/features/schedule_generation/application/schedule_generator.dart`
+- `lib/features/schedule_generation/application/monthly_roster_request_builder.dart`
+- `lib/features/shift_parser/application/monthly_roster_workbook_scanner.dart`
+- `lib/features/shift_parser/application/snapshot_normalizer.dart`
+
+### 12.1 Tabular import persistence is exposed, not proven as one UI transaction
+
+The composition root exposes separate operations:
+- `createExcelImportController()` constructs the reader/import controller.
+- `createImportedSchedule(records)` converts `ShiftRecord` values to a canonical in-memory `Schedule`.
+- `loadImportedSchedule()` reads schedule id `imported` from `ScheduleRepository`.
+- `saveImportedSchedule(schedule)` persists the supplied aggregate through `ScheduleRepository.save`.
+- `createImportedScheduleController(schedule)` creates a repository-backed schedule controller.
+
+The import controller itself converts mapped rows into `ShiftRecord` and `ImportSummary`; it does not call the schedule adapter or repository. The adapter constructs a `ScheduleService` and returns its schedule; it does not persist. Therefore the repository contains the necessary building blocks, but these separate methods do not prove that a production UI flow calls them in the correct order or atomically preserves review state. The exact route/widget call sites and failure handling remain to be traced.
+
+### 12.2 Roster-grid compatibility conversion retains metadata outside Schedule
+
+`LegacyScheduleAdapter.toCanonical` converts legacy shifts into canonical assignments and separately records source-oriented metadata (sheet title, source cell, category, exclusion/generated flags, linked shift key, source color and custom title) in `LegacyScheduleConversion`. This is a deliberate compatibility bridge, not evidence that the canonical `Schedule` aggregate itself persists that metadata. Any shared import result or persistence design must retain the conversion metadata alongside the canonical aggregate or provide a tested round-trip store.
+
+The workbook scanner normalizes every supplied worksheet independently, preserving worksheet identifiers, A1 coordinates, raw values and background colors before section parsing. The `SnapshotNormalizer` path additionally preserves merged-cell state and anchor coordinates. These are different snapshot entry points; their caller selection and common provenance contract remain unproven.
+
+### 12.3 Staffing generation currently builds a request; it does not commit it
+
+`MonthlyRosterRequestBuilder.build` creates a new empty monthly `Schedule` and derives `CoverageRequirement` entries from the blueprint and staffing rules. `ScheduleGenerator.autoAssign` delegates to `AutoAssignmentService.generate(request)`. This confirms a staffing-assignment generation capability, but the inspected builder/generator pair does not load an existing imported schedule, persist the result, or route it to Calendar.
+
+The separate `GeneratorCalendarAdapter.preview` remains a preview-only conversion boundary. It has no Calendar gateway, repository or sync executor dependency. Do not present it as a production roster-to-Calendar pipeline.
+
+### 12.4 Verified boundary matrix
+
+| Boundary | Evidence | Status |
+|---|---|---|
+| XLSX read → tabular ShiftRecord | Reader and import controller source | PASS (source contract) |
+| ShiftRecord → canonical Schedule | ImportedScheduleAdapter source | PASS (conversion contract) |
+| Canonical Schedule → repository save capability | AppDependencies exposes ScheduleRepository.save | PASS (capability exposed) |
+| Production UI calls conversion then save with review state | Exact route/call-site transaction not established | UNKNOWN |
+| Roster-grid scan → legacy Shift | Scanner and parser source contracts | PASS (source contract) |
+| Legacy Shift → canonical Schedule | LegacyScheduleAdapter source contract | PASS (conversion contract) |
+| Legacy metadata survives canonical persistence | Metadata is returned separately; persistence contract not established | UNKNOWN |
+| Monthly blueprint/rules → GenerationRequest | MonthlyRosterRequestBuilder source | PASS (request contract) |
+| GenerationRequest → assignments | ScheduleGenerator delegates to AutoAssignmentService | PASS (generation entry point) |
+| Generated Schedule → repository persistence | No persistence call in inspected builder/generator | UNKNOWN |
+| Generated roster → Calendar sync | Universal adapter is preview-only | SKIPPED (not implemented by this adapter) |
+| Automated Flutter/Dart execution | No runtime in connector session | SKIPPED |
+
+### 12.5 Next implementation sequence (no destructive consolidation)
+
+1. Trace the actual import screen route/widget and identify whether it invokes `createImportedSchedule`, `saveImportedSchedule`, and `createImportedScheduleController`; capture success, cancellation, duplicate, and repository-failure behavior.
+2. Trace roster-grid scanner callers and the exact selection/review point that creates `MonthlyRosterShiftAdapter` output; preserve sheet/cell/date-anomaly metadata through canonical persistence.
+3. Define one versioned, backward-compatible import provenance envelope that can wrap both `ShiftRecord` and legacy-grid conversion output without forcing the two source parsers into one implementation.
+4. Trace generation UI/controller callers. Define whether generated assignments augment an imported Schedule or produce a separate draft; require preview and human approval before persistence.
+5. Add integration tests for import → review → canonical conversion → save → reload and generation → preview → approval → save. Keep Calendar sync as a separate approved side-effect boundary.
+6. Only after call-site and regression evidence exists, consider adapters or orchestration refactors. Do not delete either import path or alter existing persisted data as part of this work.
