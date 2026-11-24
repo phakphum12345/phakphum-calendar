@@ -221,3 +221,10 @@ Added `GridRosterReviewSessionBuilder` to compose the existing parser report, se
 Blocked-date and unsupported sections remain visible with their original assignments and are explicitly marked blocked. Identity and shift mappings remain proposals only. The session and every assignment expose `canCommit == false`; no repository, UI route, approval store or Calendar gateway is called.
 
 Test sources cover a valid composed preview, preservation of assignments from a blocked section, and rejection of missing source/target revision evidence. Runtime execution remains SKIPPED.
+
+
+## 15. Preserve unresolved-period sections — 2026-11-24
+
+The parser previously emitted a warning and omitted a section when its explicit date period was invalid or ambiguous. It now retains a section shell with its original title/header row and a blocking `unresolved_period` anomaly. Start/end dates remain null, and no assignments or dates are fabricated. This lets the review layer show the blocked section instead of silently losing it.
+
+The conflicting-explicit-ranges regression now asserts that the section remains in the report, has no resolved date range or assignments, and carries the blocking anomaly. The source/test change is committed; runtime execution remains SKIPPED.
