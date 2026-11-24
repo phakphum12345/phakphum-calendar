@@ -12,10 +12,8 @@ import '../../schedule/data/schedule_json_codec.dart';
 import '../data/grid_roster_bundle_journal.dart';
 import '../data/grid_roster_workbook_scanner.dart';
 import '../domain/monthly_roster_section.dart';
-import '../domain/grid_roster_import_provenance.dart';
 import 'grid_roster_canonical_converter.dart';
 import 'grid_roster_review_session.dart';
-import 'monthly_roster_section_parser.dart';
 
 /// A review session bound to the exact Schedule revision loaded for review.
 class GridRosterImportReviewContext {
@@ -75,6 +73,11 @@ class GridRosterImportWorkflow {
     required Iterable<ShiftTemplate> shiftTemplates,
   }) async {
     final sourceFingerprint = report.sourceFingerprint;
+    if (report.sections.isEmpty) {
+      return const ValidationFailure(
+        'Workbook scan produced no Grid sections to review.',
+      );
+    }
     if (sourceFingerprint == null || sourceFingerprint.trim().isEmpty) {
       return const ValidationFailure(
         'Parsed workbook is missing its source fingerprint.',
@@ -91,6 +94,11 @@ class GridRosterImportWorkflow {
       return _copyFailure<Schedule?, GridRosterImportReviewContext>(loaded);
     }
     final existing = (loaded as Success<Schedule?>).value;
+    if (existing != null && existing.id != targetScheduleId) {
+      return const ValidationFailure(
+        'Schedule repository returned a different target identity.',
+      );
+    }
     final target = existing ??
         Schedule(id: targetScheduleId, name: targetScheduleName);
     final revision = revisionFor(existing, targetScheduleId);
@@ -162,6 +170,10 @@ class GridRosterImportWorkflow {
     required GridRosterCanonicalConversionResult conversion,
   }) async {
     if (conversion.schedule.id != context.session.targetScheduleId ||
+        conversion.preparedProvenance.targetScheduleId !=
+            context.session.targetScheduleId ||
+        conversion.preparedProvenance.sourceFingerprint !=
+            context.session.sourceFingerprint ||
         conversion.preparedProvenance.targetScheduleRevision !=
             context.targetScheduleRevision) {
       return const ValidationFailure(
