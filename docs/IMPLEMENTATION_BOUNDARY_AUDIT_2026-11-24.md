@@ -618,7 +618,7 @@ The coordinator binds a review session to a live canonical Schedule revision (or
 
 The scanner now carries its SHA-256 workbook fingerprint on `MonthlyRosterParseReport`, including filtered reports. The coordinator is now called by the local XLSX Grid review screen and recovery runs before a new Grid scan. It does not invoke Calendar sync. It cannot guarantee a race-free save against another concurrent writer until the repository exposes a conditional/CAS write.
 
-**Runtime status: SKIPPED** — service-level test source was added but not executed; Dart format/analyze and Flutter tests remain unrun.
+**Runtime status: SKIPPED** — service-level test source now covers local XLSX scan through canonical save and recovery, but was not executed; Dart format/analyze and Flutter tests remain unrun.
 
 
 ## 26. Production local-XLSX Grid review UI
