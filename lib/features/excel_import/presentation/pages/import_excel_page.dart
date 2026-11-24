@@ -360,6 +360,15 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
     setState(() => loadingGridRoster = true);
     ShiftTemplateController? templateController;
     try {
+      final recovery = await workflow.recover('imported');
+      if (!mounted) return;
+      if (recovery case Failure<Schedule?>()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(recovery.message)),
+        );
+        return;
+      }
+
       final report = workflow.scanWorkbook(
         workbook: workbook,
         readWorksheet: controller.readAllRows,
