@@ -13,7 +13,7 @@ The active build and delivery surface covers **Windows, Web, Android, iOS, and L
 - `ios-evidence-gate.yml` — non-blocking PR advisory report for independent iOS evidence.
 - `final-gate.yml` — post-merge gate for the same `main` commit; Auto Detect CI, Windows, and Web are required, while Android, iOS, and Linux remain best-effort on `main`.
 
-macOS is an independent unsigned artifact workflow, not a required core PR gate. Broad repository validation, coverage gates, and integration-test gates
+macOS is an independent ad-hoc-signed artifact workflow, not a required core PR gate. Broad repository validation, coverage gates, and integration-test gates
 are also not required delivery gates. Laravel Backend CI is active for backend changes
 but does not deploy the API. The Android, iOS, and Linux workflows build
 artifacts; mobile store distribution and signing are not configured.
@@ -172,8 +172,8 @@ Windows, Linux, Android, Web, or iOS pipelines.
 The workflow uses a GitHub-hosted macOS runner (default `macos-15`; optionally
 overridable with the repository variable `MACOS_RUNNER_LABEL`), verifies the
 Xcode installation and Runner project scheme, installs Flutter dependencies,
-and runs an unsigned release build through Flutter/Xcode. It verifies the
-application bundle and publishes a ZIP plus SHA-256 checksum as a standalone
+and runs a release build through Flutter/Xcode using the project's ad-hoc signing identity. It verifies the
+application bundle and publishes an ad-hoc ZIP plus SHA-256 checksum as a standalone
 artifact.
 
 The concurrency group is unique per run and does not cancel another macOS
