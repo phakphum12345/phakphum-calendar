@@ -69,21 +69,19 @@ This document summarizes the current Laravel migrations. The migration files, no
 - Unique transaction/transfer-key pair and unique transaction/shift-ID pair.
 - Employee IDs are domain identifiers, not foreign keys to a separate employee table.
 
+### `shift_transaction_sync_attempts`
 
-
-### \`shift_transaction_sync_attempts\`
-
-- UUID primary key and transaction foreign key using \`RESTRICT\` on delete.
+- UUID primary key and transaction foreign key using `RESTRICT` on delete.
 - Per-transaction attempt number with a unique transaction/attempt-number constraint.
-- Status (\`started\`, \`completed\`, or \`failed\`), initiating user, optional failure reason, start/finish timestamps and timestamps.
+- Status (`started`, `completed`, or `failed`), initiating user, optional failure reason, start/finish timestamps and timestamps.
 - Supports auditable retries without overwriting previous failed attempts.
 
-### \`shift_transaction_calendar_events\`
+### `shift_transaction_calendar_events`
 
-- Auto-incrementing primary key and transaction foreign key using \`RESTRICT\` on delete.
+- Auto-incrementing primary key and transaction foreign key using `RESTRICT` on delete.
 - One row per transfer key, enforced by a unique transaction/transfer-key constraint.
 - Stores provider, optional calendar ID, provider event ID, optional ETag and sync timestamp.
-- Legacy completion requests are retained and stored with provider \`legacy\`; structured requests retain provider-specific references.
+- Legacy completion requests are retained and stored with provider `legacy`; structured requests retain provider-specific references.
 
 ### `shift_transaction_events`
 
