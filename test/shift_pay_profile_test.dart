@@ -160,6 +160,28 @@ void main() {
     expect(result.calculation.amount, isNull);
   });
 
+  test('organization source uses its own configured decimal precision', () {
+    final profile = ShiftPayProfile(
+      id: 'profile-org-precision',
+      mode: ShiftPayMode.organization,
+      organizationId: 'org-a',
+      decimalPlaces: 2,
+      organizationDecimalPlaces: 0,
+      rules: [
+        ShiftPayRuleEntry(
+          source: ShiftPayRuleSource.organization,
+          organizationId: 'org-a',
+          rule: rule('org-fractional', 123.456),
+        ),
+      ],
+    );
+
+    final result = profile.resolve(calculator: calculator, input: input);
+
+    expect(result.source, ShiftPayRuleSource.organization);
+    expect(result.calculation.amount, 123);
+  });
+
   test('organization mode requires an organization identifier', () {
     expect(
       () => ShiftPayProfile(
