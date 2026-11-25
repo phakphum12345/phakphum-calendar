@@ -1,6 +1,6 @@
 # Schedule CAS Storage Spike
 
-**Status:** Prototype source only — not production-ready and not yet executed.
+**Status:** Prototype source only — not production-ready; native CI validation is in progress.
 
 This package is deliberately isolated under `tool/`. It is not imported by the Flutter application and does not change the root `pubspec.yaml`, root lockfile, production repository, Schedule schema v1 or existing SharedPreferences records.
 
@@ -18,8 +18,8 @@ From this directory:
 
 ```sh
 flutter pub get
-dart run build_runner build --delete-conflicting-outputs
-dart test
+dart run build_runner build
+flutter test
 ```
 
 The native test opens two independent Drift database instances, each hosted by its own executor isolate, against one temporary SQLite file. It checks stale writes, same-content generation advancement, ABA protection, tombstones, stale-token resurrection, two-writer outcomes and close/reopen durability.
