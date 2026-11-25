@@ -5,7 +5,7 @@ import '../../../domain/entities/schedule_month.dart';
 import '../../../domain/entities/shift_assignment.dart';
 import '../../../domain/entities/shift_template.dart';
 import '../../../domain/entities/shift_type.dart';
-import '../../../models/shift.dart' show ShiftCategory;
+import '../../../models/shift.dart' show ShiftCategory, ShiftCategoryInfo;
 import '../domain/grid_roster_import_provenance.dart';
 import '../domain/monthly_roster_section.dart';
 import 'grid_roster_review_session.dart';
