@@ -3,6 +3,31 @@ import 'dart:math';
 
 import 'package:http/http.dart' as http;
 
+/// A provider event reference tied to one transaction transfer leg.
+class ShiftTransactionCalendarEventMapping {
+  const ShiftTransactionCalendarEventMapping({
+    required this.transferId,
+    required this.provider,
+    required this.eventId,
+    this.calendarId,
+    this.etag,
+  });
+
+  final String transferId;
+  final String provider;
+  final String eventId;
+  final String? calendarId;
+  final String? etag;
+
+  Map<String, dynamic> toJson() => {
+    'transfer_id': transferId,
+    'provider': provider,
+    'event_id': eventId,
+    'calendar_id': ?calendarId,
+    'etag': ?etag,
+  };
+}
+
 /// A server transaction snapshot. It intentionally models the API response
 /// separately from the local domain aggregate: the API does not expose Google
 /// account subjects for participants.
