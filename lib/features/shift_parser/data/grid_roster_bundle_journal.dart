@@ -338,7 +338,8 @@ class GridRosterBundleJournal {
     final generation = root['generation'];
     final schedulePayload = root['schedule'];
     final provenancePayload = root['provenance'];
-    if ((state != 'prepared' && state != 'committed') ||
+    if (stateValue is! String ||
+        (stateValue != 'prepared' && stateValue != 'committed') ||
         generation is! int ||
         generation < 1 ||
         schedulePayload is! String ||
@@ -347,7 +348,7 @@ class GridRosterBundleJournal {
         'Journal record is missing valid required fields.',
       );
     }
-    final state = stateValue as String;
+    final state = stateValue;
     final schedule = scheduleCodec.decode(schedulePayload);
     final provenance = provenanceCodec.decode(provenancePayload);
     if (schedule.id != provenance.targetScheduleId ||
