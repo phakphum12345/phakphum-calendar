@@ -273,6 +273,12 @@ class ShiftTransactionApiTest extends TestCase
             ->assertOk()->json('data');
         $this->assertSame('approved', $synced['status']);
         $this->assertSame('synced', $synced['sync_status']);
+        $this->assertCount(2, $synced['calendar_events']);
+        $this->assertSame(['legacy', 'legacy'], collect($synced['calendar_events'])->pluck('provider')->all());
+        $this->assertSame(['completed'], collect($synced['sync_attempts'])->pluck('status')->all());
+        $this->postJson("/api/v1/shift-transactions/{$created['id']}/calendar-sync/complete", ['calendar_event_ids' => ['google-event-1', 'google-event-2']], $this->auth('alice-token'))->assertOk();
+        $this->postJson("/api/v1/shift-transactions/{$created['id']}/calendar-sync/complete", ['calendar_event_ids' => ['different-event-1', 'different-event-2']], $this->auth('alice-token'))->assertConflict();
+        $this->assertSame(2, DB::table('shift_transaction_calendar_events')->where('transaction_id', $created['id'])->count());
         $this->postJson("/api/v1/shift-transactions/{$created['id']}/fulfill", ['transfer_id' => 'primary'], $this->auth('alice-token'))->assertForbidden();
         $this->postJson("/api/v1/shift-transactions/{$created['id']}/fulfill", ['transfer_id' => 'primary'], $this->auth('bob-token'))->assertOk();
         $partial = $this->getJson("/api/v1/shift-transactions/{$created['id']}", $this->auth('bob-token'))->assertOk()->json('data');
@@ -308,6 +314,61 @@ class ShiftTransactionApiTest extends TestCase
             ->assertOk()->json('data');
         $this->assertSame('failed', $failed['sync_status']);
         $this->assertContains('sync_fail', collect($failed['timeline'])->pluck('event_type')->all());
+        $this->assertSame(['failed'], collect($failed['sync_attempts'])->pluck('status')->all());
+
+        $this->postJson("/api/v1/shift-transactions/{$created['id']}/calendar-sync/start", ['preview_confirmed' => true], $this->auth('alice-token'))->assertOk();
+        $transferId = $created['transfers'][0]['transfer_key'];
+        $retried = $this->postJson("/api/v1/shift-transactions/{$created['id']}/calendar-sync/complete", [
+            'calendar_events' => [[
+                'transfer_id' => $transferId,
+                'provider' => 'google',
+                'calendar_id' => 'primary',
+                'event_id' => 'google-event-retry',
+                'etag' => 'etag-123',
+            ]],
+        ], $this->auth('alice-token'))->assertOk()->json('data');
+        $this->assertSame('synced', $retried['sync_status']);
+        $this->assertSame(['failed', 'completed'], collect($retried['sync_attempts'])->pluck('status')->all());
+        $this->assertSame('google', $retried['calendar_events'][0]['provider']);
+        $this->assertSame($transferId, $retried['calendar_events'][0]['transfer_key']);
+    }
+
+    public function test_calendar_sync_requires_one_distinct_mapping_for_each_transfer_leg(): void
+    {
+        $this->signIn('alice-token');
+        $this->signIn('bob-token');
+        $payload = $this->giveUp();
+        $payload['type'] = 'exchange_and_return';
+        $payload['transfers'] = [
+            ['id' => 'primary', 'shift_id' => 'shift-a', 'from_employee_id' => 'A', 'to_employee_id' => 'B', 'shift_code' => 'late', 'starts_at' => now()->subDays(2)->toIso8601String(), 'ends_at' => now()->subDay()->toIso8601String(), 'purpose' => 'primary'],
+            ['id' => 'return', 'shift_id' => 'shift-b', 'from_employee_id' => 'B', 'to_employee_id' => 'A', 'shift_code' => 'morning', 'starts_at' => now()->subDay()->toIso8601String(), 'ends_at' => now()->subHours(2)->toIso8601String(), 'purpose' => 'return_shift'],
+        ];
+        $created = $this->postJson('/api/v1/shift-transactions', $payload, [
+            'Authorization' => 'Bearer alice-token', 'Idempotency-Key' => 'sync-partial-mapping',
+        ])->assertCreated()->json('data');
+        $this->postJson("/api/v1/shift-transactions/{$created['id']}/confirm", [], $this->auth('alice-token'))->assertOk();
+        $this->postJson("/api/v1/shift-transactions/{$created['id']}/confirm", [], $this->auth('bob-token'))->assertOk();
+        $this->postJson("/api/v1/shift-transactions/{$created['id']}/calendar-sync/start", ['preview_confirmed' => true], $this->auth('alice-token'))->assertOk();
+
+        $this->postJson("/api/v1/shift-transactions/{$created['id']}/calendar-sync/complete", [
+            'calendar_events' => [[
+                'transfer_id' => 'primary',
+                'provider' => 'google',
+                'event_id' => 'only-one-event',
+            ]],
+        ], $this->auth('alice-token'))->assertUnprocessable();
+
+        $this->postJson("/api/v1/shift-transactions/{$created['id']}/calendar-sync/complete", [
+            'calendar_events' => [
+                ['transfer_id' => 'primary', 'provider' => 'google', 'event_id' => 'duplicate-event'],
+                ['transfer_id' => 'return', 'provider' => 'google', 'event_id' => 'duplicate-event'],
+            ],
+        ], $this->auth('alice-token'))->assertUnprocessable();
+
+        $pending = $this->getJson("/api/v1/shift-transactions/{$created['id']}", $this->auth('alice-token'))->assertOk()->json('data');
+        $this->assertSame('pending', $pending['sync_status']);
+        $this->assertSame(['started'], collect($pending['sync_attempts'])->pluck('status')->all());
+        $this->assertCount(0, $pending['calendar_events']);
     }
 
     public function test_organization_transaction_requires_membership_and_approver_role(): void

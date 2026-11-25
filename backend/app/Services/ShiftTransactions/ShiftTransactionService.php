@@ -266,6 +266,8 @@ class ShiftTransactionService
                 'is_current_user' => (int) $participant->user_id === (int) $actor->id,
             ]);
         $transfers = DB::table('shift_transaction_transfers')->where('transaction_id', $id)->orderBy('id')->get();
+        $calendarEvents = DB::table('shift_transaction_calendar_events')->where('transaction_id', $id)->orderBy('transfer_key')->get();
+        $syncAttempts = DB::table('shift_transaction_sync_attempts')->where('transaction_id', $id)->orderBy('attempt_number')->get();
         $events = DB::table('shift_transaction_events as events')
             ->leftJoin('users', 'users.id', '=', 'events.actor_user_id')
             ->where('events.transaction_id', $id)->orderBy('events.id')
@@ -278,6 +280,7 @@ class ShiftTransactionService
             'metadata' => $transaction->metadata ? json_decode($transaction->metadata, true) : null,
             'created_at' => $transaction->created_at, 'updated_at' => $transaction->updated_at,
             'participants' => $participants, 'transfers' => $transfers,
+            'calendar_events' => $calendarEvents, 'sync_attempts' => $syncAttempts,
             'timeline' => $events->map(fn ($event): array => [
                 'id' => $event->id, 'event_type' => $event->event_type,
                 'transaction_version' => $event->transaction_version, 'actor_name' => $event->actor_name,
@@ -366,25 +369,92 @@ class ShiftTransactionService
                         if ($status !== 'approved' || in_array($sync, ['pending', 'synced'], true)) {
                             throw new ConflictHttpException('Only approved transactions may start Calendar sync.');
                         }
+                        $attemptNumber = ((int) DB::table('shift_transaction_sync_attempts')
+                            ->where('transaction_id', $id)->max('attempt_number')) + 1;
+                        $attemptId = (string) Str::uuid();
+                        DB::table('shift_transaction_sync_attempts')->insert([
+                            'id' => $attemptId,
+                            'transaction_id' => $id,
+                            'attempt_number' => $attemptNumber,
+                            'status' => 'started',
+                            'initiated_by_user_id' => $actor->id,
+                            'failure_reason' => null,
+                            'started_at' => $now,
+                            'finished_at' => null,
+                            'created_at' => $now,
+                            'updated_at' => $now,
+                        ]);
                         $sync = 'pending';
+                        $eventData = ['attempt_id' => $attemptId, 'attempt_number' => $attemptNumber];
                     } elseif ($action === 'sync_complete') {
+                        $mappings = $this->normalizeCalendarEvents($id, $input);
+                        if ($sync === 'synced') {
+                            $storedMappings = DB::table('shift_transaction_calendar_events')
+                                ->where('transaction_id', $id)->orderBy('transfer_key')
+                                ->get(['transfer_key', 'provider', 'calendar_id', 'event_id', 'etag'])
+                                ->map(fn ($event): array => [
+                                    'transfer_id' => $event->transfer_key,
+                                    'provider' => $event->provider,
+                                    'calendar_id' => $event->calendar_id,
+                                    'event_id' => $event->event_id,
+                                    'etag' => $event->etag,
+                                ])->all();
+                            if (hash_equals(
+                                hash('sha256', json_encode($storedMappings, JSON_THROW_ON_ERROR)),
+                                hash('sha256', json_encode($mappings, JSON_THROW_ON_ERROR)),
+                            )) {
+                                return $this->read($id, $actor);
+                            }
+                            throw new ConflictHttpException('Calendar sync was already completed with different provider event mappings.');
+                        }
                         if ($sync !== 'pending') {
                             throw new ConflictHttpException('Calendar sync is not pending.');
                         }
-                        $expectedEvents = DB::table('shift_transaction_transfers')->where('transaction_id', $id)->count();
-                        if (empty($input['calendar_event_ids']) || ! is_array($input['calendar_event_ids']) ||
-                            count($input['calendar_event_ids']) !== $expectedEvents ||
-                            count(array_unique($input['calendar_event_ids'])) !== $expectedEvents) {
-                            throw ValidationException::withMessages(['calendar_event_ids' => 'Provide one distinct provider event reference for every transfer leg.']);
+                        $attempt = DB::table('shift_transaction_sync_attempts')
+                            ->where('transaction_id', $id)->where('status', 'started')
+                            ->orderByDesc('attempt_number')->lockForUpdate()->first();
+                        if ($attempt === null) {
+                            throw new ConflictHttpException('No active Calendar sync attempt exists.');
                         }
+                        foreach ($mappings as $mapping) {
+                            DB::table('shift_transaction_calendar_events')->insert([
+                                'transaction_id' => $id,
+                                'transfer_key' => $mapping['transfer_id'],
+                                'provider' => $mapping['provider'],
+                                'calendar_id' => $mapping['calendar_id'],
+                                'event_id' => $mapping['event_id'],
+                                'etag' => $mapping['etag'],
+                                'synced_at' => $now,
+                                'created_at' => $now,
+                                'updated_at' => $now,
+                            ]);
+                        }
+                        DB::table('shift_transaction_sync_attempts')->where('id', $attempt->id)->update([
+                            'status' => 'completed',
+                            'finished_at' => $now,
+                            'updated_at' => $now,
+                        ]);
                         $sync = 'synced';
-                        $eventData = ['calendar_event_ids' => array_values($input['calendar_event_ids'])];
+                        $eventData = ['attempt_id' => $attempt->id, 'calendar_events' => $mappings];
                     } elseif ($action === 'sync_fail') {
                         if ($sync !== 'pending') {
                             throw new ConflictHttpException('Calendar sync is not pending.');
                         }
+                        $attempt = DB::table('shift_transaction_sync_attempts')
+                            ->where('transaction_id', $id)->where('status', 'started')
+                            ->orderByDesc('attempt_number')->lockForUpdate()->first();
+                        if ($attempt === null) {
+                            throw new ConflictHttpException('No active Calendar sync attempt exists.');
+                        }
+                        $reason = $input['reason'] ?? null;
+                        DB::table('shift_transaction_sync_attempts')->where('id', $attempt->id)->update([
+                            'status' => 'failed',
+                            'failure_reason' => $reason,
+                            'finished_at' => $now,
+                            'updated_at' => $now,
+                        ]);
                         $sync = 'failed';
-                        $eventData = ['reason' => $input['reason'] ?? null];
+                        $eventData = ['attempt_id' => $attempt->id, 'reason' => $reason];
                     } else {
                         if ($status !== 'approved' || $sync !== 'synced') {
                             throw new ConflictHttpException('Verified Calendar sync and approval are required before fulfillment.');
@@ -429,6 +499,66 @@ class ShiftTransactionService
 
             return $this->read($id, $actor);
         });
+    }
+
+    private function normalizeCalendarEvents(string $transactionId, array $input): array
+    {
+        $transfers = DB::table('shift_transaction_transfers')
+            ->where('transaction_id', $transactionId)->orderBy('id')->get(['transfer_key']);
+        if (isset($input['calendar_events'])) {
+            $mappings = array_values($input['calendar_events']);
+        } else {
+            $ids = array_values($input['calendar_event_ids'] ?? []);
+            $mappings = [];
+            foreach ($transfers as $index => $transfer) {
+                if (! array_key_exists($index, $ids)) {
+                    break;
+                }
+                $mappings[] = [
+                    'transfer_id' => $transfer->transfer_key,
+                    'provider' => 'legacy',
+                    'calendar_id' => null,
+                    'event_id' => $ids[$index],
+                    'etag' => null,
+                ];
+            }
+        }
+
+        $expectedTransferIds = $transfers->pluck('transfer_key')->sort()->values()->all();
+        $actualTransferIds = array_map(static fn (array $mapping): string => $mapping['transfer_id'], $mappings);
+        sort($actualTransferIds);
+        if (count($mappings) !== $transfers->count() ||
+            count(array_unique($actualTransferIds)) !== count($actualTransferIds) ||
+            $actualTransferIds !== $expectedTransferIds) {
+            throw ValidationException::withMessages([
+                'calendar_events' => 'Provide exactly one event mapping for every transfer leg.',
+            ]);
+        }
+
+        $eventIdentities = array_map(
+            static fn (array $mapping): string => implode('|', [
+                $mapping['provider'],
+                $mapping['calendar_id'] ?? '',
+                $mapping['event_id'],
+            ]),
+            $mappings,
+        );
+        if (count(array_unique($eventIdentities)) !== count($eventIdentities)) {
+            throw ValidationException::withMessages([
+                'calendar_events' => 'Provider event references must be distinct.',
+            ]);
+        }
+
+        $normalized = array_map(static fn (array $mapping): array => [
+            'transfer_id' => $mapping['transfer_id'],
+            'provider' => $mapping['provider'],
+            'calendar_id' => $mapping['calendar_id'] ?? null,
+            'event_id' => $mapping['event_id'],
+            'etag' => $mapping['etag'] ?? null,
+        ], $mappings);
+        usort($normalized, static fn (array $a, array $b): int => $a['transfer_id'] <=> $b['transfer_id']);
+
+        return $normalized;
     }
 
     private function validateTransferShape(string $type, array $transfers, array $participants): void

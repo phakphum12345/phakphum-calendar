@@ -69,6 +69,20 @@ This document summarizes the current Laravel migrations. The migration files, no
 - Unique transaction/transfer-key pair and unique transaction/shift-ID pair.
 - Employee IDs are domain identifiers, not foreign keys to a separate employee table.
 
+### `shift_transaction_sync_attempts`
+
+- UUID primary key and transaction foreign key using `RESTRICT` on delete.
+- Per-transaction attempt number with a unique transaction/attempt-number constraint.
+- Status (`started`, `completed`, or `failed`), initiating user, optional failure reason, start/finish timestamps and timestamps.
+- Supports auditable retries without overwriting previous failed attempts.
+
+### `shift_transaction_calendar_events`
+
+- Auto-incrementing primary key and transaction foreign key using `RESTRICT` on delete.
+- One row per transfer key, enforced by a unique transaction/transfer-key constraint.
+- Stores provider, optional calendar ID, provider event ID, optional ETag and sync timestamp.
+- Legacy completion requests are retained and stored with provider `legacy`; structured requests retain provider-specific references.
+
 ### `shift_transaction_events`
 
 - Auto-incrementing primary key.
@@ -97,6 +111,8 @@ erDiagram
     USERS ||--o{ SHIFT_TRANSACTION_PARTICIPANTS : participates
     SHIFT_TRANSACTIONS ||--o{ SHIFT_TRANSACTION_TRANSFERS : transfers
     SHIFT_TRANSACTIONS ||--o{ SHIFT_TRANSACTION_EVENTS : records
+    SHIFT_TRANSACTIONS ||--o{ SHIFT_TRANSACTION_SYNC_ATTEMPTS : retries
+    SHIFT_TRANSACTIONS ||--o{ SHIFT_TRANSACTION_CALENDAR_EVENTS : reconciles
     USERS o|--o{ SHIFT_TRANSACTION_EVENTS : acts
 ```
 
@@ -105,6 +121,8 @@ erDiagram
 - Transaction creation and state transitions use database transactions.
 - The service locks transaction rows during transitions and increments a version to prevent stale concurrent updates.
 - Idempotency keys are unique per creator; a repeated key with a different request hash is rejected.
+- Calendar sync attempts are retained individually; a retry creates a new attempt instead of overwriting a failed attempt.
+- Calendar event mappings are unique per transaction transfer leg; completed sync cannot be overwritten by different provider references.
 - Foreign-key delete behavior is `RESTRICT` for transaction, participant, transfer and event relationships in the shift-transaction migration. Do not change it without reviewing historical data and authorization implications.
 - No production database reset or destructive migration was performed as part of the 2026-11-20 repository work.
 - Do not delete user, membership, transaction or event data to make a migration or test pass.

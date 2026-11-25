@@ -118,9 +118,11 @@ Calendar writes remain behind a preview-and-confirm flow:
 3. Organization manager approves or rejects when the organization policy requires it.
 4. Client displays the calendar preview and obtains explicit confirmation.
 5. Call `calendar-sync/start` with `preview_confirmed: true`.
-6. On success call `calendar-sync/complete` with `calendar_event_ids` containing exactly one distinct provider event ID per transfer leg (1–10 IDs total; a two-leg exchange requires two distinct IDs).
-7. On failure call `calendar-sync/fail` with an optional bounded reason.
-8. Fulfill a transfer with `transfer_id` when the workflow conditions are met.
+6. On success call `calendar-sync/complete` with either the legacy `calendar_event_ids` array (one distinct ID per transfer leg, mapped in transfer creation order) or the structured `calendar_events` array. Each structured item contains `transfer_id`, `provider`, `event_id`, and optional `calendar_id` and `etag`. Exactly one distinct mapping is required for every transfer leg.
+7. On failure call `calendar-sync/fail` with an optional bounded reason. A failed attempt can be retried by starting a new attempt after the previous one has been recorded as failed.
+8. Repeating a completed request with the exact same event mappings is idempotent. Repeating completion with different mappings returns HTTP 409.
+9. Transaction reads include `calendar_events` (per-transfer provider references) and `sync_attempts` (attempt number, status, actor and timestamps).
+10. Fulfill a transfer with `transfer_id` when the workflow conditions are met.
 
 The service uses database transactions, row locking, a transaction version, idempotency keys and append-only event records by service convention. Event records have an auto-incrementing ID and transaction version; the current schema does not define a separate event-sequence column. Do not bypass the service with direct production database writes.
 
