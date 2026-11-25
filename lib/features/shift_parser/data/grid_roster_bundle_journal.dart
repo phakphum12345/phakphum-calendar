@@ -12,11 +12,13 @@ class GridRosterBundleJournalSnapshot {
     required this.schedule,
     required this.provenance,
     required this.generation,
+    this.journaledAtUtc,
   });
 
   final Schedule schedule;
   final GridRosterImportProvenance provenance;
   final int generation;
+  final DateTime? journaledAtUtc;
 }
 
 /// A fail-closed journal error. No canonical Schedule is changed by this class.
