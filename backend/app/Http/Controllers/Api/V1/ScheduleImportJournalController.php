@@ -25,7 +25,7 @@ class ScheduleImportJournalController extends Controller
     public function store(Request $request, string $scheduleId): JsonResponse
     {
         $validated = $request->validate([
-            'import_run_id' => ['required', 'uuid'],
+            'import_run_id' => ['required', 'string', 'max:128', 'regex:/^[A-Za-z0-9._:-]+$/'],
             'lifecycle' => ['required', 'in:prepared,committed'],
             'base_revision' => ['required', 'string', 'max:160'],
             'source_fingerprint' => ['required', 'regex:/^[a-f0-9]{64}$/'],
