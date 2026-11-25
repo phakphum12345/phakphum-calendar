@@ -114,7 +114,7 @@ class ScheduleController extends Controller
         ]);
         $expected = $validated['expected_revision'];
 
-        if (preg_match('/^v([1-9][0-9]*):([a-f0-9]{64})$/', $expected, $matches)) {
+        if (preg_match('/^v([1-9][0-9]*):([a-f0-9]{64})$/', $expected, $matches) !== 1) {
             throw ValidationException::withMessages([
                 'expected_revision' => ['A live revision token is required for deletion.'],
             ]);
