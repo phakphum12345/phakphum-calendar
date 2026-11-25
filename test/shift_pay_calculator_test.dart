@@ -240,6 +240,29 @@ void main() {
       expect(result.amount, isNull);
     });
 
+    test('applies configured decimal precision when requested', () {
+      final result = calculator.calculate(
+        input: ShiftPayInput(
+          date: DateTime(2026, 10, 26),
+          employmentType: EmploymentType.dailyPaid,
+          shiftTypeId: 'night',
+          hours: 1,
+        ),
+        rules: const [
+          ShiftPayRule(
+            id: 'fractional-pay',
+            employmentType: EmploymentType.dailyPaid,
+            dayCategory: WorkDayCategory.regularWeekday,
+            shiftTypeId: 'night',
+            fixedAmount: 123.456,
+          ),
+        ],
+        decimalPlaces: 2,
+      );
+
+      expect(result.amount, 123.46);
+    });
+
     test('missing rule is reported as unconfigured, not unpaid', () {
       final result = calculator.calculate(
         input: ShiftPayInput(
