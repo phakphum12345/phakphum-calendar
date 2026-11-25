@@ -10,6 +10,10 @@
 include: package:flutter_lints/flutter.yaml
 
 analyzer:
+  # The CAS spike is a standalone Dart/Flutter package with its own
+  # dependency graph. Do not analyze its tests as part of the root app.
+  exclude:
+    - tool/schedule_cas_spike/**
   errors:
     # Startup recovery intentionally publishes one final ChangeNotifier update
     # from the application boundary after a timeout or provider failure.
