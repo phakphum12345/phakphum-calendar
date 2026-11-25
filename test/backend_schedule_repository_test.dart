@@ -44,7 +44,7 @@ void main() {
     expect(loaded, isA<Success<Schedule?>>());
     final saved = await repository.save(schedule);
     expect(saved, isA<Success<Schedule>>());
-    expect(requests.map((request) => request.method), ['GET', 'PUT']);
+    expect(requests.map((request) => request.method).toList(), ['GET', 'PUT']);
   });
 
   test('surfaces a stale revision conflict instead of falling back to local storage', () async {
