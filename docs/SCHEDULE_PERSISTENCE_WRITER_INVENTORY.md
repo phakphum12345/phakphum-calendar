@@ -1,9 +1,9 @@
 # Schedule Persistence Writer Inventory
 
-**Review date:** 2026-11-24  
-**Inspected branch:** `docs/universal-roster-intelligence-masterplan-2026-11-24`  
-**Inspected head:** `229f896f2d9594e0b536fdb855d8d1fa619f5cb3`  
-**Evidence type:** static source and test-source inspection; no Dart/Flutter test execution is claimed.  
+**Review date:** 2026-11-25  
+**Inspected branch:** `feat/universal-roster-grid-reconciled-2026-11-25`  
+**Inspected head:** `1b2dafecf1f574ea5200905a4e524cd9fd38efa7` (before this inventory evidence update)  
+**Evidence type:** production writer source inspection plus separate isolated CAS prototype CI evidence. No root-app Dart/Flutter test execution is claimed.  
 **Decision:** inventory baseline only. No persistence behavior, schema, or production writer was changed by this audit.
 
 ## 1. Scope and method
@@ -129,13 +129,14 @@ Grid recovery
 | Legacy AppController writer identified | PASS | Durable write funnel and representative callers inspected. |
 | Tabular import facade identified | PASS | Dependency facade and app wiring inspected. |
 | Grid commit and recovery writers identified | PASS | Both repository save paths and guards inspected. |
-| Production conditional CAS | FAIL | No conditional repository capability or storage atomicity exists in the inspected contract/implementation. |
+| Isolated native SQLite CAS prototype contract | PASS | Run `45568406234` passed formatting, analysis and CAS/concurrency tests on macOS, Windows and Ubuntu for head `152db1c372c227704872dc9e676e9eca12d58044`; this is prototype-only evidence. |
+| Production conditional CAS | FAIL | No conditional repository capability or storage atomicity exists in the inspected contract/implementation. The prototype is not wired into production. |
 | Global writer migration to CAS | FAIL | Current writers still call ordinary `save`. |
 | Production Schedule delete caller | UNKNOWN | No caller found in inspected production paths; broader indirect call graph not exhaustively proven. |
 | Generation-to-persistence path | UNKNOWN | No production approval/save orchestration established in this audit. |
 | Startup journal discovery/index | FAIL | No index/enumeration/startup recovery path established. |
-| Runtime tests on exact head | SKIPPED | Not executed in this audit. |
+| Full root-app runtime tests on current branch head | SKIPPED | The isolated CAS workflow does not run the full Flutter application suite. Exact-head root-app test evidence is still required. |
 
 ## 9. Relationship to the persistence ADR
 
-This inventory is the first input to [ADR: Conditional Schedule Persistence and Journal Discovery](adr/CONDITIONAL_SCHEDULE_PERSISTENCE_AND_JOURNAL_DISCOVERY.md). The ADR remains **Proposed**. This document does not accept a database choice, introduce a fake CAS implementation, change Schedule schema v1, or authorize production migration.
+This inventory is the first input to [ADR: Conditional Schedule Persistence and Journal Discovery](adr/CONDITIONAL_SCHEDULE_PERSISTENCE_AND_JOURNAL_DISCOVERY.md). The ADR remains **Proposed**. The native CAS prototype is validated on three operating systems but does not establish Web/mobile/browser durability or production suitability. This document does not accept a database choice, introduce a fake CAS implementation, change Schedule schema v1, or authorize production migration.
