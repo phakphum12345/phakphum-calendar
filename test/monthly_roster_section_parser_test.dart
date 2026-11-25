@@ -87,6 +87,114 @@ void main() {
     expect(report.dateRanges.single.end, DateTime(2026, 9, 15));
   });
 
+  test('uses the explicit GEN section range instead of the unit number', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, [
+          'GEN คลินิคพิเศษ ภปร. 4 พฤศจิกายน พ.ศ. 2569 '
+          '(1 พฤศจิกายน 2569 - 30 พฤศจิกายน 2569)',
+        ]),
+        ..._row(1, ['วันที่', 1, 2, 3, 4, 5, 6, 7]),
+        ..._row(2, ['GEN', 'บุคลากร A']),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, hasLength(1));
+    expect(report.sections.single.startDate, DateTime(2026, 11, 1));
+    expect(report.sections.single.endDate, DateTime(2026, 11, 30));
+    expect(report.assignments.single.date, DateTime(2026, 11, 1));
+    expect(report.assignments.single.workerName, 'บุคลากร A');
+  });
+
+  test('does not use worksheet month when a section declares conflicting ranges', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, [
+          'GEN ประจำเดือน พฤศจิกายน 2569 '
+          '(1 พฤศจิกายน 2569 - 30 พฤศจิกายน 2569) '
+          '(1 ธันวาคม 2569 - 31 ธันวาคม 2569)',
+        ]),
+        ..._row(1, ['วันที่', 1, 2, 3, 4, 5, 6, 7]),
+        ..._row(2, ['GEN', 'บุคลากร A']),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, hasLength(1));
+    expect(report.assignments, isEmpty);
+    expect(
+      report.sections.single.dateAnomalies.single.code,
+      'unresolved_period',
+    );
+    expect(report.sections.single.startDate, isNull);
+    expect(report.sections.single.endDate, isNull);
+    expect(report.warnings, hasLength(1));
+    expect(report.warnings.single, contains('ไม่ใช้เดือนจากชื่อชีตแทน'));
+  });
+
+  test('blocks malformed X-OPD dates without blocking a valid section', () {
+    final portableDays = [
+      ...List<int>.generate(15, (index) => index + 16),
+      ...List<int>.generate(15, (index) => index + 1),
+    ];
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['PORTABLE 16 พฤศจิกายน 2569 - 15 ธันวาคม 2569']),
+        ..._row(1, ['วันที่', ...portableDays]),
+        ..._row(2, ['ER', ...List<String>.filled(30, 'นาย ก')]),
+        ..._row(4, [
+          'X-OPD ประจำเดือน พฤศจิกายน พ.ศ. 2569 '
+          '(1 พฤศจิกายน 2569 - 30 พฤศจิกายน 2569)',
+        ]),
+        ..._row(5, [
+          'วันที่',
+          ...List<int>.generate(16, (index) => index + 1),
+          30,
+          30,
+        ]),
+        ..._row(6, ['X-OPD', ...List<String>.filled(18, 'นาย ข')]),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+    final portable = report.sections.singleWhere(
+      (section) => section.title.startsWith('PORTABLE'),
+    );
+    final xopd = report.sections.singleWhere(
+      (section) => section.title.startsWith('X-OPD'),
+    );
+
+    expect(portable.dateAnomalies, isEmpty);
+    expect(portable.dateColumns, hasLength(30));
+    expect(xopd.dateAnomalies.map((item) => item.code), contains('duplicate_day'));
+    expect(xopd.dateAnomalies, isNotEmpty);
+
+    final shifts = const MonthlyRosterShiftAdapter().parseForWorkers(
+      report,
+      targetNames: ['นาย ก', 'นาย ข'],
+    );
+    expect(shifts, hasLength(30));
+    expect(shifts.every((shift) => shift.assignedName == 'นาย ก'), isTrue);
+  });
+
   test('generates independent section dates before populating worker names', () {
     final input = ShiftParserInput(
       spreadsheetId: 'spreadsheet',

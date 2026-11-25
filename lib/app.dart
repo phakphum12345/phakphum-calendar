@@ -203,6 +203,7 @@ class _ShiftToolsAppState extends State<ShiftToolsApp> {
           employeeRepository: dependencies.employeeRepository,
           shiftTemplateControllerFactory:
               dependencies.createShiftTemplateController,
+          gridRosterWorkflow: dependencies.createGridRosterImportWorkflow(),
         ),
       },
       home: AppShell(

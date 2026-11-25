@@ -47,6 +47,9 @@ class MonthlyRosterSection {
     this.startDate,
     this.endDate,
     this.dateAnomalies = const [],
+    this.sourceSpreadsheetId,
+    this.sourceSheetId,
+    this.sourceSheetTitle,
   });
 
   final String title;
@@ -58,6 +61,9 @@ class MonthlyRosterSection {
   final DateTime? startDate;
   final DateTime? endDate;
   final List<MonthlyRosterDateAnomaly> dateAnomalies;
+  final String? sourceSpreadsheetId;
+  final int? sourceSheetId;
+  final String? sourceSheetTitle;
 
   bool get hasBlockingDateAnomalies => dateAnomalies.isNotEmpty;
 }
@@ -129,12 +135,14 @@ class MonthlyRosterParseReport {
     required this.warnings,
     this.sourceSheetCount = 0,
     this.sheetSummaries = const [],
+    this.sourceFingerprint,
   });
 
   final List<MonthlyRosterSection> sections;
   final List<String> warnings;
   final int sourceSheetCount;
   final List<MonthlyRosterSheetScanSummary> sheetSummaries;
+  final String? sourceFingerprint;
 
   List<MonthlyRosterDateAnomaly> get blockingDateAnomalies => [
     for (final section in sections) ...section.dateAnomalies,
@@ -195,6 +203,9 @@ class MonthlyRosterParseReport {
           rosterRows: const [],
           startDate: assignments.first.date,
           endDate: assignments.last.date,
+          sourceSpreadsheetId: assignments.first.spreadsheetId,
+          sourceSheetId: assignments.first.sheetId,
+          sourceSheetTitle: assignments.first.sheetTitle,
         ),
       );
     }
@@ -209,6 +220,7 @@ class MonthlyRosterParseReport {
     return MonthlyRosterParseReport(
       sections: List.unmodifiable([...sections, ...imported.sections]),
       warnings: warnings,
+      sourceFingerprint: sourceFingerprint,
     );
   }
 
@@ -298,6 +310,9 @@ class MonthlyRosterParseReport {
           startDate: section.startDate,
           endDate: section.endDate,
           dateAnomalies: section.dateAnomalies,
+          sourceSpreadsheetId: section.sourceSpreadsheetId,
+          sourceSheetId: section.sourceSheetId,
+          sourceSheetTitle: section.sourceSheetTitle,
         ),
       );
     }
@@ -307,6 +322,7 @@ class MonthlyRosterParseReport {
       warnings: warnings,
       sourceSheetCount: sourceSheetCount,
       sheetSummaries: sheetSummaries,
+      sourceFingerprint: sourceFingerprint,
     );
   }
 }

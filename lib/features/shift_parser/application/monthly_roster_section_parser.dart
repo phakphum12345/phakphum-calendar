@@ -70,7 +70,8 @@ class MonthlyRosterSectionParser {
         cellsByRow: cellsByRow,
         headerRow: row,
       );
-      return _tryParsePeriod(title) != null;
+      return _tryParsePeriod(title) != null ||
+          _hasExplicitRangeExpression(title);
     });
 
     for (var index = 0; index < headerRows.length; index++) {
@@ -86,20 +87,41 @@ class MonthlyRosterSectionParser {
       );
 
       final explicitPeriod = _tryParsePeriod(title);
-      // A worksheet month may fill in dates for genuinely split, undated
-      // sections only when no section declares its own period. If one section
-      // has an explicit range, other undated sections must not borrow the tab
-      // month: they may represent a different roster period.
-      // Each inferred section must still have a strictly increasing sequence
-      // of days contained within the worksheet's single month.
-      final canUseSheetFallback = headerRows.length == 1 ||
-          (!hasExplicitSectionPeriod &&
-              _canUseSingleMonthTabFallback(tabPeriod, daysByColumn));
+      final hasExplicitRange = _hasExplicitRangeExpression(title);
+      // A worksheet month may fill in dates for genuinely undated sections
+      // only when no section declares (or attempts to declare) its own range.
+      // An invalid/ambiguous explicit range must never silently fall back to
+      // the worksheet month, even when the sheet contains only one section.
+      final canUseSheetFallback = !hasExplicitRange &&
+          (headerRows.length == 1 ||
+              (!hasExplicitSectionPeriod &&
+                  _canUseSingleMonthTabFallback(tabPeriod, daysByColumn)));
       final period = explicitPeriod ?? (canUseSheetFallback ? tabPeriod : null);
       if (period == null) {
-        warnings.add(
-          'ไม่พบช่วงวันที่เฉพาะของส่วน "$title"; '
-          'ไม่ใช้เดือนจากชื่อชีตแทนเพื่อป้องกันวันที่ข้ามเดือนไม่ถูกต้อง',
+        const message =
+            'ไม่สามารถระบุช่วงวันที่ของส่วนนี้ได้อย่างปลอดภัย; '
+            'ไม่ใช้เดือนจากชื่อชีตแทน';
+        warnings.add('ส่วน "$title": $message');
+        // Preserve the section as blocked evidence instead of dropping it.
+        // No dates or assignments are invented when the declared period is
+        // invalid or ambiguous.
+        sections.add(
+          MonthlyRosterSection(
+            title: title,
+            headerRowIndex: headerRow,
+            assignments: const [],
+            startDate: null,
+            endDate: null,
+            sourceSpreadsheetId: input.spreadsheetId,
+            sourceSheetId: input.sheetId,
+            sourceSheetTitle: input.sheetTitle,
+            dateAnomalies: const [
+              MonthlyRosterDateAnomaly(
+                code: 'unresolved_period',
+                message: message,
+              ),
+            ],
+          ),
         );
         continue;
       }
@@ -181,6 +203,9 @@ class MonthlyRosterSectionParser {
           rosterRows: List.unmodifiable(rosterRows),
           startDate: start,
           endDate: end,
+          sourceSpreadsheetId: input.spreadsheetId,
+          sourceSheetId: input.sheetId,
+          sourceSheetTitle: input.sheetTitle,
           dateAnomalies: List.unmodifiable(dateAnomalies),
         ),
       );
@@ -251,6 +276,9 @@ class MonthlyRosterSectionParser {
           startDate: section.startDate,
           endDate: section.endDate,
           dateAnomalies: section.dateAnomalies,
+          sourceSpreadsheetId: section.sourceSpreadsheetId,
+          sourceSheetId: section.sourceSheetId,
+          sourceSheetTitle: section.sourceSheetTitle,
         ),
       );
     }
@@ -274,6 +302,12 @@ class MonthlyRosterSectionParser {
         end: DateTime(period.end.year, period.end.month, period.end.day),
       );
     } on FormatException {
+      // Do not downgrade a malformed or ambiguous explicit range to a
+      // month-only period. That would silently discard the dates in the title.
+      if (RegExp(r'\d{1,2}\s*[ก-๙.]+(?:\s*\d{2,4})?\s*(?:-|ถึง)\s*\d{1,2}\s*[ก-๙.]+').hasMatch(text)) {
+        rethrow;
+      }
+
       final monthPattern = _thaiMonths.keys.join('|');
       final match = RegExp(
         '($monthPattern)\\s*(?:พ\\.?\\s*ศ\\.?)?\\s*(\\d{2,4})',
@@ -306,6 +340,12 @@ class MonthlyRosterSectionParser {
     } on FormatException {
       return null;
     }
+  }
+
+  bool _hasExplicitRangeExpression(String text) {
+    return RegExp(
+      r'\d{1,2}\s*[ก-๙.]+(?:\s*\d{2,4})?\s*(?:-|ถึง)\s*\d{1,2}\s*[ก-๙.]+' ,
+    ).hasMatch(text);
   }
 
   bool _canUseSingleMonthTabFallback(
@@ -775,6 +815,68 @@ class MonthlyRosterShiftAdapter {
       ..sort((left, right) => left.start.compareTo(right.start));
   }
 
+  /// Exposes the source of a row-label mapping without changing the
+  /// legacy conversion behavior. A resolved rule is still review-only.
+  MonthlyRosterShiftRuleResolution resolveRuleForLabel(
+    String label, {
+    Iterable<ShiftTemplate> shiftTemplates = const [],
+  }) {
+    final normalizedLabel = _compact(label);
+    if (normalizedLabel.isEmpty) {
+      return const MonthlyRosterShiftRuleResolution(
+        status: MonthlyRosterShiftRuleStatus.emptyLabel,
+      );
+    }
+
+    final templates = shiftTemplates.toList(growable: false);
+    final matchingTemplates = templates.where((template) {
+      if (!template.active) return false;
+      return [
+        template.code,
+        template.name,
+        template.shortName,
+      ].any(
+        (alias) =>
+            alias.trim().isNotEmpty && _compact(alias) == normalizedLabel,
+      );
+    }).toList(growable: false);
+
+    if (matchingTemplates.length > 1) {
+      return const MonthlyRosterShiftRuleResolution(
+        status: MonthlyRosterShiftRuleStatus.ambiguousTemplate,
+      );
+    }
+
+    final rule = _ruleForLabel(
+      label,
+      shiftTemplates: templates,
+    );
+    if (rule == null) {
+      return const MonthlyRosterShiftRuleResolution(
+        status: MonthlyRosterShiftRuleStatus.unsupportedLabel,
+      );
+    }
+
+    return MonthlyRosterShiftRuleResolution(
+      status: matchingTemplates.isEmpty
+          ? MonthlyRosterShiftRuleStatus.builtInRule
+          : MonthlyRosterShiftRuleStatus.configuredTemplate,
+      code: rule.code,
+      startTime: Duration(
+        hours: rule.startHour,
+        minutes: rule.startMinute,
+      ),
+      endTime: Duration(
+        hours: rule.endHour,
+        minutes: rule.endMinute,
+      ),
+      category: rule.category,
+      templateId: matchingTemplates.isEmpty
+          ? null
+          : matchingTemplates.single.id,
+    );
+  }
+
   _MonthlyShiftRule? _ruleForLabel(
     String label, {
     required Iterable<ShiftTemplate> shiftTemplates,
@@ -937,4 +1039,41 @@ class _MonthlyShiftRule {
   final int endHour;
   final int endMinute;
   final ShiftCategory category;
+}
+
+
+enum MonthlyRosterShiftRuleStatus {
+  configuredTemplate,
+  builtInRule,
+  ambiguousTemplate,
+  unsupportedLabel,
+  emptyLabel,
+}
+
+/// Review-only description of the existing monthly-grid shift mapping rule.
+class MonthlyRosterShiftRuleResolution {
+  const MonthlyRosterShiftRuleResolution({
+    required this.status,
+    this.code,
+    this.startTime,
+    this.endTime,
+    this.category,
+    this.templateId,
+  });
+
+  final MonthlyRosterShiftRuleStatus status;
+  final String? code;
+  final Duration? startTime;
+  final Duration? endTime;
+  final ShiftCategory? category;
+  final String? templateId;
+
+  bool get isResolved =>
+      status == MonthlyRosterShiftRuleStatus.configuredTemplate ||
+      status == MonthlyRosterShiftRuleStatus.builtInRule;
+
+  bool get requiresHumanConfirmation => true;
+
+  /// Mapping evidence alone never authorizes persistence.
+  bool get canCommit => false;
 }

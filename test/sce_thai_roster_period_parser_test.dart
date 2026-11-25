@@ -12,6 +12,26 @@ void main() {
     expect(period.end, DateTime(2026, 8, 15));
   });
 
+  test('prefers an explicit parenthesized range over a unit number', () {
+    final period = parser.parse(
+      'GEN คลินิคพิเศษ ภปร. 4 พฤศจิกายน พ.ศ. 2569 '
+      '(1 พฤศจิกายน 2569 - 30 พฤศจิกายน 2569)',
+    );
+    expect(period.start, DateTime(2026, 11, 1));
+    expect(period.end, DateTime(2026, 11, 30));
+  });
+
+  test('rejects headings containing multiple explicit date ranges', () {
+    expect(
+      () => parser.parse(
+        'GEN ภปร. 4 พฤศจิกายน 2569 '
+        '(1 พฤศจิกายน 2569 - 30 พฤศจิกายน 2569) '
+        '(1 ธันวาคม 2569 - 31 ธันวาคม 2569)',
+      ),
+      throwsA(isA<FormatException>()),
+    );
+  });
+
   test('parses abbreviated month and two-digit Buddhist year', () {
     final period = parser.parse('16 กค69-15 สค.69');
     expect(period.start, DateTime(2026, 7, 16));

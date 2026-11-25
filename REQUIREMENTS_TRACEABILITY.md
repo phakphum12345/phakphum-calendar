@@ -54,3 +54,62 @@
 - A build does not prove live integration, security or data integrity.
 - Destructive data operations, OAuth write-scope expansion, repository-setting changes and deployment require their own explicit authorization.
 - Re-run this matrix after every material merge and update the current snapshot SHA.
+
+---
+
+## 2026-11-24 — Grid import recovery and concurrency follow-up
+
+| Requirement | Scope | Current source evidence | Status | Remaining proof |
+|---|---|---|---|---|
+| RI-025 | Reject recovery when canonical Schedule advanced after the journal base revision | `GridRosterImportWorkflow.recover`; `test/grid_roster_import_workflow_test.dart` | SOURCE + TEST ADDED; NOT EXECUTED | Run focused Flutter test on exact head |
+| RI-026 | Idempotent recovery when canonical Schedule already matches accepted fingerprint | `GridRosterImportWorkflow.recover`; workflow regression test | SOURCE + TEST ADDED; NOT EXECUTED | Run focused Flutter test on exact head |
+| RI-027 | Atomic conditional Schedule persistence across concurrent writers | `ScheduleRepository` currently has no conditional write contract; SharedPreferences uses read/write/pointer steps | MISSING | Implement transaction-backed CAS and interleaved-writer tests |
+| RI-028 | Startup discovery/recovery for all journaled Schedule IDs | Journal currently accepts a Schedule ID; no durable index/enumeration contract | MISSING | Add versioned index, rebuild/recovery semantics and startup conflict reporting |
+
+The new [Grid import recovery and concurrency contract](docs/GRID_IMPORT_RECOVERY_AND_CONCURRENCY.md) defines the safe implementation boundary and release gates. The two new workflow tests are source additions only; they have not been executed in a Flutter-capable environment. No atomic concurrency guarantee is claimed.
+
+
+---
+
+## 2026-11-24 — Schedule persistence writer inventory
+
+**Inspected branch:** `docs/universal-roster-intelligence-masterplan-2026-11-24`  
+**Inspected source head before this documentation update:** `229f896f2d9594e0b536fdb855d8d1fa619f5cb3`  
+**Evidence type:** static source and test-source inspection only; runtime tests were not executed.
+
+| Requirement | Scope | Source evidence | Status | Remaining proof |
+|---|---|---|---|---|
+| RI-029 | Identify canonical Schedule persistence contract and production adapter | `ScheduleRepository`; `SharedPreferencesScheduleRepository`; two-slot payload and active pointer | PASS — source inspected | Runtime/platform durability tests remain separate |
+| RI-030 | Inventory editor, legacy compatibility, tabular import, Grid commit and Grid recovery write paths | `ScheduleController.saveSchedule`; `AppController._replaceLegacyShifts`; `AppController.adoptCanonicalSchedule`; `AppDependencies.saveImportedSchedule`; `GridRosterImportWorkflow.commit/recover` | PASS — primary paths identified | Complete call-graph confirmation and exact-head tests |
+| RI-031 | Migrate every production writer to atomic conditional persistence | Current writers call ordinary `ScheduleRepository.save`; interface has no CAS capability | MISSING | Shared conditional write use case and independent-writer atomicity tests |
+| RI-032 | Define conditional deletion and verify all production delete callers | Repository exposes `delete`, but no production caller was found in inspected paths | UNKNOWN | Exhaustive call graph; define tombstone/conditional-delete semantics before implementation |
+| RI-033 | Identify generation-to-persistence commit path | Generation core returns candidates; no production approval/save orchestration was established in this audit | UNKNOWN | Trace UI/use-case orchestration and define approved durable commit |
+| RI-034 | Replace Grid final read/save race with atomic CAS | Grid commit/recovery perform revision/fingerprint checks before ordinary save | MISSING | Interleaved two-writer test proving exactly one succeeds |
+| RI-035 | Prove exact-head runtime regression suite | Test sources exist for repository, editor and Grid workflow | SKIPPED | Run Flutter/Dart tests on a runner and bind results to exact SHA |
+
+The [Schedule Persistence Writer Inventory](docs/SCHEDULE_PERSISTENCE_WRITER_INVENTORY.md) records writer IDs W-01 through W-05, facade F-01, storage operation S-01, current guards, test-source evidence and migration order.
+
+**Important:** PASS here means the relevant source path was identified and inspected. It does not mean the tests ran or that the persistence behavior is concurrency-safe. The AppController future queue is instance-local, and Grid's repeated reads do not close the final read/save race. No production CAS or startup journal discovery is claimed.
+
+
+## 2026-11-24 — Monotonic revision-token contract refinement
+
+| Requirement | Scope | Evidence | Status | Remaining proof |
+|---|---|---|---|---|
+| RI-036 | Monotonic Schedule revision tokens, ABA protection and tombstone-based conditional delete | Proposed ADR contract: generation + state + canonical content fingerprint; no implementation selected | PROPOSED — design only | Platform-backed atomic transaction, migration and interleaved-writer tests |
+
+
+## 2026-11-24 — Cross-platform persistence candidate screening
+
+| Requirement | Scope | Evidence | Status | Remaining proof |
+|---|---|---|---|---|
+| RI-037 | Screen transaction-capable storage candidates against active release platforms | Drift, sqflite companion packages, Sembast and existing SharedPreferences documented in the persistence ADR | PARTIAL — package-documentation screen only; no package selected | Prototype and execute atomicity, crash, migration and Web multi-tab tests on all five active targets |
+
+
+## 2026-11-24 — Isolated Drift/SQLite CAS spike
+
+| Requirement | Scope | Evidence | Status | Remaining proof |
+|---|---|---|---|---|
+| RI-038 | Prototype atomic conditional create/update/delete with monotonic revisions and tombstones | Isolated Drift package source and seven Dart test cases; independent SQLite 3.46.1 SQL spot-check with two connections observed one save and one conflict | PARTIAL — SQL semantics spot-checked; Dart/Drift runtime UNKNOWN | Generate Drift code and run tests; prove native OS matrix, Android/iOS device integration, Web multi-tab and crash recovery |
+
+The spike has its own `pubspec.yaml` and is not a root application dependency. The root `pubspec.yaml`, root lockfile, production SharedPreferences repository, production Schedule schema and all production writer paths remain unchanged. The new workflow tests native SQLite behavior on Windows, Linux and macOS runners; this does not by itself prove Android/iOS runtime behavior or Web multi-tab behavior.

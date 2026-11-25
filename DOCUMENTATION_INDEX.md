@@ -82,3 +82,21 @@ When documentation and implementation disagree, use this order:
 5. Historical audits and older planning documents.
 
 Do not infer that a feature works merely because it appears in a roadmap or design document.
+
+## Universal Roster Intelligence and Grid Import
+
+- [Universal Roster Intelligence master plan](docs/UNIVERSAL_ROSTER_INTELLIGENCE_MASTER_PLAN.md)
+- [Roster intelligence capability matrix](docs/ROSTER_INTELLIGENCE_CAPABILITY_MATRIX.md)
+- [Implementation boundary audit](docs/IMPLEMENTATION_BOUNDARY_AUDIT_2026-11-24.md)
+- [Module catalog](docs/MODULE_CATALOG.md)
+- [Parser reliability specification](docs/ROSTER_PARSER_RELIABILITY_SPEC.md)
+- [Roster provenance and reconciliation](docs/ROSTER_PROVENANCE_AND_RECONCILIATION.md)
+- [Grid import review workflow](docs/GRID_IMPORT_REVIEW_WORKFLOW.md)
+- [Grid import recovery and concurrency](docs/GRID_IMPORT_RECOVERY_AND_CONCURRENCY.md)
+- [Schedule persistence writer inventory](docs/SCHEDULE_PERSISTENCE_WRITER_INVENTORY.md)
+- [Conditional Schedule persistence ADR](docs/adr/CONDITIONAL_SCHEDULE_PERSISTENCE_AND_JOURNAL_DISCOVERY.md)
+- [Schedule CAS prototype](tool/schedule_cas_spike/README.md)
+- [API and integration contracts](docs/API_AND_INTEGRATION_CONTRACTS.md)
+- [Universal Generator specification](docs/UNIVERSAL_GENERATOR_SPEC.md)
+- [Schedule generation review and commit](docs/SCHEDULE_GENERATION_REVIEW_AND_COMMIT.md)
+- [Testing and release acceptance](docs/TESTING_AND_RELEASE_ACCEPTANCE.md)
