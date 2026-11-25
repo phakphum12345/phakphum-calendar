@@ -71,6 +71,7 @@ class ScheduleController extends Controller
             }
 
             $record = DB::table('schedule_records')->where('id', $id)->first();
+
             return $this->saved($record, 201);
         }
 
