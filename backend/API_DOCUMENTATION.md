@@ -178,3 +178,18 @@ Rule definitions use the existing Flutter calculator vocabulary: employment type
 The profile response keeps personal and organization rules in separate arrays. Consumers must apply the selected mode and hybrid precedence and must never add both source amounts. An unresolved hybrid conflict remains a source-selection requirement, not a payable amount. This API persists configuration only; server-side calculation snapshots and payroll posting are separate future work.
 
 All endpoints use the existing Google account middleware and rate limit. No production migration or deployment is implied by adding this migration to source control.
+
+
+## Shift Pay calculation and immutable snapshots
+
+POST /api/v1/shift-pay/calculations calculates one assignment using the authenticated user's saved profile and persists the exact calculation as an immutable historical snapshot. Send Idempotency-Key (1–128 characters) with every calculation request.
+
+Input fields: date (YYYY-MM-DD), employment_type (salaried or dailyPaid), shift_type_id, and hours; optional department, location, work_point, assignment_purpose, date_overrides keyed by ISO date, weekly_days_off (Monday=1 through Sunday=7), and selected_source (personal or organization) for explicit hybrid selection.
+
+The engine follows the Flutter rule-matching contract: active state, employment type, day category, shift type, assignment purpose, optional department/location/work point matching, and specificity weights (department 4, location 2, work point 1). Fixed amount takes precedence over hourly rate; hourly rate is multiplied by hours, then the configured multiplier is applied. Compensatory-time and salary-included treatments return zero cash pay with treatment metadata. Amounts use the selected profile's decimal precision and half-up rounding.
+
+Personal, organization and hybrid modes select at most one source. Hybrid precedence is organizationFirst, personalFirst, or requireSelection; when both sources match under requireSelection, the response is source_selection_required with a null amount. The service never adds personal and organization amounts together. Missing matches return no_matching_rule with a null amount, not an invented zero.
+
+The snapshot stores exact input, selected rule (when any), result, source, calculation engine version and profile configuration versions. Later rule edits do not recalculate or rewrite earlier snapshots. Reusing an idempotency key with the same request and same profile versions returns the original snapshot; reusing it for a different calculation returns HTTP 409.
+
+GET /api/v1/shift-pay/snapshots lists the authenticated user's snapshots using cursor pagination (limit 1–100; default 50). GET /api/v1/shift-pay/snapshots/{snapshotId} retrieves one snapshot only for the authenticated user who created it. Snapshots are audit records, not payroll postings, statutory wage determinations or payment instructions. No existing shift transaction or historical record is modified.
