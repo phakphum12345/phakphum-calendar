@@ -334,7 +334,7 @@ class GridRosterBundleJournal {
         'Journal record has an unsupported format or version.',
       );
     }
-    final state = root['state'];
+    final stateValue = root['state'];
     final generation = root['generation'];
     final schedulePayload = root['schedule'];
     final provenancePayload = root['provenance'];
@@ -347,6 +347,7 @@ class GridRosterBundleJournal {
         'Journal record is missing valid required fields.',
       );
     }
+    final state = stateValue as String;
     final schedule = scheduleCodec.decode(schedulePayload);
     final provenance = provenanceCodec.decode(provenancePayload);
     if (schedule.id != provenance.targetScheduleId ||
