@@ -26,7 +26,10 @@ void main() {
 
   test('creates from absent and rejects stale create', () async {
     final absent = await store.read('schedule-A');
-    expect(absent.revision.token, ScheduleRevision.absentFor('schedule-A').token);
+    expect(
+      absent.revision.token,
+      ScheduleRevision.absentFor('schedule-A').token,
+    );
 
     final created = await store.compareAndSet(
       scheduleId: 'schedule-A',
@@ -44,7 +47,6 @@ void main() {
     expect(staleCreate.status, ConditionalWriteStatus.conflict);
     expect(staleCreate.current.payload, '{"value":"A"}');
   });
-
 
   test('revision tokens are scoped to their Schedule ID', () async {
     final created = await store.compareAndSet(
@@ -65,7 +67,10 @@ void main() {
     );
     expect(crossScheduleWrite.status, ConditionalWriteStatus.conflict);
     expect(crossScheduleWrite.current.revision.state, RevisionState.absent);
-    expect(crossScheduleWrite.current.revision.scheduleId, 'schedule-other');
+    expect(
+      crossScheduleWrite.current.revision.scheduleId,
+      'schedule-other',
+    );
 
     final crossScheduleDelete = await store.delete(
       scheduleId: 'schedule-other',
