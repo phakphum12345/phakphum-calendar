@@ -80,11 +80,7 @@ class WorkDayPolicy {
   WorkDayCategory classify(
     DateTime date, {
     Map<String, WorkDayCategory> dateOverrides = const {},
-    int? decimalPlaces,
   }) {
-    if (decimalPlaces != null && (decimalPlaces < 0 || decimalPlaces > 4)) {
-      throw ArgumentError.value(decimalPlaces, 'decimalPlaces');
-    }
     final key = calendarDateKey(date);
     final override = dateOverrides[key];
     if (override != null) return override;
@@ -218,7 +214,11 @@ class ShiftPayCalculator {
     required ShiftPayInput input,
     required Iterable<ShiftPayRule> rules,
     Map<String, WorkDayCategory> dateOverrides = const {},
+    int? decimalPlaces,
   }) {
+    if (decimalPlaces != null && (decimalPlaces < 0 || decimalPlaces > 4)) {
+      throw ArgumentError.value(decimalPlaces, 'decimalPlaces');
+    }
     final dayCategory = workDayPolicy.classify(
       input.date,
       dateOverrides: dateOverrides,
