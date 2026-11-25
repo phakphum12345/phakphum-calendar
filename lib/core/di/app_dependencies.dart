@@ -371,7 +371,7 @@ class AppDependencies {
     return ScheduleController(
       service: ScheduleService(schedule: schedule),
       validationService: createScheduleValidationService(),
-      repository: scheduleRepository,
+      repository: gridScheduleRepository,
       initialMonth: schedule.months.firstOrNull?.month,
     );
   }
