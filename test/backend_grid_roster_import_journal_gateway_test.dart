@@ -74,7 +74,12 @@ void main() {
           'data': [
             {
               'schedule_id': schedule.id,
+              'import_run_id': committed.importRunId,
               'lifecycle': 'committed',
+              'base_revision': committed.targetScheduleRevision,
+              'source_fingerprint': _sourceHash,
+              'accepted_schedule_fingerprint':
+                  acceptedFingerprint.substring('sha256:'.length),
               'schedule': scheduleEnvelope,
               'provenance': provenancePayload,
               'created_at': '2026-11-25T10:00:00Z',
