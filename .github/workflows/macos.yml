@@ -29,10 +29,11 @@ permissions:
   contents: read
 
 # This workflow owns its runner lifecycle. It does not depend on, wait for,
-# or cancel Windows, Linux, Android, Web, or iOS workflows.
+# Windows, Linux, Android, Web, or iOS workflows. Keep only the current Xcode
+# run per PR/ref so obsolete commits do not accumulate in the macOS queue.
 concurrency:
-  group: macos-xcode-${{ github.workflow }}-${{ github.run_id }}
-  cancel-in-progress: false
+  group: macos-xcode-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-macos:
