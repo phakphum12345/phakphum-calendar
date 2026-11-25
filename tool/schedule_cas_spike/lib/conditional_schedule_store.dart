@@ -21,7 +21,8 @@ class ScheduleRevision {
   final String? fingerprint;
 
   String get token =>
-      'schedule-revision:v1:${Uri.encodeComponent(scheduleId)}:$generation:${state.name}:${fingerprint ?? '-'}';
+      'schedule-revision:v1:${Uri.encodeComponent(scheduleId)}:'
+      '$generation:${state.name}:${fingerprint ?? '-'}';
 
   static ScheduleRevision absentFor(String scheduleId) => ScheduleRevision(
         scheduleId: scheduleId,
