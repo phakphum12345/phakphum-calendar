@@ -122,6 +122,7 @@ class ScheduleImportJournalController extends Controller
         }
 
         $record = DB::table('schedule_import_journals')->where('id', $id)->first();
+
         return response()->json(['data' => $this->resource($record)], 201);
     }
 
