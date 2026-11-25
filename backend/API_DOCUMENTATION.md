@@ -77,9 +77,16 @@ Request:
 {
   "expected_revision": "absent:<sha256-of-schedule-id>",
   "schedule": {
-    "id": "roster-2026-11",
-    "name": "November",
-    "months": []
+    "format": "shift-tools.canonical-schedule",
+    "version": 1,
+    "schedule": {
+      "id": "roster-2026-11",
+      "name": "November",
+      "departments": [],
+      "employees": [],
+      "shiftTypes": [],
+      "months": []
+    }
   }
 }
 ```
