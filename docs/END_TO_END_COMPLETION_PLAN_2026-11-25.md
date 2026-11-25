@@ -72,4 +72,4 @@ Deliver a dependable calendar and shift-management application with configurable
 
 ## Current qualification
 
-The merged PR heads #181, #182, #183, #186 and #187 passed their applicable exact-head checks. The current main SHA recorded above had 5/8 checks completed successfully and 3 still in progress at the time of this snapshot. Production deployment and live Google Calendar provider behavior remain UNKNOWN.
+The merged PR heads #181, #182, #183, #186 and #187 passed their applicable exact-head checks. The current main SHA recorded above completed all 8 exact-main checks successfully at the time of this snapshot. Production deployment and live Google Calendar provider behavior remain UNKNOWN.
