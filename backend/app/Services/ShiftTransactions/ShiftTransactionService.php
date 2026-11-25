@@ -501,7 +501,6 @@ class ShiftTransactionService
         });
     }
 
-
     private function normalizeCalendarEvents(string $transactionId, array $input): array
     {
         $transfers = DB::table('shift_transaction_transfers')
