@@ -1,6 +1,6 @@
 # Schedule CAS Storage Spike
 
-**Status:** Prototype source only — not production-ready; native CI validation is in progress.
+**Status:** Prototype source only — native CI contract validation passed on 2026-11-25; not production-ready.
 
 This package is deliberately isolated under `tool/`. It is not imported by the Flutter application and does not change the root `pubspec.yaml`, root lockfile, production repository, Schedule schema v1 or existing SharedPreferences records.
 
@@ -11,6 +11,18 @@ Test whether Drift over SQLite can provide an atomic conditional Schedule write 
 The prototype uses one SQLite UPSERT statement for create/update. Its conflict branch compares the stored generation, state and fingerprint before replacing the row. SQLite's primary-key conflict arbitration handles concurrent first-time creates. Conditional delete is one UPDATE statement that writes a tombstone rather than removing the row.
 
 The revision token is opaque to callers. The fingerprint is SHA-256 of the canonical payload supplied to the spike. This package does not yet integrate `ScheduleJsonCodec`; production canonical serialization remains a later adapter task.
+
+## Validation evidence
+
+GitHub Actions workflow: [Schedule CAS Storage Spike](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45568406234)
+
+- Run: `45568406234`
+- Validated head: `152db1c372c227704872dc9e676e9eca12d58044`
+- Result: **PASS** on `macos-latest`, `windows-latest`, and `ubuntu-latest`.
+- All jobs completed dependency resolution, Drift code generation, canonical formatting check, static analysis, and CAS/concurrency contract tests.
+- The contract includes Schedule-ID-scoped revision tokens and rejects cross-Schedule token reuse for writes and deletes.
+
+This is evidence for the isolated native prototype only. It is not evidence that the production Flutter app uses CAS, that the full root test suite passed on this head, or that Web/mobile/browser durability and concurrency have been proven.
 
 ## Run locally
 
@@ -43,4 +55,4 @@ Web multi-tab behavior is not proven by the native test. It requires a separate 
 
 Run the contract on Windows, Web, Android, iOS and Linux. Record exact SDK, package lock, OS/browser and test output. For native platforms, use two independent connections to the same durable file. For Web, use two browser tabs and the actual shared-worker storage mode. Simulate process termination around commit boundaries and verify old-or-new complete records.
 
-A single passing native test is necessary but not sufficient to accept Drift for production.
+A passing native test is necessary but not sufficient to accept Drift for production. After platform validation, integrate through a compatibility-preserving repository capability, migrate every durable Schedule writer, and prove startup journal discovery/recovery before enabling production use.
