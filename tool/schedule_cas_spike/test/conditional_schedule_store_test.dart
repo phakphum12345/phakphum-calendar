@@ -138,7 +138,7 @@ void main() {
     );
     await database.customStatement(
       'DELETE FROM schedule_records WHERE schedule_id = ?',
-      [Variable.withString('schedule-missing')],
+      ['schedule-missing'],
     );
 
     final stale = await store.compareAndSet(
