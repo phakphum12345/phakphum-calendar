@@ -78,6 +78,7 @@ class ScheduleImportJournalController extends Controller
                 ],
             ], 422);
         }
+
         $attributes = [
             'owner_user_id' => $request->user()->id,
             'schedule_id' => $scheduleId,
