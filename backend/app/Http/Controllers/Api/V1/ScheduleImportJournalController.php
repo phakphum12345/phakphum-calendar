@@ -31,8 +31,12 @@ class ScheduleImportJournalController extends Controller
             'source_fingerprint' => ['required', 'regex:/^[a-f0-9]{64}$/'],
             'accepted_schedule_fingerprint' => ['nullable', 'regex:/^[a-f0-9]{64}$/'],
             'provenance' => ['required', 'array'],
-            'schedule' => ['nullable', 'array'],
-            'schedule.id' => ['required_with:schedule', 'string', 'max:128', 'in:'.$scheduleId],
+            'schedule' => ['nullable', 'array:format,version,schedule'],
+            'schedule.format' => ['required_with:schedule', 'in:shift-tools.canonical-schedule'],
+            'schedule.version' => ['required_with:schedule', 'integer', 'in:1'],
+            'schedule.schedule' => ['required_with:schedule', 'array:id,name,departments,employees,shiftTypes,months'],
+            'schedule.schedule.id' => ['required_with:schedule', 'string', 'max:128', 'in:'.$scheduleId],
+            'schedule.schedule.name' => ['required_with:schedule', 'string', 'max:200'],
         ]);
 
         if ($validated['lifecycle'] === 'committed' &&
@@ -66,7 +70,7 @@ class ScheduleImportJournalController extends Controller
         }
 
         $payload = isset($validated['schedule'])
-            ? json_encode($validated['schedule'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)
+            ? json_encode($validated['schedule'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR)
             : null;
 
         if ($validated['lifecycle'] === 'committed' &&
