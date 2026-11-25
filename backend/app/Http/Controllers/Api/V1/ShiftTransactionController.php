@@ -9,9 +9,7 @@ use Illuminate\Validation\Rule;
 
 class ShiftTransactionController
 {
-    public function __construct(private readonly ShiftTransactionService $transactions)
-    {
-    }
+    public function __construct(private readonly ShiftTransactionService $transactions) {}
 
     public function index(Request $request): JsonResponse
     {
