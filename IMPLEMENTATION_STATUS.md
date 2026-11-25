@@ -1,69 +1,66 @@
 # Repository Implementation Status
 
-## Current main snapshot — 2026-11-23 (supersedes the historical snapshot below)
+## Current main snapshot — 2026-11-25
 
-**Verified main SHA:** `78a1ef7c1436ccfd0495778987b97a9ebd9ac2d1`
+**Verified main SHA:** `aed2f1177bdfc85f6ff53bb200116812a51bd9e3`
 
-This section is the current evidence snapshot. The remainder of this file is retained as the 2026-11-22 historical baseline and must not be used as the current PR or release status.
+This snapshot records the completed Shift Pay and Calendar Sync backend sequence. PR-head checks are distinct from post-merge main checks. At audit time, exact-main checks for this SHA were 5 PASS and 3 IN_PROGRESS; no post-merge deployment verification is claimed.
 
 | Item | Current observation | Status |
 |---|---|---|
-| Default branch | `main` | PASS |
-| Open PRs | 0 | PASS |
-| Issue tracker | Disabled on this repository (`has_issues: false`); reported open issue count is 0 | UNKNOWN |
-| Main branch protection | GitHub reports `protected: false` | FAIL |
-| Local working tree | Not available through the GitHub API audit | UNKNOWN |
-| Current-SHA workflow runs | Auto Detect CI and Cross-platform Runtime both completed successfully | PASS |
-| Current-SHA check runs | 7 of 7 completed with conclusion `success` | PASS |
-| Current-SHA Web deployment | No Web workflow run was observed for this documentation-only SHA | UNKNOWN |
-| Exact current-SHA production metadata | Not verified | UNKNOWN |
+| Default branch | `main` at `aed2f1177bdfc85f6ff53bb200116812a51bd9e3` | PASS |
+| PR #181 | Merged; Flutter Personal/Organization/Hybrid source resolution | MERGED |
+| PR #182 | Merged; Backend Evolution Blueprint | MERGED |
+| PR #183 | Merged; Shift Pay profile and rule persistence | MERGED |
+| PR #184 | Closed without merge; stacked history replaced by clean-mainline PR #186 | SUPERSEDED |
+| PR #185 | Closed without merge; stale-base Calendar Sync branch replaced by clean-mainline PR #187 | SUPERSEDED |
+| PR #186 | Merged; server-side calculation and immutable snapshots | MERGED |
+| PR #187 | Merged; Calendar Sync attempt history and transfer event reconciliation | MERGED |
+| PR #178 / #180 | Older documentation PRs; content consolidated and refreshed in documentation replacement PR #188 | SUPERSEDED BY DOC UPDATE |
+| Main branch protection | GitHub reports `protected: false`; do not assume server-enforced merge gates | NEEDS REVIEW |
+| Exact-main CI | 5 of 8 checks completed successfully; 3 were still in progress at snapshot time | IN_PROGRESS |
+| Production deployment | No deployment was performed or verified for this main SHA | UNKNOWN |
 
-### Exact-SHA CI evidence
+### Current capability evidence
 
-Current main `78a1ef7c1436ccfd0495778987b97a9ebd9ac2d1`:
-- Auto Detect CI run [45129850947](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45129850947): SUCCESS.
-- Cross-platform Runtime run [45129850973](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45129850973): SUCCESS.
-- Seven check runs completed successfully: Dart/Flutter quality, platform activation, capability detection, Linux POSIX full quality, Linux PowerShell smoke test, Windows PowerShell full quality, and Windows CMD smoke test.
+| Area | Evidence on current main | Status | Remaining work |
+|---|---|---|---|
+| Shift Pay modes | Flutter resolver supports Personal, Organization and Hybrid with explicit precedence and no double-counting | IMPLEMENTED FOUNDATION | Verify client/backend decimal precision parity and assignment-level integration |
+| Shift Pay persistence | Authenticated user profiles and organization-owned rules with membership/role checks | IMPLEMENTED FOUNDATION | Verify multi-device/offline conflict behavior |
+| Shift Pay calculation | Backend calculation service applies selected source and persists immutable, idempotent snapshots | IMPLEMENTED FOUNDATION | Connect confirmed roster assignments and monthly statement UI |
+| Calendar Sync reconciliation | Per-transaction attempts and per-transfer provider event mappings; retry history and idempotent completion | IMPLEMENTED FOUNDATION | Real Google Calendar provider adapter and external event creation are not included |
+| Calendar provider integration | PR #187 does not call provider APIs or create external events | MISSING / UNKNOWN | Implement provider adapter, OAuth scope checks, timeout recovery and provider-side idempotency separately |
+| Notifications / reminders | Web Push subscription storage exists; no confirmed production sender/worker path | PARTIAL | Implement supported delivery with secure VAPID handling, queue/retry and opt-in controls |
+| Historical roster restoration | Revision listing and timeline generation are read-only | PARTIAL | Preview, conflict detection, explicit approval, audit and recovery |
+| Workbook edge cases | Date-first validation blocks malformed sections | UNKNOWN | Obtain original X-OPD and US Clinic ภปร.4 workbooks; never infer date headers |
+| Responsive UI | Responsive components exist | NEEDS REVIEW | Verify phone/tablet/desktop critical journeys |
+| Performance | No repository-wide benchmark baseline | UNKNOWN | Add large-workbook, event-volume, memory and history benchmarks |
+| Local data protection | Local revision/history persistence exists | NEEDS REVIEW | Review encryption, retention, export and recovery |
+| Documentation | Root status docs, API/schema docs and domain documentation tree are maintained | IN PROGRESS | Keep exact SHA and implementation evidence current |
 
-These results do not mean every platform build, Laravel workflow, Pages deployment, or Final Gate ran on this exact SHA.
+### CI and release qualification
 
-### Deployment relationship
+- CI claims are tied to exact SHAs. Queued, in-progress, cancelled, skipped or missing checks are not PASS.
+- PR #186 and #187 each completed all 8 exact-head checks successfully before merge.
+- PR #181 had 16 successful quality checks and one intentionally skipped Pages deployment check; the skipped deployment was not counted as PASS.
+- Current main SHA `aed2f1177bdfc85f6ff53bb200116812a51bd9e3` had 5/8 checks completed successfully and 3 still in progress at this snapshot.
+- No Pages deployment, production API migration, live Google Calendar write, or production configuration change was performed by this PR sequence.
+- Main branch protection is disabled; repository-side protection must not be assumed.
 
-The latest observed successful Web deployment is run [45129035935](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45129035935) on application-source SHA `4618ab98b0fc371f32f08d3299365f577fa81674`. Both the GitHub Pages deployment job and its exact-SHA published-site verification step succeeded. Final Gate run [45129036049](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45129036049) also succeeded for that SHA.
+### Immediate execution order
 
-A GitHub compare of `4618ab98...` to current main `78a1ef7c1436ccfd0495778987b97a9ebd9ac2d1` reports only three changed files: `IMPLEMENTATION_STATUS.md`, `REQUIREMENTS_TRACEABILITY.md`, and `docs/REPOSITORY_AUDIT.md`. Therefore the application source tree is unchanged from the deployed application-source SHA, but the published deployment metadata has not been verified against the newer documentation-only main SHA. Strict exact-main-SHA deployment status remains UNKNOWN.
+1. Finish and record exact-main CI after the merge sequence.
+2. Implement real Calendar provider calls only behind explicit user confirmation and verified OAuth scopes.
+3. Add provider-side idempotency/reconciliation for ambiguous external timeouts.
+4. Connect Shift Pay calculation to confirmed roster assignments and monthly statements without changing existing shift workflows.
+5. Review notification delivery, historical restore, local data protection, responsive UI and performance.
+6. Verify Pages/API deployment metadata against the exact approved main SHA before any production-readiness claim.
 
-The Web and Final Gate workflows are path-filtered to application/platform/workflow files; a documentation-only change does not trigger them.
+**Snapshot date:** 2026-11-25  
+**Snapshot base:** `main` at `aed2f1177bdfc85f6ff53bb200116812a51bd9e3`
 
-### Current source-level findings
+> This is an evidence-based engineering snapshot, not a declaration that the repository is production-ready. SKIPPED and UNKNOWN are never PASS.
 
-| Area | Current evidence | Status |
-|---|---|---|
-| Roster date validation | Parser detects duplicate days, missing dates, out-of-order dates and date-sequence mismatches; conversion skips sections with blocking date anomalies | PASS (guard exists; source-specific workbook outcomes remain unverified) |
-| X-OPD November 2569 | Reported malformed header requires original workbook/cell layout to confirm intended dates | UNKNOWN |
-| US Clinic ภปร.4 | Markdown header alone does not reproduce the reported offset; original workbook is required | UNKNOWN |
-| Calendar sync | Existing planner/executor/reconciliation and regression-test files are present; live authorized Google account behavior is not verified in this audit | UNKNOWN |
-| Historical roster restore | Revision/timeline support exists, but a complete safe restore workflow was not found in the current source inventory | PARTIAL |
-| Web Push | Browser subscription and authenticated API storage exist; VAPID sender, RFC 8291 encryption, durable queue/scheduler, retry and user-facing opt-in controls are not implemented | PARTIAL |
-| Membership audit | Backend migration, write events, manager-protected read endpoint and cursor pagination exist; Flutter gateway and organization UI do not expose this endpoint | PARTIAL |
-| Responsive UI | Requires screen-by-screen device-width verification | UNKNOWN |
-| Performance | No repository-wide baseline verified | UNKNOWN |
-| Security / tenant isolation | Requires focused test and runtime review beyond this source inventory | UNKNOWN |
-
-### Immediate next work
-
-1. Obtain the original X-OPD and US Clinic ภปร.4 workbook/export. Do not infer or silently repair date headers.
-2. Add the membership-audit API method, typed model, organization-scoped UI, pagination and permission/error tests.
-3. Complete Web Push delivery only after backend VAPID configuration and supported scheduler/worker strategy are available; do not invent credentials.
-4. Define safe historical restore preview/confirmation. Any Drive write-scope expansion requires separate explicit approval.
-5. Complete targeted security/tenant-isolation, responsive UI, performance and critical E2E audits.
-6. Verify a production deployment whose published metadata exactly matches the main SHA before claiming strict release readiness.
-
-**Snapshot date:** 2026-11-22  
-**Snapshot base:** `main` at `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5`  
-**Scope:** Whole repository, Flutter client, Laravel API, persistence, synchronization, CI/CD, security and documentation.
-
-> This is a point-in-time engineering inventory, not a declaration that the repository is complete or production-ready. Source code, migrations, exact-head CI and observed runtime behavior take precedence over this document. `SKIPPED` and `UNKNOWN` are never treated as `PASS`.
 
 ## Repository evidence
 
