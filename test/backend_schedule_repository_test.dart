@@ -20,17 +20,17 @@ void main() {
       if (request.method == 'GET') {
         return http.Response(jsonEncode({
           'data': payload,
-          'revision': 'v4:${'a' * 64}',
+          'revision': 'v4:${List.filled(64, 'a').join()}',
           'state': 'live',
         }), 200);
       }
       expect(request.method, 'PUT');
       expect(request.headers['authorization'], 'Bearer test-id-token');
       final body = jsonDecode(request.body) as Map<String, dynamic>;
-      expect(body['expected_revision'], 'v4:${'a' * 64}');
+      expect(body['expected_revision'], 'v4:${List.filled(64, 'a').join()}');
       return http.Response(jsonEncode({
         'data': payload,
-        'revision': 'v5:${'b' * 64}',
+        'revision': 'v5:${List.filled(64, 'b').join()}',
         'state': 'live',
       }), 200);
     });
@@ -54,7 +54,7 @@ void main() {
       if (request.method == 'GET') {
         return http.Response(jsonEncode({
           'data': payload,
-          'revision': 'v2:${'a' * 64}',
+          'revision': 'v2:${List.filled(64, 'a').join()}',
           'state': 'live',
         }), 200);
       }
@@ -63,7 +63,7 @@ void main() {
           'code': 'schedule_revision_conflict',
           'message': 'The Schedule changed after the supplied revision was read.',
         },
-        'current_revision': 'v3:${'b' * 64}',
+        'current_revision': 'v3:${List.filled(64, 'b').join()}',
         'current_state': 'live',
       }), 409);
     });
