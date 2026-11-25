@@ -25,11 +25,11 @@ class ScheduleRevision {
       '$generation:${state.name}:${fingerprint ?? '-'}';
 
   static ScheduleRevision absentFor(String scheduleId) => ScheduleRevision(
-        scheduleId: scheduleId,
-        generation: 0,
-        state: RevisionState.absent,
-        fingerprint: null,
-      );
+    scheduleId: scheduleId,
+    generation: 0,
+    state: RevisionState.absent,
+    fingerprint: null,
+  );
 }
 
 class ScheduleSnapshot {
