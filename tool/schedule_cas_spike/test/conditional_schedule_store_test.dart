@@ -67,10 +67,7 @@ void main() {
     );
     expect(crossScheduleWrite.status, ConditionalWriteStatus.conflict);
     expect(crossScheduleWrite.current.revision.state, RevisionState.absent);
-    expect(
-      crossScheduleWrite.current.revision.scheduleId,
-      'schedule-other',
-    );
+    expect(crossScheduleWrite.current.revision.scheduleId, 'schedule-other');
 
     final crossScheduleDelete = await store.delete(
       scheduleId: 'schedule-other',
