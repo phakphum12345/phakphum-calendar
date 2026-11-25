@@ -149,8 +149,8 @@ class BackendGridRosterImportJournalGateway
 
     if (candidates.isEmpty) return null;
     candidates.sort(
-      (left, right) => left.provenance.createdAtUtc.compareTo(
-        right.provenance.createdAtUtc,
+      (left, right) => left.journaledAtUtc!.compareTo(
+        right.journaledAtUtc!,
       ),
     );
     return candidates.last;
