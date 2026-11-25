@@ -78,7 +78,7 @@ void main() {
     );
   });
 
-  Future<GridRosterImportReviewContext> _prepare() async {
+  Future<GridRosterImportReviewContext> prepareContext() async {
     final result = await workflow.prepareReview(
       report: _report(),
       targetScheduleId: 'schedule-1',
@@ -90,7 +90,7 @@ void main() {
     return (result as Success<GridRosterImportReviewContext>).value;
   }
 
-  GridRosterCanonicalConversionResult _convert(
+  GridRosterCanonicalConversionResult convertContext(
     GridRosterImportReviewContext context,
   ) {
     final source = context.session.assignments.single.source;
@@ -185,8 +185,8 @@ void main() {
   });
 
   test('runs review, conversion, journal commit and canonical repository save', () async {
-    final context = await _prepare();
-    final conversion = _convert(context);
+    final context = await prepareContext();
+    final conversion = convertContext(context);
 
     final saved = await workflow.commit(
       context: context,
@@ -205,8 +205,8 @@ void main() {
   });
 
   test('recovery replays committed journal after canonical save failure', () async {
-    final context = await _prepare();
-    final conversion = _convert(context);
+    final context = await prepareContext();
+    final conversion = convertContext(context);
     repository.failNextSave = true;
 
     final commit = await workflow.commit(
@@ -228,8 +228,8 @@ void main() {
   });
 
   test('recovery refuses to overwrite a newer canonical Schedule', () async {
-    final context = await _prepare();
-    final conversion = _convert(context);
+    final context = await prepareContext();
+    final conversion = convertContext(context);
     repository.failNextSave = true;
 
     final commit = await workflow.commit(
@@ -250,8 +250,8 @@ void main() {
   });
 
   test('recovery is idempotent when canonical Schedule already matches journal', () async {
-    final context = await _prepare();
-    final conversion = _convert(context);
+    final context = await prepareContext();
+    final conversion = convertContext(context);
     final committed = await workflow.commit(
       context: context,
       conversion: conversion,
@@ -266,8 +266,8 @@ void main() {
   });
 
   test('commit rejects a Schedule changed after the review snapshot', () async {
-    final context = await _prepare();
-    final conversion = _convert(context);
+    final context = await prepareContext();
+    final conversion = convertContext(context);
     repository.value = Schedule(id: 'schedule-1', name: 'Changed elsewhere');
 
     final result = await workflow.commit(
