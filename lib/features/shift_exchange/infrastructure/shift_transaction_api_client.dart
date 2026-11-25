@@ -20,6 +20,8 @@ class ShiftTransactionSnapshot {
     required this.transfers,
     required this.timeline,
     this.organizationId,
+    this.calendarEvents = const [],
+    this.syncAttempts = const [],
   });
 
   final String id;
@@ -34,6 +36,8 @@ class ShiftTransactionSnapshot {
   final List<Map<String, dynamic>> participants;
   final List<Map<String, dynamic>> transfers;
   final List<Map<String, dynamic>> timeline;
+  final List<Map<String, dynamic>> calendarEvents;
+  final List<Map<String, dynamic>> syncAttempts;
 
   factory ShiftTransactionSnapshot.fromJson(Map<String, dynamic> json) {
     DateTime date(String key) {
@@ -53,6 +57,11 @@ class ShiftTransactionSnapshot {
       }));
     }
 
+    List<Map<String, dynamic>> optionalRecords(String key) {
+      if (json[key] == null) return const [];
+      return records(key);
+    }
+
     return ShiftTransactionSnapshot(
       id: json['id']?.toString() ?? (throw const FormatException('Missing transaction id.')),
       mode: json['mode']?.toString() ?? '',
@@ -66,6 +75,8 @@ class ShiftTransactionSnapshot {
       participants: records('participants'),
       transfers: records('transfers'),
       timeline: records('timeline'),
+      calendarEvents: optionalRecords('calendar_events'),
+      syncAttempts: optionalRecords('sync_attempts'),
     );
   }
 }
@@ -355,6 +366,46 @@ class ShiftTransactionApiClient {
     '${_transactionPath(id)}/calendar-sync/complete',
     body: {'calendar_event_ids': calendarEventIds},
   );
+
+  /// Records provider-specific event references while retaining the legacy
+  /// completeCalendarSync method for older callers and stored clients.
+  Future<ShiftTransactionSnapshot> completeCalendarSyncWithEvents(
+    String id, {
+    required List<ShiftTransactionCalendarEventMapping> calendarEvents,
+  }) {
+    if (calendarEvents.isEmpty || calendarEvents.length > 10) {
+      throw ArgumentError.value(
+        calendarEvents,
+        'calendarEvents',
+        'Provide between 1 and 10 transfer event mappings.',
+      );
+    }
+    final transferIds = calendarEvents.map((event) => event.transferId.trim()).toList();
+    final eventIdentities = calendarEvents.map((event) => [
+      event.provider.trim(),
+      event.calendarId?.trim() ?? '',
+      event.eventId.trim(),
+    ].join('|')).toList();
+    if (transferIds.any((value) => value.isEmpty) ||
+        calendarEvents.any((event) =>
+            event.provider.trim().isEmpty || event.eventId.trim().isEmpty) ||
+        transferIds.toSet().length != transferIds.length ||
+        eventIdentities.toSet().length != eventIdentities.length) {
+      throw ArgumentError.value(
+        calendarEvents,
+        'calendarEvents',
+        'Transfer IDs and provider event references must be non-empty and unique.',
+      );
+    }
+    return _postTransaction(
+      '${_transactionPath(id)}/calendar-sync/complete',
+      body: {
+        'calendar_events': [
+          for (final event in calendarEvents) event.toJson(),
+        ],
+      },
+    );
+  }
 
   Future<ShiftTransactionSnapshot> failCalendarSync(
     String id, {
