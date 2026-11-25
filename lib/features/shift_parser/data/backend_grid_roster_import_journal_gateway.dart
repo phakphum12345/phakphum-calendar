@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
+
 import 'package:http/http.dart' as http;
 
 import '../../../domain/entities/schedule.dart';
@@ -113,10 +115,11 @@ class BackendGridRosterImportJournalGateway
       }
       final record = Map<String, dynamic>.from(entry);
       if (record['schedule_id'] != scheduleId ||
-          record['lifecycle'] != 'committed' ||
-          record['schedule'] is! Map ||
-          record['provenance'] is! Map) {
+          record['lifecycle'] != 'committed') {
         continue;
+      }
+      if (record['schedule'] is! Map || record['provenance'] is! Map) {
+        throw const FormatException('A committed backend journal record is incomplete.');
       }
       final provenancePayload = <String, Object?>{
         'format': GridRosterImportProvenance.format,
@@ -128,8 +131,19 @@ class BackendGridRosterImportJournalGateway
       if (schedule.id != scheduleId ||
           provenance.targetScheduleId != scheduleId ||
           provenance.lifecycle != GridRosterImportLifecycle.committed ||
-          provenance.acceptedScheduleFingerprint == null) {
+          provenance.importRunId != record['import_run_id'] ||
+          provenance.targetScheduleRevision != record['base_revision'] ||
+          provenance.sourceFingerprint !=
+              'sha256:${record['source_fingerprint']}' ||
+          provenance.acceptedScheduleFingerprint == null ||
+          _rawFingerprint(provenance.acceptedScheduleFingerprint!) !=
+              record['accepted_schedule_fingerprint']) {
         throw const FormatException('The backend returned inconsistent committed journal data.');
+      }
+      final actualScheduleFingerprint =
+          'sha256:${sha256.convert(utf8.encode(scheduleCodec.encode(schedule)))}';
+      if (actualScheduleFingerprint != provenance.acceptedScheduleFingerprint) {
+        throw const FormatException('The committed journal Schedule fingerprint is invalid.');
       }
       final journaledAtUtc = DateTime.tryParse(
         record['created_at']?.toString() ?? '',
