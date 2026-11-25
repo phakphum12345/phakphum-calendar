@@ -48,6 +48,7 @@ import '../../features/reports/infrastructure/monthly_schedule_pdf_service.dart'
 import '../../features/reports/infrastructure/printing_report_output_gateway.dart';
 import '../../features/reports/presentation/controllers/monthly_schedule_report_controller.dart';
 import '../../features/schedule/data/imported_schedule_adapter.dart';
+import '../../features/schedule/data/backend_schedule_repository.dart';
 import '../../features/schedule/data/legacy_schedule_adapter.dart';
 import '../../features/schedule/data/schedule_service.dart';
 import '../../features/schedule/data/shared_preferences_schedule_repository.dart';
@@ -223,6 +224,17 @@ class AppDependencies {
   final EmployeeRepository employeeRepository;
   final ShiftTemplateRepository shiftTemplateRepository;
   final ScheduleRepository scheduleRepository;
+
+  /// Uses the authenticated Laravel backend for Grid imports when configured.
+  /// Existing local storage remains the fallback for unconfigured development.
+  late final ScheduleRepository gridScheduleRepository = () {
+    const baseUrl = String.fromEnvironment('ORGANIZATION_API_BASE_URL');
+    if (baseUrl.trim().isEmpty) return scheduleRepository;
+    return BackendScheduleRepository(
+      baseUrl: baseUrl,
+      idTokenProvider: () async => googleAuthService.account?.authentication.idToken,
+    );
+  }();
   final ImportRepository? importRepository;
   final SettingsRepository? settingsRepository;
   final ImportService? importService;
@@ -308,7 +320,7 @@ class AppDependencies {
   /// Creates the repository-backed Grid workbook import workflow.
   GridRosterImportWorkflow createGridRosterImportWorkflow() {
     return GridRosterImportWorkflow(
-      scheduleRepository: scheduleRepository,
+      scheduleRepository: gridScheduleRepository,
       journal: GridRosterBundleJournal(
         store: SharedPreferencesScheduleKeyValueStore(),
       ),
@@ -366,12 +378,12 @@ class AppDependencies {
 
   /// Loads the current canonical imported schedule without mutating it.
   Future<Result<Schedule?>> loadImportedSchedule() {
-    return scheduleRepository.findById('imported');
+    return gridScheduleRepository.findById('imported');
   }
 
   /// Persists a successfully converted canonical import aggregate.
   Future<Result<Schedule>> saveImportedSchedule(Schedule schedule) {
-    return scheduleRepository.save(schedule);
+    return gridScheduleRepository.save(schedule);
   }
 
   /// Creates a rule engine from the rules registered at the composition root.
