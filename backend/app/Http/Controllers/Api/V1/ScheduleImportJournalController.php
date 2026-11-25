@@ -48,6 +48,16 @@ class ScheduleImportJournalController extends Controller
         if ($validated['lifecycle'] === 'committed') {\n            $prepared = DB::table('schedule_import_journals')\n                ->where('owner_user_id', $request->user()->id)\n                ->where('schedule_id', $scheduleId)\n                ->where('import_run_id', $validated['import_run_id'])\n                ->where('lifecycle', 'prepared')\n                ->first();\n\n            if ($prepared === null ||\n                $prepared->base_revision !== $validated['base_revision'] ||\n                $prepared->source_fingerprint !== $validated['source_fingerprint']) {\n                return response()->json([\n                    'error' => [\n                        'code' => 'prepared_journal_not_found',\n                        'message' => 'A matching PREPARED journal record is required before COMMITTED.',\n                    ],\n                ], 409);\n            }\n        }\n\n        $payload = isset($validated['schedule'])
             ? json_encode($validated['schedule'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)
             : null;
+
+        if ($validated['lifecycle'] === 'committed' &&
+            ! hash_equals($validated['accepted_schedule_fingerprint'], hash('sha256', $payload))) {
+            return response()->json([
+                'error' => [
+                    'code' => 'accepted_schedule_fingerprint_mismatch',
+                    'message' => 'The accepted Schedule fingerprint does not match the committed payload.',
+                ],
+            ], 422);
+        }
         $attributes = [
             'owner_user_id' => $request->user()->id,
             'schedule_id' => $scheduleId,
