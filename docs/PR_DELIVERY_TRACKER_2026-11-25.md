@@ -22,8 +22,8 @@
 |---|---|---|---|
 | #184 | CLOSED, not merged | #186 | Stacked on #183 branch; changing base to main produced merge conflicts/dirty state |
 | #185 | CLOSED, not merged | #187 | Based on an older main; clean mainline reconstruction preserves Shift Pay work and avoids stale-base conflicts |
-| #178 | OPEN at snapshot; replaced by current docs PR | #188 | Root implementation status/traceability/roadmap snapshot used old main SHA |
-| #180 | OPEN Draft at snapshot; replaced by current docs PR | #188 | Documentation tree was based on old main SHA and included stale PR status metadata |
+| #178 | CLOSED, not merged | #188 | Stale root status docs were replaced with a refreshed current-main snapshot | Root implementation status/traceability/roadmap snapshot used old main SHA |
+| #180 | CLOSED, not merged | #188 | Stale documentation tree was consolidated and refreshed | Documentation tree was based on old main SHA and included stale PR status metadata |
 
 ## Merge and CI policy
 
@@ -37,7 +37,7 @@
 
 ## Remaining qualification
 
-- Main SHA `aed2f1177bdfc85f6ff53bb200116812a51bd9e3` had 5/8 checks completed successfully and 3 still in progress at the time of this snapshot.
+- Main SHA `aed2f1177bdfc85f6ff53bb200116812a51bd9e3` completed all 8 exact-main checks successfully at the time of this snapshot.
 - Real Google Calendar API event creation is not implemented by PR #187; only attempt/event reconciliation is merged.
 - Shift Pay assignment-to-monthly-statement integration and Flutter/backend decimal precision parity remain open.
 - Production deployment, public Google OAuth readiness, Web Push delivery and historical roster restore remain unverified.
