@@ -70,7 +70,7 @@ class ScheduleImportJournalController extends Controller
             : null;
 
         if ($validated['lifecycle'] === 'committed' &&
-            !hash_equals($validated['accepted_schedule_fingerprint'], hash('sha256', $payload))) {
+            ! hash_equals($validated['accepted_schedule_fingerprint'], hash('sha256', $payload))) {
             return response()->json([
                 'error' => [
                     'code' => 'accepted_schedule_fingerprint_mismatch',
