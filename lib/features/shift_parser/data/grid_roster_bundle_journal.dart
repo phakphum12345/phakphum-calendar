@@ -60,6 +60,58 @@ class GridRosterBundleJournal {
 
   String _slotKey(String id, String slot) => '${_baseKey(id)}.$slot';
 
+  /// Discovers Schedule IDs represented by valid records in this journal's
+  /// reserved SharedPreferences namespace. Unrelated application keys are
+  /// never interpreted as Schedule IDs.
+  ///
+  /// This is discovery only: PREPARED records are included in the result but
+  /// are not replayed. Callers must surface recovery outcomes explicitly.
+  Future<List<String>> discoverScheduleIds() async {
+    if (_store is! ScheduleKeyEnumerator) {
+      throw const GridRosterBundleJournalException(
+        'The journal store does not support key enumeration.',
+      );
+    }
+    final keys = await (_store as ScheduleKeyEnumerator).getKeys();
+    final scheduleIds = <String>{};
+    for (final key in keys) {
+      if (!key.startsWith(storageKeyPrefix)) continue;
+      final suffix = key.substring(storageKeyPrefix.length);
+      final separator = suffix.lastIndexOf('.');
+      if (separator <= 0) {
+        throw const GridRosterBundleJournalException(
+          'A key in the journal namespace has an invalid format.',
+        );
+      }
+      final slot = suffix.substring(separator + 1);
+      if (slot != 'a' && slot != 'b') {
+        throw const GridRosterBundleJournalException(
+          'A key in the journal namespace has an unknown slot.',
+        );
+      }
+      try {
+        final encodedId = suffix.substring(0, separator);
+        final id = utf8.decode(base64Url.decode(base64Url.normalize(encodedId)));
+        if (id.isEmpty) {
+          throw const FormatException('Empty Schedule ID.');
+        }
+        scheduleIds.add(id);
+      } on FormatException catch (error) {
+        throw GridRosterBundleJournalException(
+          'A journal key contains an invalid Schedule ID: $error',
+        );
+      }
+    }
+
+    final discovered = <String>[];
+    final orderedIds = scheduleIds.toList()..sort();
+    for (final id in orderedIds) {
+      final records = await _readRecords(id);
+      if (records.isNotEmpty) discovered.add(id);
+    }
+    return discovered;
+  }
+
   /// Returns the newest committed bundle, ignoring an incomplete PREPARED
   /// record when an older committed generation is still available.
   Future<GridRosterBundleJournalSnapshot?> recover(String scheduleId) async {
