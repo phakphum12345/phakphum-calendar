@@ -42,10 +42,10 @@ class GridRosterBundleJournalException implements Exception {
 /// caller must load/revalidate the target revision immediately before commit.
 class GridRosterBundleJournal {
   GridRosterBundleJournal({
-    required ScheduleKeyValueStore store,
+    required this._store,
     this.scheduleCodec = const ScheduleJsonCodec(),
     this.provenanceCodec = const GridRosterImportProvenanceJsonCodec(),
-  }) : _store = store;
+  });
 
   static const storageKeyPrefix = 'shift_tools.grid_roster_bundle.v1.';
   static const _format = 'shift-tools.grid-roster-bundle-journal';
