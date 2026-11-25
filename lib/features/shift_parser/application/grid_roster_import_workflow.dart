@@ -9,6 +9,7 @@ import '../../../domain/entities/shift_template.dart';
 import '../../../domain/repositories/schedule_repository.dart';
 import '../../excel_import/domain/workbook_info.dart';
 import '../../schedule/data/schedule_json_codec.dart';
+import '../data/backend_grid_roster_import_journal_gateway.dart';
 import '../data/grid_roster_bundle_journal.dart';
 import 'grid_roster_workbook_scanner.dart';
 import '../domain/monthly_roster_section.dart';
@@ -38,6 +39,7 @@ class GridRosterImportWorkflow {
   GridRosterImportWorkflow({
     required this._scheduleRepository,
     required this._journal,
+    this.remoteJournalGateway,
     this.workbookScanner = const GridRosterWorkbookScanner(),
     this.reviewSessionBuilder = const GridRosterReviewSessionBuilder(),
     this.canonicalConverter = const GridRosterCanonicalConverter(),
@@ -46,6 +48,7 @@ class GridRosterImportWorkflow {
 
   final ScheduleRepository _scheduleRepository;
   final GridRosterBundleJournal _journal;
+  final GridRosterImportJournalGateway? remoteJournalGateway;
   final GridRosterWorkbookScanner workbookScanner;
   final GridRosterReviewSessionBuilder reviewSessionBuilder;
   final GridRosterCanonicalConverter canonicalConverter;
@@ -207,11 +210,19 @@ class GridRosterImportWorkflow {
       acceptedScheduleFingerprint: acceptedFingerprint,
     );
     try {
+      await remoteJournalGateway?.appendPrepared(
+        scheduleId: conversion.schedule.id,
+        provenance: conversion.preparedProvenance,
+      );
       final journalled = await _journal.commit(
         schedule: conversion.schedule,
         preparedProvenance: conversion.preparedProvenance,
         committedProvenance: committedProvenance,
         currentTargetRevision: liveRevision,
+      );
+      await remoteJournalGateway?.appendCommitted(
+        schedule: journalled.schedule,
+        provenance: committedProvenance,
       );
       final beforeSaveResult = await _scheduleRepository.findById(
         context.session.targetScheduleId,
@@ -247,7 +258,9 @@ class GridRosterImportWorkflow {
     final live = (liveResult as Success<Schedule?>).value;
 
     try {
-      final snapshot = await _journal.recover(scheduleId);
+      final localSnapshot = await _journal.recover(scheduleId);
+      final remoteSnapshot = await remoteJournalGateway?.recover(scheduleId);
+      final snapshot = _newerJournalSnapshot(localSnapshot, remoteSnapshot);
       if (snapshot == null) return Success(live);
 
       final acceptedFingerprint =
@@ -304,6 +317,17 @@ class GridRosterImportWorkflow {
       ? 'absent:$scheduleId'
       : scheduleFingerprint(schedule);
 
+}
+
+GridRosterBundleJournalSnapshot? _newerJournalSnapshot(
+  GridRosterBundleJournalSnapshot? local,
+  GridRosterBundleJournalSnapshot? remote,
+) {
+  if (local == null) return remote;
+  if (remote == null) return local;
+  return remote.provenance.createdAtUtc.isAfter(local.provenance.createdAtUtc)
+      ? remote
+      : local;
 }
 
 Result<TTarget> _copyFailure<TSource, TTarget>(Result<TSource> result) {
