@@ -124,9 +124,9 @@ class ScheduleApiTest extends TestCase
 
         $committed = $payload;
         $committed['lifecycle'] = 'committed';
-        $committed['accepted_schedule_fingerprint'] = str_repeat('b', 64);
-        $committed['provenance'] = ['source' => 'workbook.xlsx', 'parser_version' => '1', 'accepted' => true];
         $committed['schedule'] = ['id' => 'roster', 'name' => 'Imported roster', 'months' => []];
+        $committed['accepted_schedule_fingerprint'] = hash('sha256', json_encode($committed['schedule'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        $committed['provenance'] = ['source' => 'workbook.xlsx', 'parser_version' => '1', 'accepted' => true];
         $this->postJson('/api/v1/schedules/roster/import-journals', $committed, $this->auth('alice-token'))
             ->assertCreated()->assertJsonPath('data.lifecycle', 'committed');
         $this->postJson('/api/v1/schedules/roster/import-journals', $committed, $this->auth('alice-token'))
