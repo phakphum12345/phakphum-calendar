@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\V1\ClientErrorController;
 use App\Http\Controllers\Api\V1\GoogleAccountController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\OrganizationController;
+use App\Http\Controllers\Api\V1\ShiftPayProfileController;
 use App\Http\Controllers\Api\V1\ShiftTransactionController;
 use App\Http\Controllers\Api\V1\WebPushSubscriptionController;
 use Illuminate\Support\Facades\Route;
@@ -20,6 +21,16 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware(['throttle:120,1', 'google.account'])->group(function (): void {
         Route::get('/me', [GoogleAccountController::class, 'show'])
             ->name('api.v1.me');
+        Route::get('/shift-pay/profile', [ShiftPayProfileController::class, 'show'])
+            ->name('api.v1.shift-pay.profile.show');
+        Route::put('/shift-pay/profile', [ShiftPayProfileController::class, 'update'])
+            ->name('api.v1.shift-pay.profile.update');
+        Route::get('/organizations/{organizationId}/shift-pay-rules', [ShiftPayProfileController::class, 'organizationRules'])
+            ->whereUuid('organizationId')
+            ->name('api.v1.organizations.shift-pay-rules.show');
+        Route::put('/organizations/{organizationId}/shift-pay-rules', [ShiftPayProfileController::class, 'updateOrganizationRules'])
+            ->whereUuid('organizationId')
+            ->name('api.v1.organizations.shift-pay-rules.update');
         Route::get('/organizations', [OrganizationController::class, 'index'])
             ->name('api.v1.organizations.index');
         Route::post('/organizations', [OrganizationController::class, 'store'])
