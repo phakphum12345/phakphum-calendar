@@ -9,23 +9,26 @@ enum RevisionState { absent, live, deleted }
 
 class ScheduleRevision {
   const ScheduleRevision({
+    required this.scheduleId,
     required this.generation,
     required this.state,
     required this.fingerprint,
   });
 
+  final String scheduleId;
   final int generation;
   final RevisionState state;
   final String? fingerprint;
 
   String get token =>
-      'schedule-revision:v1:$generation:${state.name}:${fingerprint ?? '-'}';
+      'schedule-revision:v1:${Uri.encodeComponent(scheduleId)}:$generation:${state.name}:${fingerprint ?? '-'}';
 
-  static const absent = ScheduleRevision(
-    generation: 0,
-    state: RevisionState.absent,
-    fingerprint: null,
-  );
+  static ScheduleRevision absentFor(String scheduleId) => ScheduleRevision(
+        scheduleId: scheduleId,
+        generation: 0,
+        state: RevisionState.absent,
+        fingerprint: null,
+      );
 }
 
 class ScheduleSnapshot {
@@ -80,9 +83,9 @@ class ConditionalScheduleStore {
         .get();
 
     if (rows.isEmpty) {
-      return const ScheduleSnapshot(
+      return ScheduleSnapshot(
         payload: null,
-        revision: ScheduleRevision.absent,
+        revision: ScheduleRevision.absentFor(scheduleId),
       );
     }
 
@@ -91,6 +94,7 @@ class ConditionalScheduleStore {
     return ScheduleSnapshot(
       payload: row.readNullable<String>('payload'),
       revision: ScheduleRevision(
+        scheduleId: scheduleId,
         generation: row.read<int>('generation'),
         state: state,
         fingerprint: row.readNullable<String>('fingerprint'),
@@ -108,6 +112,12 @@ class ConditionalScheduleStore {
     required ScheduleRevision expected,
     required String replacementPayload,
   }) async {
+    if (expected.scheduleId != scheduleId) {
+      return ConditionalWriteResult(
+        status: ConditionalWriteStatus.conflict,
+        current: await read(scheduleId),
+      );
+    }
     final fingerprint = fingerprintOf(replacementPayload);
     try {
       final rows = await database
@@ -153,6 +163,7 @@ class ConditionalScheduleStore {
           current: ScheduleSnapshot(
             payload: row.readNullable<String>('payload'),
             revision: ScheduleRevision(
+              scheduleId: scheduleId,
               generation: row.read<int>('generation'),
               state: RevisionState.values.byName(row.read<String>('state')),
               fingerprint: row.readNullable<String>('fingerprint'),
@@ -179,6 +190,12 @@ class ConditionalScheduleStore {
     required String scheduleId,
     required ScheduleRevision expected,
   }) async {
+    if (expected.scheduleId != scheduleId) {
+      return ConditionalWriteResult(
+        status: ConditionalWriteStatus.conflict,
+        current: await read(scheduleId),
+      );
+    }
     try {
       final rows = await database
           .customSelect(
@@ -209,6 +226,7 @@ class ConditionalScheduleStore {
           current: ScheduleSnapshot(
             payload: row.readNullable<String>('payload'),
             revision: ScheduleRevision(
+              scheduleId: scheduleId,
               generation: row.read<int>('generation'),
               state: RevisionState.values.byName(row.read<String>('state')),
               fingerprint: row.readNullable<String>('fingerprint'),
