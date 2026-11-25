@@ -358,6 +358,13 @@ class ShiftTransactionApiTest extends TestCase
             ]],
         ], $this->auth('alice-token'))->assertUnprocessable();
 
+        $this->postJson("/api/v1/shift-transactions/{$created['id']}/calendar-sync/complete", [
+            'calendar_events' => [
+                ['transfer_id' => 'primary', 'provider' => 'google', 'event_id' => 'duplicate-event'],
+                ['transfer_id' => 'return', 'provider' => 'google', 'event_id' => 'duplicate-event'],
+            ],
+        ], $this->auth('alice-token'))->assertUnprocessable();
+
         $pending = $this->getJson("/api/v1/shift-transactions/{$created['id']}", $this->auth('alice-token'))->assertOk()->json('data');
         $this->assertSame('pending', $pending['sync_status']);
         $this->assertSame(['started'], collect($pending['sync_attempts'])->pluck('status')->all());
