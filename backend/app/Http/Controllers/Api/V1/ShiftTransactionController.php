@@ -6,6 +6,7 @@ use App\Services\ShiftTransactions\ShiftTransactionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class ShiftTransactionController
 {
@@ -98,9 +99,20 @@ class ShiftTransactionController
     public function completeSync(Request $request, string $transactionId): JsonResponse
     {
         $validated = $request->validate([
-            'calendar_event_ids' => ['required', 'array', 'min:1', 'max:10'],
+            'calendar_event_ids' => ['sometimes', 'required', 'array', 'min:1', 'max:10'],
             'calendar_event_ids.*' => ['required', 'string', 'max:512'],
+            'calendar_events' => ['sometimes', 'required', 'array', 'min:1', 'max:10'],
+            'calendar_events.*.transfer_id' => ['required', 'string', 'max:64'],
+            'calendar_events.*.provider' => ['required', 'string', 'max:32'],
+            'calendar_events.*.event_id' => ['required', 'string', 'max:512'],
+            'calendar_events.*.calendar_id' => ['nullable', 'string', 'max:512'],
+            'calendar_events.*.etag' => ['nullable', 'string', 'max:512'],
         ]);
+        if (isset($validated['calendar_event_ids']) === isset($validated['calendar_events'])) {
+            throw ValidationException::withMessages([
+                'calendar_events' => 'Provide either calendar_event_ids or calendar_events, but not both.',
+            ]);
+        }
 
         return response()->json(['data' => $this->transactions->transition(
             $transactionId, $request->user(), 'sync_complete', $validated,
