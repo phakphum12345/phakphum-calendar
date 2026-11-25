@@ -28,7 +28,7 @@ class ScheduleApiTest extends TestCase
 
         $first = $this->putJson('/api/v1/schedules/roster-2026-11', [
             'expected_revision' => $absent,
-            'schedule' => ['id' => 'roster-2026-11', 'name' => 'November', 'months' => []],
+            'schedule' => $this->schedulePayload('roster-2026-11', 'November'),
         ], $this->auth('alice-token'))->assertCreated()->json();
 
         $this->assertSame('live', $first['state']);
@@ -36,15 +36,15 @@ class ScheduleApiTest extends TestCase
 
         $updated = $this->putJson('/api/v1/schedules/roster-2026-11', [
             'expected_revision' => $first['revision'],
-            'schedule' => ['id' => 'roster-2026-11', 'name' => 'November revised', 'months' => []],
+            'schedule' => $this->schedulePayload('roster-2026-11', 'November revised'),
         ], $this->auth('alice-token'))->assertOk()->json();
 
         $this->assertSame('v2:', substr($updated['revision'], 0, 3));
-        $this->assertSame('November revised', $updated['data']['name']);
+        $this->assertSame('November revised', $updated['data']['schedule']['name']);
 
         $this->putJson('/api/v1/schedules/roster-2026-11', [
             'expected_revision' => $first['revision'],
-            'schedule' => ['id' => 'roster-2026-11', 'name' => 'stale overwrite', 'months' => []],
+            'schedule' => $this->schedulePayload('roster-2026-11', 'stale overwrite'),
         ], $this->auth('alice-token'))->assertConflict()
             ->assertJsonPath('error.code', 'schedule_revision_conflict');
 
@@ -62,7 +62,7 @@ class ScheduleApiTest extends TestCase
             ->assertOk()->json('revision');
         $this->putJson('/api/v1/schedules/shared-id', [
             'expected_revision' => $aliceAbsent,
-            'schedule' => ['id' => 'shared-id', 'name' => 'Alice private', 'months' => []],
+            'schedule' => $this->schedulePayload('shared-id', 'Alice private'),
         ], $this->auth('alice-token'))->assertCreated();
 
         $this->getJson('/api/v1/schedules/shared-id', $this->auth('bob-token'))
@@ -71,11 +71,11 @@ class ScheduleApiTest extends TestCase
         $bobAbsent = $this->getJson('/api/v1/schedules/shared-id', $this->auth('bob-token'))->json('revision');
         $this->putJson('/api/v1/schedules/shared-id', [
             'expected_revision' => $bobAbsent,
-            'schedule' => ['id' => 'shared-id', 'name' => 'Bob private', 'months' => []],
+            'schedule' => $this->schedulePayload('shared-id', 'Bob private'),
         ], $this->auth('bob-token'))->assertCreated();
 
         $this->getJson('/api/v1/schedules/shared-id', $this->auth('alice-token'))
-            ->assertOk()->assertJsonPath('data.name', 'Alice private');
+            ->assertOk()->assertJsonPath('data.schedule.name', 'Alice private');
     }
 
     public function test_conditional_delete_keeps_a_tombstone_and_rejects_stale_revision(): void
@@ -84,7 +84,7 @@ class ScheduleApiTest extends TestCase
         $absent = $this->getJson('/api/v1/schedules/delete-me', $this->auth('alice-token'))->json('revision');
         $created = $this->putJson('/api/v1/schedules/delete-me', [
             'expected_revision' => $absent,
-            'schedule' => ['id' => 'delete-me', 'name' => 'Keep history', 'months' => []],
+            'schedule' => $this->schedulePayload('delete-me', 'Keep history'),
         ], $this->auth('alice-token'))->assertCreated()->json();
 
         $deleted = $this->deleteJson('/api/v1/schedules/delete-me', [
@@ -96,7 +96,7 @@ class ScheduleApiTest extends TestCase
 
         $this->putJson('/api/v1/schedules/delete-me', [
             'expected_revision' => $created['revision'],
-            'schedule' => ['id' => 'delete-me', 'name' => 'stale resurrection', 'months' => []],
+            'schedule' => $this->schedulePayload('delete-me', 'stale resurrection'),
         ], $this->auth('alice-token'))->assertConflict();
 
         $this->getJson('/api/v1/schedules/delete-me', $this->auth('alice-token'))
@@ -124,8 +124,8 @@ class ScheduleApiTest extends TestCase
 
         $committed = $payload;
         $committed['lifecycle'] = 'committed';
-        $committed['schedule'] = ['id' => 'roster', 'name' => 'Imported roster', 'months' => []];
-        $committed['accepted_schedule_fingerprint'] = hash('sha256', json_encode($committed['schedule'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        $committed['schedule'] = $this->schedulePayload('roster', 'Imported roster');
+        $committed['accepted_schedule_fingerprint'] = hash('sha256', json_encode($committed['schedule'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION));
         $committed['provenance'] = ['source' => 'workbook.xlsx', 'parser_version' => '1', 'accepted' => true];
         $this->postJson('/api/v1/schedules/roster/import-journals', $committed, $this->auth('alice-token'))
             ->assertCreated()->assertJsonPath('data.lifecycle', 'committed');
@@ -141,6 +141,22 @@ class ScheduleApiTest extends TestCase
         $different['provenance'] = ['source' => 'different.xlsx'];
         $this->postJson('/api/v1/schedules/roster/import-journals', $different, $this->auth('alice-token'))
             ->assertConflict()->assertJsonPath('error.code', 'import_run_conflict');
+    }
+
+    private function schedulePayload(string $id, string $name): array
+    {
+        return [
+            'format' => 'shift-tools.canonical-schedule',
+            'version' => 1,
+            'schedule' => [
+                'id' => $id,
+                'name' => $name,
+                'departments' => [],
+                'employees' => [],
+                'shiftTypes' => [],
+                'months' => [],
+            ],
+        ];
     }
 
     private function signIn(string $token): void
