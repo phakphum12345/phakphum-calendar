@@ -43,6 +43,8 @@ jobs:
         run: dart pub deps --style=compact
       - name: Generate Drift database code
         run: dart run build_runner build
+      - name: Preview canonical Dart formatting
+        run: dart format --output=show lib/conditional_schedule_store.dart test/conditional_schedule_store_test.dart
       - name: Check Dart formatting
         run: dart format --output=none --set-exit-if-changed lib test
       - name: Analyze isolated spike
