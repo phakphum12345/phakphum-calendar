@@ -2,7 +2,7 @@
 
 - Status: requirements contract with merged implementation foundations
 - Related PRs: #181 (Flutter source resolution), #183 (backend persistence), #186 (backend calculation and immutable snapshots)
-- Current status: modes, persistence and calculation APIs are merged; confirmed-roster integration, monthly statements and client/backend precision parity remain open.
+- Current status: modes, persistence and calculation APIs are merged; Flutter calculation now supports profile-specific decimal rounding, including a separate organization precision. Confirmed-roster integration and monthly statements remain open.
 - Existing foundation: `ShiftPayCalculator`, `ShiftPayRule`, `ShiftTypeDefinition`, shift templates
 
 ## 1. Product modes
@@ -83,7 +83,7 @@ Validation:
 5. Match exactly one rule using deterministic specificity and effective-date logic.
 6. Resolve Hybrid precedence/source selection.
 7. Calculate from actual hours and configured formula.
-8. Apply explicit currency rounding.
+8. Apply the selected source's configured decimal precision using the backend's half-up rounding contract.
 9. Store an immutable snapshot with all inputs, source, rule version, formula, result, and timestamp.
 10. Link the snapshot to the assignment and include it once in the monthly statement.
 
