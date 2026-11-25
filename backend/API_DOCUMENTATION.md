@@ -103,6 +103,9 @@ A first create using the absent token returns HTTP 201 and revision `v1:<sha256>
 - `POST /api/v1/schedules/{scheduleId}/import-journals` appends one `prepared` or `committed` stage, keyed by import run ID and lifecycle.
 - A `committed` stage requires a matching prior `prepared` stage with the same Schedule ID, base revision and source fingerprint, and includes the accepted Schedule and fingerprint.
 - Replaying the exact same stage is idempotent. Reusing the same import run/lifecycle with different content returns HTTP 409.
+- `import_run_id` is a bounded identifier (1–128 characters; letters, digits, `.`, `_`, `:`, and `-`) so existing Grid clients using `grid-<microseconds>` remain compatible; it is not UUID-only.
+- Fingerprint columns use lowercase 64-character SHA-256 hex. The provenance envelope may retain the `sha256:` prefix; clients normalize only the API fingerprint fields.
+- When `ORGANIZATION_API_BASE_URL` is configured, the Flutter Grid workflow appends PREPARED remotely, verifies its local journal commit, appends COMMITTED remotely, then performs the conditional canonical Schedule save. A failed remote journal stage prevents the canonical save.
 - Journal writes do not automatically replay or overwrite the canonical Schedule. Recovery and user-visible conflict resolution remain explicit client responsibilities.
 
 **Current boundary:** this first backend slice stores personal Schedule records per authenticated account. Organization-shared roster ownership/permissions and Flutter client wiring are separate follow-up work; no existing SharedPreferences data is migrated or deleted by these endpoints. Production deployment and live-provider integration are not implied by source changes or CI alone.
