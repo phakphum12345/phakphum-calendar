@@ -68,6 +68,7 @@ class _MemoryScheduleRepository implements ScheduleRepository {
 class _MemoryRemoteJournalGateway implements GridRosterImportJournalGateway {
   final calls = <String>[];
   bool failCommitted = false;
+  GridRosterBundleJournalSnapshot? recoverySnapshot;
 
   @override
   Future<void> appendPrepared({
@@ -87,7 +88,8 @@ class _MemoryRemoteJournalGateway implements GridRosterImportJournalGateway {
   }
 
   @override
-  Future<GridRosterBundleJournalSnapshot?> recover(String scheduleId) async => null;
+  Future<GridRosterBundleJournalSnapshot?> recover(String scheduleId) async =>
+      recoverySnapshot;
 }
 
 void main() {
@@ -332,6 +334,32 @@ void main() {
     expect(repository.value, isNull);
     expect(await GridRosterBundleJournal(store: store).recover('schedule-1'),
         isNotNull);
+  });
+
+  test('recovers a committed remote journal when the local device has no journal', () async {
+    final context = await prepareContext();
+    final conversion = convertContext(context);
+    final acceptedFingerprint = workflow.scheduleFingerprint(conversion.schedule);
+    final committedProvenance = conversion.committedProvenance(
+      acceptedScheduleFingerprint: acceptedFingerprint,
+    );
+    final remote = _MemoryRemoteJournalGateway()
+      ..recoverySnapshot = GridRosterBundleJournalSnapshot(
+        schedule: conversion.schedule,
+        provenance: committedProvenance,
+        generation: 0,
+      );
+    final remoteWorkflow = GridRosterImportWorkflow(
+      scheduleRepository: repository,
+      journal: GridRosterBundleJournal(store: store),
+      remoteJournalGateway: remote,
+    );
+
+    final recovered = await remoteWorkflow.recover('schedule-1');
+
+    expect(recovered, isA<Success<Schedule?>>());
+    expect(repository.value?.id, 'schedule-1');
+    expect(repository.value, conversion.schedule);
   });
 
   test('commit rejects a Schedule changed after the review snapshot', () async {
