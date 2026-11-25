@@ -4,9 +4,12 @@ import 'package:phakphum_calendar/features/schedule/data/shared_preferences_sche
 import 'package:phakphum_calendar/features/shift_parser/data/grid_roster_bundle_journal.dart';
 import 'package:phakphum_calendar/features/shift_parser/domain/grid_roster_import_provenance.dart';
 
-class _MemoryStore implements ScheduleKeyValueStore {
+class _MemoryStore implements ScheduleKeyValueStore, ScheduleKeyEnumerator {
   final values = <String, String>{};
   bool failCommittedWrite = false;
+
+  @override
+  Future<Set<String>> getKeys() async => values.keys.toSet();
 
   @override
   Future<String?> getString(String key) async => values[key];
@@ -30,13 +33,14 @@ GridRosterImportProvenance _provenance({
   required String runId,
   required GridRosterImportLifecycle lifecycle,
   String revision = 'revision-1',
+  String scheduleId = 'schedule-1',
 }) {
   return GridRosterImportProvenance(
     importRunId: runId,
     sourceFingerprint: 'sha256:source-$runId',
     parserVersion: 'grid-parser/1',
     createdAtUtc: DateTime.utc(2026, 11, 24, 10),
-    targetScheduleId: 'schedule-1',
+    targetScheduleId: scheduleId,
     targetScheduleRevision: revision,
     lifecycle: lifecycle,
     acceptedScheduleFingerprint:
@@ -169,6 +173,37 @@ void main() {
     final recovered = await journal.recover('schedule-1');
     expect(recovered?.generation, 1);
     expect(recovered?.provenance.importRunId, 'run-1');
+  });
+
+  test('discovers Schedule IDs only from valid journal namespace records', () async {
+    final secondSchedule = Schedule(
+      id: 'schedule-2',
+      name: 'December roster',
+    );
+    for (final entry in [
+      (schedule, 'run-1'),
+      (secondSchedule, 'run-2'),
+    ]) {
+      await journal.commit(
+        schedule: entry.$1,
+        preparedProvenance: _provenance(
+          runId: entry.$2,
+          lifecycle: GridRosterImportLifecycle.prepared,
+          scheduleId: entry.$1.id,
+        ),
+        committedProvenance: _provenance(
+          runId: entry.$2,
+          lifecycle: GridRosterImportLifecycle.committed,
+          scheduleId: entry.$1.id,
+        ),
+        currentTargetRevision: 'revision-1',
+      );
+    }
+    store.values['unrelated.application.preference'] = 'ignored';
+
+    final discovered = await journal.discoverScheduleIds();
+
+    expect(discovered, ['schedule-1', 'schedule-2']);
   });
 
   test('prepared-only record is never returned as committed', () async {
