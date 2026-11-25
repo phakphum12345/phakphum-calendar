@@ -121,10 +121,21 @@ class ScheduleApiTest extends TestCase
             ->assertOk()->json('data');
 
         $this->assertSame($created['import_run_id'], $replayed['import_run_id']);
+
+        $committed = $payload;
+        $committed['lifecycle'] = 'committed';
+        $committed['accepted_schedule_fingerprint'] = str_repeat('b', 64);
+        $committed['provenance'] = ['source' => 'workbook.xlsx', 'parser_version' => '1', 'accepted' => true];
+        $committed['schedule'] = ['id' => 'roster', 'name' => 'Imported roster', 'months' => []];
+        $this->postJson('/api/v1/schedules/roster/import-journals', $committed, $this->auth('alice-token'))
+            ->assertCreated()->assertJsonPath('data.lifecycle', 'committed');
+        $this->postJson('/api/v1/schedules/roster/import-journals', $committed, $this->auth('alice-token'))
+            ->assertOk()->assertJsonPath('data.lifecycle', 'committed');
+
         $this->getJson('/api/v1/schedules/roster/import-journals', $this->auth('bob-token'))
             ->assertOk()->assertJsonCount(0, 'data');
         $this->getJson('/api/v1/schedules/roster/import-journals', $this->auth('alice-token'))
-            ->assertOk()->assertJsonCount(1, 'data');
+            ->assertOk()->assertJsonCount(2, 'data');
 
         $different = $payload;
         $different['provenance'] = ['source' => 'different.xlsx'];
