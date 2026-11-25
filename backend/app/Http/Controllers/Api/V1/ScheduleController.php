@@ -45,11 +45,19 @@ class ScheduleController extends Controller
     {
         $validated = $request->validate([
             'expected_revision' => ['required', 'string', 'max:160'],
-            'schedule' => ['required', 'array'],
-            'schedule.id' => ['required', 'string', 'max:128', 'in:'.$scheduleId],
+            'schedule' => ['required', 'array:format,version,schedule'],
+            'schedule.format' => ['required', 'in:shift-tools.canonical-schedule'],
+            'schedule.version' => ['required', 'integer', 'in:1'],
+            'schedule.schedule' => ['required', 'array:id,name,departments,employees,shiftTypes,months'],
+            'schedule.schedule.id' => ['required', 'string', 'max:128', 'in:'.$scheduleId],
+            'schedule.schedule.name' => ['required', 'string', 'max:200'],
+            'schedule.schedule.departments' => ['sometimes', 'array'],
+            'schedule.schedule.employees' => ['sometimes', 'array'],
+            'schedule.schedule.shiftTypes' => ['sometimes', 'array'],
+            'schedule.schedule.months' => ['sometimes', 'array'],
         ]);
 
-        $payload = json_encode($validated['schedule'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        $payload = json_encode($validated['schedule'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR);
         $fingerprint = hash('sha256', $payload);
         $ownerId = $request->user()->id;
         $expected = $validated['expected_revision'];
