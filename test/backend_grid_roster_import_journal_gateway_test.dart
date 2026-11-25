@@ -10,6 +10,8 @@ import 'package:phakphum_calendar/features/shift_parser/data/backend_grid_roster
 import 'package:phakphum_calendar/features/shift_parser/domain/grid_roster_import_provenance.dart';
 import 'package:phakphum_calendar/features/shift_parser/data/grid_roster_import_provenance_json_codec.dart';
 
+const _sourceHash = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+
 void main() {
   const scheduleCodec = ScheduleJsonCodec();
   const provenanceCodec = GridRosterImportProvenanceJsonCodec();
@@ -49,8 +51,8 @@ void main() {
     final preparedBody = jsonDecode(requests.first.body) as Map<String, dynamic>;
     expect(preparedBody['import_run_id'], 'grid-1795520000000000');
     expect(preparedBody['lifecycle'], 'prepared');
-    expect(preparedBody['source_fingerprint'], 'a' * 64);
-    expect(preparedBody['provenance']['sourceFingerprint'], 'sha256:${'a' * 64});
+    expect(preparedBody['source_fingerprint'], _sourceHash);
+    expect(preparedBody['provenance']['sourceFingerprint'], 'sha256:${_sourceHash});
     expect(preparedBody.containsKey('schedule'), isFalse);
 
     final committedBody = jsonDecode(requests.last.body) as Map<String, dynamic>;
@@ -105,7 +107,7 @@ GridRosterImportProvenance _provenance({
 }) {
   return GridRosterImportProvenance(
     importRunId: 'grid-1795520000000000',
-    sourceFingerprint: 'sha256:${'a' * 64}',
+    sourceFingerprint: 'sha256:${_sourceHash}',
     parserVersion: 'grid-roster/1',
     createdAtUtc: DateTime.utc(2026, 11, 25, 10),
     targetScheduleId: 'schedule-1',
