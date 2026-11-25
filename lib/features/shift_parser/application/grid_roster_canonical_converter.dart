@@ -1,6 +1,5 @@
 import '../../../domain/entities/employee.dart';
 import '../../../domain/entities/schedule.dart';
-import '../../../domain/entities/schedule_day.dart';
 import '../../../domain/entities/schedule_month.dart';
 import '../../../domain/entities/shift_assignment.dart';
 import '../../../domain/entities/shift_template.dart';
