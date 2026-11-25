@@ -20,12 +20,24 @@ abstract interface class ScheduleKeyValueStore {
   Future<void> remove(String key);
 }
 
+/// Optional capability for stores that can enumerate their own keys.
+///
+/// Implementations must return keys from the same logical namespace used by
+/// [ScheduleKeyValueStore]. Callers must still filter by their reserved prefix.
+abstract interface class ScheduleKeyEnumerator {
+  Future<Set<String>> getKeys();
+}
+
 /// SharedPreferences-backed production schedule key-value store.
-class SharedPreferencesScheduleKeyValueStore implements ScheduleKeyValueStore {
+class SharedPreferencesScheduleKeyValueStore
+    implements ScheduleKeyValueStore, ScheduleKeyEnumerator {
   SharedPreferencesAsync? _preferences;
 
   SharedPreferencesAsync get _instance =>
       _preferences ??= SharedPreferencesAsync();
+
+  @override
+  Future<Set<String>> getKeys() => _instance.getKeys();
 
   @override
   Future<String?> getString(String key) => _instance.getString(key);
