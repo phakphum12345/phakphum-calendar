@@ -75,7 +75,7 @@ Request:
 
 ```json
 {
-  "expected_revision": "absent:<sha256-of-schedule-id>",
+  "expected_revision": "absent:<sha256-of-account-id-and-schedule-id>",
   "schedule": {
     "format": "shift-tools.canonical-schedule",
     "version": 1,
