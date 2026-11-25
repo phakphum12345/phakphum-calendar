@@ -45,6 +45,7 @@ class ShiftPayProfile {
     this.hybridPriority = HybridShiftPayPriority.requireSelection,
     this.currencyCode = 'THB',
     this.decimalPlaces = 2,
+    this.organizationDecimalPlaces,
   }) : rules = List.unmodifiable(rules) {
     if (id.trim().isEmpty) {
       throw ArgumentError.value(id, 'id', 'must not be empty');
@@ -58,6 +59,10 @@ class ShiftPayProfile {
     }
     if (decimalPlaces < 0 || decimalPlaces > 4) {
       throw ArgumentError.value(decimalPlaces, 'decimalPlaces');
+    }
+    final organizationPlaces = organizationDecimalPlaces ?? decimalPlaces;
+    if (organizationPlaces < 0 || organizationPlaces > 4) {
+      throw ArgumentError.value(organizationPlaces, 'organizationDecimalPlaces');
     }
     if (mode == ShiftPayMode.organization &&
         (organizationId == null || organizationId!.trim().isEmpty)) {
@@ -85,6 +90,7 @@ class ShiftPayProfile {
   final HybridShiftPayPriority hybridPriority;
   final String currencyCode;
   final int decimalPlaces;
+  final int? organizationDecimalPlaces;
   final List<ShiftPayRuleEntry> rules;
 
   /// Resolves exactly one source for an assignment. It never adds a personal
@@ -102,12 +108,15 @@ class ShiftPayProfile {
         .where((entry) => entry.belongsToOrganization(organizationId))
         .toList(growable: false);
 
-    ShiftPayCalculation calculate(List<ShiftPayRuleEntry> entries) =>
-        calculator.calculate(
-          input: input,
-          rules: entries.map((entry) => entry.rule),
-          dateOverrides: dateOverrides,
-        );
+    ShiftPayCalculation calculate(
+      List<ShiftPayRuleEntry> entries, {
+      int? precision,
+    }) => calculator.calculate(
+      input: input,
+      rules: entries.map((entry) => entry.rule),
+      dateOverrides: dateOverrides,
+      decimalPlaces: precision ?? decimalPlaces,
+    );
 
     switch (mode) {
       case ShiftPayMode.personal:
@@ -117,7 +126,10 @@ class ShiftPayProfile {
           source: result.hasRule ? ShiftPayRuleSource.personal : null,
         );
       case ShiftPayMode.organization:
-        final result = calculate(organization);
+        final result = calculate(
+          organization,
+          precision: organizationDecimalPlaces ?? decimalPlaces,
+        );
         return ShiftPayResolvedCalculation(
           calculation: result,
           source: result.hasRule ? ShiftPayRuleSource.organization : null,
@@ -127,14 +139,22 @@ class ShiftPayProfile {
           final entries = selectedSource == ShiftPayRuleSource.personal
               ? personal
               : organization;
-          final result = calculate(entries);
+          final result = calculate(
+            entries,
+            precision: selectedSource == ShiftPayRuleSource.organization
+                ? organizationDecimalPlaces ?? decimalPlaces
+                : decimalPlaces,
+          );
           return ShiftPayResolvedCalculation(
             calculation: result,
             source: result.hasRule ? selectedSource : null,
           );
         }
         final personalResult = calculate(personal);
-        final organizationResult = calculate(organization);
+        final organizationResult = calculate(
+          organization,
+          precision: organizationDecimalPlaces ?? decimalPlaces,
+        );
         if (personalResult.hasRule && organizationResult.hasRule &&
             hybridPriority == HybridShiftPayPriority.requireSelection) {
           // Do not expose either candidate amount while the source is
