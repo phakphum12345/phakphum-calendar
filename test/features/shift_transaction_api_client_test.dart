@@ -204,6 +204,41 @@ void main() {
     client.close();
   });
 
+  test('rejects duplicate structured transfer mappings before making a request', () {
+    var requestCount = 0;
+    final client = ShiftTransactionApiClient(
+      baseUrl: 'https://calendar.example.test',
+      idTokenProvider: () async => 'token',
+      httpClient: MockClient((request) async {
+        requestCount++;
+        return http.Response('{}', 200);
+      }),
+    );
+
+    expect(
+      () => client.completeCalendarSyncWithEvents(
+        'transaction-1',
+        calendarEvents: const [
+          ShiftTransactionCalendarEventMapping(
+            transferId: 'transfer-1',
+            provider: 'google',
+            calendarId: 'primary',
+            eventId: 'event-1',
+          ),
+          ShiftTransactionCalendarEventMapping(
+            transferId: 'transfer-1',
+            provider: 'google',
+            calendarId: 'primary',
+            eventId: 'event-2',
+          ),
+        ],
+      ),
+      throwsArgumentError,
+    );
+    expect(requestCount, 0);
+    client.close();
+  });
+
   test('rejects transaction creation without an idempotency key', () async {
     final client = ShiftTransactionApiClient(
       baseUrl: 'https://calendar.example.test',
