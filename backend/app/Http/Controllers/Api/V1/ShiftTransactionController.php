@@ -98,8 +98,14 @@ class ShiftTransactionController
     public function completeSync(Request $request, string $transactionId): JsonResponse
     {
         $validated = $request->validate([
-            'calendar_event_ids' => ['required', 'array', 'min:1', 'max:10'],
+            'calendar_event_ids' => ['required_without:calendar_events', 'prohibited_with:calendar_events', 'array', 'min:1', 'max:10'],
             'calendar_event_ids.*' => ['required', 'string', 'max:512'],
+            'calendar_events' => ['required_without:calendar_event_ids', 'prohibited_with:calendar_event_ids', 'array', 'min:1', 'max:10'],
+            'calendar_events.*.transfer_id' => ['required', 'string', 'max:64'],
+            'calendar_events.*.provider' => ['required', 'string', 'max:32'],
+            'calendar_events.*.event_id' => ['required', 'string', 'max:512'],
+            'calendar_events.*.calendar_id' => ['nullable', 'string', 'max:512'],
+            'calendar_events.*.etag' => ['nullable', 'string', 'max:512'],
         ]);
 
         return response()->json(['data' => $this->transactions->transition(
