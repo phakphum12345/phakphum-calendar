@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:schedule_cas_spike/conditional_schedule_store.dart';
 import 'package:schedule_cas_spike/spike_database.dart';
@@ -168,7 +168,9 @@ void main() {
   });
 
   test('two independent instances have one CAS winner', () async {
-    final secondDatabase = SpikeDatabase(NativeDatabase.createInBackground(databaseFile));
+    final secondDatabase = SpikeDatabase(
+      NativeDatabase.createInBackground(databaseFile),
+    );
     try {
       final secondStore = ConditionalScheduleStore(secondDatabase);
       await secondDatabase.customStatement('PRAGMA busy_timeout = 5000');
@@ -223,7 +225,9 @@ void main() {
         1,
       );
       expect(
-        results.where((r) => r.status == ConditionalWriteStatus.conflict).length,
+        results
+            .where((r) => r.status == ConditionalWriteStatus.conflict)
+            .length,
         1,
       );
     } finally {

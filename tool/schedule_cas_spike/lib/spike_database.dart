@@ -35,8 +35,8 @@ class SpikeDatabase extends _$SpikeDatabase {
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
-        onCreate: (m) async {
-          await m.createAll();
-        },
-      );
+    onCreate: (m) async {
+      await m.createAll();
+    },
+  );
 }

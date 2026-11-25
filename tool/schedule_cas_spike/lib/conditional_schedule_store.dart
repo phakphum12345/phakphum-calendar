@@ -66,19 +66,18 @@ class ConditionalScheduleStore {
     } catch (_) {
       // The status remains storageFailure; this is only the last known token,
       // not a claim that storage currently contains this revision.
-      return ScheduleSnapshot(
-        payload: null,
-        revision: lastKnownRevision,
-      );
+      return ScheduleSnapshot(payload: null, revision: lastKnownRevision);
     }
   }
 
   Future<ScheduleSnapshot> read(String scheduleId) async {
-    final rows = await database.customSelect(
-      'SELECT generation, state, payload, fingerprint '
-      'FROM schedule_records WHERE schedule_id = ?',
-      variables: [Variable.withString(scheduleId)],
-    ).get();
+    final rows = await database
+        .customSelect(
+          'SELECT generation, state, payload, fingerprint '
+          'FROM schedule_records WHERE schedule_id = ?',
+          variables: [Variable.withString(scheduleId)],
+        )
+        .get();
 
     if (rows.isEmpty) {
       return const ScheduleSnapshot(
@@ -111,8 +110,9 @@ class ConditionalScheduleStore {
   }) async {
     final fingerprint = fingerprintOf(replacementPayload);
     try {
-      final rows = await database.customSelect(
-        '''
+      final rows = await database
+          .customSelect(
+            '''
         INSERT INTO schedule_records
           (schedule_id, generation, state, payload, fingerprint)
         SELECT ?, ?, 'live', ?, ?
@@ -131,19 +131,20 @@ class ConditionalScheduleStore {
           AND COALESCE(schedule_records.fingerprint, '') = ?
         RETURNING generation, state, payload, fingerprint
         ''',
-        variables: [
-          Variable.withString(scheduleId),
-          Variable.withInt(expected.generation + 1),
-          Variable.withString(replacementPayload),
-          Variable.withString(fingerprint),
-          Variable.withInt(expected.generation),
-          Variable.withString(expected.state.name),
-          Variable.withString(scheduleId),
-          Variable.withInt(expected.generation),
-          Variable.withString(expected.state.name),
-          Variable.withString(expected.fingerprint ?? ''),
-        ],
-      ).get();
+            variables: [
+              Variable.withString(scheduleId),
+              Variable.withInt(expected.generation + 1),
+              Variable.withString(replacementPayload),
+              Variable.withString(fingerprint),
+              Variable.withInt(expected.generation),
+              Variable.withString(expected.state.name),
+              Variable.withString(scheduleId),
+              Variable.withInt(expected.generation),
+              Variable.withString(expected.state.name),
+              Variable.withString(expected.fingerprint ?? ''),
+            ],
+          )
+          .get();
 
       if (rows.isNotEmpty) {
         final row = rows.single;
@@ -179,8 +180,9 @@ class ConditionalScheduleStore {
     required ScheduleRevision expected,
   }) async {
     try {
-      final rows = await database.customSelect(
-        '''
+      final rows = await database
+          .customSelect(
+            '''
         UPDATE schedule_records
         SET generation = generation + 1,
             state = 'deleted',
@@ -192,12 +194,13 @@ class ConditionalScheduleStore {
           AND COALESCE(fingerprint, '') = ?
         RETURNING generation, state, payload, fingerprint
         ''',
-        variables: [
-          Variable.withString(scheduleId),
-          Variable.withInt(expected.generation),
-          Variable.withString(expected.fingerprint ?? ''),
-        ],
-      ).get();
+            variables: [
+              Variable.withString(scheduleId),
+              Variable.withInt(expected.generation),
+              Variable.withString(expected.fingerprint ?? ''),
+            ],
+          )
+          .get();
 
       if (rows.isNotEmpty) {
         final row = rows.single;

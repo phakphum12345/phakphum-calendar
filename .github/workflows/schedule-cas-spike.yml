@@ -53,6 +53,7 @@ jobs:
           path: |
             tool/schedule_cas_spike/lib/**/*.dart
             tool/schedule_cas_spike/test/**/*.dart
+            tool/schedule_cas_spike/pubspec.lock
       - name: Check Dart formatting
         run: dart format --output=none --set-exit-if-changed lib test
       - name: Analyze isolated spike
