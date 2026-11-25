@@ -4,11 +4,11 @@ use App\Http\Controllers\Api\V1\ClientErrorController;
 use App\Http\Controllers\Api\V1\GoogleAccountController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\OrganizationController;
+use App\Http\Controllers\Api\V1\ScheduleController;
+use App\Http\Controllers\Api\V1\ScheduleImportJournalController;
 use App\Http\Controllers\Api\V1\ShiftPayCalculationController;
 use App\Http\Controllers\Api\V1\ShiftPayProfileController;
 use App\Http\Controllers\Api\V1\ShiftTransactionController;
-use App\Http\Controllers\Api\V1\ScheduleController;
-use App\Http\Controllers\Api\V1\ScheduleImportJournalController;
 use App\Http\Controllers\Api\V1\WebPushSubscriptionController;
 use Illuminate\Support\Facades\Route;
 
