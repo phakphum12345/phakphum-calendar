@@ -112,7 +112,7 @@ GridRosterImportProvenance _provenance({
 }) {
   return GridRosterImportProvenance(
     importRunId: 'grid-1795520000000000',
-    sourceFingerprint: 'sha256:${_sourceHash}',
+    sourceFingerprint: 'sha256:$_sourceHash',
     parserVersion: 'grid-roster/1',
     createdAtUtc: DateTime.utc(2026, 11, 25, 10),
     targetScheduleId: 'schedule-1',
