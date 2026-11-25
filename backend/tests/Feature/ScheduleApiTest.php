@@ -69,6 +69,7 @@ class ScheduleApiTest extends TestCase
             ->assertOk()->assertJsonPath('state', 'absent')->assertJsonPath('data', null);
 
         $bobAbsent = $this->getJson('/api/v1/schedules/shared-id', $this->auth('bob-token'))->json('revision');
+        $this->assertNotSame($aliceAbsent, $bobAbsent, 'Absent revision tokens must be scoped to the authenticated account.');
         $this->putJson('/api/v1/schedules/shared-id', [
             'expected_revision' => $bobAbsent,
             'schedule' => $this->schedulePayload('shared-id', 'Bob private'),
