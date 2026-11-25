@@ -10,6 +10,7 @@ import 'package:phakphum_calendar/domain/repositories/schedule_repository.dart';
 import 'package:phakphum_calendar/features/schedule/data/shared_preferences_schedule_repository.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/grid_roster_canonical_converter.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/grid_roster_import_workflow.dart';
+import 'package:phakphum_calendar/features/shift_parser/data/backend_grid_roster_import_journal_gateway.dart';
 import 'package:phakphum_calendar/features/shift_parser/data/grid_roster_bundle_journal.dart';
 import 'package:phakphum_calendar/features/shift_parser/domain/monthly_roster_section.dart';
 import 'package:phakphum_calendar/features/excel_import/domain/excel_cell.dart';
@@ -61,6 +62,31 @@ class _MemoryScheduleRepository implements ScheduleRepository {
     value = null;
     return const Success(null);
   }
+}
+
+class _MemoryRemoteJournalGateway implements GridRosterImportJournalGateway {
+  final calls = <String>[];
+  bool failCommitted = false;
+
+  @override
+  Future<void> appendPrepared({
+    required String scheduleId,
+    required GridRosterImportProvenance provenance,
+  }) async {
+    calls.add('prepared');
+  }
+
+  @override
+  Future<void> appendCommitted({
+    required Schedule schedule,
+    required GridRosterImportProvenance provenance,
+  }) async {
+    calls.add('committed');
+    if (failCommitted) throw StateError('simulated remote journal failure');
+  }
+
+  @override
+  Future<GridRosterBundleJournalSnapshot?> recover(String scheduleId) async => null;
 }
 
 void main() {
@@ -263,6 +289,48 @@ void main() {
 
     expect(recovered, isA<Success<Schedule?>>());
     expect(repository.value, same(accepted));
+  });
+
+  test('persists PREPARED remotely before COMMITTED and canonical save', () async {
+    final context = await prepareContext();
+    final conversion = convertContext(context);
+    final remote = _MemoryRemoteJournalGateway();
+    final remoteWorkflow = GridRosterImportWorkflow(
+      scheduleRepository: repository,
+      journal: GridRosterBundleJournal(store: store),
+      remoteJournalGateway: remote,
+    );
+
+    final result = await remoteWorkflow.commit(
+      context: context,
+      conversion: conversion,
+    );
+
+    expect(result, isA<Success<Schedule>>());
+    expect(remote.calls, ['prepared', 'committed']);
+    expect(repository.value?.id, 'schedule-1');
+  });
+
+  test('does not save canonical Schedule when remote COMMITTED stage fails', () async {
+    final context = await prepareContext();
+    final conversion = convertContext(context);
+    final remote = _MemoryRemoteJournalGateway()..failCommitted = true;
+    final remoteWorkflow = GridRosterImportWorkflow(
+      scheduleRepository: repository,
+      journal: GridRosterBundleJournal(store: store),
+      remoteJournalGateway: remote,
+    );
+
+    final result = await remoteWorkflow.commit(
+      context: context,
+      conversion: conversion,
+    );
+
+    expect(result, isA<PersistenceFailure<Schedule>>());
+    expect(remote.calls, ['prepared', 'committed']);
+    expect(repository.value, isNull);
+    expect(await GridRosterBundleJournal(store: store).recover('schedule-1'),
+        isNotNull);
   });
 
   test('commit rejects a Schedule changed after the review snapshot', () async {
