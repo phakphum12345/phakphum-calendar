@@ -9,7 +9,7 @@ This document describes the current routes. Request validation and service autho
 
 - Public health routes: `GET /api/v1/health`, `GET /api/v1/ready`.
 - Public client diagnostics: `POST /api/v1/diagnostics/client-errors`, throttled at 30 requests per minute.
-- All account, organization and shift-transaction routes use the `google.account` middleware and are throttled at 120 requests per minute.
+- All account, organization, Schedule, import-journal and shift-transaction routes use the `google.account` middleware and are throttled at 120 requests per minute.
 - Send a Google **ID token** as `Authorization: Bearer <google-id-token>`. The backend verifies the Google identity token; do not send an OAuth client secret or refresh token.
 - The middleware resolves or updates the account by verified Google subject and rejects conflicting email identities.
 
