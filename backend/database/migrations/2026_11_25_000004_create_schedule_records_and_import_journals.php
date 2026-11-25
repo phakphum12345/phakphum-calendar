@@ -25,7 +25,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('owner_user_id')->constrained('users')->restrictOnDelete();
             $table->string('schedule_id', 128);
-            $table->uuid('import_run_id');
+            $table->string('import_run_id', 128);
             $table->string('lifecycle', 16);
             $table->string('base_revision', 160);
             $table->char('source_fingerprint', 64);
