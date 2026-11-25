@@ -26,7 +26,7 @@ void main() {
 
   test('creates from absent and rejects stale create', () async {
     final absent = await store.read('schedule-A');
-    expect(absent.revision.token, ScheduleRevision.absent.token);
+    expect(absent.revision.token, ScheduleRevision.absentFor('schedule-A').token);
 
     final created = await store.compareAndSet(
       scheduleId: 'schedule-A',
@@ -38,17 +38,47 @@ void main() {
 
     final staleCreate = await store.compareAndSet(
       scheduleId: 'schedule-A',
-      expected: ScheduleRevision.absent,
+      expected: ScheduleRevision.absentFor('schedule-A'),
       replacementPayload: '{"value":"intruder"}',
     );
     expect(staleCreate.status, ConditionalWriteStatus.conflict);
     expect(staleCreate.current.payload, '{"value":"A"}');
   });
 
+
+  test('revision tokens are scoped to their Schedule ID', () async {
+    final created = await store.compareAndSet(
+      scheduleId: 'schedule-source',
+      expected: ScheduleRevision.absentFor('schedule-source'),
+      replacementPayload: '{"value":"source"}',
+    );
+    expect(created.status, ConditionalWriteStatus.saved);
+    expect(
+      created.current.revision.token,
+      isNot(ScheduleRevision.absentFor('schedule-other').token),
+    );
+
+    final crossScheduleWrite = await store.compareAndSet(
+      scheduleId: 'schedule-other',
+      expected: created.current.revision,
+      replacementPayload: '{"value":"must-not-write"}',
+    );
+    expect(crossScheduleWrite.status, ConditionalWriteStatus.conflict);
+    expect(crossScheduleWrite.current.revision.state, RevisionState.absent);
+    expect(crossScheduleWrite.current.revision.scheduleId, 'schedule-other');
+
+    final crossScheduleDelete = await store.delete(
+      scheduleId: 'schedule-other',
+      expected: created.current.revision,
+    );
+    expect(crossScheduleDelete.status, ConditionalWriteStatus.conflict);
+    expect(crossScheduleDelete.current.revision.state, RevisionState.absent);
+  });
+
   test('rejects stale update without changing the payload', () async {
     final first = await store.compareAndSet(
       scheduleId: 'schedule-B',
-      expected: ScheduleRevision.absent,
+      expected: ScheduleRevision.absentFor('schedule-B'),
       replacementPayload: '{"value":"one"}',
     );
     final staleRevision = first.current.revision;
@@ -72,7 +102,7 @@ void main() {
   test('generation prevents ABA and advances on same-content save', () async {
     final a1 = await store.compareAndSet(
       scheduleId: 'schedule-C',
-      expected: ScheduleRevision.absent,
+      expected: ScheduleRevision.absentFor('schedule-C'),
       replacementPayload: '{"value":"A"}',
     );
     final b = await store.compareAndSet(
@@ -102,7 +132,7 @@ void main() {
   test('tombstone blocks stale recreation', () async {
     final created = await store.compareAndSet(
       scheduleId: 'schedule-D',
-      expected: ScheduleRevision.absent,
+      expected: ScheduleRevision.absentFor('schedule-D'),
       replacementPayload: '{"value":"live"}',
     );
     final deleted = await store.delete(
@@ -132,7 +162,7 @@ void main() {
   test('stale token cannot recreate a missing row', () async {
     final created = await store.compareAndSet(
       scheduleId: 'schedule-missing',
-      expected: ScheduleRevision.absent,
+      expected: ScheduleRevision.absentFor('schedule-missing'),
       replacementPayload: '{"value":"created"}',
     );
     await database.customStatement(
@@ -152,7 +182,7 @@ void main() {
   test('committed revision survives database close and reopen', () async {
     final saved = await store.compareAndSet(
       scheduleId: 'schedule-reopen',
-      expected: ScheduleRevision.absent,
+      expected: ScheduleRevision.absentFor('schedule-reopen'),
       replacementPayload: '{"value":"durable"}',
     );
     expect(saved.status, ConditionalWriteStatus.saved);
@@ -177,12 +207,12 @@ void main() {
       final concurrentCreates = await Future.wait([
         store.compareAndSet(
           scheduleId: 'schedule-F',
-          expected: ScheduleRevision.absent,
+          expected: ScheduleRevision.absentFor('schedule-F'),
           replacementPayload: '{"creator":"one"}',
         ),
         secondStore.compareAndSet(
           scheduleId: 'schedule-F',
-          expected: ScheduleRevision.absent,
+          expected: ScheduleRevision.absentFor('schedule-F'),
           replacementPayload: '{"creator":"two"}',
         ),
       ]);
@@ -201,7 +231,7 @@ void main() {
 
       final seed = await store.compareAndSet(
         scheduleId: 'schedule-E',
-        expected: ScheduleRevision.absent,
+        expected: ScheduleRevision.absentFor('schedule-E'),
         replacementPayload: '{"value":"seed"}',
       );
       final sharedRevision = seed.current.revision;
