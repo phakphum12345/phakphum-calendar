@@ -18,7 +18,7 @@ This snapshot records the completed Shift Pay and Calendar Sync backend sequence
 | PR #187 | Merged; Calendar Sync attempt history and transfer event reconciliation | MERGED |
 | PR #178 / #180 | Older documentation PRs; content consolidated and refreshed in documentation replacement PR #188 | SUPERSEDED BY DOC UPDATE |
 | Main branch protection | GitHub reports `protected: false`; do not assume server-enforced merge gates | NEEDS REVIEW |
-| Exact-main CI | 5 of 8 checks completed successfully; 3 were still in progress at snapshot time | IN_PROGRESS |
+| Exact-main CI | 8 of 8 exact-main checks completed successfully | IN_PROGRESS |
 | Production deployment | No deployment was performed or verified for this main SHA | UNKNOWN |
 
 ### Current capability evidence
@@ -43,7 +43,7 @@ This snapshot records the completed Shift Pay and Calendar Sync backend sequence
 - CI claims are tied to exact SHAs. Queued, in-progress, cancelled, skipped or missing checks are not PASS.
 - PR #186 and #187 each completed all 8 exact-head checks successfully before merge.
 - PR #181 had 16 successful quality checks and one intentionally skipped Pages deployment check; the skipped deployment was not counted as PASS.
-- Current main SHA `aed2f1177bdfc85f6ff53bb200116812a51bd9e3` had 5/8 checks completed successfully and 3 still in progress at this snapshot.
+- Current main SHA `aed2f1177bdfc85f6ff53bb200116812a51bd9e3` completed 8/8 exact-main checks successfully.
 - No Pages deployment, production API migration, live Google Calendar write, or production configuration change was performed by this PR sequence.
 - Main branch protection is disabled; repository-side protection must not be assumed.
 
