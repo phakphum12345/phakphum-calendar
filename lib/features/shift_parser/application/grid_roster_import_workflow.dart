@@ -10,7 +10,7 @@ import '../../../domain/repositories/schedule_repository.dart';
 import '../../excel_import/domain/workbook_info.dart';
 import '../../schedule/data/schedule_json_codec.dart';
 import '../data/grid_roster_bundle_journal.dart';
-import '../data/grid_roster_workbook_scanner.dart';
+import 'grid_roster_workbook_scanner.dart';
 import '../domain/monthly_roster_section.dart';
 import 'grid_roster_canonical_converter.dart';
 import 'grid_roster_review_session.dart';
