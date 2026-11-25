@@ -36,7 +36,7 @@ class ScheduleImportJournalController extends Controller
         ]);
 
         if ($validated['lifecycle'] === 'committed' &&
-            (! isset($validated['schedule']) || ! isset($validated['accepted_schedule_fingerprint']))) {
+            (isset($validated['schedule']) === false || isset($validated['accepted_schedule_fingerprint']) === false)) {
             return response()->json([
                 'error' => [
                     'code' => 'committed_journal_requires_schedule',
@@ -70,7 +70,7 @@ class ScheduleImportJournalController extends Controller
             : null;
 
         if ($validated['lifecycle'] === 'committed' &&
-            ! hash_equals($validated['accepted_schedule_fingerprint'], hash('sha256', $payload))) {
+            hash_equals($validated['accepted_schedule_fingerprint'], hash('sha256', $payload)) === false) {
             return response()->json([
                 'error' => [
                     'code' => 'accepted_schedule_fingerprint_mismatch',
