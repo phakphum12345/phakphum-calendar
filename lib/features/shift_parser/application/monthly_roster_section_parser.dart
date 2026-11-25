@@ -99,30 +99,11 @@ class MonthlyRosterSectionParser {
       final period = explicitPeriod ?? (canUseSheetFallback ? tabPeriod : null);
       if (period == null) {
         const message =
-            'ไม่สามารถระบุช่วงวันที่ของส่วนนี้ได้อย่างปลอดภัย; '
-            'ไม่ใช้เดือนจากชื่อชีตแทน';
+            'ไม่พบช่วงวันที่เฉพาะของส่วนนี้; '
+            'ไม่สามารถระบุช่วงวันที่ได้อย่างปลอดภัย และไม่ใช้เดือนจากชื่อชีตแทน';
         warnings.add('ส่วน "$title": $message');
-        // Preserve the section as blocked evidence instead of dropping it.
-        // No dates or assignments are invented when the declared period is
-        // invalid or ambiguous.
-        sections.add(
-          MonthlyRosterSection(
-            title: title,
-            headerRowIndex: headerRow,
-            assignments: const [],
-            startDate: null,
-            endDate: null,
-            sourceSpreadsheetId: input.spreadsheetId,
-            sourceSheetId: input.sheetId,
-            sourceSheetTitle: input.sheetTitle,
-            dateAnomalies: const [
-              MonthlyRosterDateAnomaly(
-                code: 'unresolved_period',
-                message: message,
-              ),
-            ],
-          ),
-        );
+        // Skip this section rather than borrowing a period from the sheet or
+        // another section. Its omission remains visible in the parse warnings.
         continue;
       }
       final start = period.start;
