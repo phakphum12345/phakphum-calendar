@@ -21,7 +21,7 @@ class ScheduleController extends Controller
         if ($record === null) {
             return response()->json([
                 'data' => null,
-                'revision' => $this->absentRevision($scheduleId),
+                'revision' => $this->absentRevision($request->user()->id, $scheduleId),
                 'state' => 'absent',
             ], 200);
         }
@@ -62,7 +62,7 @@ class ScheduleController extends Controller
         $ownerId = $request->user()->id;
         $expected = $validated['expected_revision'];
 
-        if ($expected === $this->absentRevision($scheduleId)) {
+        if ($expected === $this->absentRevision($ownerId, $scheduleId)) {
             try {
                 $id = DB::table('schedule_records')->insertGetId([
                     'owner_user_id' => $ownerId,
@@ -182,7 +182,7 @@ class ScheduleController extends Controller
                 'message' => 'The Schedule changed after the supplied revision was read.',
             ],
             'current_revision' => $record === null
-                ? $this->absentRevision($scheduleId)
+                ? $this->absentRevision($ownerId, $scheduleId)
                 : $this->revision($record),
             'current_state' => $record?->state ?? 'absent',
         ], 409);
@@ -193,8 +193,8 @@ class ScheduleController extends Controller
         return 'v'.$record->generation.':'.($record->fingerprint ?? str_repeat('0', 64));
     }
 
-    private function absentRevision(string $scheduleId): string
+    private function absentRevision(int $ownerId, string $scheduleId): string
     {
-        return 'absent:'.hash('sha256', $scheduleId);
+        return 'absent:'.hash('sha256', $ownerId."\0".$scheduleId);
     }
 }
