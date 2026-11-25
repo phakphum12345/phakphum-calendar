@@ -20,7 +20,7 @@ Route::prefix('v1')->group(function (): void {
         ->name('api.v1.diagnostics.client-errors');
 
     Route::middleware(['throttle:120,1', 'google.account'])->group(function (): void {
-        Route::get('/me', [GoogleAccountController::class, 'show'])
+        Route::get('/schedules/{scheduleId}', [ScheduleController::class, 'show'])\n            ->where('scheduleId', '[A-Za-z0-9._:-]{1,128}')\n            ->name('api.v1.schedules.show');\n        Route::put('/schedules/{scheduleId}', [ScheduleController::class, 'store'])\n            ->where('scheduleId', '[A-Za-z0-9._:-]{1,128}')\n            ->name('api.v1.schedules.store');\n        Route::delete('/schedules/{scheduleId}', [ScheduleController::class, 'destroy'])\n            ->where('scheduleId', '[A-Za-z0-9._:-]{1,128}')\n            ->name('api.v1.schedules.destroy');\n        Route::get('/schedules/{scheduleId}/import-journals', [ScheduleImportJournalController::class, 'index'])\n            ->where('scheduleId', '[A-Za-z0-9._:-]{1,128}')\n            ->name('api.v1.schedules.import-journals.index');\n        Route::post('/schedules/{scheduleId}/import-journals', [ScheduleImportJournalController::class, 'store'])\n            ->where('scheduleId', '[A-Za-z0-9._:-]{1,128}')\n            ->name('api.v1.schedules.import-journals.store');\n        Route::get('/me', [GoogleAccountController::class, 'show'])
             ->name('api.v1.me');
         Route::post('/shift-pay/calculations', [ShiftPayCalculationController::class, 'store'])
             ->name('api.v1.shift-pay.calculations.store');
