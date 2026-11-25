@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 /// Configurable work-day classification and additional shift-pay calculation.
 ///
 /// This engine calculates additional shift pay only. It does not calculate base
@@ -78,7 +80,11 @@ class WorkDayPolicy {
   WorkDayCategory classify(
     DateTime date, {
     Map<String, WorkDayCategory> dateOverrides = const {},
+    int? decimalPlaces,
   }) {
+    if (decimalPlaces != null && (decimalPlaces < 0 || decimalPlaces > 4)) {
+      throw ArgumentError.value(decimalPlaces, 'decimalPlaces');
+    }
     final key = calendarDateKey(date);
     final override = dateOverrides[key];
     if (override != null) return override;
@@ -280,11 +286,20 @@ class ShiftPayCalculator {
     return ShiftPayCalculation(
       dayCategory: dayCategory,
       rule: rule,
-      amount: base == null ? null : base * rule.multiplier,
+      amount: base == null
+          ? null
+          : decimalPlaces == null
+          ? base * rule.multiplier
+          : _roundAmount(base * rule.multiplier, decimalPlaces),
       isCoveredBySalary: false,
       isCompensatoryTime: false,
       compensatesShiftTypeId: null,
     );
+  }
+
+  double _roundAmount(double amount, int decimalPlaces) {
+    final factor = math.pow(10, decimalPlaces).toDouble();
+    return (amount * factor).roundToDouble() / factor;
   }
 
   int _specificity(ShiftPayRule rule) =>
