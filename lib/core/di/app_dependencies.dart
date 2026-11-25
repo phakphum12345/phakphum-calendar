@@ -56,6 +56,7 @@ import '../../features/schedule/presentation/controllers/schedule_controller.dar
 import '../../features/shift_exchange/presentation/controllers/shift_exchange_controller.dart';
 import '../../features/shift_templates/application/shift_template_controller.dart';
 import '../../features/shift_parser/application/grid_roster_import_workflow.dart';
+import '../../features/shift_parser/data/backend_grid_roster_import_journal_gateway.dart';
 import '../../features/shift_parser/data/grid_roster_bundle_journal.dart';
 import '../../features/shift_templates/infrastructure/shared_preferences_shift_template_repository.dart';
 import '../../features/workflow/application/calendar_sync_coordinator.dart';
@@ -235,6 +236,19 @@ class AppDependencies {
       idTokenProvider: () async => googleAuthService.account?.authentication.idToken,
     );
   }();
+  /// Uses the same configured backend origin as Schedule persistence.
+  /// When no backend origin is configured, the existing local journal remains
+  /// the only journal and all legacy local workflows continue unchanged.
+  late final GridRosterImportJournalGateway? gridRosterImportJournalGateway = () {
+    const baseUrl = String.fromEnvironment('ORGANIZATION_API_BASE_URL');
+    if (baseUrl.trim().isEmpty) return null;
+    return BackendGridRosterImportJournalGateway(
+      baseUrl: baseUrl,
+      idTokenProvider: () async =>
+          googleAuthService.account?.authentication.idToken,
+    );
+  }();
+
   final ImportRepository? importRepository;
   final SettingsRepository? settingsRepository;
   final ImportService? importService;
@@ -324,6 +338,7 @@ class AppDependencies {
       journal: GridRosterBundleJournal(
         store: SharedPreferencesScheduleKeyValueStore(),
       ),
+      remoteJournalGateway: gridRosterImportJournalGateway,
     );
   }
 
