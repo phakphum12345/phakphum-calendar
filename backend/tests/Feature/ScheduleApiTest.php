@@ -49,7 +49,7 @@ class ScheduleApiTest extends TestCase
             ->assertJsonPath('error.code', 'schedule_revision_conflict');
 
         $this->getJson('/api/v1/schedules/roster-2026-11', $this->auth('alice-token'))
-            ->assertOk()->assertJsonPath('data.name', 'November revised')
+            ->assertOk()->assertJsonPath('data.schedule.name', 'November revised')
             ->assertJsonPath('revision', $updated['revision']);
     }
 
