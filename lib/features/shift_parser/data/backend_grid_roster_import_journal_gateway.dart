@@ -131,11 +131,18 @@ class BackendGridRosterImportJournalGateway
           provenance.acceptedScheduleFingerprint == null) {
         throw const FormatException('The backend returned inconsistent committed journal data.');
       }
+      final journaledAtUtc = DateTime.tryParse(
+        record['created_at']?.toString() ?? '',
+      )?.toUtc();
+      if (journaledAtUtc == null) {
+        throw const FormatException('The backend journal record is missing a valid created_at timestamp.');
+      }
       candidates.add(
         GridRosterBundleJournalSnapshot(
           schedule: schedule,
           provenance: provenance,
           generation: 0,
+          journaledAtUtc: journaledAtUtc,
         ),
       );
     }
