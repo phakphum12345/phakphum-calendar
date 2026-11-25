@@ -119,7 +119,7 @@ void main() {
       final transferSnapshot = ShiftTransactionSnapshot.fromJson(
         transactionJson(),
       );
-      final transferSyncIds = mapper.map(
+      final transferTargets = mapper.mapTargets(
         schedule: schedule,
         transaction: transferSnapshot,
       );
@@ -156,7 +156,14 @@ void main() {
           }
           if (request.url.path.endsWith('/calendar-sync/complete')) {
             expect(gateway.writeCount, 1);
-            expect(body['calendar_event_ids'], ['provider-event-1']);
+            expect(body['calendar_events'], [
+              {
+                'transfer_id': 'transfer-1',
+                'provider': 'google',
+                'calendar_id': 'primary',
+                'event_id': 'provider-event-1',
+              },
+            ]);
             current = transactionJson(
               status: 'approved',
               syncStatus: 'synced',
@@ -231,17 +238,25 @@ void main() {
                     await verification.prepareSchedule(schedule);
                     final readBack = verification.schedulePreparation!;
                     final eventIds = [
-                      for (final syncId in transferSyncIds)
-                        readBack.existingEventIdsBySyncId[syncId]!,
+                      for (final target in transferTargets)
+                        readBack.existingEventIdsBySyncId[target.syncId]!,
                     ];
                     expect(eventIds, ['provider-event-1']);
                     expect(
                       result.operations.single.providerEventId,
                       eventIds.single,
                     );
-                    await apiClient.completeCalendarSync(
+                    await apiClient.completeCalendarSyncWithEvents(
                       transaction.id,
-                      calendarEventIds: eventIds,
+                      calendarEvents: [
+                        for (var index = 0; index < transferTargets.length; index++)
+                          ShiftTransactionCalendarEventMapping(
+                            transferId: transferTargets[index].transferId,
+                            provider: 'google',
+                            calendarId: 'primary',
+                            eventId: eventIds[index],
+                          ),
+                      ],
                     );
                   } finally {
                     verification.dispose();

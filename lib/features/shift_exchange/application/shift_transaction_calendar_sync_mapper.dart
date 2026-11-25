@@ -2,6 +2,16 @@ import '../../../domain/entities/schedule.dart';
 import '../../workflow/application/canonical_schedule_event_mapper.dart';
 import '../infrastructure/shift_transaction_api_client.dart';
 
+class ShiftTransactionTransferSyncTarget {
+  const ShiftTransactionTransferSyncTarget({
+    required this.transferId,
+    required this.syncId,
+  });
+
+  final String transferId;
+  final String syncId;
+}
+
 /// Resolves every approved transaction transfer to exactly one event in the
 /// effective schedule. Transfer order is retained for the server event ledger.
 class ShiftTransactionCalendarSyncMapper {
@@ -14,9 +24,16 @@ class ShiftTransactionCalendarSyncMapper {
   List<String> map({
     required Schedule schedule,
     required ShiftTransactionSnapshot transaction,
+  }) => mapTargets(schedule: schedule, transaction: transaction)
+      .map((target) => target.syncId)
+      .toList(growable: false);
+
+  List<ShiftTransactionTransferSyncTarget> mapTargets({
+    required Schedule schedule,
+    required ShiftTransactionSnapshot transaction,
   }) {
     final candidates = eventMapper.map(schedule);
-    final syncIds = <String>[];
+    final targets = <ShiftTransactionTransferSyncTarget>[];
     for (final transfer in transaction.transfers) {
       final start = DateTime.tryParse(
         transfer['starts_at']?.toString() ?? '',
@@ -25,7 +42,13 @@ class ShiftTransactionCalendarSyncMapper {
         transfer['ends_at']?.toString() ?? '',
       )?.toLocal();
       final target = transfer['to_employee_id']?.toString();
-      if (start == null || end == null || target == null || !end.isAfter(start)) {
+      final transferId = transfer['transfer_key']?.toString();
+      if (start == null ||
+          end == null ||
+          target == null ||
+          transferId == null ||
+          transferId.isEmpty ||
+          !end.isAfter(start)) {
         throw StateError('ข้อมูลเวลาและผู้รับของธุรกรรมไม่สมบูรณ์');
       }
 
@@ -62,11 +85,17 @@ class ShiftTransactionCalendarSyncMapper {
               : 'พบเวรปลายทางมากกว่าหนึ่งรายการ ไม่สามารถจับคู่ Event ID ได้',
         );
       }
-      syncIds.add(matches.single);
+      targets.add(ShiftTransactionTransferSyncTarget(
+        transferId: transferId,
+        syncId: matches.single,
+      ));
     }
-    if (syncIds.toSet().length != syncIds.length) {
-      throw StateError('หลายธุรกรรมชี้ไปยัง Calendar Event เดียวกัน');
+    final syncIds = targets.map((target) => target.syncId).toList();
+    final transferIds = targets.map((target) => target.transferId).toList();
+    if (syncIds.toSet().length != syncIds.length ||
+        transferIds.toSet().length != transferIds.length) {
+      throw StateError('หลายธุรกรรมชี้ไปยัง Calendar Event หรือ transfer เดียวกัน');
     }
-    return List.unmodifiable(syncIds);
+    return List.unmodifiable(targets);
   }
 }

@@ -36,6 +36,21 @@ void main() {
         'fulfilled_at': null,
       },
     ],
+    'calendar_events': [
+      {
+        'transfer_key': 'transfer-1',
+        'provider': 'google',
+        'calendar_id': 'primary',
+        'event_id': 'event-1',
+        'etag': 'etag-1',
+      },
+    ],
+    'sync_attempts': [
+      {
+        'attempt_number': 1,
+        'status': 'completed',
+      },
+    ],
     'timeline': [
       {
         'id': 1,
@@ -72,6 +87,9 @@ void main() {
     expect(result, hasLength(1));
     expect(result.single.id, 'transaction-1');
     expect(result.single.timeline.single['event_type'], 'created');
+    expect(result.single.calendarEvents.single['event_id'], 'event-1');
+    expect(result.single.calendarEvents.single['etag'], 'etag-1');
+    expect(result.single.syncAttempts.single['attempt_number'], 1);
     expect(result.single.participants.first.containsKey('account_subject'), isFalse);
     client.close();
   });
@@ -136,10 +154,22 @@ void main() {
       'transaction-1',
       calendarEventIds: const ['event-1'],
     );
+    await client.completeCalendarSyncWithEvents(
+      'transaction-1',
+      calendarEvents: const [
+        ShiftTransactionCalendarEventMapping(
+          transferId: 'transfer-1',
+          provider: 'google',
+          calendarId: 'primary',
+          eventId: 'provider-event-1',
+          etag: 'etag-1',
+        ),
+      ],
+    );
     await client.failCalendarSync('transaction-1', reason: 'Retry later');
     await client.fulfillTransfer('transaction-1', transferId: 'transfer-1');
 
-    expect(requests, hasLength(10));
+    expect(requests, hasLength(11));
     expect(requests.first.method, 'POST');
     expect(requests.first.headers['Authorization'], 'Bearer google-id-token');
     expect(requests.first.headers['Idempotency-Key'], 'request-unique-001');
@@ -153,12 +183,59 @@ void main() {
       '/api/v1/shift-transactions/transaction-1/cancel',
       '/api/v1/shift-transactions/transaction-1/calendar-sync/start',
       '/api/v1/shift-transactions/transaction-1/calendar-sync/complete',
+      '/api/v1/shift-transactions/transaction-1/calendar-sync/complete',
       '/api/v1/shift-transactions/transaction-1/calendar-sync/fail',
       '/api/v1/shift-transactions/transaction-1/fulfill',
     ]);
     expect(jsonDecode(requests[6].body), {'preview_confirmed': true});
     expect(jsonDecode(requests[7].body), {'calendar_event_ids': ['event-1']});
-    expect(jsonDecode(requests[9].body), {'transfer_id': 'transfer-1'});
+    expect(jsonDecode(requests[8].body), {
+      'calendar_events': [
+        {
+          'transfer_id': 'transfer-1',
+          'provider': 'google',
+          'calendar_id': 'primary',
+          'event_id': 'provider-event-1',
+          'etag': 'etag-1',
+        },
+      ],
+    });
+    expect(jsonDecode(requests[10].body), {'transfer_id': 'transfer-1'});
+    client.close();
+  });
+
+  test('rejects duplicate structured transfer mappings before making a request', () {
+    var requestCount = 0;
+    final client = ShiftTransactionApiClient(
+      baseUrl: 'https://calendar.example.test',
+      idTokenProvider: () async => 'token',
+      httpClient: MockClient((request) async {
+        requestCount++;
+        return http.Response('{}', 200);
+      }),
+    );
+
+    expect(
+      () => client.completeCalendarSyncWithEvents(
+        'transaction-1',
+        calendarEvents: const [
+          ShiftTransactionCalendarEventMapping(
+            transferId: 'transfer-1',
+            provider: 'google',
+            calendarId: 'primary',
+            eventId: 'event-1',
+          ),
+          ShiftTransactionCalendarEventMapping(
+            transferId: 'transfer-1',
+            provider: 'google',
+            calendarId: 'primary',
+            eventId: 'event-2',
+          ),
+        ],
+      ),
+      throwsArgumentError,
+    );
+    expect(requestCount, 0);
     client.close();
   });
 
