@@ -4,6 +4,24 @@
 **Last reviewed:** 2026-11-24  
 **Scope:** Local XLSX Grid import, canonical Schedule persistence, and provenance journal.
 
+## Backend journal synchronization and cross-device recovery
+
+When `ORGANIZATION_API_BASE_URL` is configured, the Grid import workflow uses the authenticated Schedule API and the append-only remote import-journal API together with the existing local two-slot journal.
+
+The write order is deliberately fail-closed:
+
+1. Re-read the canonical Schedule and verify the review base revision.
+2. Append the remote PREPARED stage.
+3. Commit and read back the local two-slot journal.
+4. Append the remote COMMITTED stage with the canonical Schedule and accepted fingerprint.
+5. Re-read the canonical Schedule and save with the backend revision token (CAS).
+
+A failed remote PREPARED or COMMITTED stage prevents the canonical Schedule save. A local COMMITTED record is retained if the remote COMMITTED request fails, so local recovery remains possible. Remote PREPARED-only records are never replayed.
+
+Recovery reads both the local journal and the authenticated remote journal, chooses the newest committed provenance timestamp, then applies the same base-revision and accepted-fingerprint guards before saving. A remote read failure is not treated as an empty journal and does not silently trigger local-only replay. The remote API is currently personal-account scoped; organization-shared roster persistence is a separate future scope.
+
+The current UI uses `grid-<microseconds>` import-run identifiers. The backend therefore accepts bounded safe identifiers rather than requiring UUID syntax. API fingerprint fields are raw lowercase SHA-256 hex; the versioned provenance codec continues to store the `sha256:` prefix.
+
 ## 1. Safety invariants
 
 1. A reviewed import is bound to one Schedule ID and the exact Schedule revision loaded before review.
