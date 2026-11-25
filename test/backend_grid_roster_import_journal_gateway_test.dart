@@ -52,7 +52,7 @@ void main() {
     expect(preparedBody['import_run_id'], 'grid-1795520000000000');
     expect(preparedBody['lifecycle'], 'prepared');
     expect(preparedBody['source_fingerprint'], _sourceHash);
-    expect(preparedBody['provenance']['sourceFingerprint'], 'sha256:${_sourceHash});
+    expect(preparedBody['provenance']['sourceFingerprint'], 'sha256:$_sourceHash');
     expect(preparedBody.containsKey('schedule'), isFalse);
 
     final committedBody = jsonDecode(requests.last.body) as Map<String, dynamic>;
