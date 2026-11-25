@@ -109,7 +109,7 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
                               style: TextStyle(fontWeight: FontWeight.w600),
                             ),
                             for (final warning in session.warnings)
-                              Text('• $warning'),
+                              Text(warning),
                           ],
                         ),
                       ),
