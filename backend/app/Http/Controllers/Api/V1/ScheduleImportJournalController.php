@@ -45,7 +45,7 @@ class ScheduleImportJournalController extends Controller
             ], 422);
         }
 
-        $payload = isset($validated['schedule'])
+        if ($validated['lifecycle'] === 'committed') {\n            $prepared = DB::table('schedule_import_journals')\n                ->where('owner_user_id', $request->user()->id)\n                ->where('schedule_id', $scheduleId)\n                ->where('import_run_id', $validated['import_run_id'])\n                ->where('lifecycle', 'prepared')\n                ->first();\n\n            if ($prepared === null ||\n                $prepared->base_revision !== $validated['base_revision'] ||\n                $prepared->source_fingerprint !== $validated['source_fingerprint']) {\n                return response()->json([\n                    'error' => [\n                        'code' => 'prepared_journal_not_found',\n                        'message' => 'A matching PREPARED journal record is required before COMMITTED.',\n                    ],\n                ], 409);\n            }\n        }\n\n        $payload = isset($validated['schedule'])
             ? json_encode($validated['schedule'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)
             : null;
         $attributes = [
