@@ -108,7 +108,7 @@ class ScheduleApiTest extends TestCase
         $this->signIn('alice-token');
         $this->signIn('bob-token');
         $payload = [
-            'import_run_id' => 'f4dca2d5-2c10-4b63-9d4f-2a8f6a9a0001',
+            'import_run_id' => 'grid-1795520000000000',
             'lifecycle' => 'prepared',
             'base_revision' => 'absent:abc',
             'source_fingerprint' => str_repeat('a', 64),
