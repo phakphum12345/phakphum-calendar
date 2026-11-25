@@ -253,7 +253,7 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
           ),
           if (included && !blocked) ...[
             DropdownButtonFormField<String>(
-              value: _selectedEmployees[sourceId],
+              initialValue: _selectedEmployees[sourceId],
               decoration: const InputDecoration(
                 labelText: 'ยืนยันพนักงาน',
                 border: OutlineInputBorder(),
@@ -270,7 +270,7 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
             ),
             const SizedBox(height: 8),
             DropdownButtonFormField<String>(
-              value: _selectedTemplates[sourceId],
+              initialValue: _selectedTemplates[sourceId],
               decoration: InputDecoration(
                 labelText: rule.isResolved
                     ? 'เลือก Template อื่น (ไม่บังคับ)'
