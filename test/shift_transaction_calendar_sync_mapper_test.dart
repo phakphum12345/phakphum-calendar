@@ -75,6 +75,20 @@ void main() {
     );
   });
 
+  test('retains the transfer key alongside the effective event sync identity', () {
+    final targets = mapper.mapTargets(
+      schedule: schedule(),
+      transaction: transaction(),
+    );
+
+    expect(targets, hasLength(1));
+    expect(targets.single.transferId, 'transfer-1');
+    expect(
+      targets.single.syncId,
+      const CanonicalScheduleEventMapper().map(schedule()).single.syncId,
+    );
+  });
+
   test('fails closed when more than one effective assignment matches a transfer', () {
     expect(
       () => mapper.map(
