@@ -52,7 +52,7 @@ Proposed storage metadata (not part of canonical Schedule schema v1):
 - `contentFingerprint`: SHA-256 of the canonical `ScheduleJsonCodec.encode(schedule)` payload when state is live; absent for a tombstone;
 - `revisionToken`: opaque token derived from schema version, generation, state and (for live records) content fingerprint.
 
-The revision token is compared as an opaque value. A human-readable conceptual form may be `schedule-revision:v1:<generation>:<state>:<fingerprint>`; callers must not parse or manufacture it.
+The revision token is compared as an opaque value. A human-readable conceptual form may be `schedule-revision:v1:<encoded-schedule-id>:<generation>:<state>:<fingerprint>`; the Schedule ID is part of the token scope, and callers must not parse or manufacture it.
 
 ### Read and conditional-write semantics
 
@@ -142,7 +142,7 @@ The exact UPSERT/conditional-UPDATE SQL shape was separately exercised against S
 
 This is **not** evidence that the Dart Drift adapter, the generated database, Drift's `customSelect` handling of SQLite `RETURNING`, or any of the five app targets work. It only reduces uncertainty about the SQL statement semantics. The Drift package workflow must still run before the prototype receives any runtime PASS.
 
-The prototype currently hashes the payload supplied by its caller; it does not yet use `ScheduleJsonCodec`. This is deliberate isolation, not permission to substitute it into production. The prototype cannot justify accepting this ADR until exact-SHA test results and the complete active-platform matrix are attached.
+The prototype scopes every revision token to its Schedule ID and rejects cross-Schedule token reuse. It currently hashes the payload supplied by its caller; it does not yet use `ScheduleJsonCodec`. This is deliberate isolation, not permission to substitute it into production. The prototype cannot justify accepting this ADR until exact-SHA test results and the complete active-platform matrix are attached.
 
 ## Migration sequence
 
