@@ -78,6 +78,46 @@ void main() {
     );
   });
 
+  Future<GridRosterImportReviewContext> _prepare() async {
+    final result = await workflow.prepareReview(
+      report: _report(),
+      targetScheduleId: 'schedule-1',
+      targetScheduleName: 'November roster',
+      employees: [_employee],
+      shiftTemplates: const [],
+    );
+    expect(result, isA<Success<GridRosterImportReviewContext>>());
+    return (result as Success<GridRosterImportReviewContext>).value;
+  }
+
+  GridRosterCanonicalConversionResult _convert(
+    GridRosterImportReviewContext context,
+  ) {
+    final source = context.session.assignments.single.source;
+    final sourceId = GridRosterCanonicalConverter.assignmentId(
+      context.session.sourceFingerprint,
+      source,
+    );
+    final result = workflow.convert(
+      context: context,
+      employees: [_employee],
+      shiftTemplates: const [],
+      decisions: {
+        sourceId: GridRosterAssignmentDecision(
+          include: true,
+          employeeId: _employee.id,
+          reviewerId: 'reviewer-1',
+          reviewedAtUtc: createdAt,
+        ),
+      },
+      importRunId: 'workflow-run-1',
+      parserVersion: 'grid-parser/1',
+      createdAtUtc: createdAt,
+    );
+    expect(result, isA<Success<GridRosterCanonicalConversionResult>>());
+    return (result as Success<GridRosterCanonicalConversionResult>).value;
+  }
+
   test('scans a local workbook through review and canonical commit end-to-end', () async {
     final workbook = WorkbookInfo(
       file: ImportFile(
@@ -238,45 +278,7 @@ void main() {
     expect(store.values, isEmpty);
   });
 
-  Future<GridRosterImportReviewContext> _prepare() async {
-    final result = await workflow.prepareReview(
-      report: _report(),
-      targetScheduleId: 'schedule-1',
-      targetScheduleName: 'November roster',
-      employees: [_employee],
-      shiftTemplates: const [],
-    );
-    expect(result, isA<Success<GridRosterImportReviewContext>>());
-    return (result as Success<GridRosterImportReviewContext>).value;
-  }
 
-  GridRosterCanonicalConversionResult _convert(
-    GridRosterImportReviewContext context,
-  ) {
-    final source = context.session.assignments.single.source;
-    final sourceId = GridRosterCanonicalConverter.assignmentId(
-      context.session.sourceFingerprint,
-      source,
-    );
-    final result = workflow.convert(
-      context: context,
-      employees: [_employee],
-      shiftTemplates: const [],
-      decisions: {
-        sourceId: GridRosterAssignmentDecision(
-          include: true,
-          employeeId: _employee.id,
-          reviewerId: 'reviewer-1',
-          reviewedAtUtc: createdAt,
-        ),
-      },
-      importRunId: 'workflow-run-1',
-      parserVersion: 'grid-parser/1',
-      createdAtUtc: createdAt,
-    );
-    expect(result, isA<Success<GridRosterCanonicalConversionResult>>());
-    return (result as Success<GridRosterCanonicalConversionResult>).value;
-  }
 }
 
 MonthlyRosterParseReport _report() {
