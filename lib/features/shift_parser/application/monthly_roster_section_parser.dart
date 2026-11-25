@@ -102,8 +102,28 @@ class MonthlyRosterSectionParser {
             'ไม่พบช่วงวันที่เฉพาะของส่วนนี้; '
             'ไม่สามารถระบุช่วงวันที่ได้อย่างปลอดภัย และไม่ใช้เดือนจากชื่อชีตแทน';
         warnings.add('ส่วน "$title": $message');
-        // Skip this section rather than borrowing a period from the sheet or
-        // another section. Its omission remains visible in the parse warnings.
+        if (hasExplicitRange) {
+          // Keep an explicitly malformed/conflicting section visible as
+          // blocked evidence. Do not resolve dates or create assignments.
+          sections.add(
+            MonthlyRosterSection(
+              title: title,
+              headerRowIndex: headerRow,
+              assignments: const [],
+              sourceSpreadsheetId: input.spreadsheetId,
+              sourceSheetId: input.sheetId,
+              sourceSheetTitle: input.sheetTitle,
+              dateAnomalies: const [
+                MonthlyRosterDateAnomaly(
+                  code: 'unresolved_period',
+                  message: message,
+                ),
+              ],
+            ),
+          );
+        }
+        // A genuinely undated section is skipped rather than borrowing a
+        // period from the sheet or another section.
         continue;
       }
       final start = period.start;
