@@ -82,6 +82,7 @@ class ScheduleController extends Controller
 
         $generation = (int) $matches[1];
         $expectedFingerprint = $matches[2];
+
         $updated = DB::table('schedule_records')
             ->where('owner_user_id', $ownerId)
             ->where('schedule_id', $scheduleId)
