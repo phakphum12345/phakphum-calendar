@@ -33,7 +33,7 @@ return new class extends Migration
             $table->json('provenance');
             $table->longText('schedule_payload')->nullable();
             $table->timestamps();
-            $table->unique(['owner_user_id', 'import_run_id'], 'schedule_import_run_unique');
+            $table->unique(['owner_user_id', 'import_run_id', 'lifecycle'], 'schedule_import_run_lifecycle_unique');
             $table->index(['owner_user_id', 'schedule_id', 'created_at'], 'schedule_journal_lookup');
             $table->index(['owner_user_id', 'lifecycle']);
         });
