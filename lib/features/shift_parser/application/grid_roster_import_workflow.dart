@@ -325,9 +325,9 @@ GridRosterBundleJournalSnapshot? _newerJournalSnapshot(
 ) {
   if (local == null) return remote;
   if (remote == null) return local;
-  return remote.provenance.createdAtUtc.isAfter(local.provenance.createdAtUtc)
-      ? remote
-      : local;
+  final localTime = local.journaledAtUtc ?? local.provenance.createdAtUtc;
+  final remoteTime = remote.journaledAtUtc ?? remote.provenance.createdAtUtc;
+  return remoteTime.isAfter(localTime) ? remote : local;
 }
 
 Result<TTarget> _copyFailure<TSource, TTarget>(Result<TSource> result) {
