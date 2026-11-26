@@ -53,7 +53,7 @@ class CalendarSyncPlanBuilder {
           calendarId: calendarId,
           beforeWrites: candidate.syncId.startsWith('legacy:'),
           expectedEtag: existing.etag,
-          expectedSyncId: existing.syncId,
+          expectedSyncId: existing.providerSyncId,
         ),
       );
     }
