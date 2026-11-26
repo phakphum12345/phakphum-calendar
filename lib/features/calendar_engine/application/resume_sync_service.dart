@@ -40,7 +40,25 @@ class ResumeSyncService {
   /// This method is explicit; it is never invoked automatically at startup.
   /// Provider mutations still pass through the normal lease, ETag and
   /// idempotency checks in [resume].
-  Future<ResumeSyncResult> recoverRun(String runId) async {
+  Future<ResumeSyncResult> recoverRun(String runId) =>
+      _recoverRun(runId, historyId: runId);
+
+  /// Recovers a local history item using the durable server run ID captured
+  /// when the original synchronization acquired its cross-device lease.
+  Future<ResumeSyncResult> recoverHistory(String historyId) async {
+    final history = await _historyRepository.findById(historyId);
+    if (history == null) throw StateError('Sync history entry not found.');
+    final runId = history.serverRunId;
+    if (runId == null || runId.trim().isEmpty) {
+      throw StateError('This history entry has no durable server run to recover.');
+    }
+    return _recoverRun(runId, historyId: historyId);
+  }
+
+  Future<ResumeSyncResult> _recoverRun(
+    String runId, {
+    required String historyId,
+  }) async {
     final coordination = coordinationGateway;
     if (coordination == null) {
       throw StateError('Durable Calendar recovery requires a configured backend.');
@@ -48,17 +66,17 @@ class ResumeSyncService {
 
     final run = await coordination.getRun(runId);
     if (run == null) {
-      throw StateError('Durable Calendar sync run was not found for this account.');
+      throw StateError('No durable server run exists for this history entry; no Calendar operation was replayed.');
     }
     final ledger = await coordination.listOperations(runId);
     final succeeded = ledger.where((item) => item.status == 'succeeded');
     final pending = ledger.where((item) => item.status != 'succeeded').toList();
     final recovered = pending
-        .map((item) => _failedOperationFromLedger(run, item))
+        .map((item) => _failedOperationFromLedger(run, item, historyId: historyId))
         .toList(growable: false);
 
     final history = SyncHistoryEntry(
-      id: run.runId,
+      id: historyId,
       startedAt: run.startedAt,
       status: recovered.isEmpty
           ? SyncHistoryStatus.success
@@ -76,12 +94,12 @@ class ResumeSyncService {
     );
 
     await _historyRepository.save(history);
-    await _failedRepository.replaceForHistory(run.runId, recovered);
+    await _failedRepository.replaceForHistory(historyId, recovered);
 
     if (recovered.isEmpty) {
       return ResumeSyncResult(historyEntry: history, operations: const []);
     }
-    return resume(run.runId);
+    return resume(historyId);
   }
 
   Future<ResumeSyncResult> resume(String historyId) async {
@@ -270,6 +288,7 @@ class ResumeSyncService {
             ? 'All failed operations resumed successfully.'
             : '${remaining.length} operation(s) still failed.',
         serverRunId: lease?.runId ?? original.serverRunId,
+        serverRunId: lease?.runId ?? original.serverRunId,
       );
       await _historyRepository.save(history);
       leaseStatus = remaining.isEmpty ? 'success' : 'partial_success';
@@ -288,8 +307,9 @@ class ResumeSyncService {
 
 FailedSyncOperation _failedOperationFromLedger(
   CalendarSyncRunRecord run,
-  CalendarSyncOperationRecord record,
-) {
+  CalendarSyncOperationRecord record, {
+  required String historyId,
+}) {
   final matchingTypes = CalendarSyncOperationType.values
       .where((value) => value.name == record.operationType)
       .toList(growable: false);
@@ -336,7 +356,7 @@ FailedSyncOperation _failedOperationFromLedger(
   };
 
   return FailedSyncOperation(
-    historyId: run.runId,
+    historyId: historyId,
     type: type,
     referenceId: referenceId,
     attempts: record.attemptCount,
