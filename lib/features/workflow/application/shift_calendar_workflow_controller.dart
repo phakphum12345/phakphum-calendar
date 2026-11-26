@@ -54,6 +54,7 @@ class ShiftCalendarWorkflowController extends ChangeNotifier
   RuleResult? _validationResult;
   CalendarSyncPreparation? _schedulePreparation;
   Schedule? _schedule;
+  String? _compatibilityScheduleId;
 
   WorkflowPreview? get preview => _preview;
   bool get isBusy => _isBusy;
@@ -83,7 +84,14 @@ class ShiftCalendarWorkflowController extends ChangeNotifier
   void preparePreview({
     required List<UserShiftChange> changes,
     required List<CalendarEventCandidate> existing,
+    required String scheduleId,
   }) {
+    _validateScheduleIdentity(scheduleId);
+    _schedule = null;
+    _schedulePreparation = null;
+    _validationResult = null;
+    _lastResult = null;
+    _compatibilityScheduleId = scheduleId;
     _preview = _previewBuilder.build(changes: changes, existing: existing);
     _message = null;
     notifyListeners();
@@ -92,10 +100,17 @@ class ShiftCalendarWorkflowController extends ChangeNotifier
   /// Prepares a compatibility preview from pre-mapped event candidates.
   Future<void> prepareCandidatePreview({
     required List<CalendarEventCandidate> desired,
+    required String scheduleId,
     String calendarId = 'primary',
   }) async {
+    _validateScheduleIdentity(scheduleId);
     _isBusy = true;
     _message = null;
+    _lastResult = null;
+    _validationResult = null;
+    _schedule = null;
+    _schedulePreparation = null;
+    _compatibilityScheduleId = scheduleId;
     notifyListeners();
     try {
       final existing = await _syncCoordinator.listExistingCandidates(
@@ -121,6 +136,7 @@ class ShiftCalendarWorkflowController extends ChangeNotifier
     _message = null;
     _lastResult = null;
     _schedule = schedule;
+    _compatibilityScheduleId = schedule.id;
     _schedulePreparation = null;
     notifyListeners();
     try {
@@ -178,6 +194,7 @@ class ShiftCalendarWorkflowController extends ChangeNotifier
         timeMin: current.timeMin,
         timeMax: current.timeMax,
         calendarId: calendarId,
+        scheduleId: _compatibilityScheduleId ?? 'unknown',
       );
       _message = _lastResult!.hasFailures
           ? _messageProvider('workflowSyncPartialSuccess')
@@ -187,6 +204,17 @@ class ShiftCalendarWorkflowController extends ChangeNotifier
     } finally {
       _isBusy = false;
       notifyListeners();
+    }
+  }
+
+  void _validateScheduleIdentity(String scheduleId) {
+    if (scheduleId.trim().isEmpty ||
+        scheduleId.trim().toLowerCase() == 'unknown') {
+      throw ArgumentError.value(
+        scheduleId,
+        'scheduleId',
+        'A stable Schedule ID is required for compatibility Calendar synchronization.',
+      );
     }
   }
 
