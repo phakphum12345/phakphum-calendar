@@ -26,7 +26,7 @@ jobs:
         os:
           - ubuntu-latest
           - windows-latest
-          - macos-latest
+          - ${{ vars.MACOS_RUNNER_LABEL || 'macos-latest' }}
     defaults:
       run:
         working-directory: tool/schedule_cas_spike
