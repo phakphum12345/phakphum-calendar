@@ -5,6 +5,8 @@ import '../../controller/app_controller.dart';
 import '../../domain/repositories/employee_repository.dart';
 import '../../domain/repositories/import_repository.dart';
 import '../../domain/repositories/schedule_repository.dart';
+import '../../domain/repositories/conditional_schedule_writer.dart';
+import '../../domain/repositories/schedule_revision_source.dart';
 import '../../domain/repositories/settings_repository.dart';
 import '../../domain/repositories/shift_template_repository.dart';
 import '../../domain/entities/schedule.dart';
