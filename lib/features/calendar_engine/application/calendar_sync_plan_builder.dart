@@ -11,6 +11,7 @@ class CalendarSyncPlanBuilder {
     required CalendarDiff diff,
     required List<ManagedCalendarEvent> existingEvents,
     String calendarId = 'primary',
+    String scheduleId = 'unknown',
   }) {
     final existingBySyncId = <String, ManagedCalendarEvent>{
       for (final event in existingEvents) event.syncId: event,
@@ -62,6 +63,8 @@ class CalendarSyncPlanBuilder {
       inserts: inserts,
       updates: updates,
       deletes: deletes,
+      scheduleId: scheduleId,
+      calendarId: calendarId,
     );
   }
 
