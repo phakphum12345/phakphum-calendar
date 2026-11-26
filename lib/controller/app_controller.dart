@@ -217,6 +217,7 @@ class AppController extends ChangeNotifier implements ControllerState {
         name: _runtimeScheduleName,
       );
   Future<void> _pendingScheduleWrite = Future.value();
+  bool _isDisposed = false;
 
   /// Canonical runtime schedule used by all legacy schedule orchestration.
   Schedule get canonicalSchedule => _legacySchedule.schedule;
@@ -3106,6 +3107,7 @@ class AppController extends ChangeNotifier implements ControllerState {
               next: conversion.schedule,
               base: previousSchedule,
             );
+            if (_isDisposed) return;
             if (result case Failure<Schedule>()) {
               error = 'บันทึกตารางไม่สำเร็จ: ${result.message}';
               notifyListeners();
@@ -3218,6 +3220,7 @@ class AppController extends ChangeNotifier implements ControllerState {
 
   @override
   void dispose() {
+    _isDisposed = true;
     _autoRefreshTimer?.cancel();
     _pendingCalendarWorkflow?.dispose();
     cancelShiftTransactionCalendarSyncPreview();
