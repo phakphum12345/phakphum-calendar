@@ -234,7 +234,7 @@ class CalendarSyncCoordinationController extends Controller
             return true;
         });
 
-        if (! $released) {
+        if ($released === false) {
             return response()->json(['error' => ['code' => 'calendar_sync_lease_lost', 'message' => 'The synchronization lease is missing.']], 409);
         }
 
@@ -252,13 +252,13 @@ class CalendarSyncCoordinationController extends Controller
         ]);
 
         $payloadJson = json_encode($this->canonicalizePayload($data['operation_payload']), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR);
-        if (! hash_equals(hash('sha256', $payloadJson), $data['payload_hash'])) {
+        if (hash_equals(hash('sha256', $payloadJson), $data['payload_hash']) === false) {
             return response()->json(['error' => ['code' => 'calendar_sync_payload_hash_mismatch', 'message' => 'The operation payload does not match its SHA-256 hash.']], 422);
         }
         $payloadCiphertext = Crypt::encryptString($payloadJson);
 
         $result = DB::transaction(function () use ($request, $runId, $data, $payloadCiphertext): array {
-            if (! $this->lockActiveLease($request, $runId, $data['lease_token'])) {
+            if ($this->lockActiveLease($request, $runId, $data['lease_token']) === false) {
                 return ['status' => 409, 'error' => 'calendar_sync_lease_lost'];
             }
 
@@ -272,7 +272,7 @@ class CalendarSyncCoordinationController extends Controller
             if ($existing !== null) {
                 if (
                     $existing->operation_type !== $data['operation_type']
-                    || ! hash_equals($existing->payload_hash, $data['payload_hash'])
+                    || hash_equals($existing->payload_hash, $data['payload_hash']) === false
                 ) {
                     return ['status' => 409, 'error' => 'calendar_sync_operation_conflict'];
                 }
@@ -306,7 +306,7 @@ class CalendarSyncCoordinationController extends Controller
             if (
                 $record === null
                 || $record->operation_type !== $data['operation_type']
-                || ! hash_equals($record->payload_hash, $data['payload_hash'])
+                || hash_equals($record->payload_hash, $data['payload_hash']) === false
             ) {
                 return ['status' => 409, 'error' => 'calendar_sync_operation_conflict'];
             }
@@ -342,7 +342,7 @@ class CalendarSyncCoordinationController extends Controller
         ]);
 
         $result = DB::transaction(function () use ($request, $runId, $operationKey, $data): array {
-            if (! $this->lockActiveLease($request, $runId, $data['lease_token'])) {
+            if ($this->lockActiveLease($request, $runId, $data['lease_token']) === false) {
                 return ['status' => 409, 'error' => 'calendar_sync_lease_lost'];
             }
 
@@ -368,7 +368,7 @@ class CalendarSyncCoordinationController extends Controller
                 default => [],
             };
             if (
-                ! in_array($data['status'], $allowedTransitions, true)
+                in_array($data['status'], $allowedTransitions, true) === false
                 || (
                     $operation->status === 'failed'
                     && $data['status'] === 'running'
@@ -461,7 +461,7 @@ class CalendarSyncCoordinationController extends Controller
             }
         }
 
-        if (! array_is_list($value)) {
+        if (array_is_list($value) === false) {
             ksort($value);
         }
 
