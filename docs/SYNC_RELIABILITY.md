@@ -53,8 +53,17 @@ Resume performs the same lookup before inserting and again after an ambiguous
 insert failure. Deterministic provider IDs make concurrent inserts for the same
 sync identity duplicate-resistant, but Google documents that globally
 distributed ID collisions are not guaranteed to be detected at creation time.
-Concurrent update/delete coordination across independent clients remains a
-separate concern.
+Calendar update/delete plans now carry the provider ETag and the provider-side
+managed Sync ID observed during preview. The Google gateway re-reads the exact
+event, verifies its identity, and sends the mutation with `If-Match`. A stale
+ETag or changed managed identity fails closed. An ambiguous update is reconciled
+by reading the event and comparing its managed identity and desired content; an
+ambiguous delete is reconciled by checking whether the event still exists.
+
+This protects individual provider mutations from stale concurrent writes; it
+does not serialize whole sync runs or provide a shared cross-device operation
+ledger. Sync history and failed-operation records remain local SharedPreferences
+storage in the current production dependency graph.
 
 ## Partial success
 
