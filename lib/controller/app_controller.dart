@@ -20,9 +20,12 @@ import '../domain/entities/schedule.dart';
 import '../domain/entities/schedule_month.dart';
 import '../domain/entities/shift_template.dart';
 import '../domain/repositories/schedule_repository.dart';
+import '../domain/repositories/conditional_schedule_writer.dart';
+import '../domain/repositories/schedule_revision_source.dart';
 import '../domain/repositories/shift_template_repository.dart';
 import '../core/result/result.dart';
 import '../features/schedule/data/legacy_schedule_adapter.dart';
+import '../features/schedule/data/schedule_json_codec.dart';
 import '../features/shift_parser/application/monthly_roster_workbook_scanner.dart';
 import '../features/shift_parser/application/monthly_roster_section_parser.dart';
 import '../features/shift_exchange/application/shift_transaction_schedule_projector.dart';
@@ -3079,6 +3082,7 @@ class AppController extends ChangeNotifier implements ControllerState {
 
   void _replaceLegacyShifts(List<Shift> next, {bool persist = true}) {
     cancelShiftTransactionCalendarSyncPreview();
+    final previousSchedule = _legacySchedule.schedule;
     final conversion = _legacyScheduleAdapter.toCanonical(
       next,
       id: _runtimeScheduleId,
@@ -3086,10 +3090,62 @@ class AppController extends ChangeNotifier implements ControllerState {
     );
     _legacySchedule = conversion;
     if (persist) {
-      _pendingScheduleWrite = _pendingScheduleWrite.then((_) async {
-        await _scheduleRepository.save(conversion.schedule);
-      });
+      _pendingScheduleWrite = _pendingScheduleWrite
+          .catchError((_) {})
+          .then((_) async {
+            final result = await _saveCanonicalSchedule(
+              next: conversion.schedule,
+              base: previousSchedule,
+            );
+            if (result case Failure<Schedule>()) {
+              error = 'บันทึกตารางไม่สำเร็จ: ${result.message}';
+              notifyListeners();
+              throw StateError(result.message);
+            }
+            error = null;
+            notifyListeners();
+          });
     }
+  }
+
+  Future<Result<Schedule>> _saveCanonicalSchedule({
+    required Schedule next,
+    required Schedule base,
+  }) async {
+    final repository = _scheduleRepository;
+    if (repository is! ConditionalScheduleWriter ||
+        repository is! ScheduleRevisionSource) {
+      return repository.save(next);
+    }
+
+    final currentResult = await repository.findById(next.id);
+    if (currentResult case Failure<Schedule?>()) {
+      return PersistenceFailure<Schedule>(
+        currentResult.message,
+        cause: currentResult,
+      );
+    }
+    final current = (currentResult as Success<Schedule?>).value;
+    const codec = ScheduleJsonCodec();
+    if (current == null) {
+      if (base.months.isNotEmpty) {
+        return const PersistenceFailure(
+          'The persisted Schedule is absent but the editor has a non-empty base snapshot. Reload before saving.',
+        );
+      }
+    } else if (codec.encode(current) != codec.encode(base)) {
+      return const PersistenceFailure(
+        'The Schedule changed on another device. Reload and review before saving.',
+      );
+    }
+
+    final expectedRevision = repository.currentRevisionFor(next.id);
+    if (expectedRevision == null || expectedRevision.trim().isEmpty) {
+      return const PersistenceFailure(
+        'The backend did not provide a caller-owned Schedule revision.',
+      );
+    }
+    return repository.saveIfRevision(next, expectedRevision);
   }
 
   /// Waits until canonical schedule mutations queued by synchronous legacy
@@ -3105,10 +3161,20 @@ class AppController extends ChangeNotifier implements ControllerState {
     bool persist = true,
   }) async {
     cancelShiftTransactionCalendarSyncPreview();
+    final previousSchedule = _legacySchedule.schedule;
     _legacySchedule = _legacyScheduleAdapter.wrapCanonical(schedule);
     _rebuildAlerts();
     if (persist) {
-      await _scheduleRepository.save(schedule);
+      final result = await _saveCanonicalSchedule(
+        next: schedule,
+        base: previousSchedule,
+      );
+      if (result case Failure<Schedule>()) {
+        error = 'บันทึกตารางไม่สำเร็จ: ${result.message}';
+        notifyListeners();
+        throw StateError(result.message);
+      }
+      error = null;
     }
     notifyListeners();
   }
