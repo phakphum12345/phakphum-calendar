@@ -27,8 +27,7 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
        _currentMonth = _normalizeMonth(initialMonth ?? DateTime.now()) {
     final source = repository;
     if (source is ScheduleRevisionSource) {
-      _expectedRevision = source.revisionForSnapshot(_service.schedule) ??
-          source.currentRevisionFor(_service.schedule.id);
+      _expectedRevision = source.revisionForSnapshot(_service.schedule);
     }
     loadMonth(_currentMonth);
   }
@@ -218,27 +217,28 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
     _error = null;
     _message = null;
     notifyListeners();
-    final ScheduleRepositoryResult = scheduleRepository;
+    final scheduleRepositoryForCas = scheduleRepository;
     final Result<Schedule> result;
-    if (ScheduleRepositoryResult is ConditionalScheduleWriter &&
-        ScheduleRepositoryResult is ScheduleRevisionSource) {
+    if (scheduleRepositoryForCas is ConditionalScheduleWriter &&
+        scheduleRepositoryForCas is ScheduleRevisionSource) {
       final expectedRevision = _expectedRevision;
       if (expectedRevision == null || expectedRevision.trim().isEmpty) {
-        _loading = false;
-        _error = const PersistenceFailure(
+        const failure = PersistenceFailure<Schedule>(
           'Load the exact Schedule snapshot before saving with backend CAS.',
         );
-        _message = _error.toString();
+        _loading = false;
+        _error = failure;
+        _message = failure.message;
         notifyListeners();
-        return _error as Result<Schedule>;
+        return failure;
       }
-      result = await ScheduleRepositoryResult.saveIfRevision(
+      result = await scheduleRepositoryForCas.saveIfRevision(
         canonicalSchedule,
         expectedRevision,
       );
       if (result case Success<Schedule>(value: final saved)) {
         _expectedRevision =
-            ScheduleRepositoryResult.currentRevisionFor(saved.id);
+            scheduleRepositoryForCas.currentRevisionFor(saved.id);
       }
     } else {
       result = await scheduleRepository.save(canonicalSchedule);
