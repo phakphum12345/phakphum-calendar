@@ -217,6 +217,7 @@ class AppController extends ChangeNotifier implements ControllerState {
         name: _runtimeScheduleName,
       );
   Future<void> _pendingScheduleWrite = Future.value();
+  Schedule? _lastPersistedSchedule;
   bool _isDisposed = false;
 
   /// Canonical runtime schedule used by all legacy schedule orchestration.
@@ -3105,7 +3106,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           .then((_) async {
             final result = await _saveCanonicalSchedule(
               next: conversion.schedule,
-              base: previousSchedule,
+              base: _lastPersistedSchedule ?? previousSchedule,
             );
             if (_isDisposed) return;
             if (result case Failure<Schedule>()) {
@@ -3124,6 +3125,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     final result = await _scheduleRepository.findById(_runtimeScheduleId);
     switch (result) {
       case Success<Schedule?>(value: final schedule):
+        _lastPersistedSchedule = schedule;
         // An absent local record must not erase an in-memory roster that
         // has already been imported in this session. The initial controller
         // state is already an empty canonical Schedule when no roster exists.
@@ -3144,7 +3146,15 @@ class AppController extends ChangeNotifier implements ControllerState {
     final repository = _scheduleRepository;
     if (repository is! ConditionalScheduleWriter ||
         repository is! ScheduleRevisionSource) {
-      return repository.save(next);
+      final saved = await repository.save(next);
+      if (saved case Success<Schedule>(value: final value)) {
+        _lastPersistedSchedule = value;
+        if (const ScheduleJsonCodec().encode(_legacySchedule.schedule) ==
+            const ScheduleJsonCodec().encode(next)) {
+          _legacySchedule = _legacySchedule.withSchedule(value);
+        }
+      }
+      return saved;
     }
 
     if (base.id != next.id) {
@@ -3183,7 +3193,18 @@ class AppController extends ChangeNotifier implements ControllerState {
         'The Schedule repository did not provide a caller-owned revision.',
       );
     }
-    return conditionalWriter.saveIfRevision(next, expectedRevision);
+    final saved = await conditionalWriter.saveIfRevision(
+      next,
+      expectedRevision,
+    );
+    if (saved case Success<Schedule>(value: final value)) {
+      _lastPersistedSchedule = value;
+      if (const ScheduleJsonCodec().encode(_legacySchedule.schedule) ==
+          const ScheduleJsonCodec().encode(next)) {
+        _legacySchedule = _legacySchedule.withSchedule(value);
+      }
+    }
+    return saved;
   }
 
   /// Waits until canonical schedule mutations queued by synchronous legacy
@@ -3198,8 +3219,9 @@ class AppController extends ChangeNotifier implements ControllerState {
     Schedule schedule, {
     bool persist = true,
   }) async {
+    await flushSchedulePersistence();
     cancelShiftTransactionCalendarSyncPreview();
-    final previousSchedule = _legacySchedule.schedule;
+    final previousSchedule = _lastPersistedSchedule ?? _legacySchedule.schedule;
     _legacySchedule = _legacyScheduleAdapter.wrapCanonical(schedule);
     _rebuildAlerts();
     if (persist) {
