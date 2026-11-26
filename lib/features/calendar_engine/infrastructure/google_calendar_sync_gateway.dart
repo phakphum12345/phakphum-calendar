@@ -96,7 +96,7 @@ class GoogleCalendarSyncGateway
             title: event.summary ?? '',
             start: _bangkokWallTime(event.start!.dateTime!),
             end: _bangkokWallTime(event.end!.dateTime!),
-            description: event.description,
+            description: _normalizeManagedDescription(event.description),
             colorId: event.colorId,
             etag: event.etag,
             providerSyncId: _managedSyncId(event),
@@ -294,7 +294,10 @@ class GoogleCalendarSyncGateway
     existing
       ..id = eventId
       ..summary = desired.summary
-      ..description = desired.description
+      ..description = _preserveTimelineSection(
+        desiredDescription: desired.description,
+        existingDescription: existing.description,
+      )
       ..colorId = desired.colorId
       ..start = desired.start
       ..end = desired.end
@@ -305,6 +308,41 @@ class GoogleCalendarSyncGateway
     return existing;
   }
 
+
+  String? _normalizeManagedDescription(String? value) {
+    final normalized = value?.trim();
+    if (normalized == null || normalized.isEmpty) return null;
+
+    const marker = '--- Timeline ---';
+    final markerIndex = normalized.indexOf(marker);
+    final rosterDescription = markerIndex < 0
+        ? normalized
+        : normalized.substring(0, markerIndex).trimRight();
+    return rosterDescription.isEmpty ? null : rosterDescription;
+  }
+
+  String? _preserveTimelineSection({
+    required String? desiredDescription,
+    required String? existingDescription,
+  }) {
+    const marker = '--- Timeline ---';
+    final existing = existingDescription?.trimRight() ?? '';
+    final markerIndex = existing.indexOf(marker);
+    if (markerIndex < 0) return desiredDescription;
+
+    final desired = desiredDescription?.trimRight();
+    final desiredMarkerIndex = desired?.indexOf(marker) ?? -1;
+    final baseDescription = desired == null || desired.isEmpty
+        ? existing.substring(0, markerIndex).trimRight()
+        : desiredMarkerIndex < 0
+        ? desired
+        : desired.substring(0, desiredMarkerIndex).trimRight();
+    final timelineSection = existing.substring(markerIndex).trimRight();
+    return baseDescription.isEmpty
+        ? timelineSection
+        : '$baseDescription\\n\\n$timelineSection';
+  }
+
   bool _matchesExpectedProviderIdentity(calendar.Event event, String? expectedSyncId) =>
       _managedSyncId(event) == expectedSyncId;
 
@@ -313,7 +351,7 @@ class GoogleCalendarSyncGateway
     final end = event.end?.dateTime;
     return _managedSyncId(event) == command.syncId &&
         event.summary == command.title &&
-        event.description == command.description &&
+        _normalizeManagedDescription(event.description) == command.description &&
         event.colorId == command.colorId &&
         start != null && end != null &&
         _bangkokWallTime(start) == command.start &&
@@ -355,7 +393,7 @@ class GoogleCalendarSyncGateway
       end: event.end?.dateTime == null
           ? DateTime.fromMillisecondsSinceEpoch(0)
           : _bangkokWallTime(event.end!.dateTime!),
-      description: event.description,
+      description: _normalizeManagedDescription(event.description),
       colorId: event.colorId,
       etag: event.etag,
       providerSyncId: _managedSyncId(event),
