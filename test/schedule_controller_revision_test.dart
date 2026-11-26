@@ -50,6 +50,9 @@ class _RevisionRepository
           : null;
 
   @override
+  String? revisionForAbsentSchedule(String scheduleId) => null;
+
+  @override
   Future<Result<Schedule?>> findById(String id) async =>
       id == schedule.id ? Success(schedule) : const Success(null);
 
