@@ -311,7 +311,7 @@ class MonthlyRosterSectionParser {
 
       final monthPattern = _thaiMonths.keys.join('|');
       final match = RegExp(
-        '($monthPattern)\\s*(?:พ\.?\s*ศ\.?)?\\s*(\\d{2,4})',
+        '($monthPattern)\\s*(?:พ\\.?\\s*ศ\\.?)?\\s*(\\d{2,4})',
       ).firstMatch(text);
 
       if (match == null) rethrow;
