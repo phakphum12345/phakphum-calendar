@@ -14,9 +14,10 @@ import 'schedule_json_codec.dart';
 
 /// Authenticated Laravel Schedule persistence using server-enforced revisions.
 ///
-/// The revision cache is populated by reads and updated only from successful
-/// server responses. A stale cached token is safe: the backend rejects it with
-/// HTTP 409 rather than replacing a newer Schedule.
+/// Revision tokens are bound to the exact canonical snapshot that was read.
+/// A later read of the same Schedule cannot silently replace an older editor's
+/// token. Unknown snapshots fail closed, and deletes require an explicit
+/// caller-owned revision before they can be enabled.
 class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionSource, ConditionalScheduleWriter {
   BackendScheduleRepository({
     required String baseUrl,
@@ -187,7 +188,11 @@ class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionS
   }
 
   void _rememberSnapshotRevision(Schedule schedule, String revision) {
-    _snapshotRevisions[_snapshotKey(schedule)] = revision;
+    final key = _snapshotKey(schedule);
+    if (!_snapshotRevisions.containsKey(key) && _snapshotRevisions.length >= 256) {
+      _snapshotRevisions.remove(_snapshotRevisions.keys.first);
+    }
+    _snapshotRevisions[key] = revision;
   }
 
   String _schedulePath(String id) {
