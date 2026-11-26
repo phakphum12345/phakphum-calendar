@@ -610,6 +610,34 @@ class MonthlyRosterSectionParser {
       }
     }
 
+    // A duplicate day in a declared period can leave a trailing portion of
+    // the period unresolved even when the header is far shorter than 90% of
+    // the expected range. Report the actual missing dates as well as the
+    // duplicate so users can repair the header without guessing.
+    if (!completeRangeHeader &&
+        anomalies.any((anomaly) => anomaly.code == 'duplicate_day')) {
+      final resolvedKeys = datesByColumn.values
+          .map((date) => '${date.year}-${date.month}-${date.day}')
+          .toSet();
+      final missing = <String>[];
+      for (
+        var date = DateTime(start.year, start.month, start.day);
+        !date.isAfter(end);
+        date = DateTime(date.year, date.month, date.day + 1)
+      ) {
+        final key = '${date.year}-${date.month}-${date.day}';
+        if (!resolvedKeys.contains(key)) missing.add(_formatDate(date));
+      }
+      if (missing.isNotEmpty) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'missing_dates',
+            message: 'ไม่สามารถจับคู่วันที่ในช่วงที่ระบุได้ครบ: ${missing.join(', ')}',
+          ),
+        );
+      }
+    }
+
     final unique = <String, MonthlyRosterDateAnomaly>{};
     for (final anomaly in anomalies) {
       final key = '${anomaly.code}|${anomaly.columnIndex ?? ''}|${anomaly.displayedDay ?? ''}|${anomaly.message}';
