@@ -1,6 +1,11 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
+
 import '../../history/domain/sync_history_entry.dart';
 import '../../history/domain/sync_history_repository.dart';
 import '../domain/calendar_sync_gateway.dart';
+import '../domain/calendar_sync_coordination_gateway.dart';
 import '../domain/calendar_sync_command.dart';
 import '../domain/calendar_sync_operation_result.dart';
 import '../domain/failed_sync_operation.dart';
@@ -26,12 +31,14 @@ class ResilientCalendarSyncExecutor {
     required this._gateway,
     required this._historyRepository,
     this.failedRepository,
+    this.coordinationGateway,
     this.maxAttempts = 2,
   }) : assert(maxAttempts > 0);
 
   final CalendarSyncGateway _gateway;
   final SyncHistoryRepository _historyRepository;
   final FailedSyncRepository? failedRepository;
+  final CalendarSyncCoordinationGateway? coordinationGateway;
   final int maxAttempts;
 
   Future<ResilientCalendarSyncResult> execute(CalendarSyncPlan plan) async {
@@ -56,9 +63,71 @@ class ResilientCalendarSyncExecutor {
     var updated = 0;
     var deleted = 0;
     var failed = 0;
+    final coordination = coordinationGateway;
+    final lease = coordination == null || plan.operationCount == 0
+        ? null
+        : await coordination.acquire(
+            calendarId: plan.calendarId,
+            scheduleId: plan.scheduleId,
+          );
+    var leaseStatus = 'failed';
+
+    Future<CalendarSyncOperationResult> trackOperation({
+      required CalendarSyncOperationType type,
+      required String referenceId,
+      required Map<String, Object?> payload,
+      required Future<CalendarSyncOperationResult> Function() operation,
+    }) async {
+      if (coordination == null || lease == null) return operation();
+      final operationKey = _ledgerOperationKey(type, referenceId);
+      final payloadHash = sha256.convert(utf8.encode(jsonEncode(payload))).toString();
+      await coordination.heartbeat(lease);
+      await coordination.recordOperation(
+        lease: lease,
+        operationKey: operationKey,
+        operationType: type.name,
+        payloadHash: payloadHash,
+      );
+      await coordination.updateOperation(
+        lease: lease,
+        operationKey: operationKey,
+        status: 'running',
+        attemptCount: 0,
+      );
+      try {
+        final result = await operation();
+        await coordination.updateOperation(
+          lease: lease,
+          operationKey: operationKey,
+          status: result.success ? 'succeeded' : 'failed',
+          attemptCount: result.attempts,
+          providerEventId: result.providerEventId,
+          lastError: result.message,
+        );
+        return result;
+      } catch (error) {
+        await coordination.updateOperation(
+          lease: lease,
+          operationKey: operationKey,
+          status: 'failed',
+          attemptCount: 1,
+          lastError: error.toString(),
+        );
+        rethrow;
+      }
+    }
 
     Future<void> executeDelete(CalendarDeleteOperation operation) async {
-      final result = await _retry(
+      final result = await trackOperation(
+        type: CalendarSyncOperationType.delete,
+        referenceId: operation.eventId,
+        payload: {
+          'event_id': operation.eventId,
+          'calendar_id': operation.calendarId,
+          'expected_etag': operation.expectedEtag,
+          'expected_sync_id': operation.expectedSyncId,
+        },
+        operation: () => _retry(
         type: CalendarSyncOperationType.delete,
         referenceId: operation.eventId,
         operation: () {
@@ -97,6 +166,7 @@ class ResilientCalendarSyncExecutor {
       result.success ? deleted++ : failed++;
     }
 
+    try {
     for (final operation in plan.deletes.where(
       (operation) => operation.beforeWrites,
     )) {
@@ -105,8 +175,12 @@ class ResilientCalendarSyncExecutor {
 
     final insertReconciler = CalendarSyncInsertReconciler(_gateway);
     for (final command in plan.inserts) {
-      final attempt = await _retryInsert(command, insertReconciler);
-      final result = attempt.result;
+      final result = await trackOperation(
+        type: CalendarSyncOperationType.insert,
+        referenceId: command.syncId,
+        payload: _commandPayload(command),
+        operation: () async => (await _retryInsert(command, insertReconciler)).result,
+      );
       operations.add(result);
       if (!result.success) {
         failedOperations.add(
@@ -114,7 +188,7 @@ class ResilientCalendarSyncExecutor {
             historyId: historyId,
             type: CalendarSyncOperationType.insert,
             referenceId: command.syncId,
-            attempts: attempt.attempts,
+            attempts: result.attempts,
             command: command,
             message: result.message,
           ),
@@ -124,7 +198,16 @@ class ResilientCalendarSyncExecutor {
     }
 
     for (final operation in plan.updates) {
-      final result = await _retry(
+      final result = await trackOperation(
+        type: CalendarSyncOperationType.update,
+        referenceId: operation.command.syncId,
+        payload: {
+          'event_id': operation.eventId,
+          'expected_etag': operation.expectedEtag,
+          'expected_sync_id': operation.expectedSyncId,
+          ..._commandPayload(operation.command),
+        },
+        operation: () => _retry(
         type: CalendarSyncOperationType.update,
         referenceId: operation.command.syncId,
         operation: () {
@@ -143,6 +226,7 @@ class ResilientCalendarSyncExecutor {
           }
           return _gateway.update(eventId: operation.eventId, command: operation.command);
         },
+      ),
       );
       operations.add(result);
       if (!result.success) {
@@ -151,7 +235,7 @@ class ResilientCalendarSyncExecutor {
             historyId: historyId,
             type: CalendarSyncOperationType.update,
             referenceId: operation.command.syncId,
-            attempts: maxAttempts,
+            attempts: result.attempts,
             command: operation.command,
             eventId: operation.eventId,
             expectedEtag: operation.expectedEtag,
@@ -189,11 +273,26 @@ class ResilientCalendarSyncExecutor {
 
     await failedRepository?.replaceForHistory(historyId, failedOperations);
     await _historyRepository.save(history);
+    leaseStatus = switch (status) {
+      SyncHistoryStatus.success => 'success',
+      SyncHistoryStatus.partialSuccess => 'partial_success',
+      SyncHistoryStatus.failure => 'failed',
+      SyncHistoryStatus.running => 'failed',
+    };
 
     return ResilientCalendarSyncResult(
       historyEntry: history,
       operations: operations,
     );
+    } finally {
+      if (coordination != null && lease != null) {
+        try {
+          await coordination.release(lease: lease, status: leaseStatus);
+        } catch (_) {
+          // The lease expires automatically if release cannot be confirmed.
+        }
+      }
+    }
   }
 
   Future<_RetryInsertResult> _retryInsert(
@@ -211,6 +310,7 @@ class ResilientCalendarSyncExecutor {
             referenceId: command.syncId,
             success: true,
             providerEventId: created.eventId.isEmpty ? null : created.eventId,
+            attempts: attempt,
           ),
           attempts: attempt,
         );
@@ -226,6 +326,7 @@ class ResilientCalendarSyncExecutor {
                 success: true,
                 providerEventId:
                     existing.eventId.isEmpty ? null : existing.eventId,
+                attempts: attempt,
               ),
               attempts: attempt,
             );
@@ -239,6 +340,7 @@ class ResilientCalendarSyncExecutor {
               message:
                   'Insert failed and its provider outcome could not be verified: '
                   '$error; verification failed: $verificationError',
+              attempts: attempt,
             ),
             attempts: attempt,
           );
@@ -256,6 +358,7 @@ class ResilientCalendarSyncExecutor {
         referenceId: command.syncId,
         success: false,
         message: lastError?.toString(),
+        attempts: maxAttempts,
       ),
       attempts: maxAttempts,
     );
@@ -278,6 +381,7 @@ class ResilientCalendarSyncExecutor {
           providerEventId: value is ManagedCalendarEvent && value.eventId.isNotEmpty
               ? value.eventId
               : null,
+          attempts: attempt,
         );
       } catch (error) {
         lastError = error;
@@ -292,9 +396,28 @@ class ResilientCalendarSyncExecutor {
       referenceId: referenceId,
       success: false,
       message: lastError?.toString(),
+      attempts: maxAttempts,
     );
   }
 }
+
+String _ledgerOperationKey(
+  CalendarSyncOperationType type,
+  String referenceId,
+) {
+  final digest = sha256.convert(utf8.encode(referenceId));
+  return '${type.name}:$digest';
+}
+
+Map<String, Object?> _commandPayload(CalendarSyncCommand command) => {
+  'sync_id': command.syncId,
+  'title': command.title,
+  'start': command.start.toIso8601String(),
+  'end': command.end.toIso8601String(),
+  'description': command.description,
+  'color_id': command.colorId,
+  'calendar_id': command.calendarId,
+};
 
 class _RetryInsertResult {
   const _RetryInsertResult({
