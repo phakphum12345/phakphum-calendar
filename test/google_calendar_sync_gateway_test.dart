@@ -193,7 +193,7 @@ void main() {
       'id': 'managed-1',
       'etag': 'etag-v1',
       'summary': 'Old title',
-      'description': 'Old roster details\\n\\n--- Timeline ---\\nApproved by manager',
+      'description': 'Old roster details\n\n--- Timeline ---\nApproved by manager',
       'location': 'Ward 7',
       'attendees': [{'email': 'colleague@example.com'}],
       'reminders': {'useDefault': true},
@@ -214,7 +214,7 @@ void main() {
         expect(request.headers['If-Match'], 'etag-v1');
         final body = jsonDecode(request.body) as Map<String, dynamic>;
         expect(body['id'], 'managed-1');
-        expect(body['description'], 'New roster details\\n\\n--- Timeline ---\\nApproved by manager');
+        expect(body['description'], 'New roster details\n\n--- Timeline ---\nApproved by manager');
         expect(body['location'], 'Ward 7');
         expect(body['attendees'], [{'email': 'colleague@example.com'}]);
         expect(body['reminders'], {'useDefault': true});
