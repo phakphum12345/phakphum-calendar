@@ -7,6 +7,7 @@ class ManagedCalendarEvent {
     required this.end,
     this.description,
     this.colorId,
+    this.etag,
   });
 
   final String eventId;
@@ -16,4 +17,6 @@ class ManagedCalendarEvent {
   final DateTime end;
   final String? description;
   final String? colorId;
+  /// Google Calendar provider version used for conditional mutations.
+  final String? etag;
 }
