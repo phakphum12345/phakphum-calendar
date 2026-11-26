@@ -10,6 +10,46 @@ use Illuminate\Support\Str;
 
 class CalendarSyncCoordinationController extends Controller
 {
+    public function index(Request $request): JsonResponse
+    {
+        $filters = $request->validate([
+            'calendar_id' => ['sometimes', 'string', 'max:512'],
+            'limit' => ['sometimes', 'integer', 'min:1', 'max:100'],
+        ]);
+        $query = DB::table('calendar_sync_runs')
+            ->where('owner_user_id', $request->user()->id);
+        if (isset($filters['calendar_id'])) {
+            $query->where('calendar_id', $filters['calendar_id']);
+        }
+        $runs = $query->orderByDesc('started_at')
+            ->limit($filters['limit'] ?? 50)
+            ->get();
+
+        return response()->json(['data' => $runs->map(function (object $run): array {
+            return $this->runResource($run);
+        })]);
+    }
+
+    public function operations(Request $request, string $runId): JsonResponse
+    {
+        $run = DB::table('calendar_sync_runs')
+            ->where('owner_user_id', $request->user()->id)
+            ->where('id', $runId)
+            ->first();
+        if ($run === null) {
+            return response()->json(['error' => ['code' => 'calendar_sync_run_not_found', 'message' => 'The synchronization run was not found.']], 404);
+        }
+
+        $operations = DB::table('calendar_sync_operations')
+            ->where('owner_user_id', $request->user()->id)
+            ->where('run_id', $runId)
+            ->orderBy('id')
+            ->get()
+            ->map(fn (object $operation): array => $this->operationResource($operation));
+
+        return response()->json(['data' => $operations]);
+    }
+
     public function acquire(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -256,6 +296,18 @@ class CalendarSyncCoordinationController extends Controller
         if ($data['attempt_count'] < $operation->attempt_count) {
             return response()->json(['error' => ['code' => 'calendar_sync_attempt_regression', 'message' => 'Attempt count cannot move backwards.']], 409);
         }
+        $allowedTransitions = match ($operation->status) {
+            'prepared' => ['prepared', 'running', 'failed'],
+            'running' => ['running', 'succeeded', 'failed'],
+            'failed' => ['failed', 'running'],
+            'succeeded' => ['succeeded'],
+            default => [],
+        };
+        if (! in_array($data['status'], $allowedTransitions, true) ||
+            ($operation->status === 'failed' && $data['status'] === 'running' &&
+                $data['attempt_count'] <= $operation->attempt_count)) {
+            return response()->json(['error' => ['code' => 'calendar_sync_operation_transition_invalid', 'message' => 'The operation status transition is not allowed.']], 409);
+        }
 
         $now = now();
         DB::table('calendar_sync_operations')->where('id', $operation->id)->update([
@@ -286,6 +338,23 @@ class CalendarSyncCoordinationController extends Controller
     private function leaseLost(): JsonResponse
     {
         return response()->json(['error' => ['code' => 'calendar_sync_lease_lost', 'message' => 'The synchronization lease is missing or expired.']], 409);
+    }
+
+    private function runResource(object $run): array
+    {
+        return [
+            'run_id' => $run->id,
+            'calendar_id' => $run->calendar_id,
+            'schedule_id' => $run->schedule_id,
+            'client_instance_id' => $run->client_instance_id,
+            'status' => $run->status,
+            'started_at' => $run->started_at,
+            'heartbeat_at' => $run->heartbeat_at,
+            'finished_at' => $run->finished_at,
+            'operation_count' => DB::table('calendar_sync_operations')
+                ->where('run_id', $run->id)
+                ->count(),
+        ];
     }
 
     private function operationResource(object $operation): array
