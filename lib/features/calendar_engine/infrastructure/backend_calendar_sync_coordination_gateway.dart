@@ -109,6 +109,7 @@ class BackendCalendarSyncCoordinationGateway
     required String operationKey,
     required String operationType,
     required String payloadHash,
+    required Map<String, Object?> operationPayload,
   }) async {
     await _request(
       'POST',
@@ -118,6 +119,7 @@ class BackendCalendarSyncCoordinationGateway
         'operation_key': operationKey,
         'operation_type': operationType,
         'payload_hash': payloadHash,
+        'operation_payload': operationPayload,
       },
     );
   }
