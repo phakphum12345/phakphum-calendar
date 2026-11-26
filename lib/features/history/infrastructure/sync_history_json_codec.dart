@@ -18,6 +18,7 @@ class SyncHistoryJsonCodec {
             'failed': entry.failed,
             'message': entry.message,
             'scheduleId': entry.scheduleId,
+            'serverRunId': entry.serverRunId,
           },
         )
         .toList(growable: false),
@@ -47,6 +48,7 @@ class SyncHistoryJsonCodec {
             failed: (json['failed'] as num?)?.toInt() ?? 0,
             message: json['message'] as String?,
             scheduleId: json['scheduleId'] as String? ?? 'unknown',
+            serverRunId: json['serverRunId'] as String?,
           );
         })
         .toList(growable: false);
