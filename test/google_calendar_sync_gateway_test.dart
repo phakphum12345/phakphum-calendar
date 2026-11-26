@@ -349,4 +349,21 @@ void main() {
     expect(requests.map((request) => request.method), ['GET', 'PUT']);
   });
 
+  test('conditional delete treats provider 410 as already deleted', () async {
+    var deleteRequests = 0;
+    final client = MockClient((request) async {
+      if (request.method == 'GET') return http.Response('', 410);
+      if (request.method == 'DELETE') deleteRequests++;
+      return http.Response('', 500);
+    });
+    final gateway = GoogleCalendarSyncGateway(client);
+    await gateway.deleteConditionally(
+      eventId: 'already-deleted',
+      calendarId: 'primary',
+      expectedEtag: 'old-etag',
+      expectedSyncId: 'sync-1',
+    );
+    expect(deleteRequests, 0);
+  });
+
 }
