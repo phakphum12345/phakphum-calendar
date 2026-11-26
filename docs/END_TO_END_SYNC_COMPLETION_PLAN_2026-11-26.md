@@ -277,3 +277,41 @@ No row becomes PASS from a roadmap, a Draft PR, a skipped check, or a mock-only 
 - PR #197 documentation checks: 5 successful and 2 pending at its then-current head; not yet certified complete.
 - PR #192 exact head `12e9245ba3c7df89428de48f6e73b2106a525973`: 9 successful, 10 failed, 1 queued, and 1 skipped. The failures remain blockers; the skipped Pages job is not a pass.
 - The timeline-preservation patch is a data-integrity correction within PR #196. It does not close the separate cross-device lease/operation-ledger gap. Do not merge #196 until all exact-head required checks complete and the code review is satisfied.
+### 8.8 Live execution checkpoint — 2026-11-26 12:26 UTC
+
+This update supersedes earlier PR-head and CI snapshots in sections 8.2 and 8.7 where they differ. Main remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`. No PR has been merged by this execution.
+
+| PR | Current head | Current evidence | Remaining blockers |
+|---|---|---|---|
+| #192 Grid import / persistence | `c9bc708f5047bd232b7b4ca7cac15342f9af5ea2` | Backend security refresh workflow passed; committed `backend/composer.lock` now pins `symfony/http-kernel`, `symfony/mailer`, and `symfony/routing` to `v8.1.12`. Laravel Backend CI on the latest head is PASS. Web/Linux and formatting had passed on the immediately preceding head; exact-head platform matrix is still running. | Windows/Android/iOS/macOS/runtime and full root quality gates still require exact-head results. Production Schedule writer inventory is not fully migrated; local SharedPreferences remains the default repository. |
+| #196 Calendar ETag + coordination foundation | `1f3d5364bd69a813aa4427c977b77c1d58560fb6` | ETag/If-Match code retained. Added authenticated Laravel calendar sync leases, heartbeat/release, durable run records, per-run idempotent operation ledger, status/attempt guards, owner-scoped history reads and feature tests. Corrected route declarations after Laravel CI exposed literal newline escapes. | Latest exact-head Laravel CI and platform checks are queued. Flutter executor is NOT YET wired to acquire/heartbeat/release leases or persist operations. Therefore cross-device serialization and durable recovery are NOT proven. |
+| #191 Notification Outbox | `69cf20b8eba1d073f87ddaad0587237a9c414e7a` | Updated branch to current `main` via merge commit `7c42241a24b4f22d51d750f5c6c721a6475ebbae` (8 ahead, 0 behind); applied patched Symfony lockfile from #192. Backend CI has been queued on the updated head. | Still Draft; outbox is enqueue-only and has no worker/provider delivery. Exact-head CI and review remain required. |
+| #197 execution documentation | `9d8e66504160c7faf804c1de2e90ab74e25ce38d` | Documentation-only checkpoint; no code or production data changed. | Review and exact-head checks remain required. |
+
+#### Security dependency evidence
+
+- The first lock-refresh workflow attempt failed because Composer does not support `composer install --locked`; the workflow was corrected to use `composer install` (which consumes `composer.lock`).
+- The corrected refresh workflow completed successfully. Its log shows `composer audit --locked` reporting no security vulnerability advisories, then Pint, Laravel bootstrap syntax and Laravel tests completed successfully before committing the lockfile.
+- The resulting lockfile commit `08a0ea0fad29819ffe0accb1b44750245bd87638` changes only `backend/composer.lock`; the three affected Symfony packages are `v8.1.12`.
+- The standard Laravel Backend CI was then re-triggered on the newer PR #192 head and passed. The same patched lockfile was copied to PR #191 so its backend gate no longer inherits the vulnerable baseline.
+
+#### Production CAS boundary — still open
+
+- PR #192's backend revision-aware repository provides server-enforced generation/fingerprint compare-and-swap for its Grid backend path. It is only selected for Grid when `ORGANIZATION_API_BASE_URL` is configured.
+- `AppDependencies` still defaults general Schedule editing and the legacy AppController to `SharedPreferencesScheduleRepository`; the SharedPreferences two-slot write is crash-resilient but not cross-instance atomic CAS.
+- The new server lease/operation tables in #196 are currently API foundations. Until `ResilientCalendarSyncExecutor` is integrated with the lease/ledger and every production Schedule writer carries caller-owned revision tokens, do not claim production-wide CAS or cross-device sync safety.
+
+#### Current conservative acceptance status
+
+| Requirement | Status | Evidence still required |
+|---|---|---|
+| Symfony dependency audit | PASS on #192 refresh workflow and latest #192 Laravel CI | Confirm standard exact-head checks remain green after subsequent commits. |
+| PR #192 root/platform matrix | IN PROGRESS | Exact-head Flutter analyze/tests and Windows/Android/iOS/macOS/runtime checks. |
+| PR #191 base freshness | PASS (0 behind main) | Exact-head CI and independent outbox review. |
+| PR #191 notification delivery | NOT PROVEN | Worker, retry/backoff, dead-letter and provider delivery integration. |
+| PR #196 server lease/ledger API foundation | IMPLEMENTED, TESTING | Exact-head Laravel feature tests and schema review. |
+| PR #196 Flutter lease/ledger integration | NOT IMPLEMENTED | Executor acquire/heartbeat/operation record/release wiring and two-client race/restart tests. |
+| Production-wide Schedule CAS | NOT PROVEN | Migrate or safely coordinate every writer; eliminate unguarded SharedPreferences production writes where multi-device guarantees are required. |
+| Controlled Google Calendar verification | NOT AUTHORIZED | Separate explicit authorization for a dedicated test calendar only. |
+
+All Draft PRs remain Draft. No merge, deployment, production migration or real-calendar write is authorized by this checkpoint.
