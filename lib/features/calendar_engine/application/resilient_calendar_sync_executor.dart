@@ -82,7 +82,7 @@ class ResilientCalendarSyncExecutor {
       if (coordination == null || lease == null) return operation();
       final operationKey = _ledgerOperationKey(type, referenceId);
       final payloadHash = sha256
-          .convert(utf8.encode(jsonEncode(payload)))
+          .convert(utf8.encode(_canonicalJson(payload)))
           .toString();
       await coordination.heartbeat(lease);
       await coordination.recordOperation(
@@ -90,6 +90,7 @@ class ResilientCalendarSyncExecutor {
         operationKey: operationKey,
         operationType: type.name,
         payloadHash: payloadHash,
+        operationPayload: payload,
       );
       await coordination.updateOperation(
         lease: lease,
@@ -456,3 +457,19 @@ class _RetryInsertResult {
   final CalendarSyncOperationResult result;
   final int attempts;
 }
+
+Object? _canonicalizeJson(Object? value) {
+  if (value is Map) {
+    final keys = value.keys.map((key) => key.toString()).toList()..sort();
+    return {
+      for (final key in keys) key: _canonicalizeJson(value[key]),
+    };
+  }
+  if (value is List) {
+    return value.map(_canonicalizeJson).toList(growable: false);
+  }
+  return value;
+}
+
+String _canonicalJson(Map<String, Object?> value) =>
+    jsonEncode(_canonicalizeJson(value));
