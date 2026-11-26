@@ -10,6 +10,15 @@ on:
       - "backend/routes/api.php"
       - "backend/tests/Feature/CalendarSyncCoordinationApiTest.php"
       - ".github/workflows/format-calendar-sync-backend.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "backend/app/Http/Controllers/Api/V1/CalendarSyncCoordinationController.php"
+      - "backend/database/migrations/2026_11_26_000001_create_calendar_sync_coordination.php"
+      - "backend/routes/api.php"
+      - "backend/tests/Feature/CalendarSyncCoordinationApiTest.php"
+      - ".github/workflows/format-calendar-sync-backend.yml"
 
 permissions:
   contents: write
@@ -24,6 +33,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Set up PHP 8.4
         uses: shivammathur/setup-php@v2
@@ -67,5 +77,5 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add -- backend/app/Http/Controllers/Api/V1/CalendarSyncCoordinationController.php backend/database/migrations/2026_11_26_000001_create_calendar_sync_coordination.php backend/routes/api.php backend/tests/Feature/CalendarSyncCoordinationApiTest.php
             git commit -m "style(sync): format coordination API and tests"
-            git push origin "HEAD:$GITHUB_REF_NAME"
+            git push origin "HEAD:${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
           fi
