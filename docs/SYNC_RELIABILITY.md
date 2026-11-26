@@ -80,13 +80,22 @@ PR #196 adds authenticated Laravel coordination primitives:
   operation status transitions;
 - owner-scoped read APIs for run history and operation details.
 
-The API is a foundation, not yet an end-to-end guarantee. The Flutter
-`ResilientCalendarSyncExecutor` has not yet acquired or renewed these leases,
-nor persisted each provider operation through this ledger. Until that client
-integration and exact-head tests pass, the app must not claim cross-device
-serialization or durable shared recovery. The existing local SharedPreferences
-history remains in use, and no production Calendar write is authorized by
-these backend endpoints alone.
+The production `ResilientCalendarSyncExecutor` is now wired to this API
+when `ORGANIZATION_API_BASE_URL` is configured. It acquires a lease before
+provider mutations, heartbeats between operations, records a stable operation
+key and payload hash, updates the operation outcome/provider event ID, and
+releases the lease with the final run status. The reviewed Schedule ID is
+carried into the immutable sync plan; server-coordinated mode fails closed when
+a stable Schedule ID or Google ID token is unavailable.
+
+This is not yet complete shared recovery. The app still writes its user-facing
+history and resume queue to local SharedPreferences, and it does not yet load
+old server operation records to reconcile/recover an interrupted run after a
+process restart. The backend history read APIs are available, but their UI and
+resume integration remain open. If no backend origin is configured, local-only
+mode remains usable but does not serialize syncs across devices. Do not claim
+cross-device safety in local-only mode. No production Calendar write is
+authorized by these backend endpoints alone.
 
 ## Partial success
 
