@@ -66,6 +66,14 @@ class CalendarWorkflowFacade {
     required String scheduleId,
     required String calendarId,
   }) async {
+    if (scheduleId.trim().isEmpty ||
+        scheduleId.trim().toLowerCase() == 'unknown') {
+      throw ArgumentError.value(
+        scheduleId,
+        'scheduleId',
+        'A stable Schedule ID is required before Calendar reads.',
+      );
+    }
     final calendarSnapshot = await _readCalendarPeriods(client, periods);
     final workflow = CalendarWorkflowFactory.create(client: client);
     await workflow.prepareCandidatePreview(
