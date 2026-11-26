@@ -7,6 +7,7 @@ class CalendarSyncOperationResult {
     required this.success,
     this.message,
     this.providerEventId,
+    this.attempts = 0,
   });
 
   final CalendarSyncOperationType type;
@@ -14,4 +15,5 @@ class CalendarSyncOperationResult {
   final bool success;
   final String? message;
   final String? providerEventId;
+  final int attempts;
 }
