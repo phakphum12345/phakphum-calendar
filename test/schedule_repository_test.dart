@@ -135,20 +135,21 @@ void main() {
   });
 
   test('concurrent writers using one absent revision cannot both create', () async {
-    final repository = SharedPreferencesScheduleRepository(
-      store: InMemoryScheduleKeyValueStore(),
-    );
-    final writer = repository as ConditionalScheduleWriter;
-    final revisionSource = repository as ScheduleRevisionSource;
-    await repository.findById('schedule-1');
+    final store = InMemoryScheduleKeyValueStore();
+    final firstRepository = SharedPreferencesScheduleRepository(store: store);
+    final secondRepository = SharedPreferencesScheduleRepository(store: store);
+    final firstWriter = firstRepository as ConditionalScheduleWriter;
+    final secondWriter = secondRepository as ConditionalScheduleWriter;
+    final revisionSource = firstRepository as ScheduleRevisionSource;
+    await firstRepository.findById('schedule-1');
     final absentRevision = revisionSource.revisionForAbsentSchedule('schedule-1')!;
 
     final results = await Future.wait([
-      writer.saveIfRevision(
+      firstWriter.saveIfRevision(
         canonicalScheduleFixture(name: 'Writer A'),
         absentRevision,
       ),
-      writer.saveIfRevision(
+      secondWriter.saveIfRevision(
         canonicalScheduleFixture(name: 'Writer B'),
         absentRevision,
       ),
@@ -188,6 +189,40 @@ void main() {
       await writer.saveIfRevision(
         canonicalScheduleFixture(name: 'Stale recreate'),
         originalAbsent,
+      ),
+      isA<ValidationFailure<Schedule>>(),
+    );
+  });
+
+  test('failed pointer switch advances the revision and rejects stale writers', () async {
+    final store = InMemoryScheduleKeyValueStore();
+    final repository = SharedPreferencesScheduleRepository(store: store);
+    final writer = repository as ConditionalScheduleWriter;
+    final revisionSource = repository as ScheduleRevisionSource;
+    final original = canonicalScheduleFixture(name: 'Original');
+    await repository.save(original);
+    final loaded = await repository.findById(original.id);
+    final snapshot = (loaded as Success<Schedule?>).value!;
+    final staleRevision = revisionSource.revisionForSnapshot(snapshot)!;
+
+    store.failActivePointerWrites = true;
+    final failed = await writer.saveIfRevision(
+      canonicalScheduleFixture(name: 'Replacement'),
+      staleRevision,
+    );
+    store.failActivePointerWrites = false;
+
+    expect(failed, isA<PersistenceFailure<Schedule>>());
+    final stillActive = await repository.findById(original.id);
+    expect((stillActive as Success<Schedule?>).value!.name, 'Original');
+    final latestRevision = revisionSource.revisionForSnapshot(
+      (stillActive as Success<Schedule?>).value!,
+    )!;
+    expect(latestRevision, isNot(staleRevision));
+    expect(
+      await writer.saveIfRevision(
+        canonicalScheduleFixture(name: 'Stale overwrite'),
+        staleRevision,
       ),
       isA<ValidationFailure<Schedule>>(),
     );
