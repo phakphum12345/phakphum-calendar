@@ -52,6 +52,14 @@ class _MemoryScheduleRepository implements ScheduleRepository, ScheduleRevisionS
   String? currentRevisionFor(String scheduleId) => _value == null ? 'absent:$scheduleId' : 'v$_generation';
 
   @override
+  String? revisionForSnapshot(Schedule schedule) =>
+      _value != null && _value!.id == schedule.id ? 'v$_generation' : null;
+
+  @override
+  String? revisionForAbsentSchedule(String scheduleId) =>
+      _value == null ? 'absent:$scheduleId' : null;
+
+  @override
   Future<Result<Schedule?>> findById(String id) async => Success(_value);
 
   @override
