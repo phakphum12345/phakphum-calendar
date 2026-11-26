@@ -434,6 +434,7 @@ class AppDependencies {
         gateway: gateway,
         historyRepository: syncHistoryRepository,
         failedRepository: failedSyncRepository,
+        coordinationGateway: calendarSyncCoordinationGateway,
       ),
       onDispose: onDispose,
       messageProvider: messageProvider ?? workflowMessageProvider,
