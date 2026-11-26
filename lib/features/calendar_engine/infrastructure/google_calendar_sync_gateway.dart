@@ -248,7 +248,7 @@ class GoogleCalendarSyncGateway
     final request = http.Request('DELETE', _eventUri(calendarId, eventId))
       ..headers.addAll({'If-Match': expectedEtag});
     final response = await _send(request);
-    if (response.statusCode == 404) return;
+    if (response.statusCode == 404 || response.statusCode == 410) return;
     if (response.statusCode == 412) {
       throw StateError('Calendar event $eventId failed the ETag precondition; refusing stale delete.');
     }
@@ -260,7 +260,7 @@ class GoogleCalendarSyncGateway
   Future<calendar.Event?> _readEvent(String calendarId, String eventId) async {
     final request = http.Request('GET', _eventUri(calendarId, eventId));
     final response = await _send(request);
-    if (response.statusCode == 404) return null;
+    if (response.statusCode == 404 || response.statusCode == 410) return null;
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw StateError('Calendar event lookup failed with HTTP ${response.statusCode}.');
     }
