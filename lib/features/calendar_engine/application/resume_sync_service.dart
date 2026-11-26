@@ -285,15 +285,17 @@ FailedSyncOperation _failedOperationFromLedger(
   CalendarSyncRunRecord run,
   CalendarSyncOperationRecord record,
 ) {
-  final type = CalendarSyncOperationType.values
+  final matchingTypes = CalendarSyncOperationType.values
       .where((value) => value.name == record.operationType)
-      .firstOrNull;
-  if (type == null || !['prepared', 'running', 'failed'].contains(record.status)) {
+      .toList(growable: false);
+  if (matchingTypes.isEmpty ||
+      !['prepared', 'running', 'failed'].contains(record.status)) {
     throw FormatException(
       'Durable operation ${record.operationKey} has an unsupported recovery state.',
     );
   }
 
+  final type = matchingTypes.single;
   final payload = record.operationPayload;
   String requiredString(String key) {
     final value = payload[key];
