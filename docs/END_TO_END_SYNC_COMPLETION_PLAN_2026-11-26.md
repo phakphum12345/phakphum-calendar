@@ -349,3 +349,38 @@ This checkpoint supersedes the earlier implementation notes in section 8.8 where
 | Real Google Calendar test writes | NOT AUTHORIZED | Separate explicit authorization for a dedicated test calendar only. |
 
 Never count queued, in-progress, skipped or missing platform evidence as PASS. Keep all PRs Draft until the complete acceptance matrix and human review are satisfied.
+
+### 8.10 Live execution checkpoint — 2026-11-26 13:02 UTC
+
+Current exact PR heads after the latest CAS and coordination changes. Main baseline remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`. All PRs remain Draft; no merge, deployment, production migration or production Google Calendar write has occurred.
+
+| PR | Head SHA | Exact-head CI at this checkpoint | Assessment |
+|---|---|---|---|
+| #192 Grid import / Schedule persistence | `8a825ae41c3eb090c15664bb0eca7f1c5d2d0f91` | 15 checks queued; no failures yet. | Added snapshot-bound BackendScheduleRepository revisions, fail-closed unknown snapshots, W-01 editor CAS token, W-02/W-03 base-snapshot compare-and-save, F-01 create-only backend facade, local-only sign-out/source resets, and stale-editor concurrency test. Full exact-head platform evidence is pending. |
+| #196 Calendar ETag / cross-device coordination | `271128769a5ba0e705eb510a90c56f464cddb604` | 13 checks queued; no failures yet. | Added Laravel lease/run/operation ledger APIs; Flutter executor and ResumeSyncService use the same lease/ledger when backend is configured; Schedule ID is persisted in history. Dedicated backend verification on the earlier same-source revision passed 79 tests / 620 assertions. Exact-head Flutter/platform checks are pending. |
+| #191 Notification Outbox | `69cf20b8eba1d073f87ddaad0587237a9c414e7a` | 8 successful, 0 failed, 0 pending. | Branch includes latest main (0 behind) and patched Symfony lockfile. Outbox remains enqueue-only; no provider worker/delivery is enabled. |
+| #197 execution documentation | `d825291d8ef706141100a48634d2558965e92ae2` | 7 successful, 0 failed, 0 pending. | Documentation checkpoint passes. |
+
+#### Production CAS boundary
+
+- With `ORGANIZATION_API_BASE_URL` configured, `AppDependencies` uses one shared `BackendScheduleRepository` for production Schedule consumers. Grid import shares that instance.
+- `BackendScheduleRepository.save()` binds its revision to the exact loaded Schedule snapshot fingerprint. A later read cannot silently replace an older editor's token. Unobserved snapshots fail closed. `delete()` is disabled until caller-owned conditional-delete/tombstone semantics exist.
+- W-01 captures the editor's base revision and calls `saveIfRevision`. W-02/W-03 compare the live server Schedule with the exact previous canonical snapshot before calling `saveIfRevision`; a remote change is surfaced instead of overwritten. F-01 creates only against an absent revision; replacing an existing Schedule requires the reviewed Grid path.
+- Sign-out, account change, source switch and local-source clearing are local-only resets; they do not persist an empty Schedule.
+- This is backend-mode safe-by-fail-closed for identified writers, not a claim that every legacy workflow can save without first loading its base snapshot. The SharedPreferences fallback remains local-only and is not cross-device CAS.
+
+#### Calendar recovery boundary
+
+- When the backend origin and Google ID token are configured, both normal sync and resume acquire the same owner/Calendar lease, heartbeat, persist operation keys and payload hashes, record provider outcomes and release the lease.
+- Server run/operation history is durable and owner-scoped. However, app startup does not yet load server history to recover a process-killed run; user-facing history and failed queue remain local SharedPreferences. Startup reconciliation remains open.
+- Backend API feature tests and dependency audit passed in a dedicated verification workflow; exact-head CI on #196 remains queued and must be treated as UNKNOWN until completed.
+
+#### Remaining acceptance gates
+
+1. Wait for all 15 #192 checks and all 13 #196 checks on their exact current heads. No queued or skipped item is PASS.
+2. Verify two-editor Schedule CAS conflict and backend-mode fail-closed behavior on exact-head Flutter tests.
+3. Verify two-device Calendar lease race, expiry/reclaim, timeout/ambiguous response, duplicate operation replay, resume and release-on-error.
+4. Implement server-history-driven recovery after process restart; local queue alone is not durable shared recovery.
+5. Keep production Google Calendar writes disabled until a separate explicit authorization for a dedicated test calendar.
+
+Do not mark the repository complete or merge any PR until these gates and human review pass.
