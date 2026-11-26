@@ -269,7 +269,7 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
     return result;
   }
 
-  Future<Result<Schedule>?> _captureExpectedRevision(
+  Future<Failure<Schedule>?> _captureExpectedRevision(
     ScheduleRevisionSource revisionSource,
   ) async {
     final scheduleRepository = repository;
