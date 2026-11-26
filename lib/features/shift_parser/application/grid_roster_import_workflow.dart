@@ -170,7 +170,9 @@ class GridRosterImportWorkflow {
   /// the committed Schedule only when the live repository is still at the
   /// original target revision. Repositories implementing
   /// ConditionalScheduleWriter receive that exact caller-owned revision at
-  /// the write boundary; the legacy local fallback still has a read/save race.
+  /// the write boundary. The built-in local repository serializes conditional
+  /// writes within this process; custom repositories without the capability
+  /// retain a best-effort read/save fallback.
   Future<Result<Schedule>> commit({
     required GridRosterImportReviewContext context,
     required GridRosterCanonicalConversionResult conversion,
