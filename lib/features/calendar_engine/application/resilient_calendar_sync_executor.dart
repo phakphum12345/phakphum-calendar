@@ -131,7 +131,7 @@ class ResilientCalendarSyncExecutor {
           if (_gateway is ConditionalCalendarSyncGateway) {
             final etag = operation.expectedEtag;
             final syncId = operation.expectedSyncId;
-            if (etag == null || syncId == null) {
+            if (etag == null) {
               throw StateError('Calendar update is blocked because its preview has no provider ETag or managed identity.');
             }
             return (_gateway as ConditionalCalendarSyncGateway).updateConditionally(
