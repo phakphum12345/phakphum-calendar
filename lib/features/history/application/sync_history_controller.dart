@@ -9,8 +9,8 @@ typedef RecoverSyncHistory = Future<void> Function(String historyId);
 class SyncHistoryController extends ChangeNotifier implements ControllerState {
   SyncHistoryController(
     this._repository, {
-    RecoverSyncHistory? recoverHistory,
-  }) : _recoverHistory = recoverHistory;
+    this._recoverHistory,
+  });
 
   final SyncHistoryRepository _repository;
   final RecoverSyncHistory? _recoverHistory;
