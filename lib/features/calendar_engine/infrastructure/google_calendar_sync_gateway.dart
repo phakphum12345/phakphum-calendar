@@ -263,9 +263,8 @@ class GoogleCalendarSyncGateway
   Future<http.Response> _send(http.Request request) async =>
       http.Response.fromStream(await _client.send(request)).timeout(requestTimeout);
 
-  Uri _eventUri(String calendarId, String eventId) => Uri.https(
-    'www.googleapis.com',
-    '/calendar/v3/calendars/${Uri.encodeComponent(calendarId)}/events/${Uri.encodeComponent(eventId)}',
+  Uri _eventUri(String calendarId, String eventId) => Uri.parse(
+    'https://www.googleapis.com/calendar/v3/calendars/${Uri.encodeComponent(calendarId)}/events/${Uri.encodeComponent(eventId)}',
   );
 
   bool _matchesExpectedProviderIdentity(calendar.Event event, String? expectedSyncId) =>
