@@ -857,3 +857,13 @@ No implementation PR merged. No production Calendar writes or deployment. Apple 
 - PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: Dart Format, Backend, Dependency Security, Linux and Web passed; Windows, Android, iOS Advisory and PR Gate in progress; CAS Windows passed and Ubuntu in progress; Cross-platform Runtime queued; Apple builds pending.
 
 No implementation PR merged. No production notification, Schedule or Calendar data writes, or deployment. Queued, pending and in-progress checks are not PASS.
+
+
+### 8.41 Live execution checkpoint — 2026-11-27 (CAS platform progress)
+
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: Dart Format, Backend, Dependency Security, Linux and Web passed. Windows, Android, iOS Advisory and PR Gate were in progress. Cross-platform Runtime had Linux full quality in progress and Windows PowerShell full quality queued. Schedule CAS Storage Spike passed on Windows and Ubuntu; macOS CAS queued. Native iOS/macOS Xcode pending.
+- The six-month, two-department regression is part of this exact-head Flutter quality suite and remains unverified until Cross-platform Runtime / Auto Detect completes.
+- PR #191 exact head `6787fe710ceb351581eb42c9b7045c49a93c9cfb`: Backend, Linux, Web, Android, Cross-platform Runtime, Auto Detect and Dependency Security passed; Windows, PR Gate and iOS Advisory in progress.
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: all non-Apple CI including PR Gate passed; iOS Advisory in progress; iOS/macOS Xcode pending.
+
+No implementation PR merged. No production data writes, notifications, Calendar writes or deployment. Queued, pending and in-progress checks are not PASS.
