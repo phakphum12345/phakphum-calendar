@@ -310,6 +310,8 @@ class ResilientCalendarSyncExecutor {
       );
     } catch (_) {
       final hasCompletedOperation = inserted + updated + deleted > 0;
+      final leaseWasNotAcquired =
+          coordination != null && plan.operationCount > 0 && lease == null;
       history = history.copyWith(
         finishedAt: DateTime.now(),
         status: hasCompletedOperation
@@ -318,8 +320,14 @@ class ResilientCalendarSyncExecutor {
         inserted: inserted,
         updated: updated,
         deleted: deleted,
-        failed: failed == 0 ? plan.operationCount : failed + 1,
-        message: hasCompletedOperation
+        failed: failed == 0
+            ? leaseWasNotAcquired
+                ? 0
+                : plan.operationCount
+            : failed + 1,
+        message: leaseWasNotAcquired
+            ? 'Synchronization was blocked before Calendar writes; another run may hold the lease. Retry after it finishes.'
+            : hasCompletedOperation
             ? 'Synchronization stopped unexpectedly; review the durable operation ledger before retrying.'
             : 'Synchronization did not complete; no successful operation was confirmed.',
       );
