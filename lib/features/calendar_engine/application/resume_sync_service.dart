@@ -75,6 +75,7 @@ class ResumeSyncService {
             operationKey: operationKey,
             operationType: item.type.name,
             payloadHash: _payloadHash(item),
+            operationPayload: _operationPayload(item),
           );
           await coordination.updateOperation(
             lease: lease,
@@ -239,7 +240,7 @@ String _ledgerOperationKey(CalendarSyncOperationType type, String referenceId) {
   return '${type.name}:$digest';
 }
 
-String _payloadHash(FailedSyncOperation item) {
+Map<String, Object?> _operationPayload(FailedSyncOperation item) {
   final command = item.command;
   final payload = <String, Object?>{
     'event_id': item.eventId,
@@ -258,5 +259,25 @@ String _payloadHash(FailedSyncOperation item) {
       'command_calendar_id': command.calendarId,
     });
   }
-  return sha256.convert(utf8.encode(jsonEncode(payload))).toString();
+  return payload;
 }
+
+String _payloadHash(FailedSyncOperation item) {
+  return sha256.convert(utf8.encode(_canonicalJson(_operationPayload(item)))).toString();
+}
+
+Object? _canonicalizeJson(Object? value) {
+  if (value is Map) {
+    final keys = value.keys.map((key) => key.toString()).toList()..sort();
+    return {
+      for (final key in keys) key: _canonicalizeJson(value[key]),
+    };
+  }
+  if (value is List) {
+    return value.map(_canonicalizeJson).toList(growable: false);
+  }
+  return value;
+}
+
+String _canonicalJson(Map<String, Object?> value) =>
+    jsonEncode(_canonicalizeJson(value));
