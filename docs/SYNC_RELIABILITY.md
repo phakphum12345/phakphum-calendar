@@ -106,13 +106,15 @@ deletes treat an already-missing event as complete and reject changed events.
 A rejected lease acquisition is recorded as a failed local history entry before the error is returned; no provider operation is started. Unexpected execution errors persist the confirmed counts and leave the server ledger available for explicit reconciliation. Lease release is best-effort and an expired lease cannot be released by its former owner.
 
 Recovery is explicit and is not automatically replayed at application startup.
-The user-facing history and failed-operation queue remain local
-SharedPreferences views; the server ledger is the durable recovery source.
-The app must have a configured backend origin and the authenticated owner
-must request recovery. If no backend origin is configured, local-only mode
-remains usable but does not serialize syncs across devices or provide
-cross-device recovery. No production Calendar write is authorized by these
-backend endpoints alone.
+The History utility now displays local sync-history entries and exposes a
+confirmation-gated **กู้คืน** action for failed, partial or interrupted entries.
+With a configured backend origin, the action follows the stored server Run ID
+and reads the owner-scoped encrypted ledger before resuming; without a backend
+origin it uses only the local failed-operation queue. A missing server Run ID
+in server-coordinated mode fails closed. The history list and failed-operation
+queue remain local SharedPreferences views; the server ledger is the durable
+cross-device recovery source. No production Calendar write is authorized by
+these backend endpoints alone.
 
 ## Partial success
 
