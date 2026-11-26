@@ -72,7 +72,7 @@ jobs:
         run: xcodebuild -list -project macos/Runner.xcodeproj
 
       - name: Require shared backend for production artifact
-        if: github.ref == 'refs/heads/main'
+        if: github.event_name != 'pull_request'
         env:
           ORGANIZATION_API_BASE_URL: ${{ vars.ORGANIZATION_API_BASE_URL }}
         shell: bash
