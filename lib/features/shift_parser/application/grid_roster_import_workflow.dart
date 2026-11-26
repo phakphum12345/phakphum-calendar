@@ -168,9 +168,9 @@ class GridRosterImportWorkflow {
   ///
   /// If repository save fails after the journal commit, recover() can replay
   /// the committed Schedule only when the live repository is still at the
-  /// original target revision. A final read-before-save guard rejects any
-  /// newer revision it observes; ScheduleRepository does not expose CAS, so
-  /// a concurrent write in the remaining read/save window is not eliminated.
+  /// original target revision. Repositories implementing
+  /// ConditionalScheduleWriter receive that exact caller-owned revision at
+  /// the write boundary; the legacy local fallback still has a read/save race.
   Future<Result<Schedule>> commit({
     required GridRosterImportReviewContext context,
     required GridRosterCanonicalConversionResult conversion,
