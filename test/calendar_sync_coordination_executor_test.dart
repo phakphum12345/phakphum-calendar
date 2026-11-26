@@ -254,6 +254,57 @@ void main() {
     expect(coordination.calls, isEmpty);
   });
 
+  test('blocked resume keeps its failed history instead of leaving it running', () async {
+    final history = _MemoryHistoryRepository()
+      ..entries['local-history-3'] = SyncHistoryEntry(
+        id: 'local-history-3',
+        startedAt: DateTime(2026, 11, 26, 8),
+        status: SyncHistoryStatus.failure,
+        inserted: 0,
+        updated: 0,
+        deleted: 0,
+        failed: 1,
+        scheduleId: 'schedule-3',
+        serverRunId: 'old-run-3',
+      );
+    final failed = _MemoryFailedSyncRepository([
+      FailedSyncOperation(
+        historyId: 'local-history-3',
+        type: CalendarSyncOperationType.insert,
+        referenceId: 'sync-3',
+        attempts: 1,
+        command: CalendarSyncCommand(
+          syncId: 'sync-3',
+          title: 'OPD',
+          start: DateTime(2026, 11, 26, 8),
+          end: DateTime(2026, 11, 26, 16),
+          calendarId: 'primary',
+        ),
+        calendarId: 'primary',
+      ),
+    ]);
+    final gateway = _FakeCalendarGateway();
+    final coordination = _FakeCoordinationGateway()..rejectAcquire = true;
+
+    await expectLater(
+      ResumeSyncService(
+        gateway: gateway,
+        historyRepository: history,
+        failedRepository: failed,
+        coordinationGateway: coordination,
+      ).resume('local-history-3'),
+      throwsStateError,
+    );
+
+    expect(gateway.insertCount, 0);
+    expect(history.entries['local-history-3']?.status, SyncHistoryStatus.failure);
+    expect(
+      history.entries['local-history-3']?.message,
+      startsWith('Resume was blocked before Calendar operations started:'),
+    );
+    expect(coordination.calls, ['acquire:primary:schedule-3']);
+  });
+
   test('does not call Calendar when lease acquisition is rejected', () async {
     final coordination = _FakeCoordinationGateway()..rejectAcquire = true;
     final gateway = _FakeCalendarGateway();
