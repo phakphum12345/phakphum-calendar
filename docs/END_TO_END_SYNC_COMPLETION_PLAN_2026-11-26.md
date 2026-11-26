@@ -755,3 +755,15 @@ No implementation PR merged. No production Calendar writes, production Schedule 
 - Docs PR #197 head `3b388994e55423a0ae8b6e45a1271462ff9cfca5`: Auto Detect CI was queued and Cross-platform Runtime was in progress at the latest observed snapshot.
 
 No implementation PR merged. No production Calendar writes or deployment. Required Schedule identity is now enforced through the compatibility workflow, facade, coordinator and plan builder; exact-head CI remains mandatory. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
+
+
+### 8.32 Live execution checkpoint — 2026-11-27 (real row 33 regression)
+
+- PR #192 current head: `53dd9c6be94fe151bbd909ffec3a1c3fa22217fd`.
+- Retrieved the previously supplied roster reference containing the actual `เวรเช้า14 ชั้น` row in the 16 November–15 December 2569 block. Added a parser regression test at row index 32 (spreadsheet row 33), with the real 30-day header sequence (16–30 then 1–15) and the row's worker cells.
+- The regression asserts 20 non-empty assignments across the date range, source-cell mapping from B33 through AE33, U14 shift conversion, and the selected worker's 07:00–08:00 shift times. This directly covers the row-33 issue rather than relying only on generic label tests.
+- PR #192 exact-head CI on `53dd9c6be94fe151bbd909ffec3a1c3fa22217fd` has restarted. Windows, Web, Dart Format, Pull Request Gate and iOS Advisory are in progress; other platform, backend, dependency, CAS and Auto Detect workflows are queued/pending. No current-head result is certified PASS yet.
+- Previous #192 head `483cab074abb8d0daf73a71f7a424c7072dcdc3c` passed Dart Format, Dependency Security, Backend, Linux, Android, Web, Cross-platform Runtime, Auto Detect, Windows and PR Gate. CAS passed on Ubuntu/Windows; macOS was queued. The row-33 test requires a new exact-head pass.
+- #196 current head remains `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`; Backend, Linux, Web, Dart Format and Dependency Security passed, while Windows, Android, Cross-platform Runtime, Auto Detect, PR Gate and iOS Advisory were still running. Apple builds remained pending.
+
+No implementation PR merged. No production data writes or deployment. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
