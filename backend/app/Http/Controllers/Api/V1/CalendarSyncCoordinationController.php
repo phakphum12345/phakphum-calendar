@@ -234,9 +234,16 @@ class CalendarSyncCoordinationController extends Controller
             'operation_key' => ['required', 'string', 'max:128'],
             'operation_type' => ['required', 'in:insert,update,delete'],
             'payload_hash' => ['required', 'regex:/^[a-f0-9]{64}$/'],
+            'operation_payload' => ['required', 'array', 'max:24'],
         ]);
 
-        $result = DB::transaction(function () use ($request, $runId, $data): array {
+        $payloadJson = json_encode($this->canonicalizePayload($data['operation_payload']), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR);
+        if (! hash_equals(hash('sha256', $payloadJson), $data['payload_hash'])) {
+            return response()->json(['error' => ['code' => 'calendar_sync_payload_hash_mismatch', 'message' => 'The operation payload does not match its SHA-256 hash.']], 422);
+        }
+        $payloadCiphertext = Crypt::encryptString($payloadJson);
+
+        $result = DB::transaction(function () use ($request, $runId, $data, $payloadCiphertext): array {
             if (! $this->lockActiveLease($request, $runId, $data['lease_token'])) {
                 return ['status' => 409, 'error' => 'calendar_sync_lease_lost'];
             }
@@ -270,6 +277,7 @@ class CalendarSyncCoordinationController extends Controller
                 'operation_type' => $data['operation_type'],
                 'status' => 'prepared',
                 'payload_hash' => $data['payload_hash'],
+                'payload_ciphertext' => $payloadCiphertext,
                 'attempt_count' => 0,
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -431,6 +439,21 @@ class CalendarSyncCoordinationController extends Controller
         ];
     }
 
+    private function canonicalizePayload(array $value): array
+    {
+        foreach ($value as $key => $item) {
+            if (is_array($item)) {
+                $value[$key] = $this->canonicalizePayload($item);
+            }
+        }
+
+        if (! array_is_list($value)) {
+            ksort($value);
+        }
+
+        return $value;
+    }
+
     private function operationResource(object $operation): array
     {
         return [
@@ -438,6 +461,7 @@ class CalendarSyncCoordinationController extends Controller
             'operation_type' => $operation->operation_type,
             'status' => $operation->status,
             'payload_hash' => $operation->payload_hash,
+            'operation_payload' => json_decode(Crypt::decryptString($operation->payload_ciphertext), true, 512, JSON_THROW_ON_ERROR),
             'attempt_count' => $operation->attempt_count,
             'provider_event_id' => $operation->provider_event_id,
             'last_error' => $operation->last_error,
