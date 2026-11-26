@@ -1,7 +1,5 @@
 import 'dart:convert';
 
-import 'package:crypto/crypto.dart';
-
 import 'package:http/http.dart' as http;
 
 import '../../../core/result/result.dart';
@@ -34,7 +32,7 @@ class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionS
   final bool _ownsHttpClient;
   final ScheduleJsonCodec codec;
   final Map<String, String> _revisions = {};
-  final Map<String, String> _snapshotRevisions = {};
+  final Map<Schedule, String> _snapshotRevisions = Map<Schedule, String>.identity();
   final Map<String, String> _absentRevisions = {};
 
   @override
@@ -42,7 +40,7 @@ class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionS
 
   @override
   String? revisionForSnapshot(Schedule schedule) =>
-      _snapshotRevisions[_snapshotKey(schedule)];
+      _snapshotRevisions[schedule];
 
   @override
   String? revisionForAbsentSchedule(String scheduleId) =>
@@ -193,17 +191,14 @@ class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionS
     return Success(schedule);
   }
 
-  String _snapshotKey(Schedule schedule) {
-    final digest = sha256.convert(utf8.encode(codec.encode(schedule)));
-    return '${schedule.id}:$digest';
-  }
-
   void _rememberSnapshotRevision(Schedule schedule, String revision) {
-    final key = _snapshotKey(schedule);
-    if (!_snapshotRevisions.containsKey(key) && _snapshotRevisions.length >= 256) {
+    if (!_snapshotRevisions.containsKey(schedule) && _snapshotRevisions.length >= 256) {
       _snapshotRevisions.remove(_snapshotRevisions.keys.first);
     }
-    _snapshotRevisions[key] = revision;
+    // Identity-keying preserves the token attached to an older editor snapshot.
+    // Content-keying would overwrite A's original token after an A -> B -> A
+    // sequence and silently defeat the monotonic server generation.
+    _snapshotRevisions[schedule] = revision;
   }
 
   String _schedulePath(String id) {
