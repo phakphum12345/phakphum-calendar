@@ -731,3 +731,15 @@ No implementation PR merged. No production data writes or deployment. Queued, pe
 - Earlier compile/analyzer issues on head `076f56831a5f4f553dac3aaa55cc718a5bfc9bf1` were corrected on later commits. Head `825e54d4a46fdc0b1a60043e6c74e172b509a0dd` had several jobs cancelled as a newer commit superseded it; those cancellations are not PASS. Only exact-head checks count for merge.
 
 No implementation PR merged. No production data writes or deployment. Local CAS is process-scoped; multi-device CAS remains server-enforced. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
+
+
+### 8.30 Live execution checkpoint — 2026-11-27 (compatibility Calendar sync identity)
+
+- PR #196 current head: `3a0c7de7b2f0e520ceb3bd1b481a16c322d97ed4`, based on `d18454680879a10c6efe9e44ffb37cd0695f25a6`.
+- The previous fail-closed guard prevented the literal `unknown` from entering shared lease scope, but left the compatibility path unable to sync when it had no schedule identity. The compatibility workflow now requires a stable Schedule ID for both candidate and user-change previews. AppController supplies `canonicalSchedule.id`; the workflow passes that ID through CalendarSyncCoordinator to CalendarSyncPlanBuilder.
+- Switching between canonical Schedule preview and compatibility preview clears stale preview/preparation/validation/result state, preventing an old canonical plan from being executed after a candidate preview.
+- Regression tests prove a compatibility candidate preview records the canonical Schedule ID in sync history and that blank/unknown IDs are rejected before provider reads. Exact-head CI for #196: Laravel Backend CI, Dart Format and Dependency Security passed; Linux, Windows, Android, Web, Cross-platform Runtime, PR Gate, iOS Advisory and Auto Detect were in progress/queued; Apple Xcode builds pending. No exact-head platform matrix is complete.
+- PR #192 head `483cab074abb8d0daf73a71f7a424c7072dcdc3c`: Dart Format, Dependency Security, Laravel Backend CI, Linux, Android, Web, Cross-platform Runtime and Auto Detect passed. Windows, PR Gate and iOS Advisory remained in progress. Schedule CAS Spike passed on Ubuntu and Windows; macOS queued. iOS/macOS Xcode pending.
+- PR #197 docs head `23cf9e11aa780f37d323decc6cce766bac0cf7cc`: Auto Detect CI passed; Cross-platform Runtime in progress.
+
+No implementation PR merged. No production Calendar writes, production Schedule writes, migration or deployment. Apple build and CAS macOS queue are not PASS. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
