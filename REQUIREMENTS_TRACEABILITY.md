@@ -113,3 +113,17 @@ The [Schedule Persistence Writer Inventory](docs/SCHEDULE_PERSISTENCE_WRITER_INV
 | RI-038 | Prototype atomic conditional create/update/delete with monotonic revisions and tombstones | Isolated Drift package source and seven Dart test cases; independent SQLite 3.46.1 SQL spot-check with two connections observed one save and one conflict | PARTIAL — SQL semantics spot-checked; Dart/Drift runtime UNKNOWN | Generate Drift code and run tests; prove native OS matrix, Android/iOS device integration, Web multi-tab and crash recovery |
 
 The spike has its own `pubspec.yaml` and is not a root application dependency. The root `pubspec.yaml`, root lockfile, production SharedPreferences repository, production Schedule schema and all production writer paths remain unchanged. The new workflow tests native SQLite behavior on Windows, Linux and macOS runners; this does not by itself prove Android/iOS runtime behavior or Web multi-tab behavior.
+
+
+---
+
+## 2026-11-26 — Caller-bound Schedule revisions and Grid conditional commit
+
+| Requirement | Scope | Current source evidence | Status | Remaining proof |
+|---|---|---|---|---|
+| RI-039 | Carry authoritative backend generation token through Grid review and provenance; reject ABA | `ScheduleRevisionSource`; `GridRosterImportWorkflow.revisionFor`; Grid workflow ABA regression | SOURCE + TEST ADDED | Run focused Flutter tests on exact head |
+| RI-040 | Grid commit/recovery use the exact reviewed/base revision at the backend write boundary | `ConditionalScheduleWriter.saveIfRevision`; `BackendScheduleRepository.saveIfRevision`; Grid workflow race regression | SOURCE + TEST ADDED — Grid backend path only | Run backend API and Flutter tests on exact head; controlled concurrent-writer verification |
+| RI-041 | Migrate every editor, legacy AppController and imported-Schedule writer to caller-owned revision tokens | Legacy writers remain on local SharedPreferences; imported facade uses generic cached `save` | MISSING / OPEN | Per-controller snapshot tokens and explicit conditional save for every production writer |
+| RI-042 | Provide atomic compare-and-set for local/offline fallback across independent instances | SharedPreferences two-slot repository remains non-transactional | MISSING / OPEN | Select a cross-platform storage transaction strategy and run multi-instance/platform crash tests |
+
+The backend Grid path now closes the final read/save race and ABA gap by passing the exact server revision token from review/journal into the conditional write. This does not make the entire application concurrency-safe: other writer paths and the local fallback remain open. No global CAS claim is made.
