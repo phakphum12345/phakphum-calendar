@@ -105,8 +105,8 @@ void main() {
     final repository = SharedPreferencesScheduleRepository(
       store: InMemoryScheduleKeyValueStore(),
     );
-    final revisionSource = repository as ScheduleRevisionSource;
-    final writer = repository as ConditionalScheduleWriter;
+    final ScheduleRevisionSource revisionSource = repository;
+    final ConditionalScheduleWriter writer = repository;
     await repository.findById('schedule-1');
     final absentRevision = revisionSource.revisionForAbsentSchedule('schedule-1')!;
 
@@ -214,8 +214,8 @@ void main() {
 
     expect(failed, isA<PersistenceFailure<Schedule>>());
     final stillActive = await repository.findById(original.id);
-    expect((stillActive as Success<Schedule?>).value!.name, 'Original');
     final stillActiveSchedule = (stillActive as Success<Schedule?>).value!;
+    expect(stillActiveSchedule.name, 'Original');
     final latestRevision = revisionSource.revisionForSnapshot(
       stillActiveSchedule,
     )!;
