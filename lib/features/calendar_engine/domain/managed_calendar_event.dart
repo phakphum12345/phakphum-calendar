@@ -8,6 +8,7 @@ class ManagedCalendarEvent {
     this.description,
     this.colorId,
     this.etag,
+    this.providerSyncId,
   });
 
   final String eventId;
@@ -19,4 +20,6 @@ class ManagedCalendarEvent {
   final String? colorId;
   /// Google Calendar provider version used for conditional mutations.
   final String? etag;
+  /// Sync ID actually stored by the provider; null for legacy untagged events.
+  final String? providerSyncId;
 }
