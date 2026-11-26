@@ -269,7 +269,7 @@ class AppDependencies {
       archiveService: driveArchiveService,
       ownershipService: driveOwnershipService,
       localFileService: localRosterFileService,
-      scheduleRepository: scheduleRepository,
+      scheduleRepository: gridScheduleRepository,
       shiftTemplateRepository: shiftTemplateRepository,
       legacyScheduleAdapter: legacyScheduleAdapter,
       calendarWorkflowControllerFactory:
@@ -301,7 +301,7 @@ class AppDependencies {
   ScheduleController createScheduleController(Schedule schedule) {
     return ScheduleController(
       service: ScheduleService(schedule: schedule),
-      repository: scheduleRepository,
+      repository: gridScheduleRepository,
       validationService: createScheduleValidationService(),
     );
   }
@@ -326,7 +326,7 @@ class AppDependencies {
           Failure() => const [],
         },
       ),
-      repository: scheduleRepository,
+      repository: gridScheduleRepository,
       validationService: createScheduleValidationService(),
     );
   }
