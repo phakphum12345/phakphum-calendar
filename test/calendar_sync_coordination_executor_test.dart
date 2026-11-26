@@ -255,10 +255,10 @@ class _FakeCoordinationGateway implements CalendarSyncCoordinationGateway {
   }
 
   @override
-  Future<CalendarSyncRunRecord> getRun(String runId) async {
+  Future<CalendarSyncRunRecord?> getRun(String runId) async {
     final value = runRecord;
     if (value == null || value.runId != runId) {
-      throw StateError('run not found');
+      return null;
     }
     return value;
   }
