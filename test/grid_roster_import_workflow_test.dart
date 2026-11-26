@@ -8,6 +8,7 @@ import 'package:phakphum_calendar/domain/entities/schedule.dart';
 import 'package:phakphum_calendar/domain/entities/schedule_month.dart';
 import 'package:phakphum_calendar/domain/repositories/schedule_repository.dart';
 import 'package:phakphum_calendar/domain/repositories/schedule_revision_source.dart';
+import 'package:phakphum_calendar/domain/repositories/conditional_schedule_writer.dart';
 import 'package:phakphum_calendar/features/schedule/data/shared_preferences_schedule_repository.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/grid_roster_canonical_converter.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/grid_roster_import_workflow.dart';
@@ -38,10 +39,11 @@ class _MemoryStore implements ScheduleKeyValueStore {
   }
 }
 
-class _MemoryScheduleRepository implements ScheduleRepository, ScheduleRevisionSource {
+class _MemoryScheduleRepository implements ScheduleRepository, ScheduleRevisionSource, ConditionalScheduleWriter {
   Schedule? _value;
   int _generation = 0;
   bool failNextSave = false;
+  bool changeBeforeConditionalSave = false;
 
   Schedule? get value => _value;
   set value(Schedule? next) { _value = next; _generation++; }
@@ -51,6 +53,21 @@ class _MemoryScheduleRepository implements ScheduleRepository, ScheduleRevisionS
 
   @override
   Future<Result<Schedule?>> findById(String id) async => Success(_value);
+
+  @override
+  Future<Result<Schedule>> saveIfRevision(
+    Schedule schedule,
+    String expectedRevision,
+  ) async {
+    if (changeBeforeConditionalSave) {
+      changeBeforeConditionalSave = false;
+      value = Schedule(id: schedule.id, name: 'Concurrent writer');
+    }
+    if (currentRevisionFor(schedule.id) != expectedRevision) {
+      return const ValidationFailure('conditional revision conflict');
+    }
+    return save(schedule);
+  }
 
   @override
   Future<Result<ScheduleMonth?>> loadMonth(String scheduleId, DateTime month) async =>
@@ -368,6 +385,18 @@ void main() {
     expect(recovered, isA<Success<Schedule?>>());
     expect(repository.value?.id, 'schedule-1');
     expect(repository.value, conversion.schedule);
+  });
+
+  test('Grid commit fails closed when another writer wins after the final read', () async {
+    final context = await prepareContext();
+    final conversion = convertContext(context);
+    repository.changeBeforeConditionalSave = true;
+
+    final result = await workflow.commit(context: context, conversion: conversion);
+
+    expect(result, isA<ValidationFailure<Schedule>>());
+    expect(repository.value?.name, 'Concurrent writer');
+    expect(store.values, isNotEmpty);
   });
 
   test('review revision rejects an A to B to A Schedule change (ABA)', () async {
