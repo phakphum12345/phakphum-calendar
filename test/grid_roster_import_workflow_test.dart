@@ -38,12 +38,19 @@ class _MemoryStore implements ScheduleKeyValueStore {
   }
 }
 
-class _MemoryScheduleRepository implements ScheduleRepository {
-  Schedule? value;
+class _MemoryScheduleRepository implements ScheduleRepository, ScheduleRevisionSource {
+  Schedule? _value;
+  int _generation = 0;
   bool failNextSave = false;
 
+  Schedule? get value => _value;
+  set value(Schedule? next) { _value = next; _generation++; }
+
   @override
-  Future<Result<Schedule?>> findById(String id) async => Success(value);
+  String? currentRevisionFor(String scheduleId) => _value == null ? 'absent:$scheduleId' : 'v$_generation';
+
+  @override
+  Future<Result<Schedule?>> findById(String id) async => Success(_value);
 
   @override
   Future<Result<ScheduleMonth?>> loadMonth(String scheduleId, DateTime month) async =>
