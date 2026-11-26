@@ -57,7 +57,7 @@ jobs:
         run: composer audit --locked
 
       - name: Verify install from the generated lockfile
-        run: composer install --locked --no-interaction --prefer-dist --no-progress
+        run: composer install --no-interaction --prefer-dist --no-progress
 
       - name: Check PHP formatting
         run: vendor/bin/pint --test app config database routes tests
