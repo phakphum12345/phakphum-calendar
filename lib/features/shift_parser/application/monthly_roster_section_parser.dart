@@ -311,7 +311,7 @@ class MonthlyRosterSectionParser {
 
       final monthPattern = _thaiMonths.keys.join('|');
       final match = RegExp(
-        '($monthPattern)\\s*(?:พ\\.?\\s*ศ\\.?)?\\s*(\\d{2,4})',
+        '($monthPattern)\\s*(?:พ\.?\s*ศ\.?)?\\s*(\\d{2,4})',
       ).firstMatch(text);
 
       if (match == null) rethrow;
@@ -345,11 +345,11 @@ class MonthlyRosterSectionParser {
 
   bool _hasExplicitRangeExpression(String text) {
     final rangeWithMonthsOnBothEnds = RegExp(
-      r'(?<!\d)\d{1,2}\s*[ก-๙.]+(?:\s*\d{2,4})?\s*(?:-|ถึง|\\bto\\b)\s*\d{1,2}\s*[ก-๙.]+',
+      r'(?<!\d)\d{1,2}\s*[ก-๙.]+(?:\s*\d{2,4})?\s*(?:-|ถึง|\bto\b)\s*\d{1,2}\s*[ก-๙.]+',
       caseSensitive: false,
     ).hasMatch(text);
     final compactSameMonthRange = RegExp(
-      r'(?<!\d)\d{1,2}\s*(?:-|ถึง)\s*\d{1,2}\s*[ก-๙.]+(?:\s*(?:พ\\.?\\s*ศ\\.?)?\\s*\\d{2,4})?(?!\d)',
+      r'(?<!\d)\d{1,2}\s*(?:-|ถึง)\s*\d{1,2}\s*[ก-๙.]+(?:\s*(?:พ\.?\s*ศ\.?)?\s*\d{2,4})?(?!\d)',
     ).hasMatch(text);
     return rangeWithMonthsOnBothEnds || compactSameMonthRange;
   }
