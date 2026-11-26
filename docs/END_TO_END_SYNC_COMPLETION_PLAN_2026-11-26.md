@@ -816,3 +816,13 @@ No implementation PR merged. No production data writes, Calendar writes or deplo
 - No push notification has been sent and no worker is enabled.
 
 No implementation PR merged. No production data writes or deployment. Notification delivery remains a release blocker until the sender, worker, settings UI and end-to-end tests are complete.
+
+
+### 8.37 Live execution checkpoint — 2026-11-27 (six-month, multi-department import coverage)
+
+- PR #192 current head: `bde4107660ceaa6031b495ef7e8904f55f1d97b9`.
+- Added a six-month 181-day date-grid regression spanning 1 November 2569 through 30 April 2570, with two independent department sections and separate date headers. The test asserts both sections retain the complete date range and that assignments map to the correct department/date.
+- This supplements the real row-33 `เวรเช้า14 ชั้น` regression and the X-OPD duplicate-day/missing-date regression. It validates parser support for multiple sections/departments and long schedule blocks without introducing a fixed monthly layout assumption.
+- Exact-head CI for `bde4107660ceaa6031b495ef7e8904f55f1d97b9` has not yet appeared in the workflow listing. Previous head `8af2471200cc5f3cbe8b8778b37ab528c3f90403` passed Dart Format, Dependency Security, Backend, Linux, Android, Web, Cross-platform Runtime and Auto Detect; Windows, PR Gate and iOS Advisory were still in progress, with CAS macOS and Apple builds incomplete.
+
+No implementation PR merged. No production data writes or deployment. The six-month regression requires exact-head CI before it can be accepted.
