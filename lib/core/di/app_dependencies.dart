@@ -297,7 +297,8 @@ class AppDependencies {
       archiveService: driveArchiveService,
       ownershipService: driveOwnershipService,
       localFileService: localRosterFileService,
-      scheduleRepository: scheduleRepository,
+      scheduleRepository:
+          _providedScheduleRepository ?? SharedPreferencesScheduleRepository(),
       shiftTemplateRepository: shiftTemplateRepository,
       legacyScheduleAdapter: legacyScheduleAdapter,
       calendarWorkflowControllerFactory:
