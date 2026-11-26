@@ -76,7 +76,9 @@ class MonthlyRosterSectionParser {
 
     for (var index = 0; index < headerRows.length; index++) {
       final headerRow = headerRows[index];
-      final daysByColumn = _daysByColumn(cellsByRow[headerRow] ?? const []);
+      final headerCells = cellsByRow[headerRow] ?? const [];
+      final daysByColumn = _daysByColumn(headerCells);
+      final explicitDatesByColumn = _explicitDatesByColumn(headerCells);
       final nextHeader = index + 1 < headerRows.length
           ? headerRows[index + 1]
           : (cellsByRow.keys.fold<int>(headerRow, (a, b) => a > b ? a : b) + 1);
@@ -131,6 +133,7 @@ class MonthlyRosterSectionParser {
 
       final datesByColumn = _resolveDatesByColumn(
         daysByColumn: daysByColumn,
+        explicitDatesByColumn: explicitDatesByColumn,
         start: start,
         end: end,
         sectionTitle: title,
@@ -412,16 +415,32 @@ class MonthlyRosterSectionParser {
     final result = <int, int>{};
     for (final cell in cells) {
       final value = cell.rawValue ?? cell.text;
-      // Excel can represent a numeric cell as a double. Accept values such as
-      // 1.0, but never truncate 1.5 to day 1: that would silently assign a
-      // worker to the wrong calendar date.
-      final day = value is num
+      // Date-formatted Excel cells arrive as DateTime values; numeric cells
+      // may also be represented as integral doubles. Never truncate fractions.
+      final day = value is DateTime
+          ? value.day
+          : value is num
           ? (value.isFinite && value == value.roundToDouble()
                 ? value.toInt()
                 : null)
           : int.tryParse(value?.toString().trim() ?? '');
       if (day != null && day >= 1 && day <= 31) {
         result[cell.columnIndex as int] = day;
+      }
+    }
+    return result;
+  }
+
+  Map<int, DateTime> _explicitDatesByColumn(List<dynamic> cells) {
+    final result = <int, DateTime>{};
+    for (final cell in cells) {
+      final value = cell.rawValue ?? cell.text;
+      if (value is DateTime) {
+        result[cell.columnIndex as int] = DateTime(
+          value.year,
+          value.month,
+          value.day,
+        );
       }
     }
     return result;
@@ -601,6 +620,7 @@ class MonthlyRosterSectionParser {
 
   Map<int, DateTime> _resolveDatesByColumn({
     required Map<int, int> daysByColumn,
+    required Map<int, DateTime> explicitDatesByColumn,
     required DateTime start,
     required DateTime end,
     required String sectionTitle,
@@ -613,13 +633,21 @@ class MonthlyRosterSectionParser {
 
     for (final column in columns) {
       final displayedDay = daysByColumn[column]!;
+      final explicitDate = explicitDatesByColumn[column];
 
-      final resolved = _resolveNextRosterDate(
-        displayedDay: displayedDay,
-        cursor: cursor,
-        start: start,
-        end: end,
-      );
+      final resolved = explicitDate == null
+          ? _resolveNextRosterDate(
+              displayedDay: displayedDay,
+              cursor: cursor,
+              start: start,
+              end: end,
+            )
+          : _resolveExplicitRosterDate(
+              value: explicitDate,
+              cursor: cursor,
+              start: start,
+              end: end,
+            );
 
       if (resolved == null) {
         warnings.add(
@@ -641,6 +669,19 @@ class MonthlyRosterSectionParser {
     }
 
     return result;
+  }
+
+  DateTime? _resolveExplicitRosterDate({
+    required DateTime value,
+    required DateTime cursor,
+    required DateTime start,
+    required DateTime end,
+  }) {
+    final date = DateTime(value.year, value.month, value.day);
+    if (date.isBefore(cursor) || date.isBefore(start) || date.isAfter(end)) {
+      return null;
+    }
+    return date;
   }
 
   DateTime? _resolveNextRosterDate({
