@@ -332,11 +332,14 @@ class GridRosterImportWorkflow {
 
   String revisionFor(Schedule? schedule, String scheduleId) {
     final source = _scheduleRepository;
-    final authoritative = source is ScheduleRevisionSource
-        ? schedule == null
-            ? source.revisionForAbsentSchedule(scheduleId)
-            : source.revisionForSnapshot(schedule)
+    final revisionSource = source is ScheduleRevisionSource
+        ? source as ScheduleRevisionSource
         : null;
+    final authoritative = revisionSource == null
+        ? null
+        : schedule == null
+        ? revisionSource.revisionForAbsentSchedule(scheduleId)
+        : revisionSource.revisionForSnapshot(schedule);
     if (authoritative != null) return authoritative;
     return schedule == null ? 'absent:$scheduleId' : scheduleFingerprint(schedule);
   }
