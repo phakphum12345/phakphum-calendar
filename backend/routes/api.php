@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\CalendarSyncCoordinationController;
 use App\Http\Controllers\Api\V1\ClientErrorController;
 use App\Http\Controllers\Api\V1\GoogleAccountController;
 use App\Http\Controllers\Api\V1\HealthController;
@@ -19,11 +20,22 @@ Route::prefix('v1')->group(function (): void {
         ->middleware('throttle:30,1')
         ->name('api.v1.diagnostics.client-errors');
 
-    Route::middleware(['throttle:120,1', 'google.account'])->group(function (): void {\n        Route::get('/calendar-sync/runs', [CalendarSyncCoordinationController::class, 'index'])
+    Route::middleware(['throttle:120,1', 'google.account'])->group(function (): void {
+        Route::get('/calendar-sync/runs', [CalendarSyncCoordinationController::class, 'index'])
             ->name('api.v1.calendar-sync.runs.index');
         Route::get('/calendar-sync/runs/{runId}/operations', [CalendarSyncCoordinationController::class, 'operations'])
             ->whereUuid('runId')->name('api.v1.calendar-sync.runs.operations.index');
-        Route::post('/calendar-sync/leases', [CalendarSyncCoordinationController::class, 'acquire'])\n            ->name('api.v1.calendar-sync.leases.acquire');\n        Route::put('/calendar-sync/leases/{runId}', [CalendarSyncCoordinationController::class, 'heartbeat'])\n            ->whereUuid('runId')->name('api.v1.calendar-sync.leases.heartbeat');\n        Route::delete('/calendar-sync/leases/{runId}', [CalendarSyncCoordinationController::class, 'release'])\n            ->whereUuid('runId')->name('api.v1.calendar-sync.leases.release');\n        Route::post('/calendar-sync/leases/{runId}/operations', [CalendarSyncCoordinationController::class, 'recordOperation'])\n            ->whereUuid('runId')->name('api.v1.calendar-sync.operations.store');\n        Route::patch('/calendar-sync/leases/{runId}/operations/{operationKey}', [CalendarSyncCoordinationController::class, 'updateOperation'])\n            ->whereUuid('runId')->where('operationKey', '[A-Za-z0-9._:-]{1,128}')\n            ->name('api.v1.calendar-sync.operations.update');
+        Route::post('/calendar-sync/leases', [CalendarSyncCoordinationController::class, 'acquire'])
+            ->name('api.v1.calendar-sync.leases.acquire');
+        Route::put('/calendar-sync/leases/{runId}', [CalendarSyncCoordinationController::class, 'heartbeat'])
+            ->whereUuid('runId')->name('api.v1.calendar-sync.leases.heartbeat');
+        Route::delete('/calendar-sync/leases/{runId}', [CalendarSyncCoordinationController::class, 'release'])
+            ->whereUuid('runId')->name('api.v1.calendar-sync.leases.release');
+        Route::post('/calendar-sync/leases/{runId}/operations', [CalendarSyncCoordinationController::class, 'recordOperation'])
+            ->whereUuid('runId')->name('api.v1.calendar-sync.operations.store');
+        Route::patch('/calendar-sync/leases/{runId}/operations/{operationKey}', [CalendarSyncCoordinationController::class, 'updateOperation'])
+            ->whereUuid('runId')->where('operationKey', '[A-Za-z0-9._:-]{1,128}')
+            ->name('api.v1.calendar-sync.operations.update');
         Route::get('/me', [GoogleAccountController::class, 'show'])
             ->name('api.v1.me');
         Route::post('/shift-pay/calculations', [ShiftPayCalculationController::class, 'store'])
