@@ -155,16 +155,16 @@ class GoogleCalendarSyncGateway
     required String eventId,
     required CalendarSyncCommand command,
   }) async {
-    final api = calendar.CalendarApi(_client);
-    final updated = await api.events
-        .update(
-          _toEvent(command),
-          command.calendarId,
-          eventId,
-        )
-        .timeout(requestTimeout);
-
-    return _toManaged(updated, command.syncId);
+    final existing = await _readEvent(command.calendarId, eventId);
+    if (existing == null || existing.etag == null) {
+      throw StateError('Calendar event $eventId is missing or has no ETag; refresh the preview.');
+    }
+    return updateConditionally(
+      eventId: eventId,
+      expectedEtag: existing.etag!,
+      expectedSyncId: _managedSyncId(existing),
+      command: command,
+    );
   }
 
   @override
@@ -172,8 +172,17 @@ class GoogleCalendarSyncGateway
     required String eventId,
     String calendarId = 'primary',
   }) async {
-    final api = calendar.CalendarApi(_client);
-    await api.events.delete(calendarId, eventId).timeout(requestTimeout);
+    final existing = await _readEvent(calendarId, eventId);
+    if (existing == null) return;
+    if (existing.etag == null) {
+      throw StateError('Calendar event $eventId has no ETag; refusing an unguarded delete.');
+    }
+    await deleteConditionally(
+      eventId: eventId,
+      calendarId: calendarId,
+      expectedEtag: existing.etag!,
+      expectedSyncId: _managedSyncId(existing),
+    );
   }
 
   @override
@@ -203,7 +212,7 @@ class GoogleCalendarSyncGateway
         'Content-Type': 'application/json',
         'If-Match': expectedEtag,
       })
-      ..body = jsonEncode((_toEvent(command)..id = eventId).toJson());
+      ..body = jsonEncode(_mergeManagedFields(existing, command, eventId).toJson());
     final response = await _send(request);
     if (response.statusCode == 412) {
       throw StateError('Calendar event $eventId failed the ETag precondition. Refresh the preview.');
@@ -266,6 +275,29 @@ class GoogleCalendarSyncGateway
   Uri _eventUri(String calendarId, String eventId) => Uri.parse(
     'https://www.googleapis.com/calendar/v3/calendars/${Uri.encodeComponent(calendarId)}/events/${Uri.encodeComponent(eventId)}',
   );
+
+  calendar.Event _mergeManagedFields(
+    calendar.Event existing,
+    CalendarSyncCommand command,
+    String eventId,
+  ) {
+    final desired = _toEvent(command);
+    final privateProperties = Map<String, String>.from(
+      existing.extendedProperties?.private ?? const <String, String>{},
+    )..[syncIdKey] = command.syncId;
+    existing
+      ..id = eventId
+      ..summary = desired.summary
+      ..description = desired.description
+      ..colorId = desired.colorId
+      ..start = desired.start
+      ..end = desired.end
+      ..extendedProperties = calendar.EventExtendedProperties(
+        private: privateProperties,
+        shared: existing.extendedProperties?.shared,
+      );
+    return existing;
+  }
 
   bool _matchesExpectedProviderIdentity(calendar.Event event, String? expectedSyncId) =>
       _managedSyncId(event) == expectedSyncId;
