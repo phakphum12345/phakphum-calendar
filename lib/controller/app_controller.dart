@@ -3124,13 +3124,12 @@ class AppController extends ChangeNotifier implements ControllerState {
     final result = await _scheduleRepository.findById(_runtimeScheduleId);
     switch (result) {
       case Success<Schedule?>(value: final schedule):
-        _legacySchedule = schedule == null
-            ? _legacyScheduleAdapter.toCanonical(
-                const [],
-                id: _runtimeScheduleId,
-                name: _runtimeScheduleName,
-              )
-            : _legacyScheduleAdapter.wrapCanonical(schedule);
+        // An absent local record must not erase an in-memory roster that
+        // has already been imported in this session. The initial controller
+        // state is already an empty canonical Schedule when no roster exists.
+        if (schedule != null) {
+          _legacySchedule = _legacyScheduleAdapter.wrapCanonical(schedule);
+        }
         _rebuildAlerts();
       case Failure<Schedule?>():
         error ??= 'โหลดตารางหลักจาก Backend ไม่สำเร็จ: ${result.message}';
@@ -3181,7 +3180,7 @@ class AppController extends ChangeNotifier implements ControllerState {
         : revisionSource.revisionForSnapshot(base);
     if (expectedRevision == null || expectedRevision.trim().isEmpty) {
       return const PersistenceFailure(
-        'The backend did not provide a caller-owned Schedule revision.',
+        'The Schedule repository did not provide a caller-owned revision.',
       );
     }
     return conditionalWriter.saveIfRevision(next, expectedRevision);
