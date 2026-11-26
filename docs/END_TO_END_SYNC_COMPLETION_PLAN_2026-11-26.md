@@ -657,3 +657,16 @@ This section supersedes prior PR/CI snapshots above where they conflict. Main is
 - No real Calendar writes, production migration, deployment, notification delivery or merge were performed by this checkpoint.
 
 No queued, pending, in-progress, skipped, cancelled or older-head result is PASS. Keep all implementation PRs Draft until required exact-head checks, code review and production-readiness evidence are complete.
+
+
+### 8.24 Live execution checkpoint — 2026-11-27 (refreshed exact-head evidence)
+
+- #191 remains at `12dc4a5a1902f62998e65cc85f880614f9919110`; all 10 PR-triggered workflows observed are completed successfully. This remains an enqueue-only notification foundation, not delivery.
+- #192 remains at `10875734d0a956c76933cd8cc94cfa1108585cd3`. Android, Linux, Windows, Web, Laravel Backend CI, Pull Request Gate, Auto Detect CI, Dart Format Baseline Audit, Dependency Security, Cross-platform Runtime and iOS completed successfully. The Schedule CAS Storage Spike completed successfully on Ubuntu, Windows and macOS. The separate macOS/Xcode build job is **cancelled**, not passed. Keep #192 Draft until the cancelled Apple build is rerun successfully and review/acceptance is complete.
+- #196 remains at `3dc978f707a7ab9797e76fcab0b88f22b73dbd53`. Backend, Web, Windows, Android, Linux, Pull Request Gate, Auto Detect CI, Cross-platform Runtime, Dart Format and Dependency Security completed successfully. Both macOS/Xcode and iOS/Xcode jobs remain queued. These are not PASS.
+- #197 documentation head `8a5db3b5f02e3cd753f29bc4fb4eac7be6a6808f`: Auto Detect CI and Cross-platform Runtime completed successfully; all jobs in both workflows completed successfully.
+- #196 code review found that the compatibility sync path omits a real Schedule ID, so the plan builder's default `unknown` value can reach the shared-backend lease request. The backend currently validates only that `schedule_id` is a non-empty string; it does not reject the literal `unknown`. This is an identity/ledger correctness defect, not evidence of an observed provider write.
+- A fail-closed guard and regression test have now been committed to the #196 branch: `06c34f29e83da7d8cc52414d83010605bec0c25e` adds the shared-mode guard; `990ba523367ca15794561ec27209723c87dcd525` adds a test proving an unknown Schedule ID is rejected before lease acquisition or Google Calendar mutation. Local test execution is not claimed; exact-head CI must validate these commits.
+- The guard is intentionally limited to configured shared-backend mode. Local-only compatibility behavior remains unchanged. The durable correction for the compatibility workflow is still to propagate a real Schedule ID from the canonical Schedule, or to make that legacy path unavailable in shared mode.
+
+No implementation PR has been merged. No Google Calendar provider write, production migration or deployment was performed. Cancelled, queued, pending, in-progress, skipped and older-head checks are not PASS.
