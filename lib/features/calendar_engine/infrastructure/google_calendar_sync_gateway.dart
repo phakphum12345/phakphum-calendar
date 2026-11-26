@@ -9,7 +9,7 @@ import '../domain/calendar_sync_gateway.dart';
 import '../domain/managed_calendar_event.dart';
 
 class GoogleCalendarSyncGateway
-    implements CalendarSyncGateway, ComparableCalendarEventGateway {
+    implements CalendarSyncGateway, ComparableCalendarEventGateway, ConditionalCalendarSyncGateway {
   GoogleCalendarSyncGateway(
     this._client, {
     this.requestTimeout = defaultRequestTimeout,
@@ -98,6 +98,7 @@ class GoogleCalendarSyncGateway
             end: _bangkokWallTime(event.end!.dateTime!),
             description: event.description,
             colorId: event.colorId,
+            etag: event.etag,
           ),
         )
         .toList(growable: false);
@@ -174,6 +175,110 @@ class GoogleCalendarSyncGateway
     await api.events.delete(calendarId, eventId).timeout(requestTimeout);
   }
 
+  @override
+  Future<ManagedCalendarEvent> updateConditionally({
+    required String eventId,
+    required String expectedEtag,
+    required String expectedSyncId,
+    required CalendarSyncCommand command,
+  }) async {
+    final existing = await _readEvent(command.calendarId, eventId);
+    if (existing == null) {
+      throw StateError('Calendar event $eventId no longer exists; refresh the preview.');
+    }
+    if (_managedSyncId(existing) != expectedSyncId) {
+      throw StateError('Calendar event $eventId is no longer owned by this sync identity.');
+    }
+    if (_matchesCommand(existing, command)) {
+      return _toManaged(existing, command.syncId);
+    }
+    if (existing.etag == null || existing.etag != expectedEtag) {
+      throw StateError('Calendar event $eventId changed after preview; refresh before retrying.');
+    }
+
+    final request = http.Request('PUT', _eventUri(command.calendarId, eventId))
+      ..headers.addAll({
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'If-Match': expectedEtag,
+      })
+      ..body = jsonEncode(_toEvent(command).toJson());
+    final response = await _send(request);
+    if (response.statusCode == 412) {
+      throw StateError('Calendar event $eventId failed the ETag precondition. Refresh the preview.');
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw StateError('Conditional Calendar update failed with HTTP ${response.statusCode}.');
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map) throw const FormatException('Calendar update response is invalid.');
+    return _toManaged(
+      calendar.Event.fromJson(Map<String, dynamic>.from(decoded)),
+      command.syncId,
+    );
+  }
+
+  @override
+  Future<void> deleteConditionally({
+    required String eventId,
+    required String calendarId,
+    required String expectedEtag,
+    required String expectedSyncId,
+  }) async {
+    final existing = await _readEvent(calendarId, eventId);
+    // A missing event is the desired terminal state for a delete retry.
+    if (existing == null) return;
+    if (_managedSyncId(existing) != expectedSyncId) {
+      throw StateError('Refusing to delete Calendar event $eventId: managed identity does not match.');
+    }
+    if (existing.etag == null || existing.etag != expectedEtag) {
+      throw StateError('Calendar event $eventId changed after preview; refusing stale delete.');
+    }
+
+    final request = http.Request('DELETE', _eventUri(calendarId, eventId))
+      ..headers.addAll({'If-Match': expectedEtag});
+    final response = await _send(request);
+    if (response.statusCode == 404) return;
+    if (response.statusCode == 412) {
+      throw StateError('Calendar event $eventId failed the ETag precondition; refusing stale delete.');
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw StateError('Conditional Calendar delete failed with HTTP ${response.statusCode}.');
+    }
+  }
+
+  Future<calendar.Event?> _readEvent(String calendarId, String eventId) async {
+    final request = http.Request('GET', _eventUri(calendarId, eventId));
+    final response = await _send(request);
+    if (response.statusCode == 404) return null;
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw StateError('Calendar event lookup failed with HTTP ${response.statusCode}.');
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map) throw const FormatException('Calendar event response is invalid.');
+    return calendar.Event.fromJson(Map<String, dynamic>.from(decoded));
+  }
+
+  Future<http.Response> _send(http.Request request) async =>
+      http.Response.fromStream(await _client.send(request)).timeout(requestTimeout);
+
+  Uri _eventUri(String calendarId, String eventId) => Uri.https(
+    'www.googleapis.com',
+    '/calendar/v3/calendars/${Uri.encodeComponent(calendarId)}/events/${Uri.encodeComponent(eventId)}',
+  );
+
+  bool _matchesCommand(calendar.Event event, CalendarSyncCommand command) {
+    final start = event.start?.dateTime;
+    final end = event.end?.dateTime;
+    return _managedSyncId(event) == command.syncId &&
+        event.summary == command.title &&
+        event.description == command.description &&
+        event.colorId == command.colorId &&
+        start != null && end != null &&
+        _bangkokWallTime(start) == command.start &&
+        _bangkokWallTime(end) == command.end;
+  }
+
   String _providerEventId(String syncId) {
     final digest = sha256.convert(utf8.encode(syncId));
     return 'sce${digest.toString()}';
@@ -211,6 +316,7 @@ class GoogleCalendarSyncGateway
           : _bangkokWallTime(event.end!.dateTime!),
       description: event.description,
       colorId: event.colorId,
+      etag: event.etag,
     );
   }
 
