@@ -46,6 +46,7 @@ return new class extends Migration
             $table->string('operation_type', 16);
             $table->string('status', 16)->default('prepared');
             $table->char('payload_hash', 64);
+            $table->text('payload_ciphertext');
             $table->unsignedSmallInteger('attempt_count')->default(0);
             $table->string('provider_event_id', 512)->nullable();
             $table->text('last_error')->nullable();
