@@ -95,4 +95,44 @@ void main() {
     expect((result as NetworkFailure<Schedule?>).statusCode, 401);
     expect(requestCount, 0);
   });
+  test('conditional save uses the caller revision, not the shared revision cache', () async {
+    final schedule = Schedule(id: 'roster-4', name: 'Reviewed snapshot');
+    final payload = jsonDecode(codec.encode(schedule));
+    final requests = <http.Request>[];
+    final repository = BackendScheduleRepository(
+      baseUrl: 'https://roster.example.test',
+      idTokenProvider: () async => 'test-id-token',
+      httpClient: MockClient((request) async {
+        requests.add(request);
+        if (request.method == 'GET') {
+          return http.Response(jsonEncode({
+            'data': payload,
+            'revision': 'v9:${List.filled(64, '9').join()}',
+            'state': 'live',
+          }), 200);
+        }
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        expect(body['expected_revision'], 'v7:${List.filled(64, '7').join()}');
+        return http.Response(jsonEncode({
+          'error': {
+            'code': 'schedule_revision_conflict',
+            'message': 'The Schedule changed after the reviewed snapshot.',
+          },
+          'current_revision': 'v9:${List.filled(64, '9').join()}',
+          'current_state': 'live',
+        }), 409);
+      }),
+    );
+
+    await repository.findById('roster-4');
+    final result = await repository.saveIfRevision(
+      schedule,
+      'v7:${List.filled(64, '7').join()}',
+    );
+
+    expect(result, isA<NetworkFailure<Schedule>>());
+    expect((result as NetworkFailure<Schedule>).statusCode, 409);
+    expect(requests.map((request) => request.method), ['GET', 'PUT']);
+  });
+
 }
