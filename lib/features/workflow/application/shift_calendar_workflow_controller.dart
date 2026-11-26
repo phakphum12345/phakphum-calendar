@@ -220,6 +220,15 @@ class ShiftCalendarWorkflowController extends ChangeNotifier
     return service.recoverRun(runId);
   }
 
+  /// Recovers an existing local history entry through its durable server run ID.
+  Future<ResumeSyncResult> recoverHistory(String historyId) {
+    final service = resumeSyncService;
+    if (service == null) {
+      throw StateError('Resume synchronization is not configured.');
+    }
+    return service.recoverHistory(historyId);
+  }
+
   /// Resumes failed operations recorded by the resilient executor.
   Future<ResumeSyncResult> resume(String historyId) {
     final service = resumeSyncService;
