@@ -290,6 +290,60 @@ void main() {
         DateTime(2026, 12, 15));
   });
 
+  test('resolves Excel DateTime header cells to their exact cross-month dates', () {
+    final dates = <DateTime>[
+      for (var day = 16; day <= 30; day++) DateTime(2026, 11, day),
+      for (var day = 1; day <= 15; day++) DateTime(2026, 12, day),
+    ];
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['เวร 16 พฤศจิกายน 2569 - 15 ธันวาคม 2569']),
+        ..._row(1, ['วันที่', ...dates]),
+        ..._row(2, ['ER', ...List<String>.filled(30, 'นาย ก')]),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+    final section = report.sections.single;
+
+    expect(section.dateColumns, hasLength(30));
+    expect(section.dateColumns.first.date, DateTime(2026, 11, 16));
+    expect(section.dateColumns[14].date, DateTime(2026, 11, 30));
+    expect(section.dateColumns[15].date, DateTime(2026, 12, 1));
+    expect(section.dateColumns.last.date, DateTime(2026, 12, 15));
+    expect(section.dateAnomalies, isEmpty);
+  });
+
+  test('blocks Excel DateTime header cells outside the declared date range', () {
+    final dates = <DateTime>[
+      for (var day = 16; day <= 30; day++) DateTime(2026, 11, day),
+      for (var day = 1; day <= 15; day++) DateTime(2026, 12, day),
+    ]..[15] = DateTime(2025, 12, 1);
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['เวร 16 พฤศจิกายน 2569 - 15 ธันวาคม 2569']),
+        ..._row(1, ['วันที่', ...dates]),
+        ..._row(2, ['ER', ...List<String>.filled(30, 'นาย ก')]),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+    final section = report.sections.single;
+
+    expect(section.dateAnomalies.map((item) => item.code), contains('missing_dates'));
+    expect(section.hasBlockingDateAnomalies, isTrue);
+  });
+
   test('uses a single-month tab title for multiple ordered split sections', () {
     final input = ShiftParserInput(
       spreadsheetId: 'spreadsheet',
