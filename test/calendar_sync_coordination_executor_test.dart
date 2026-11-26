@@ -160,7 +160,7 @@ void main() {
     expect(result.historyEntry.id, 'local-history-1');
     expect(result.historyEntry.serverRunId, coordination.lease.runId);
     expect(result.historyEntry.scheduleId, 'schedule-1');
-    expect(result.historyEntry.serverRunId, coordination.lease.runId);
+    expect(coordination.updates.first.attemptCount, 2);
     expect(gateway.insertCount, 1);
     expect(failed.operations, isEmpty);
     expect(coordination.recorded.single.payload['sync_id'], 'stable-sync-id');
@@ -361,7 +361,7 @@ class _FakeCalendarGateway implements CalendarSyncGateway, ConditionalCalendarSy
 class _FakeCoordinationGateway implements CalendarSyncCoordinationGateway {
   final calls = <String>[];
   final recorded = <({String operationType, String payloadHash, Map<String, Object?> payload})>[];
-  final updates = <({String status, String? providerEventId})>[];
+  final updates = <({String status, String? providerEventId, int attemptCount})>[];
   final released = <({String status})>[];
   bool rejectAcquire = false;
   CalendarSyncRunRecord? runRecord;
@@ -425,7 +425,7 @@ class _FakeCoordinationGateway implements CalendarSyncCoordinationGateway {
     String? lastError,
   }) async {
     calls.add('update:$status');
-    updates.add((status: status, providerEventId: providerEventId));
+    updates.add((status: status, providerEventId: providerEventId, attemptCount: attemptCount));
   }
 
   @override
