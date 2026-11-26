@@ -36,7 +36,7 @@ class CalendarSyncPlanBuilder {
           eventId: existing.eventId,
           command: _toCommand(candidate, calendarId),
           expectedEtag: existing.etag,
-          expectedSyncId: existing.syncId,
+          expectedSyncId: existing.providerSyncId,
         ),
       );
     }
