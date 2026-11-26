@@ -175,11 +175,12 @@ class ResilientCalendarSyncExecutor {
 
     try {
       if (coordination != null && plan.operationCount > 0) {
-        lease = await coordination.acquire(
+        final acquiredLease = await coordination.acquire(
           calendarId: plan.calendarId,
           scheduleId: plan.scheduleId,
         );
-        history = history.copyWith(serverRunId: lease.runId);
+        lease = acquiredLease;
+        history = history.copyWith(serverRunId: acquiredLease.runId);
         await _historyRepository.save(history);
       }
 
