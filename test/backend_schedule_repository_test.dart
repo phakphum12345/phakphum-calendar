@@ -79,6 +79,84 @@ void main() {
     expect((result as NetworkFailure<Schedule>).statusCode, 409);
   });
 
+  test('save keeps the revision attached to the exact snapshot after another read', () async {
+    final oldSnapshot = Schedule(id: 'roster-5', name: 'Reviewed old snapshot');
+    final newSnapshot = Schedule(id: 'roster-5', name: 'Newer snapshot');
+    final oldPayload = jsonDecode(codec.encode(oldSnapshot));
+    final newPayload = jsonDecode(codec.encode(newSnapshot));
+    var reads = 0;
+    String? putRevision;
+    final repository = BackendScheduleRepository(
+      baseUrl: 'https://roster.example.test',
+      idTokenProvider: () async => 'test-id-token',
+      httpClient: MockClient((request) async {
+        if (request.method == 'GET') {
+          reads++;
+          return http.Response(jsonEncode({
+            'data': reads == 1 ? oldPayload : newPayload,
+            'revision': reads == 1
+                ? 'v7:${List.filled(64, '7').join()}'
+                : 'v9:${List.filled(64, '9').join()}',
+            'state': 'live',
+          }), 200);
+        }
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        putRevision = body['expected_revision'] as String;
+        return http.Response(jsonEncode({
+          'error': {
+            'code': 'schedule_revision_conflict',
+            'message': 'The reviewed Schedule snapshot is stale.',
+          },
+          'current_revision': 'v9:${List.filled(64, '9').join()}',
+          'current_state': 'live',
+        }), 409);
+      }),
+    );
+
+    final old = await repository.findById('roster-5');
+    await repository.findById('roster-5');
+    final result = await repository.save((old as Success<Schedule?>).value!);
+
+    expect(result, isA<NetworkFailure<Schedule>>());
+    expect(putRevision, 'v7:${List.filled(64, '7').join()}');
+  });
+
+  test('save refuses an unobserved Schedule snapshot without making a request', () async {
+    var requestCount = 0;
+    final repository = BackendScheduleRepository(
+      baseUrl: 'https://roster.example.test',
+      idTokenProvider: () async => 'test-id-token',
+      httpClient: MockClient((request) async {
+        requestCount++;
+        return http.Response('{}', 200);
+      }),
+    );
+
+    final result = await repository.save(
+      Schedule(id: 'roster-6', name: 'Unobserved'),
+    );
+
+    expect(result, isA<PersistenceFailure<Schedule>>());
+    expect(requestCount, 0);
+  });
+
+  test('backend Schedule deletion fails closed without a caller-owned revision', () async {
+    var requestCount = 0;
+    final repository = BackendScheduleRepository(
+      baseUrl: 'https://roster.example.test',
+      idTokenProvider: () async => 'test-id-token',
+      httpClient: MockClient((request) async {
+        requestCount++;
+        return http.Response('{}', 200);
+      }),
+    );
+
+    final result = await repository.delete('roster-7');
+
+    expect(result, isA<PersistenceFailure<void>>());
+    expect(requestCount, 0);
+  });
+
   test('requires a Google ID token before sending Schedule data', () async {
     var requestCount = 0;
     final repository = BackendScheduleRepository(
