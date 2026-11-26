@@ -180,4 +180,13 @@ Regression coverage added:
 - Section-level GEN heading resolution to the explicit range.
 - A malformed X-OPD duplicate-day header is blocked while a valid PORTABLE section in the same worksheet remains convertible.
 
-Execution status: regression tests have been added but have **not yet been executed** in this environment. Formatting and static analysis remain unverified.
+## Execution evidence — 2026-11-26
+
+The following checks have now been executed against the parser changes:
+
+- Dart / Flutter quality (static analysis, full unit suite and integration tests): **PASS** at commit `6651409891716a7c787f65d746977504106de8e5` ([workflow](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45769304874)).
+- Non-mutating Dart formatting baseline: **PASS** at the same commit ([workflow](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45769305220)).
+- Web build, Linux release build, cross-platform runtime and isolated Schedule CAS contract: **PASS** at the same commit ([web](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45769304835), [Linux](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45769304707), [runtime](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45769304766), [CAS](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45769304834)).
+- Laravel Backend CI, including Pint formatting and Laravel tests: **PASS** at commit `772dea9bb0236ef251a4469fc93bbcea5432e568` ([workflow](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45769999225)).
+
+The parser source and regression tests were unchanged between the Flutter-tested commit and the later PHP-only formatting commits. The latest exact-head cross-platform workflow and pull-request gate must still be checked before release. This evidence does not authorize merge, deployment or Calendar synchronization.
