@@ -730,6 +730,11 @@ class MonthlyRosterSectionParser {
     final dated = candidates.where((text) => _tryParsePeriod(text) != null);
     if (dated.isNotEmpty) return dated.first;
 
+    // Preserve malformed explicit ranges as section evidence. Dropping them
+    // here would let the worksheet title silently replace an invalid range.
+    final explicitRange = candidates.where(_hasExplicitRangeExpression);
+    if (explicitRange.isNotEmpty) return explicitRange.first;
+
     final periodTitle = candidates.where((text) => text.contains('ประจำเดือน'));
     if (periodTitle.isNotEmpty) return periodTitle.first;
     final descriptive = candidates.where(
