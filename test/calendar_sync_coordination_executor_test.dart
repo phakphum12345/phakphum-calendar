@@ -108,6 +108,17 @@ void main() {
 
   test('recovers an interrupted insert from the encrypted durable ledger', () async {
     final history = _MemoryHistoryRepository();
+    history.entries['local-history-1'] = SyncHistoryEntry(
+      id: 'local-history-1',
+      startedAt: DateTime(2026, 11, 26, 8),
+      status: SyncHistoryStatus.failure,
+      inserted: 0,
+      updated: 0,
+      deleted: 0,
+      failed: 1,
+      scheduleId: 'schedule-1',
+      serverRunId: 'remote-run-1',
+    );
     final failed = _MemoryFailedSyncRepository();
     final gateway = _FakeCalendarGateway();
     final coordination = _FakeCoordinationGateway()
@@ -143,15 +154,32 @@ void main() {
       historyRepository: history,
       failedRepository: failed,
       coordinationGateway: coordination,
-    ).recoverRun('remote-run-1');
+    ).recoverHistory('local-history-1');
 
     expect(result.completed, isTrue);
-    expect(result.historyEntry.id, 'remote-run-1');
+    expect(result.historyEntry.id, 'local-history-1');
+    expect(result.historyEntry.serverRunId, coordination.lease.runId);
     expect(result.historyEntry.scheduleId, 'schedule-1');
     expect(result.historyEntry.serverRunId, coordination.lease.runId);
     expect(gateway.insertCount, 1);
     expect(failed.operations, isEmpty);
     expect(coordination.recorded.single.payload['sync_id'], 'stable-sync-id');
+  });
+
+  test('missing durable server run fails closed without replay', () async {
+    final gateway = _FakeCalendarGateway();
+    final coordination = _FakeCoordinationGateway();
+    await expectLater(
+      ResumeSyncService(
+        gateway: gateway,
+        historyRepository: _MemoryHistoryRepository(),
+        failedRepository: _MemoryFailedSyncRepository(),
+        coordinationGateway: coordination,
+      ).recoverRun('missing-run'),
+      throwsStateError,
+    );
+    expect(gateway.insertCount, 0);
+    expect(coordination.calls, isEmpty);
   });
 
   test('does not call Calendar when lease acquisition is rejected', () async {
