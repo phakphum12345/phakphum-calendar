@@ -5,6 +5,8 @@ import 'package:phakphum_calendar/features/calendar_engine/application/resilient
 import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_command.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_coordination_gateway.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_gateway.dart';
+import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_operation_result.dart';
+import 'package:phakphum_calendar/features/calendar_engine/application/resume_sync_service.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/failed_sync_operation.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/failed_sync_repository.dart';
 import 'package:phakphum_calendar/features/calendar_engine/domain/managed_calendar_event.dart';
@@ -48,6 +50,48 @@ void main() {
     expect(coordination.released.single.status, 'success');
     expect(coordination.calls.first, 'acquire:primary:schedule-1');
     expect(coordination.calls.last, 'release:success');
+  });
+
+  test('coordinates resumed operations under the original Schedule lease', () async {
+    final history = _MemoryHistoryRepository();
+    history.entries['history-1'] = SyncHistoryEntry(
+      id: 'history-1',
+      startedAt: DateTime(2026, 11, 26, 8),
+      status: SyncHistoryStatus.failure,
+      inserted: 0,
+      updated: 0,
+      deleted: 0,
+      failed: 1,
+      scheduleId: 'schedule-1',
+    );
+    final command = CalendarSyncCommand(
+      syncId: 'resume-sync-id',
+      title: 'OPD',
+      start: DateTime(2026, 11, 26, 8),
+      end: DateTime(2026, 11, 26, 16),
+    );
+    final failed = _MemoryFailedSyncRepository([
+      FailedSyncOperation(
+        historyId: 'history-1',
+        type: CalendarSyncOperationType.insert,
+        referenceId: command.syncId,
+        attempts: 1,
+        command: command,
+      ),
+    ]);
+    final coordination = _FakeCoordinationGateway();
+    final result = await ResumeSyncService(
+      gateway: _FakeCalendarGateway(),
+      historyRepository: history,
+      failedRepository: failed,
+      coordinationGateway: coordination,
+    ).resume('history-1');
+
+    expect(result.completed, isTrue);
+    expect(result.historyEntry.scheduleId, 'schedule-1');
+    expect(failed.operations, isEmpty);
+    expect(coordination.updates.map((value) => value.status), ['running', 'succeeded']);
+    expect(coordination.released.single.status, 'success');
   });
 
   test('does not call Calendar when lease acquisition is rejected', () async {
@@ -197,15 +241,24 @@ class _MemoryHistoryRepository implements SyncHistoryRepository {
 }
 
 class _MemoryFailedSyncRepository implements FailedSyncRepository {
-  @override
-  Future<void> clearHistory(String historyId) async {}
+  _MemoryFailedSyncRepository([this.operations = const []]);
+
+  List<FailedSyncOperation> operations;
 
   @override
-  Future<List<FailedSyncOperation>> listForHistory(String historyId) async => [];
+  Future<void> clearHistory(String historyId) async {
+    operations = [];
+  }
+
+  @override
+  Future<List<FailedSyncOperation>> listForHistory(String historyId) async =>
+      operations;
 
   @override
   Future<void> replaceForHistory(
     String historyId,
     List<FailedSyncOperation> operations,
-  ) async {}
+  ) async {
+    this.operations = List.of(operations);
+  }
 }
