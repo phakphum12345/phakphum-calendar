@@ -28,6 +28,7 @@ This file is the central map of project documentation. Prefer updating an existi
 - [Durable history and resume](docs/DURABLE_HISTORY_AND_RESUME.md)
 - [Google setup](docs/GOOGLE_SETUP.md)
 - [Platform support](docs/PLATFORM_SUPPORT.md)
+- [End-to-end roster and sync completion plan (2026-11-26)](docs/END_TO_END_SYNC_COMPLETION_PLAN_2026-11-26.md)
 
 These documents collectively cover the calendar engine and synchronization topics; a second `CALENDAR_ENGINE.md` or `SYNCHRONIZATION.md` is not created to avoid duplicate guidance.
 

@@ -28,8 +28,8 @@ on:
 permissions:
   contents: read
 
-# iOS owns its own runner lifecycle. No dependency on other platform workflows.
-# Unique run IDs ensure that queued builds are not cancelled by later PR updates.
+# iOS owns its own runner lifecycle. Keep one current Xcode run per PR/ref so
+# obsolete commits do not accumulate in the macOS runner queue.
 concurrency:
   group: ios-xcode-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   # Let a running Xcode build finish; GitHub replaces only the older pending run.
