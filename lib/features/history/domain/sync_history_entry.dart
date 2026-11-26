@@ -11,6 +11,7 @@ class SyncHistoryEntry {
     required this.failed,
     this.finishedAt,
     this.message,
+    this.scheduleId = 'unknown',
   });
 
   final String id;
@@ -22,6 +23,7 @@ class SyncHistoryEntry {
   final int deleted;
   final int failed;
   final String? message;
+  final String scheduleId;
 
   SyncHistoryEntry copyWith({
     DateTime? finishedAt,
@@ -31,6 +33,7 @@ class SyncHistoryEntry {
     int? deleted,
     int? failed,
     String? message,
+    String? scheduleId,
   }) {
     return SyncHistoryEntry(
       id: id,
@@ -42,6 +45,7 @@ class SyncHistoryEntry {
       deleted: deleted ?? this.deleted,
       failed: failed ?? this.failed,
       message: message ?? this.message,
+      scheduleId: scheduleId ?? this.scheduleId,
     );
   }
 }
