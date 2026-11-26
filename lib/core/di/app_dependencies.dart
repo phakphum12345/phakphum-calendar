@@ -423,7 +423,7 @@ class AppDependencies {
           'An existing Schedule can only be replaced through the reviewed Grid import workflow.',
         );
       }
-      final revision = repository.currentRevisionFor(schedule.id);
+      final revision = repository.revisionForAbsentSchedule(schedule.id);
       if (revision == null || revision.trim().isEmpty) {
         return const PersistenceFailure(
           'The backend did not provide an absent-Schedule revision.',
