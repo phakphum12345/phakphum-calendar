@@ -23,6 +23,8 @@ Route::prefix('v1')->group(function (): void {
     Route::middleware(['throttle:120,1', 'google.account'])->group(function (): void {
         Route::get('/calendar-sync/runs', [CalendarSyncCoordinationController::class, 'index'])
             ->name('api.v1.calendar-sync.runs.index');
+        Route::get('/calendar-sync/runs/{runId}', [CalendarSyncCoordinationController::class, 'show'])
+            ->whereUuid('runId')->name('api.v1.calendar-sync.runs.show');
         Route::get('/calendar-sync/runs/{runId}/operations', [CalendarSyncCoordinationController::class, 'operations'])
             ->whereUuid('runId')->name('api.v1.calendar-sync.runs.operations.index');
         Route::post('/calendar-sync/leases', [CalendarSyncCoordinationController::class, 'acquire'])
