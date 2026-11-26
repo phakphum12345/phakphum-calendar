@@ -56,9 +56,11 @@ distributed ID collisions are not guaranteed to be detected at creation time.
 Calendar update/delete plans now carry the provider ETag and the provider-side
 managed Sync ID observed during preview. The Google gateway re-reads the exact
 event, verifies its identity, and sends the mutation with `If-Match`. A stale
-ETag or changed managed identity fails closed. An ambiguous update is reconciled
-by reading the event and comparing its managed identity and desired content; an
-ambiguous delete is reconciled by checking whether the event still exists.
+ETag or changed managed identity fails closed. Conditional updates preserve
+provider-owned Calendar fields and the existing `--- Timeline ---` audit section.
+An ambiguous update is reconciled by reading the event and comparing its managed
+identity and normalized desired content; an ambiguous delete is reconciled by
+checking whether the event still exists.
 
 This protects individual provider mutations from stale concurrent writes; it
 does not serialize whole sync runs or provide a shared cross-device operation
