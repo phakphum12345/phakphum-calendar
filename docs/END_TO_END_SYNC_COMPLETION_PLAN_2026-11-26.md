@@ -941,3 +941,14 @@ No implementation PR merged. PR #192's core and cross-platform test gates are gr
 - Apple jobs have moved from pending/queued into in-progress. This is allocation/progress only, not a successful build result. Do not merge until the exact-head Apple jobs and remaining CAS/Advisory checks complete successfully.
 
 No implementation PR merged. No production data writes or deployment.
+
+
+### 8.50 Live execution checkpoint — 2026-11-27 (native Xcode builds started)
+
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: macOS and iOS Xcode toolchain verification, Flutter setup and dependency resolution passed. Generated Xcode project verification passed; both native macOS and unsigned iOS application builds are now in progress. The optional Google iOS OAuth configuration step also completed successfully.
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: macOS Xcode toolchain/project verification passed and the macOS application build is in progress. The unsigned iOS build has also started and is in progress.
+- The PR #192 macOS production-backend requirement step is skipped on pull_request by workflow condition; this is expected for PR validation and is not evidence of a configured production backend. Production release still requires HTTPS `ORGANIZATION_API_BASE_URL`.
+- Schedule CAS Storage Spike on PR #192 remains queued for macOS after Windows/Ubuntu success.
+- All these Xcode jobs remain in progress; bundle verification, packaging and artifact upload have not completed.
+
+No implementation PR merged. No production data writes or deployment. Native build success requires completed Xcode build, bundle verification, package and artifact upload steps.
