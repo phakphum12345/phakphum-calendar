@@ -35,6 +35,7 @@ class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionS
   final ScheduleJsonCodec codec;
   final Map<String, String> _revisions = {};
   final Map<String, String> _snapshotRevisions = {};
+  final Map<String, String> _absentRevisions = {};
 
   @override
   String? currentRevisionFor(String scheduleId) => _revisions[scheduleId];
@@ -42,6 +43,10 @@ class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionS
   @override
   String? revisionForSnapshot(Schedule schedule) =>
       _snapshotRevisions[_snapshotKey(schedule)];
+
+  @override
+  String? revisionForAbsentSchedule(String scheduleId) =>
+      _absentRevisions[scheduleId];
 
   static Uri _normalizeBaseUri(String value) {
     final parsed = Uri.tryParse(value.trim());
@@ -68,7 +73,12 @@ class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionS
         throw const FormatException('Schedule response is missing its revision or state.');
       }
       _revisions[id] = revision;
-      if (state == 'absent' || state == 'deleted') return const Success(null);
+      if (state == 'absent') {
+        _absentRevisions[id] = revision;
+        return const Success(null);
+      }
+      _absentRevisions.remove(id);
+      if (state == 'deleted') return const Success(null);
       if (state != 'live' || response['data'] is! Map) {
         throw const FormatException('The backend returned an invalid Schedule state.');
       }
@@ -178,6 +188,7 @@ class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionS
       throw const FormatException('The saved Schedule identity does not match the request.');
     }
     _revisions[id] = revision;
+    _absentRevisions.remove(id);
     _rememberSnapshotRevision(schedule, revision);
     return Success(schedule);
   }
