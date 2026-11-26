@@ -27,6 +27,7 @@ abstract interface class CalendarSyncCoordinationGateway {
     required String operationKey,
     required String operationType,
     required String payloadHash,
+    required Map<String, Object?> operationPayload,
   });
 
   Future<void> updateOperation({
