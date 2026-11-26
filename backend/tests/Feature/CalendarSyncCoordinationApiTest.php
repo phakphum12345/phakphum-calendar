@@ -80,9 +80,13 @@ class CalendarSyncCoordinationApiTest extends TestCase
             'lease_token' => $lease['lease_token'],
             'operation_key' => 'owner-private-op',
             'operation_type' => 'insert',
-            'payload_hash' => hash('sha256', 'owner-private-payload'),
+            'operation_payload' => ['sync_id' => 'owner-private-op', 'title' => 'Private shift'],
+            'payload_hash' => hash('sha256', json_encode(['sync_id' => 'owner-private-op', 'title' => 'Private shift'])),
         ], $this->auth('alice-token'))->assertCreated();
 
+        $this->getJson('/api/v1/calendar-sync/runs/00000000-0000-4000-8000-000000000008/operations', $this->auth('alice-token'))
+            ->assertOk()
+            ->assertJsonPath('data.0.operation_payload.sync_id', 'owner-private-op');
         $this->getJson('/api/v1/calendar-sync/runs/00000000-0000-4000-8000-000000000008/operations', $this->auth('bob-token'))
             ->assertNotFound();
     }
@@ -95,7 +99,8 @@ class CalendarSyncCoordinationApiTest extends TestCase
             'lease_token' => $lease['lease_token'],
             'operation_key' => 'event-sync-1',
             'operation_type' => 'insert',
-            'payload_hash' => hash('sha256', 'same-event-payload'),
+            'operation_payload' => ['sync_id' => 'same-event-payload'],
+            'payload_hash' => hash('sha256', json_encode(['sync_id' => 'same-event-payload'])),
         ];
 
         $this->postJson('/api/v1/calendar-sync/leases/00000000-0000-4000-8000-000000000005/operations', $payload, $this->auth('alice-token'))
@@ -105,7 +110,8 @@ class CalendarSyncCoordinationApiTest extends TestCase
 
         $this->postJson('/api/v1/calendar-sync/leases/00000000-0000-4000-8000-000000000005/operations', [
             ...$payload,
-            'payload_hash' => hash('sha256', 'different-event-payload'),
+            'operation_payload' => ['sync_id' => 'different-event-payload'],
+            'payload_hash' => hash('sha256', json_encode(['sync_id' => 'different-event-payload'])),
         ], $this->auth('alice-token'))->assertConflict();
 
         $this->patchJson('/api/v1/calendar-sync/leases/00000000-0000-4000-8000-000000000005/operations/event-sync-1', [
@@ -138,7 +144,8 @@ class CalendarSyncCoordinationApiTest extends TestCase
             'lease_token' => $first['lease_token'],
             'operation_key' => 'prepared-before-expiry',
             'operation_type' => 'insert',
-            'payload_hash' => hash('sha256', 'original-payload'),
+            'operation_payload' => ['sync_id' => 'original-payload'],
+            'payload_hash' => hash('sha256', json_encode(['sync_id' => 'original-payload'])),
         ], $this->auth('alice-token'))->assertCreated();
 
         $this->travel(61)->seconds();
@@ -154,7 +161,8 @@ class CalendarSyncCoordinationApiTest extends TestCase
             'lease_token' => $first['lease_token'],
             'operation_key' => 'late-write-after-reclaim',
             'operation_type' => 'insert',
-            'payload_hash' => hash('sha256', 'late-payload'),
+            'operation_payload' => ['sync_id' => 'late-payload'],
+            'payload_hash' => hash('sha256', json_encode(['sync_id' => 'late-payload'])),
         ], $this->auth('alice-token'))
             ->assertConflict()
             ->assertJsonPath('error.code', 'calendar_sync_lease_lost');
