@@ -103,6 +103,8 @@ rebuilds unfinished work, and resumes it under a newly acquired Calendar lease.
 provider event with the desired command before enforcing the original ETag;
 deletes treat an already-missing event as complete and reject changed events.
 
+A rejected lease acquisition is recorded as a failed local history entry before the error is returned; no provider operation is started. Unexpected execution errors persist the confirmed counts and leave the server ledger available for explicit reconciliation. Lease release is best-effort and an expired lease cannot be released by its former owner.
+
 Recovery is explicit and is not automatically replayed at application startup.
 The user-facing history and failed-operation queue remain local
 SharedPreferences views; the server ledger is the durable recovery source.
