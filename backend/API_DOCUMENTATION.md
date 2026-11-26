@@ -37,6 +37,7 @@ These routes use the existing `google.account` middleware and the 120 requests/m
 | POST | `/calendar-sync/leases/{runId}/operations` | Record an idempotent operation intent |
 | PATCH | `/calendar-sync/leases/{runId}/operations/{operationKey}` | Update operation status and provider result |
 | GET | `/calendar-sync/runs` | Read the caller's durable run history |
+| GET | `/calendar-sync/runs/{runId}` | Read one owner-scoped durable synchronization run |
 | GET | `/calendar-sync/runs/{runId}/operations` | Read operation records for one owned run |
 
 Lease acquisition requires `run_id` (UUID), `calendar_id`, `schedule_id`, and `client_instance_id`; `ttl_seconds` is optional and bounded to 15–300 seconds (default 60). The database enforces one active lease per authenticated owner and Calendar ID. A competing active run receives HTTP 409. An expired lease may be reclaimed; a previous lease token cannot renew or release the new owner's run.
