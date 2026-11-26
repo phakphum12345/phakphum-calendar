@@ -55,6 +55,7 @@ class ScheduleApiTest extends TestCase
             ->assertJsonPath('revision', $updated['revision']);
     }
 
+    // Keep unexpected storage failures distinct from stale-revision conflicts.
     public function test_schedule_insert_database_failure_is_not_reported_as_a_revision_conflict(): void
     {
         $this->signIn('alice-token');
