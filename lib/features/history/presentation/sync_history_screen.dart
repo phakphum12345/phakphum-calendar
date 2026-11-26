@@ -143,7 +143,7 @@ class _SyncHistoryEntryTile extends StatelessWidget {
         'แก้ไข ${entry.updated} · '
         'ลบ ${entry.deleted} · '
         'ล้มเหลว ${entry.failed}'
-        '${entry.serverRunId == null ? '\nไม่มี Server Run ID: กู้คืนข้ามอุปกรณ์ไม่ได้' : '\nServer run: ${entry.serverRunId}'}',
+        '${entry.serverRunId != null ? '\nServer run: ${entry.serverRunId}' : entry.status == SyncHistoryStatus.success ? '' : '\nไม่มี Server Run ID: กู้คืนข้ามอุปกรณ์ไม่ได้'}',
       ),
       isThreeLine: true,
       trailing: canRecover
