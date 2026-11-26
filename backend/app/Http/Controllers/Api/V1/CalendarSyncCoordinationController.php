@@ -218,6 +218,7 @@ class CalendarSyncCoordinationController extends Controller
                 ->where('owner_user_id', $request->user()->id)
                 ->where('run_id', $runId)
                 ->where('lease_token', $data['lease_token'])
+                ->where('expires_at', '>', $now)
                 ->lockForUpdate()
                 ->first();
             if ($lease === null) {
