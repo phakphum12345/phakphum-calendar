@@ -30,7 +30,7 @@ class CalendarSyncCoordinationController extends Controller
                 ->lockForUpdate()
                 ->first();
 
-            if ($lease !== null && $lease->expires_at > $now->toDateTimeString()) {
+            if ($lease !== null && Carbon::parse($lease->expires_at)->isFuture()) {
                 if ($lease->run_id === $data['run_id'] &&
                     $lease->client_instance_id === $data['client_instance_id'] &&
                     $lease->schedule_id === $data['schedule_id']) {
