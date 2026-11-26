@@ -148,6 +148,7 @@ void main() {
     expect(result.completed, isTrue);
     expect(result.historyEntry.id, 'remote-run-1');
     expect(result.historyEntry.scheduleId, 'schedule-1');
+    expect(result.historyEntry.serverRunId, coordination.lease.runId);
     expect(gateway.insertCount, 1);
     expect(failed.operations, isEmpty);
     expect(coordination.recorded.single.payload['sync_id'], 'stable-sync-id');
