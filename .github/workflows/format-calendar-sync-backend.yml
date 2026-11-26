@@ -1,0 +1,71 @@
+name: Format Calendar Sync Backend
+
+on:
+  push:
+    branches:
+      - fix/calendar-sync-etag-concurrency-2026-11-26
+    paths:
+      - "backend/app/Http/Controllers/Api/V1/CalendarSyncCoordinationController.php"
+      - "backend/database/migrations/2026_11_26_000001_create_calendar_sync_coordination.php"
+      - "backend/routes/api.php"
+      - "backend/tests/Feature/CalendarSyncCoordinationApiTest.php"
+      - ".github/workflows/format-calendar-sync-backend.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  format-and-verify:
+    name: Format and verify Calendar coordination API
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: ctype, curl, dom, fileinfo, filter, hash, mbstring, openssl, pdo, pdo_sqlite, session, tokenizer, xml
+          coverage: none
+          tools: composer:v2
+
+      - name: Install exact locked dependencies
+        working-directory: backend
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Verify dependency audit
+        working-directory: backend
+        run: composer audit --locked
+
+      - name: Format the coordination API and tests
+        working-directory: backend
+        run: vendor/bin/pint app/Http/Controllers/Api/V1/CalendarSyncCoordinationController.php database/migrations/2026_11_26_000001_create_calendar_sync_coordination.php routes/api.php tests/Feature/CalendarSyncCoordinationApiTest.php
+
+      - name: Run Laravel tests
+        working-directory: backend
+        env:
+          APP_ENV: testing
+          APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+          CACHE_STORE: array
+          GOOGLE_ALLOWED_CLIENT_IDS: test-server-client-id
+        run: |
+          touch .env
+          php artisan test
+
+      - name: Commit only formatted coordination files
+        run: |
+          if git diff --quiet -- backend/app/Http/Controllers/Api/V1/CalendarSyncCoordinationController.php backend/database/migrations/2026_11_26_000001_create_calendar_sync_coordination.php backend/routes/api.php backend/tests/Feature/CalendarSyncCoordinationApiTest.php; then
+            echo "Coordination files already formatted."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -- backend/app/Http/Controllers/Api/V1/CalendarSyncCoordinationController.php backend/database/migrations/2026_11_26_000001_create_calendar_sync_coordination.php backend/routes/api.php backend/tests/Feature/CalendarSyncCoordinationApiTest.php
+            git commit -m "style(sync): format coordination API and tests"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
