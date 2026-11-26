@@ -836,3 +836,14 @@ No implementation PR merged. No production data writes or deployment. The six-mo
 - PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: fresh workflow runs queued; the prior row-33 test head passed its core cross-platform suite. The new six-month multi-department test remains unverified until exact-head CI finishes.
 
 No implementation PR merged. No production notification sent, no Calendar write, no Schedule write or deployment. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
+
+
+### 8.39 Live execution checkpoint — 2026-11-27 (PR #196 core matrix green)
+
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: Backend, Dart Format, Dependency Security, Web, Linux, Android, Windows, Auto Detect CI, Cross-platform Runtime and Pull Request Gate all completed successfully.
+- iOS Advisory Evidence remains in progress. Native iOS and macOS Xcode jobs remain pending. The implementation has no Apple-build certification yet.
+- The compatibility Calendar workflow now requires stable Schedule identity through the AppController, workflow controller, facade, coordinator and plan builder. Exact-head non-Apple CI and PR Gate validate these code paths.
+- PR #191 head `6787fe710ceb351581eb42c9b7045c49a93c9cfb`: Backend, Linux, Web and Dependency Security passed; Windows, Android, Cross-platform Runtime, PR Gate and Auto Detect remained in progress.
+- PR #192 latest head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: all workflows were still queued/pending at the latest poll because a new six-month multi-department regression commit had restarted CI.
+
+No implementation PR merged. No production Calendar writes or deployment. Apple builds and remaining current-head CI are still required.
