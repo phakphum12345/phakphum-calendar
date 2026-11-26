@@ -32,6 +32,7 @@ void main() {
           start: start,
           end: end,
           etag: 'etag-update',
+          providerSyncId: 'update',
         ),
         ManagedCalendarEvent(
           eventId: 'google-delete',
@@ -40,6 +41,7 @@ void main() {
           start: start,
           end: end,
           etag: 'etag-delete',
+          providerSyncId: 'delete',
         ),
       ],
     );
