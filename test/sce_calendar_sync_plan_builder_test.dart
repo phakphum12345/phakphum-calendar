@@ -44,8 +44,10 @@ void main() {
           providerSyncId: 'delete',
         ),
       ],
+      scheduleId: 'schedule-1',
     );
 
+    expect(plan.scheduleId, 'schedule-1');
     expect(plan.inserts.single.syncId, 'add');
     expect(plan.updates.single.eventId, 'google-update');
     expect(plan.updates.single.expectedEtag, 'etag-update');
