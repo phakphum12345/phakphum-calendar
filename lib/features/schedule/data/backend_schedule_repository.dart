@@ -159,7 +159,7 @@ class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionS
 
   @override
   Future<Result<Schedule>> save(Schedule schedule) async {
-    final expectedRevision = _snapshotRevisions[_snapshotKey(schedule)];
+    final expectedRevision = _snapshotRevisions[schedule];
     if (expectedRevision == null) {
       return const PersistenceFailure(
         'Cannot save a Schedule snapshot without the revision captured when it was loaded.',
