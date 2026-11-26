@@ -242,25 +242,36 @@ String _ledgerOperationKey(CalendarSyncOperationType type, String referenceId) {
 
 Map<String, Object?> _operationPayload(FailedSyncOperation item) {
   final command = item.command;
-  final payload = <String, Object?>{
+  if (item.type == CalendarSyncOperationType.insert) {
+    if (command == null) throw StateError('Insert command missing.');
+    return _commandPayload(command);
+  }
+  if (item.type == CalendarSyncOperationType.update) {
+    if (command == null) throw StateError('Update command missing.');
+    return {
+      'event_id': item.eventId,
+      'expected_etag': item.expectedEtag,
+      'expected_sync_id': item.expectedSyncId,
+      ..._commandPayload(command),
+    };
+  }
+  return {
     'event_id': item.eventId,
     'calendar_id': item.calendarId,
     'expected_etag': item.expectedEtag,
     'expected_sync_id': item.expectedSyncId,
   };
-  if (command != null) {
-    payload.addAll({
-      'sync_id': command.syncId,
-      'title': command.title,
-      'start': command.start.toIso8601String(),
-      'end': command.end.toIso8601String(),
-      'description': command.description,
-      'color_id': command.colorId,
-      'command_calendar_id': command.calendarId,
-    });
-  }
-  return payload;
 }
+
+Map<String, Object?> _commandPayload(CalendarSyncCommand command) => {
+  'sync_id': command.syncId,
+  'title': command.title,
+  'start': command.start.toIso8601String(),
+  'end': command.end.toIso8601String(),
+  'description': command.description,
+  'color_id': command.colorId,
+  'calendar_id': command.calendarId,
+};
 
 String _payloadHash(FailedSyncOperation item) {
   return sha256.convert(utf8.encode(_canonicalJson(_operationPayload(item)))).toString();
