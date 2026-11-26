@@ -85,7 +85,9 @@ are wired to this API when `ORGANIZATION_API_BASE_URL` is configured. The
 executor acquires a lease before provider mutations, heartbeats between
 operations, records a stable operation key and payload hash, updates the
 operation outcome/provider event ID, and releases the lease with the final run
-status. The reviewed Schedule ID is carried into the immutable sync plan and
+status. Coordination HTTP calls have a 15-second timeout. The server ledger stores
+only safe diagnostic codes (for example `provider_timeout` or
+`stale_precondition`), never raw provider exception text or event content. The reviewed Schedule ID is carried into the immutable sync plan and
 persisted with local history. Resume acquires the same Calendar lease and
 records each resumed operation using that original Schedule ID. Legacy history
 entries without a Schedule ID fail closed in server-coordinated mode.
