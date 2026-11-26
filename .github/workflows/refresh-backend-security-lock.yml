@@ -1,0 +1,82 @@
+name: Refresh Backend Security Lock
+
+on:
+  push:
+    branches:
+      - feat/universal-roster-grid-reconciled-2026-11-25
+    paths:
+      - "backend/composer.lock"
+      - ".github/workflows/refresh-backend-security-lock.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: backend-security-lock-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  refresh-and-verify:
+    name: Resolve patched Symfony dependencies and verify Laravel
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: backend
+    env:
+      APP_ENV: testing
+      APP_KEY: base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ":memory:"
+      CACHE_STORE: array
+      GOOGLE_ALLOWED_CLIENT_IDS: test-server-client-id
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up PHP 8.4
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.4"
+          extensions: ctype, curl, dom, fileinfo, filter, hash, mbstring, openssl, pdo, pdo_sqlite, session, tokenizer, xml
+          coverage: none
+          tools: composer:v2
+
+      - name: Prepare empty test environment
+        run: touch .env
+
+      - name: Validate Composer manifest
+        run: composer validate --strict
+
+      - name: Update only vulnerable Symfony packages and required dependencies
+        run: composer update symfony/http-kernel symfony/mailer symfony/routing --with-dependencies --with-all-dependencies --no-interaction --prefer-dist --no-progress
+
+      - name: Verify locked dependency audit
+        run: composer audit --locked
+
+      - name: Verify install from the generated lockfile
+        run: composer install --locked --no-interaction --prefer-dist --no-progress
+
+      - name: Check PHP formatting
+        run: vendor/bin/pint --test app config database routes tests
+
+      - name: Check Laravel bootstrap syntax
+        run: php -l bootstrap/app.php
+
+      - name: Run Laravel tests
+        run: php artisan test
+
+      - name: Commit the verified lockfile only
+        working-directory: .
+        run: |
+          if git diff --quiet -- backend/composer.lock; then
+            echo "Composer lockfile is already current."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add -- backend/composer.lock
+            git commit -m "fix(deps): update vulnerable Symfony packages"
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
