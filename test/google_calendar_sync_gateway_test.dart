@@ -293,4 +293,51 @@ void main() {
     expect(requests.map((request) => request.method), ['GET', 'DELETE']);
   });
 
+
+  test('conditional mutation can reconcile a reviewed untagged legacy event by ETag', () async {
+    final requests = <http.Request>[];
+    final client = MockClient((request) async {
+      requests.add(request);
+      if (request.method == 'GET') {
+        return http.Response(jsonEncode({
+          'id': 'legacy-event',
+          'etag': 'legacy-etag-1',
+          'summary': 'Old title',
+          'start': {'dateTime': '2026-11-26T01:00:00Z'},
+          'end': {'dateTime': '2026-11-26T09:00:00Z'},
+        }), 200, headers: {'content-type': 'application/json'});
+      }
+      if (request.method == 'PUT') {
+        expect(request.headers['if-match'], 'legacy-etag-1');
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        expect(body['extendedProperties']['private']['sceSyncId'], 'sync-legacy');
+        return http.Response(jsonEncode({
+          'id': 'legacy-event',
+          'etag': 'legacy-etag-2',
+          'summary': 'New title',
+          'start': {'dateTime': '2026-11-26T01:00:00Z'},
+          'end': {'dateTime': '2026-11-26T09:00:00Z'},
+          'extendedProperties': {
+            'private': {'sceSyncId': 'sync-legacy'},
+          },
+        }), 200, headers: {'content-type': 'application/json'});
+      }
+      return http.Response('', 500);
+    });
+    final gateway = GoogleCalendarSyncGateway(client);
+    final result = await gateway.updateConditionally(
+      eventId: 'legacy-event',
+      expectedEtag: 'legacy-etag-1',
+      expectedSyncId: null,
+      command: CalendarSyncCommand(
+        syncId: 'sync-legacy',
+        title: 'New title',
+        start: DateTime(2026, 11, 26, 8),
+        end: DateTime(2026, 11, 26, 16),
+      ),
+    );
+    expect(result.providerSyncId, 'sync-legacy');
+    expect(requests.map((request) => request.method), ['GET', 'PUT']);
+  });
+
 }
