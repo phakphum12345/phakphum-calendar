@@ -465,7 +465,7 @@ class ShiftTransactionApiTest extends TestCase
         $this->postJson('/api/v1/shift-transactions', $payload, [
             'Authorization' => 'Bearer alice-token',
             'Idempotency-Key' => 'notification-lifecycle',
-        ])->assertOk();
+        ])->assertCreated();
         $this->assertSame(
             1,
             DB::table('notification_outbox')
