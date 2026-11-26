@@ -429,7 +429,7 @@ class AppDependencies {
       final revision = revisionSource.revisionForAbsentSchedule(schedule.id);
       if (revision == null || revision.trim().isEmpty) {
         return const PersistenceFailure(
-          'The backend did not provide an absent-Schedule revision.',
+          'The Schedule repository did not provide an absent-Schedule revision.',
         );
       }
       return conditionalWriter.saveIfRevision(schedule, revision);
