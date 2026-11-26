@@ -47,6 +47,9 @@ class ResumeSyncService {
     }
 
     final run = await coordination.getRun(runId);
+    if (run == null) {
+      throw StateError('Durable Calendar sync run was not found for this account.');
+    }
     final ledger = await coordination.listOperations(runId);
     final succeeded = ledger.where((item) => item.status == 'succeeded');
     final pending = ledger.where((item) => item.status != 'succeeded').toList();
@@ -69,6 +72,7 @@ class ResumeSyncService {
           ? 'All durable Calendar operations are already complete.'
           : 'Recovered ${recovered.length} unfinished operation(s) from the durable ledger.',
       scheduleId: run.scheduleId,
+      serverRunId: run.runId,
     );
 
     await _historyRepository.save(history);
@@ -265,6 +269,7 @@ class ResumeSyncService {
         message: remaining.isEmpty
             ? 'All failed operations resumed successfully.'
             : '${remaining.length} operation(s) still failed.',
+        serverRunId: lease?.runId ?? original.serverRunId,
       );
       await _historyRepository.save(history);
       leaseStatus = remaining.isEmpty ? 'success' : 'partial_success';
