@@ -124,7 +124,7 @@ void main() {
           operationKey: 'insert:stable-sync-id',
           operationType: 'insert',
           status: 'running',
-          payloadHash: 'a' * 64,
+          payloadHash: List.filled(64, 'a').join(),
           operationPayload: {
             'sync_id': 'stable-sync-id',
             'title': 'OPD',
