@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Contracts\GoogleIdentityTokenVerifier;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\Fakes\FakeGoogleIdentityTokenVerifier;
 use Tests\TestCase;
 
@@ -74,7 +76,6 @@ class ScheduleApiTest extends TestCase
         }
 
         $this->assertDatabaseMissing('schedule_records', [
-            'owner_user_id' => 1,
             'schedule_id' => 'insert-failure',
         ]);
     }
