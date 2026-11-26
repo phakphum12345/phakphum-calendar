@@ -71,6 +71,11 @@ class SyncHistoryController extends ChangeNotifier implements ControllerState {
       return true;
     } catch (error) {
       _recoveryMessage = 'กู้คืนไม่สำเร็จ: $error';
+      try {
+        _entries = await _repository.list();
+      } catch (_) {
+        // Keep the last visible history if the local store is unavailable.
+      }
       return false;
     } finally {
       _recoveringHistoryId = null;
