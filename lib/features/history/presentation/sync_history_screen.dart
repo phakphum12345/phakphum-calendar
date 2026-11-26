@@ -131,7 +131,7 @@ class _SyncHistoryEntryTile extends StatelessWidget {
     final recovering = controller.recoveringHistoryId == entry.id;
     final canRecover = controller.hasRecoveryAction &&
         entry.status != SyncHistoryStatus.success &&
-        (entry.failed > 0 || entry.serverRunId != null);
+        entry.serverRunId != null;
 
     return ListTile(
       contentPadding: EdgeInsets.zero,
@@ -143,7 +143,7 @@ class _SyncHistoryEntryTile extends StatelessWidget {
         'แก้ไข ${entry.updated} · '
         'ลบ ${entry.deleted} · '
         'ล้มเหลว ${entry.failed}'
-        '${entry.serverRunId == null ? '' : '\nServer run: ${entry.serverRunId}'}',
+        '${entry.serverRunId == null ? '\nไม่มี Server Run ID: กู้คืนข้ามอุปกรณ์ไม่ได้' : '\nServer run: ${entry.serverRunId}'}',
       ),
       isThreeLine: true,
       trailing: canRecover
@@ -169,10 +169,8 @@ class _SyncHistoryEntryTile extends StatelessWidget {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('ยืนยันการกู้คืนการซิงก์'),
-        content: Text(
-          entry.serverRunId == null
-              ? 'ระบบจะตรวจสอบคิวรายการที่ล้มเหลวในเครื่องและลองทำต่อ โดยไม่เริ่มซิงก์รายการใหม่ทั้งหมด'
-              : 'ระบบจะอ่านรายการที่ยังไม่สำเร็จจาก Server Ledger และตรวจสอบสถานะ Google Calendar ก่อนทำต่อ จะไม่เล่นรายการซ้ำโดยไม่ตรวจสอบ',
+        content: const Text(
+          'ระบบจะอ่านรายการที่ยังไม่สำเร็จจาก Server Ledger และตรวจสอบสถานะ Google Calendar ก่อนทำต่อ จะไม่เล่นรายการซ้ำโดยไม่ตรวจสอบ',
         ),
         actions: [
           TextButton(
