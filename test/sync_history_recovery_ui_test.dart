@@ -54,6 +54,28 @@ void main() {
     controller.dispose();
   });
 
+  testWidgets('local-only history does not expose cross-session recovery', (
+    tester,
+  ) async {
+    final entry = _failedEntry().copyWith(serverRunId: null);
+    final controller = SyncHistoryController(
+      _MemorySyncHistoryRepository([entry]),
+      recoverHistory: (_) async {},
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SyncHistoryPanel(controllerFactory: () => controller),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('กู้คืน'), findsNothing);
+    expect(find.textContaining('ไม่มี Server Run ID'), findsOneWidget);
+  });
+
   testWidgets('history panel requires confirmation before recovery', (
     tester,
   ) async {
