@@ -176,7 +176,7 @@ class ResumeSyncService {
               operationKey: operationKey,
               status: 'failed',
               attemptCount: item.attempts + 1,
-              lastError: error.toString(),
+              lastError: 'resume_operation_exception',
             );
           }
           remaining.add(
