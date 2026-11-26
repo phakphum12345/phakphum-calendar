@@ -46,7 +46,6 @@ class CalendarSyncCoordinator {
   Future<CalendarSyncPreparation> prepareSchedule(
     Schedule schedule, {
     String calendarId = 'primary',
-    String scheduleId = 'unknown',
   }) async {
     final desired = scheduleMapper.map(schedule);
     final range = _range(desired);
@@ -142,6 +141,7 @@ class CalendarSyncCoordinator {
     required DateTime timeMin,
     required DateTime timeMax,
     String calendarId = 'primary',
+    String scheduleId = 'unknown',
   }) async {
     final existing = await _gateway.listManagedEvents(
       timeMin: timeMin,
