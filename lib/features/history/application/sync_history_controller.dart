@@ -35,10 +35,13 @@ class SyncHistoryController extends ChangeNotifier implements ControllerState {
   bool get loading => _isLoading || _recoveringHistoryId != null;
 
   @override
-  Object? get error => _message ?? _recoveryMessage;
+  Object? get error => _message ??
+      (_recoveryMessage?.startsWith('กู้คืนไม่สำเร็จ') == true
+          ? _recoveryMessage
+          : null);
 
   @override
-  bool get success => !_isLoading && _message == null;
+  bool get success => !_isLoading && error == null;
 
   Future<void> load() async {
     _isLoading = true;
