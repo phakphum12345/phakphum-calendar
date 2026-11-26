@@ -407,3 +407,16 @@ The Laravel coordination API exists in the repository and its dedicated backend 
 - Run controlled two-device Calendar sync tests against a dedicated test calendar only after separate explicit authorization.
 - Implement server-history-driven startup recovery after process termination; current UI history and failed-operation queue remain local even though resume operations are ledgered when explicitly resumed.
 - Keep all four PRs Draft and do not merge until exact-head CI, reviews, recovery acceptance and human approval are complete.
+
+### 8.12 Live execution checkpoint — 2026-11-26 13:17 UTC
+
+Latest branch tips after the final changes. Main base remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`.
+
+| PR | Head | Latest Actions state |
+|---|---|---|
+| #192 | `8643a86fb21fe33639e25577159a310ef15b98ef` | 13 workflow runs created at 13:15 UTC; most are queued and iOS/macOS/Windows/Android jobs are pending. 0 failures observed. No exact-head check is complete yet. |
+| #196 | `1558ba00395be4fcc9bfc7a9fd1e2cb6adde9122` | 12 workflow runs created at 13:16 UTC; most queued, platform/backend jobs pending. 0 failures observed. No exact-head check is complete yet. |
+| #191 | `69cf20b8eba1d073f87ddaad0587237a9c414e7a` | 8 successful checks, 0 failures. |
+| #197 | `e1c3b59a787df5d73d4634132f36765cfd708bc4` | Docs update triggered Auto Detect CI (pending) and Cross-platform Runtime (queued). |
+
+Do not read queued or pending as a runner pass. In particular, native macOS/iOS and all root-quality jobs have not yet completed on the latest #192/#196 heads. The backend coordination service remains undeployed and unverified at a live URL. All PRs remain Draft and no merge/deployment/production Calendar mutation is authorized.
