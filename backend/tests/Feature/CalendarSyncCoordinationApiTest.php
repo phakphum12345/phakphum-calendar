@@ -75,10 +75,19 @@ class CalendarSyncCoordinationApiTest extends TestCase
 
         $this->patchJson('/api/v1/calendar-sync/leases/00000000-0000-4000-8000-000000000005/operations/event-sync-1', [
             'lease_token' => $lease['lease_token'],
+            'status' => 'running',
+            'attempt_count' => 1,
+        ], $this->auth('alice-token'))->assertOk()->assertJsonPath('data.status', 'running');
+        $this->patchJson('/api/v1/calendar-sync/leases/00000000-0000-4000-8000-000000000005/operations/event-sync-1', [
+            'lease_token' => $lease['lease_token'],
             'status' => 'succeeded',
             'attempt_count' => 1,
             'provider_event_id' => 'provider-event-123',
         ], $this->auth('alice-token'))->assertOk()->assertJsonPath('data.status', 'succeeded');
+        $this->getJson('/api/v1/calendar-sync/runs', $this->auth('alice-token'))
+            ->assertOk()->assertJsonPath('data.0.operation_count', 1);
+        $this->getJson('/api/v1/calendar-sync/runs/00000000-0000-4000-8000-000000000005/operations', $this->auth('alice-token'))
+            ->assertOk()->assertJsonPath('data.0.provider_event_id', 'provider-event-123');
     }
 
     private function lease(string $runId, string $client): array
