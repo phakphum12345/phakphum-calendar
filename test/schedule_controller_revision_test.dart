@@ -6,9 +6,50 @@ import 'package:phakphum_calendar/domain/repositories/conditional_schedule_write
 import 'package:phakphum_calendar/domain/repositories/schedule_repository.dart';
 import 'package:phakphum_calendar/domain/repositories/schedule_revision_source.dart';
 import 'package:phakphum_calendar/features/schedule/data/schedule_service.dart';
+import 'package:phakphum_calendar/features/schedule/data/shared_preferences_schedule_repository.dart';
 import 'package:phakphum_calendar/features/schedule/presentation/controllers/schedule_controller.dart';
 
+import 'support/canonical_schedule_fixture.dart';
+import 'support/in_memory_schedule_store.dart';
+
 void main() {
+  test('local controller captures an absent revision before creating a Schedule', () async {
+    final repository = SharedPreferencesScheduleRepository(
+      store: InMemoryScheduleKeyValueStore(),
+    );
+    final schedule = canonicalScheduleFixture(name: 'New local roster');
+    final controller = ScheduleController(
+      service: ScheduleService(schedule: schedule),
+      repository: repository,
+    );
+
+    final saved = await controller.saveSchedule();
+
+    expect(saved, isA<Success<Schedule>>());
+    final loaded = await repository.findById(schedule.id);
+    expect((loaded as Success<Schedule?>).value!.name, 'New local roster');
+  });
+
+  test('local controller refuses a different unreviewed persisted snapshot', () async {
+    final repository = SharedPreferencesScheduleRepository(
+      store: InMemoryScheduleKeyValueStore(),
+    );
+    final original = canonicalScheduleFixture(name: 'Persisted roster');
+    await repository.save(original);
+    final controller = ScheduleController(
+      service: ScheduleService(
+        schedule: canonicalScheduleFixture(name: 'Stale imported roster'),
+      ),
+      repository: repository,
+    );
+
+    final saved = await controller.saveSchedule();
+
+    expect(saved, isA<ValidationFailure<Schedule>>());
+    final loaded = await repository.findById(original.id);
+    expect((loaded as Success<Schedule?>).value!.name, 'Persisted roster');
+  });
+
   test('two editors loaded at one revision cannot both overwrite the Schedule', () async {
     final initial = Schedule(id: 'roster-1', name: 'November');
     final repository = _RevisionRepository(initial);
