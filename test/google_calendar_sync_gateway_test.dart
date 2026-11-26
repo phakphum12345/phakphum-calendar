@@ -206,7 +206,7 @@ void main() {
             headers: {'content-type': 'application/json'});
       }
       if (request.method == 'PUT') {
-        expect(request.headers['if-match'], 'etag-v1');
+        expect(request.headers['If-Match'], 'etag-v1');
         final body = jsonDecode(request.body) as Map<String, dynamic>;
         expect(body['id'], 'managed-1');
         return http.Response(
@@ -278,7 +278,7 @@ void main() {
         }), 200, headers: {'content-type': 'application/json'});
       }
       if (request.method == 'DELETE') {
-        expect(request.headers['if-match'], 'etag-v1');
+        expect(request.headers['If-Match'], 'etag-v1');
         return http.Response('', 204);
       }
       return http.Response('', 500);
@@ -308,7 +308,7 @@ void main() {
         }), 200, headers: {'content-type': 'application/json'});
       }
       if (request.method == 'PUT') {
-        expect(request.headers['if-match'], 'legacy-etag-1');
+        expect(request.headers['If-Match'], 'legacy-etag-1');
         final body = jsonDecode(request.body) as Map<String, dynamic>;
         expect(body['extendedProperties']['private']['sceSyncId'], 'sync-legacy');
         return http.Response(jsonEncode({
