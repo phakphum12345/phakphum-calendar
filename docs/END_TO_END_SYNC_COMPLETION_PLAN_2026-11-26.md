@@ -574,3 +574,13 @@ The Schedule CAS spike run reports its macOS matrix job as `Native SQLite CAS co
 To route all Apple jobs to a self-hosted Mac, the repository must have an online macOS runner registered with a custom label (for example `calendar-macos`) and the repository variables `IOS_RUNNER_LABEL` and `MACOS_RUNNER_LABEL` must both be set to that label. This configuration cannot be completed or verified from the repository code alone. Until the Mac runner is online and the variables are set, the Apple jobs remain pending on hosted macOS capacity.
 
 No implementation PR has been merged. PR #191's green checks do not make #192 or #196 green; each PR must pass its own exact-head gates. The production HTTPS backend origin and live database are also not verified. Keep all PRs Draft.
+
+
+### 8.18 Live execution checkpoint — 2026-11-26 23:36 Asia/Bangkok
+
+- #191 remains at `12dc4a5a1902f62998e65cc85f880614f9919110`: Laravel, Web, Windows, Android, Linux, Cross-platform Runtime, Auto Detect CI, Pull Request Gate and recursive Dependency Security PASS. iOS Advisory Evidence is still in progress; the iOS build itself was not triggered by this backend-only Outbox PR.
+- #192 remains at `10875734d0a956c76933cd8cc94cfa1108585cd3`: Laravel Backend CI, Web, Dart Format Baseline Audit and Android PASS. Auto Detect CI and Pull Request Gate are in progress; Windows is in progress; Linux, Cross-platform Runtime, Dependency Security and CAS spike are queued; iOS/macOS builds are pending.
+- #196 remains at `937708ee9f0e596556a019b2d999e7bbc68485cd`: Laravel Backend CI PASS. Web, Windows and Linux are in progress; Auto Detect CI, iOS/macOS, Cross-platform Runtime, Pull Request Gate, Dart Format and Dependency Security are pending/queued.
+- #197 remains at `2d6313cb4c7a352506a8dc258308ab6acd9d145e`; its documentation checks are queued.
+
+The latest #192 CAS spike has passed Ubuntu; Windows is still running and macOS remains queued on the hosted `macos-latest` fallback. The exact same dependency lockfiles are already covered by #191's successful recursive OSV scan, but #192/#196 branch-specific scanner checks remain pending. No implementation PR is fully complete and none has been merged.
