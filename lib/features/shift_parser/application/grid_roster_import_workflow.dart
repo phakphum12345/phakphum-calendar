@@ -7,6 +7,7 @@ import '../../../domain/entities/employee.dart';
 import '../../../domain/entities/schedule.dart';
 import '../../../domain/entities/shift_template.dart';
 import '../../../domain/repositories/schedule_repository.dart';
+import '../../../domain/repositories/schedule_revision_source.dart';
 import '../../excel_import/domain/workbook_info.dart';
 import '../../schedule/data/schedule_json_codec.dart';
 import '../data/backend_grid_roster_import_journal_gateway.dart';
@@ -313,9 +314,14 @@ class GridRosterImportWorkflow {
   String scheduleFingerprint(Schedule schedule) =>
       'sha256:${sha256.convert(utf8.encode(scheduleCodec.encode(schedule)))}';
 
-  String revisionFor(Schedule? schedule, String scheduleId) => schedule == null
-      ? 'absent:$scheduleId'
-      : scheduleFingerprint(schedule);
+  String revisionFor(Schedule? schedule, String scheduleId) {
+    final authoritative = _scheduleRepository is ScheduleRevisionSource
+        ? (_scheduleRepository as ScheduleRevisionSource)
+              .currentRevisionFor(scheduleId)
+        : null;
+    if (authoritative != null) return authoritative;
+    return schedule == null ? 'absent:$scheduleId' : scheduleFingerprint(schedule);
+  }
 
 }
 
