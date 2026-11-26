@@ -804,3 +804,15 @@ No implementation PR merged. No production data writes or deployment. Delivery a
 - PR #196 head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: Backend, Web, Linux, Android, Cross-platform Runtime, Auto Detect, Format and Dependency Security passed; Windows, PR Gate and iOS Advisory were in progress; Apple Xcode pending.
 
 No implementation PR merged. No production data writes, Calendar writes or deployment. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
+
+
+### 8.36 Live execution checkpoint — 2026-11-27 (notification payload readiness)
+
+- PR #191 latest head: `6787fe710ceb351581eb42c9b7045c49a93c9cfb`.
+- Shift transaction lifecycle outbox intents now include safe browser presentation fields (`title`, `body`, stable versioned `tag`, and same-origin `url`) alongside transaction ID/type/status/version. They do not include push endpoints, authentication secrets, Google provider event IDs or ETags.
+- `web/push-scope/service-worker.js` already displays those presentation fields and uses the tag for duplicate display suppression. The server-side VAPID sender and encryption are still missing.
+- Documentation now accurately states that lifecycle enqueue is implemented but push delivery, atomic claim/lease, retries/backoff, expired-subscription cleanup, user opt-in UI and device-level verification are not implemented.
+- Previous code head `43bdc2ebd94ac8e223d1dc43b532f4a9691d0eb9`: Laravel Backend CI, Linux POSIX full quality suite and Dependency Security passed; Windows, Android, Cross-platform Runtime, PR Gate and Auto Detect were in progress. Latest docs/payload head requires fresh exact-head CI.
+- No push notification has been sent and no worker is enabled.
+
+No implementation PR merged. No production data writes or deployment. Notification delivery remains a release blocker until the sender, worker, settings UI and end-to-end tests are complete.
