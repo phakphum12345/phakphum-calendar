@@ -263,3 +263,10 @@ This checkpoint supersedes the older PR snapshot above where they conflict. It i
 | CAL-05 real Google provider | NOT PROVEN | Dedicated test-calendar create/update/read-back/recovery evidence |
 
 No row becomes PASS from a roadmap, a Draft PR, a skipped check, or a mock-only test. Do not mark the overall project complete until every mandatory row has exact evidence and the shipped implementation matches these documents.
+### 8.6 Production synchronization call graph
+
+- The current application dependency container wires the main schedule workflow through `CalendarSyncGateway` → `CalendarSyncCoordinator` → `ResilientCalendarSyncExecutor`, with `ResumeSyncService` for failed operations. The default Google gateway is `GoogleCalendarSyncGateway`.
+- The production history and failed-operation repositories created by this dependency container are `SharedPreferencesSyncHistoryRepository` and `SharedPreferencesFailedSyncRepository`; they are device-local.
+- A separate `features/calendar_sync` module also exists with its own `CalendarSyncService`, `CalendarSyncExecutor` and `GoogleCalendarEventRepository`. Do not assume it is the active path or delete it based on directory names. Trace all imports/routes/widgets/callers before consolidation; avoid implementing the same fix twice.
+- The transaction-specific flow in `AppController` uses the schedule workflow, then calls the backend shift-transaction start/complete/fail endpoints. Its existing `shift_transaction_sync_attempts` and `shift_transaction_calendar_events` tables are transaction-scoped; they do not replace a general per-user Calendar sync run/operation ledger.
+- The next code change must preserve the existing explicit preview/confirmation boundary and route every production schedule sync through the same safety/coordination contract.
