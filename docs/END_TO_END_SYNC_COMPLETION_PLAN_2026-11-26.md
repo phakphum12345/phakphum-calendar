@@ -625,3 +625,35 @@ No PR has been merged. Keep #192/#196 Draft until the full exact-head platform m
 - #197 latest documentation checks remain in progress/queued.
 
 #192 has a green core PR Gate but is not fully platform-complete because Apple build and macOS CAS evidence are pending. #196's exact-head test matrix is still running after the SharedPreferencesAsync test-platform fix. No implementation PR has been merged.
+
+
+
+### 8.23 Live execution checkpoint — 2026-11-27 (current GitHub evidence)
+
+This section supersedes prior PR/CI snapshots above where they conflict. Main is still `d18454680879a10c6efe9e44ffb37cd0695f25a6`. This checkpoint records GitHub API evidence collected for the exact PR head SHAs; it does not certify the overall product as complete.
+
+| PR | Exact head | Completed checks observed | Outstanding checks / disposition |
+|---|---|---|---|
+| #191 Notification Outbox | `12dc4a5a1902f62998e65cc85f880614f9919110` | Laravel Backend CI, Web, Windows, Android, Linux, Pull Request Gate, Auto Detect CI, Cross-platform Runtime, Dependency Security and iOS Advisory Evidence all completed successfully. | Backend enqueue foundation only; no delivery worker/provider is implemented. Keep Draft pending review and decision on delivery scope. |
+| #192 Grid import / Schedule CAS | `10875734d0a956c76933cd8cc94cfa1108585cd3` | Android, Linux, Windows, Web, Laravel Backend CI, Pull Request Gate, Auto Detect CI, Dart Format Baseline Audit, Dependency Security, Cross-platform Runtime and iOS build completed successfully. | macOS/Xcode is pending. Schedule CAS Storage Spike is still in progress: Ubuntu and Windows passed; macOS leg is still running. Do not mark Apple/CAS matrix complete. |
+| #196 Calendar ETag / lease / durable operation ledger | `3dc978f707a7ab9797e76fcab0b88f22b73dbd53` | Laravel Backend CI, Web, Windows, Android, Linux, Pull Request Gate, Auto Detect CI, Cross-platform Runtime, Dart Format Baseline Audit and Dependency Security completed successfully. | iOS and macOS Xcode builds are queued; iOS Advisory Evidence is in progress. Do not treat queued jobs as passed. |
+| #197 execution documentation | `da9e81353851df38a7ccbaecc4dfabe1e8ea780c` | Auto Detect CI and Cross-platform Runtime completed successfully on this documentation head. | Documentation PR remains Draft; this checkpoint itself must run through the updated documentation PR checks after commit. |
+
+#### Apple runner routing — verified workflow configuration
+
+- `.github/workflows/ios.yml` uses `vars.IOS_RUNNER_LABEL || 'macos-15'`.
+- `.github/workflows/macos.yml` uses `vars.MACOS_RUNNER_LABEL || 'macos-15'`.
+- `.github/workflows/schedule-cas-spike.yml` uses `vars.MACOS_RUNNER_LABEL || 'macos-latest'` for its macOS matrix leg.
+- The current #192 macOS build job and #196 iOS/macOS build jobs are queued; no completed Apple job evidence is available for those heads. The CAS macOS leg is in progress, not yet completed.
+- Repository variable values and online self-hosted Mac runner availability have not been verified by the available evidence. Do not claim that the custom Mac runner is configured or available. A Windows runner cannot execute Xcode.
+
+#### Code-level acceptance still open
+
+- #192 and #196 remain Draft and unmerged. A green core PR Gate does not substitute for outstanding Apple/CAS jobs or code review.
+- #196's documented lease scope is authenticated Google owner + Calendar ID; it is not a tenant-wide lock across different Google accounts sharing one Calendar.
+- Local-only mode without the configured HTTPS shared backend remains without cross-device Schedule CAS, Calendar run serialization or server-side recovery.
+- The active workflow's compatibility preview/sync paths must be checked to ensure a stable real Schedule ID reaches the durable Calendar ledger. A default `unknown` Schedule ID must never be treated as a valid production scope; fail closed until the real identity is propagated.
+- Production backend reachability, persistent database locking/transaction behavior, authentication, Laravel `APP_KEY` backup/restore, and controlled Google test-calendar behavior remain unverified.
+- No real Calendar writes, production migration, deployment, notification delivery or merge were performed by this checkpoint.
+
+No queued, pending, in-progress, skipped, cancelled or older-head result is PASS. Keep all implementation PRs Draft until required exact-head checks, code review and production-readiness evidence are complete.
