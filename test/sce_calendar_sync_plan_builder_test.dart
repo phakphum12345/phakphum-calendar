@@ -31,6 +31,7 @@ void main() {
           title: 'Old',
           start: start,
           end: end,
+          etag: 'etag-update',
         ),
         ManagedCalendarEvent(
           eventId: 'google-delete',
@@ -38,12 +39,17 @@ void main() {
           title: 'Delete',
           start: start,
           end: end,
+          etag: 'etag-delete',
         ),
       ],
     );
 
     expect(plan.inserts.single.syncId, 'add');
     expect(plan.updates.single.eventId, 'google-update');
+    expect(plan.updates.single.expectedEtag, 'etag-update');
+    expect(plan.updates.single.expectedSyncId, 'update');
     expect(plan.deletes.single.eventId, 'google-delete');
+    expect(plan.deletes.single.expectedEtag, 'etag-delete');
+    expect(plan.deletes.single.expectedSyncId, 'delete');
   });
 }
