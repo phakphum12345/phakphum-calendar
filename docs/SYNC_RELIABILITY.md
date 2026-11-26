@@ -85,7 +85,11 @@ are wired to this API when `ORGANIZATION_API_BASE_URL` is configured. The
 executor acquires a lease before provider mutations, heartbeats between
 operations, records a stable operation key and payload hash, updates the
 operation outcome/provider event ID, and releases the lease with the final run
-status. Coordination HTTP calls have a 15-second timeout. The server ledger stores
+status. Lease uniqueness is scoped to the authenticated owner plus Calendar ID,
+so it serializes devices using the same Google account. It is not an
+organization-wide lock for two different Google accounts that share one
+Calendar; that requires an explicit tenant-level ownership/authorization model.
+Coordination HTTP calls have a 15-second timeout. The server ledger stores
 only safe diagnostic codes (for example `provider_timeout` or
 `stale_precondition`), never raw provider exception text or event content. The reviewed Schedule ID is carried into the immutable sync plan and
 persisted with local history. Resume acquires the same Calendar lease and
