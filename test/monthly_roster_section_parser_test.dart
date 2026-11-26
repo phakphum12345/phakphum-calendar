@@ -209,6 +209,15 @@ void main() {
     expect(portable.dateAnomalies, isEmpty);
     expect(portable.dateColumns, hasLength(30));
     expect(xopd.dateAnomalies.map((item) => item.code), contains('duplicate_day'));
+    expect(xopd.dateAnomalies.map((item) => item.code), contains('missing_dates'));
+    expect(
+      xopd.dateAnomalies.singleWhere((item) => item.code == 'missing_dates').message,
+      contains('17/11/2569'),
+    );
+    expect(
+      xopd.dateAnomalies.singleWhere((item) => item.code == 'missing_dates').message,
+      contains('29/11/2569'),
+    );
     expect(xopd.dateAnomalies, isNotEmpty);
 
     final shifts = const MonthlyRosterShiftAdapter().parseForWorkers(
