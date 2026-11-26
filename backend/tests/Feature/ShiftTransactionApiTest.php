@@ -434,6 +434,93 @@ class ShiftTransactionApiTest extends TestCase
         $this->assertContains('cancel', collect($cancelledHistory['timeline'])->pluck('event_type')->all());
     }
 
+    public function test_transaction_lifecycle_enqueues_idempotent_notifications_for_other_participants(): void
+    {
+        $this->signIn('alice-token');
+        $this->signIn('bob-token');
+        $payload = $this->giveUp();
+
+        $created = $this->postJson('/api/v1/shift-transactions', $payload, [
+            'Authorization' => 'Bearer alice-token',
+            'Idempotency-Key' => 'notification-lifecycle',
+        ])->assertCreated()->json('data');
+
+        $aliceId = (int) DB::table('users')->where('google_subject', 'google-alice')->value('id');
+        $bobId = (int) DB::table('users')->where('google_subject', 'google-bob')->value('id');
+        $this->assertDatabaseHas('notification_outbox', [
+            'user_id' => $bobId,
+            'notification_type' => 'shift_transaction.created',
+            'idempotency_key' => "shift-transaction:{$created['id']}:created:{$bobId}",
+            'status' => 'pending',
+        ]);
+        $this->assertSame(
+            1,
+            DB::table('notification_outbox')
+                ->where('user_id', $bobId)
+                ->where('notification_type', 'shift_transaction.created')
+                ->count(),
+        );
+
+        // Replaying the idempotent create request must not enqueue again.
+        $this->postJson('/api/v1/shift-transactions', $payload, [
+            'Authorization' => 'Bearer alice-token',
+            'Idempotency-Key' => 'notification-lifecycle',
+        ])->assertOk();
+        $this->assertSame(
+            1,
+            DB::table('notification_outbox')
+                ->where('user_id', $bobId)
+                ->where('notification_type', 'shift_transaction.created')
+                ->count(),
+        );
+
+        $this->postJson(
+            "/api/v1/shift-transactions/{$created['id']}/confirm",
+            [],
+            $this->auth('bob-token'),
+        )->assertOk();
+        $confirmKey = "shift-transaction:{$created['id']}:v2:confirm:{$aliceId}";
+        $this->assertDatabaseHas('notification_outbox', [
+            'user_id' => $aliceId,
+            'notification_type' => 'shift_transaction.confirm',
+            'idempotency_key' => $confirmKey,
+            'status' => 'pending',
+        ]);
+
+        // Replaying an already-confirmed transition is a no-op.
+        $this->postJson(
+            "/api/v1/shift-transactions/{$created['id']}/confirm",
+            [],
+            $this->auth('bob-token'),
+        )->assertOk();
+        $this->assertSame(
+            1,
+            DB::table('notification_outbox')
+                ->where('user_id', $aliceId)
+                ->where('idempotency_key', $confirmKey)
+                ->count(),
+        );
+
+        $this->postJson(
+            "/api/v1/shift-transactions/{$created['id']}/cancel",
+            [],
+            $this->auth('alice-token'),
+        )->assertOk();
+        $this->assertDatabaseHas('notification_outbox', [
+            'user_id' => $bobId,
+            'notification_type' => 'shift_transaction.cancel',
+            'idempotency_key' => "shift-transaction:{$created['id']}:v3:cancel:{$bobId}",
+            'status' => 'pending',
+        ]);
+        $this->assertSame(
+            0,
+            DB::table('notification_outbox')
+                ->where('user_id', $aliceId)
+                ->where('notification_type', 'shift_transaction.created')
+                ->count(),
+        );
+    }
+
     private function signIn(string $token): void
     {
         $this->getJson('/api/v1/me', $this->auth($token))->assertOk();
