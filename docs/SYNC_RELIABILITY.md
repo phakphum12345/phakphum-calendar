@@ -67,6 +67,27 @@ does not serialize whole sync runs or provide a shared cross-device operation
 ledger. Sync history and failed-operation records remain local SharedPreferences
 storage in the current production dependency graph.
 
+## Backend coordination foundation (2026-11-26)
+
+PR #196 adds authenticated Laravel coordination primitives:
+
+- one active lease per authenticated owner and Calendar ID;
+- lease expiry, heartbeat, and explicit release;
+- durable sync-run records with owner, schedule, Calendar, client instance,
+  start, heartbeat, finish, and terminal status;
+- a durable per-run operation ledger keyed by an idempotent operation key;
+- payload-hash conflict detection, attempt-count monotonicity, and guarded
+  operation status transitions;
+- owner-scoped read APIs for run history and operation details.
+
+The API is a foundation, not yet an end-to-end guarantee. The Flutter
+`ResilientCalendarSyncExecutor` has not yet acquired or renewed these leases,
+nor persisted each provider operation through this ledger. Until that client
+integration and exact-head tests pass, the app must not claim cross-device
+serialization or durable shared recovery. The existing local SharedPreferences
+history remains in use, and no production Calendar write is authorized by
+these backend endpoints alone.
+
 ## Partial success
 
 Synchronization continues after an individual operation fails.
