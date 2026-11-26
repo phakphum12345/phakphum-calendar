@@ -275,8 +275,11 @@ class GoogleCalendarSyncGateway
     return calendar.Event.fromJson(Map<String, dynamic>.from(decoded));
   }
 
-  Future<http.Response> _send(http.Request request) async =>
-      http.Response.fromStream(await _client.send(request)).timeout(requestTimeout);
+  Future<http.Response> _send(http.Request request) =>
+      Future<http.Response>(() async {
+        final streamedResponse = await _client.send(request);
+        return http.Response.fromStream(streamedResponse);
+      }).timeout(requestTimeout);
 
   Uri _eventUri(String calendarId, String eventId) => Uri.parse(
     'https://www.googleapis.com/calendar/v3/calendars/${Uri.encodeComponent(calendarId)}/events/${Uri.encodeComponent(eventId)}',
