@@ -321,7 +321,8 @@ class ResilientCalendarSyncExecutor {
         updated: updated,
         deleted: deleted,
         failed: failed == 0
-            ? leaseWasNotAcquired
+            ? leaseWasNotAcquired ||
+                    (coordination == null && failedOperations.isEmpty)
                 ? 0
                 : plan.operationCount
             : failed + 1,
