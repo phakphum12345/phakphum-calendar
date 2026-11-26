@@ -778,3 +778,18 @@ No implementation PR merged. No production data writes or deployment. Queued, pe
 - Previous head `483cab074abb8d0daf73a71f7a424c7072dcdc3c` passed the non-Apple core matrix including Linux, Windows, Android, Web, Cross-platform Runtime, Auto Detect, Format, Dependency Security, Backend and PR Gate. CAS passed on Ubuntu/Windows; macOS CAS and Apple Xcode builds were not completed.
 
 No implementation PR merged. No production data writes or deployment. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
+
+
+### 8.34 Live execution checkpoint — 2026-11-27 (transactional notification enqueue)
+
+- PR #191 current head: `43bdc2ebd94ac8e223d1dc43b532f4a9691d0eb9`.
+- The notification outbox is now wired into the shift transaction lifecycle inside the same database transaction as each state change:
+  - Creation enqueues `shift_transaction.created` for the resolved recipient.
+  - Confirm/reject, organization approve/reject, cancel, sync completion/failure and fulfillment enqueue to the other participant(s).
+  - Internal `sync_start` is intentionally not user-notified.
+- Idempotency keys include transaction ID, version, action and recipient ID. Payloads are minimal and contain the transaction reference/state, not provider event IDs or ETags. A repeated create/confirm request cannot enqueue a duplicate.
+- Regression test covers recipient notification on create, requester notification on confirm, recipient notification on cancellation, and duplicate request suppression.
+- Exact-head CI for #191: Dependency Security passed; Android, Windows, Cross-platform Runtime and iOS Advisory were in progress; Laravel Backend CI, Web, Linux, PR Gate and Auto Detect were queued. No exact-head backend/test result is PASS yet.
+- This remains an outbox, not delivery. No push transport, queue worker, inbox/read API or client display has been implemented; no production notification was sent.
+
+No implementation PR merged. No production data writes or deployment. Delivery and device-level acceptance remain release blockers.
