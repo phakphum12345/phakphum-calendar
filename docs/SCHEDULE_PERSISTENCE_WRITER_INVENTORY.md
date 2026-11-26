@@ -184,3 +184,13 @@ This section supersedes the W-01 through F-01 backend-mode dispositions in secti
 - Conditional Schedule delete is deliberately disabled until a tombstone/expected-revision contract and recovery semantics are designed. No Schedule data was deleted by this work.
 - Generation-to-persistence approval flow and startup journal discovery/indexing remain separate open work packages.
 - These changes are committed but are not certified until Flutter analyze/tests and the exact-head platform matrix pass. No merge or production migration is authorized.
+
+### 10.1 Legacy writer conflict behavior and non-destructive resets
+
+- W-02 and W-03 now compare the exact prior canonical Schedule snapshot with the live backend snapshot before submitting `saveIfRevision`. A mismatch is surfaced as a persistence error; a writer does not silently adopt a newer shared revision.
+- The AppController queue now reports a failed repository result and allows a later queued attempt to proceed after the previous failure. The queue remains local to one controller; server CAS is the actual cross-instance guard.
+- Sign-out, account-change, source-sheet switch, saved-sheet removal and local-source clearing now call `_replaceLegacyShifts(..., persist: false)`. Clearing an in-memory view no longer persists an empty Schedule or deletes/overwrites backend data.
+- F-01 is create-only in backend mode: it reads the target's absent revision and uses `saveIfRevision`; an existing Schedule must be replaced through the reviewed Grid workflow.
+- W-01 editor saves carry the revision captured when the exact Schedule snapshot was loaded. Two editors using the same base revision cannot both commit.
+
+**Boundary:** backend mode is safe-by-fail-closed for the inventoried writers, but not every legacy workflow is guaranteed to save until it has loaded/compared its exact base snapshot. Local-only SharedPreferences mode remains non-atomic across devices. Conditional deletion remains disabled.
