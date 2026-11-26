@@ -96,9 +96,10 @@ Durable operation records now include the exact replay payload required for
 insert/update/delete reconciliation. The backend canonicalizes and verifies
 the payload hash, encrypts the payload with the Laravel application key, and
 returns it only through owner-scoped run/operation reads. The explicit
-`ResumeSyncService.recoverRun(runId)` path loads an interrupted run, rebuilds
-its unfinished operations, and resumes them under a newly acquired Calendar
-lease. Inserts reconcile by stable Sync ID; updates first compare the current
+`ResumeSyncService.recoverHistory(historyId)` path follows the server run ID
+stored with local history, loads the owner-scoped run and encrypted operations,
+rebuilds unfinished work, and resumes it under a newly acquired Calendar lease.
+`recoverRun(runId)` is available when the server run ID is already known. Inserts reconcile by stable Sync ID; updates first compare the current
 provider event with the desired command before enforcing the original ETag;
 deletes treat an already-missing event as complete and reject changed events.
 
