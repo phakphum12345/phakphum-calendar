@@ -27,6 +27,8 @@ import '../features/shift_parser/domain/monthly_roster_section.dart';
 import '../features/shift_parser/domain/monthly_roster_template.dart';
 import '../features/shift_templates/application/shift_template_controller.dart';
 import '../features/shift_templates/presentation/shift_templates_page.dart';
+import '../features/history/application/sync_history_controller.dart';
+import '../features/history/presentation/sync_history_screen.dart';
 import '../features/schedule/presentation/controllers/schedule_controller.dart';
 import '../features/schedule/presentation/pages/schedule_workspace_page.dart';
 import '../l10n/l10n.dart';
@@ -69,6 +71,7 @@ class AppShell extends StatefulWidget {
     required this.dashboardSummaryService,
     required this.shiftTemplateControllerFactory,
     required this.scheduleControllerFactory,
+    required this.syncHistoryControllerFactory,
   });
 
   final AppController controller;
@@ -82,6 +85,7 @@ class AppShell extends StatefulWidget {
   final DashboardSummaryService dashboardSummaryService;
   final ShiftTemplateController Function() shiftTemplateControllerFactory;
   final Future<ScheduleController> Function(Schedule) scheduleControllerFactory;
+  final SyncHistoryController Function() syncHistoryControllerFactory;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -572,6 +576,7 @@ class _AppShellState extends State<AppShell> {
         activateSavedSheet: _activateSavedSheet,
         openSavedSheet: _openSavedSheet,
         deleteSavedSheet: _deleteSavedSheet,
+        syncHistoryControllerFactory: widget.syncHistoryControllerFactory,
       ),
       _UtilityPage.tools => _ToolsPage(
         controller: widget.controller,
@@ -5010,6 +5015,7 @@ class _AuditPage extends StatelessWidget {
     required this.activateSavedSheet,
     required this.openSavedSheet,
     required this.deleteSavedSheet,
+    required this.syncHistoryControllerFactory,
   });
 
   final AppController controller;
@@ -5017,6 +5023,7 @@ class _AuditPage extends StatelessWidget {
   final Future<void> Function(SavedSheet sheet) activateSavedSheet;
   final Future<void> Function(SavedSheet sheet) openSavedSheet;
   final Future<void> Function(SavedSheet sheet) deleteSavedSheet;
+  final SyncHistoryController Function() syncHistoryControllerFactory;
 
   @override
   Widget build(BuildContext context) {
@@ -5107,6 +5114,10 @@ class _AuditPage extends StatelessWidget {
               ],
             ),
           ),
+        ),
+        const SizedBox(height: 20),
+        SyncHistoryPanel(
+          controllerFactory: syncHistoryControllerFactory,
         ),
         const SizedBox(height: 20),
         Text('ประวัติการทำงาน', style: Theme.of(context).textTheme.titleLarge),
