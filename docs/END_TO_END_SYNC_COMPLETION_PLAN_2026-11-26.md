@@ -584,3 +584,13 @@ No implementation PR has been merged. PR #191's green checks do not make #192 or
 - #197 remains at `2d6313cb4c7a352506a8dc258308ab6acd9d145e`; its documentation checks are queued.
 
 The latest #192 CAS spike has passed Ubuntu; Windows is still running and macOS remains queued on the hosted `macos-latest` fallback. The exact same dependency lockfiles are already covered by #191's successful recursive OSV scan, but #192/#196 branch-specific scanner checks remain pending. No implementation PR is fully complete and none has been merged.
+
+
+### 8.19 Live execution checkpoint — 2026-11-26 23:42 Asia/Bangkok
+
+- #191 remains at `12dc4a5a1902f62998e65cc85f880614f9919110`: Laravel, Web, Windows, Android, Linux, Cross-platform Runtime, Auto Detect CI, Pull Request Gate and recursive Dependency Security PASS. Only the non-blocking iOS Advisory Evidence reporter remains in progress; the backend-only Outbox PR did not trigger a native iOS build.
+- #192 remains at `10875734d0a956c76933cd8cc94cfa1108585cd3`: Laravel, Web, Android, Linux and Dart Format PASS. Cross-platform Runtime and Auto Detect CI tests are in progress; Windows release build and Pull Request Gate are in progress; recursive Dependency Security and CAS spike are queued; iOS/macOS builds are pending.
+- #196 remains at `937708ee9f0e596556a019b2d999e7bbc68485cd`: Laravel, Web, Linux and Dart Format PASS. Windows Flutter tests, Android build and Auto Detect CI tests are in progress; iOS/macOS, Cross-platform Runtime, Pull Request Gate and Dependency Security are queued/pending.
+- #197 documentation checks remain pending on the latest documentation head.
+
+The #192 CAS spike's Ubuntu and Windows contracts have passed; its macOS contract remains queued on `macos-latest`. No current-head full gate is complete for #192 or #196. All implementation PRs remain Draft and unmerged.
