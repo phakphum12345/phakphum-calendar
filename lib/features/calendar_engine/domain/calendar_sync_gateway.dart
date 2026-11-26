@@ -19,6 +19,24 @@ abstract interface class CalendarSyncGateway {
 }
 
 /// Optional provider capability used to adopt equivalent pre-metadata events.
+/// Optional provider capability for race-safe Calendar mutations.
+/// Implementations must verify event ownership and use provider preconditions.
+abstract interface class ConditionalCalendarSyncGateway {
+  Future<ManagedCalendarEvent> updateConditionally({
+    required String eventId,
+    required String expectedEtag,
+    required String expectedSyncId,
+    required CalendarSyncCommand command,
+  });
+
+  Future<void> deleteConditionally({
+    required String eventId,
+    required String calendarId,
+    required String expectedEtag,
+    required String expectedSyncId,
+  });
+}
+
 abstract interface class ComparableCalendarEventGateway {
   Future<List<ManagedCalendarEvent>> listComparableLegacyEvents({
     required DateTime timeMin,
