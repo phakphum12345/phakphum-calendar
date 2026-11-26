@@ -227,7 +227,7 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
       final expectedRevision = _expectedRevision;
       if (expectedRevision == null || expectedRevision.trim().isEmpty) {
         const failure = PersistenceFailure<Schedule>(
-          'Load the exact Schedule snapshot before saving with backend CAS.',
+          'Load the exact Schedule snapshot before saving with revision-aware CAS.',
         );
         _loading = false;
         _error = failure;
