@@ -237,13 +237,17 @@ String _payloadHash(FailedSyncOperation item) {
     'calendar_id': item.calendarId,
     'expected_etag': item.expectedEtag,
     'expected_sync_id': item.expectedSyncId,
-    if (command != null) 'sync_id': command.syncId,
-    if (command != null) 'title': command.title,
-    if (command != null) 'start': command.start.toIso8601String(),
-    if (command != null) 'end': command.end.toIso8601String(),
-    if (command != null) 'description': command.description,
-    if (command != null) 'color_id': command.colorId,
-    if (command != null) 'command_calendar_id': command.calendarId,
   };
+  if (command != null) {
+    payload.addAll({
+      'sync_id': command.syncId,
+      'title': command.title,
+      'start': command.start.toIso8601String(),
+      'end': command.end.toIso8601String(),
+      'description': command.description,
+      'color_id': command.colorId,
+      'command_calendar_id': command.calendarId,
+    });
+  }
   return sha256.convert(utf8.encode(jsonEncode(payload))).toString();
 }
