@@ -235,46 +235,78 @@ class CalendarSyncCoordinationController extends Controller
             'operation_type' => ['required', 'in:insert,update,delete'],
             'payload_hash' => ['required', 'regex:/^[a-f0-9]{64}$/'],
         ]);
-        if (! $this->hasActiveLease($request, $runId, $data['lease_token'])) {
-            return $this->leaseLost();
-        }
 
-        $existing = DB::table('calendar_sync_operations')
-            ->where('owner_user_id', $request->user()->id)
-            ->where('run_id', $runId)
-            ->where('operation_key', $data['operation_key'])
-            ->first();
-        if ($existing !== null) {
-            if ($existing->operation_type !== $data['operation_type'] || ! hash_equals($existing->payload_hash, $data['payload_hash'])) {
-                return response()->json(['error' => ['code' => 'calendar_sync_operation_conflict', 'message' => 'The operation key was already used with different content.']], 409);
+        $result = DB::transaction(function () use ($request, $runId, $data): array {
+            if (! $this->lockActiveLease($request, $runId, $data['lease_token'])) {
+                return ['status' => 409, 'error' => 'calendar_sync_lease_lost'];
             }
 
-            return response()->json(['data' => $this->operationResource($existing)], 200);
+            $existing = DB::table('calendar_sync_operations')
+                ->where('owner_user_id', $request->user()->id)
+                ->where('run_id', $runId)
+                ->where('operation_key', $data['operation_key'])
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing !== null) {
+                if (
+                    $existing->operation_type !== $data['operation_type']
+                    || ! hash_equals($existing->payload_hash, $data['payload_hash'])
+                ) {
+                    return ['status' => 409, 'error' => 'calendar_sync_operation_conflict'];
+                }
+
+                return [
+                    'status' => 200,
+                    'data' => $this->operationResource($existing),
+                ];
+            }
+
+            $now = now();
+            $inserted = DB::table('calendar_sync_operations')->insertOrIgnore([
+                'run_id' => $runId,
+                'owner_user_id' => $request->user()->id,
+                'operation_key' => $data['operation_key'],
+                'operation_type' => $data['operation_type'],
+                'status' => 'prepared',
+                'payload_hash' => $data['payload_hash'],
+                'attempt_count' => 0,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ]);
+            $record = DB::table('calendar_sync_operations')
+                ->where('owner_user_id', $request->user()->id)
+                ->where('run_id', $runId)
+                ->where('operation_key', $data['operation_key'])
+                ->lockForUpdate()
+                ->first();
+
+            if (
+                $record === null
+                || $record->operation_type !== $data['operation_type']
+                || ! hash_equals($record->payload_hash, $data['payload_hash'])
+            ) {
+                return ['status' => 409, 'error' => 'calendar_sync_operation_conflict'];
+            }
+
+            return [
+                'status' => $inserted === 1 ? 201 : 200,
+                'data' => $this->operationResource($record),
+            ];
+        });
+
+        if ($result['status'] === 409) {
+            return response()->json([
+                'error' => [
+                    'code' => $result['error'],
+                    'message' => $result['error'] === 'calendar_sync_lease_lost'
+                        ? 'The synchronization lease is missing or expired.'
+                        : 'The operation key was already used with different content.',
+                ],
+            ], 409);
         }
 
-        $now = now();
-        $inserted = DB::table('calendar_sync_operations')->insertOrIgnore([
-            'run_id' => $runId,
-            'owner_user_id' => $request->user()->id,
-            'operation_key' => $data['operation_key'],
-            'operation_type' => $data['operation_type'],
-            'status' => 'prepared',
-            'payload_hash' => $data['payload_hash'],
-            'attempt_count' => 0,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ]);
-        $record = DB::table('calendar_sync_operations')
-            ->where('owner_user_id', $request->user()->id)
-            ->where('run_id', $runId)
-            ->where('operation_key', $data['operation_key'])
-            ->first();
-
-        if ($record === null || $record->operation_type !== $data['operation_type'] || ! hash_equals($record->payload_hash, $data['payload_hash'])) {
-            return response()->json(['error' => ['code' => 'calendar_sync_operation_conflict', 'message' => 'The operation key was already used with different content.']], 409);
-        }
-
-        return response()->json(['data' => $this->operationResource($record)], $inserted === 1 ? 201 : 200);
+        return response()->json(['data' => $result['data']], $result['status']);
     }
 
     public function updateOperation(Request $request, string $runId, string $operationKey): JsonResponse
@@ -286,58 +318,95 @@ class CalendarSyncCoordinationController extends Controller
             'provider_event_id' => ['nullable', 'string', 'max:512'],
             'last_error' => ['nullable', 'string', 'max:4000'],
         ]);
-        if (! $this->hasActiveLease($request, $runId, $data['lease_token'])) {
-            return $this->leaseLost();
+
+        $result = DB::transaction(function () use ($request, $runId, $operationKey, $data): array {
+            if (! $this->lockActiveLease($request, $runId, $data['lease_token'])) {
+                return ['status' => 409, 'error' => 'calendar_sync_lease_lost'];
+            }
+
+            $operation = DB::table('calendar_sync_operations')
+                ->where('owner_user_id', $request->user()->id)
+                ->where('run_id', $runId)
+                ->where('operation_key', $operationKey)
+                ->lockForUpdate()
+                ->first();
+
+            if ($operation === null) {
+                return ['status' => 404, 'error' => 'calendar_sync_operation_not_found'];
+            }
+            if ($data['attempt_count'] < $operation->attempt_count) {
+                return ['status' => 409, 'error' => 'calendar_sync_attempt_regression'];
+            }
+
+            $allowedTransitions = match ($operation->status) {
+                'prepared' => ['prepared', 'running', 'failed'],
+                'running' => ['running', 'succeeded', 'failed'],
+                'failed' => ['failed', 'running'],
+                'succeeded' => ['succeeded'],
+                default => [],
+            };
+            if (
+                ! in_array($data['status'], $allowedTransitions, true)
+                || (
+                    $operation->status === 'failed'
+                    && $data['status'] === 'running'
+                    && $data['attempt_count'] <= $operation->attempt_count
+                )
+            ) {
+                return ['status' => 409, 'error' => 'calendar_sync_operation_transition_invalid'];
+            }
+
+            $now = now();
+            DB::table('calendar_sync_operations')->where('id', $operation->id)->update([
+                'status' => $data['status'],
+                'attempt_count' => $data['attempt_count'],
+                'provider_event_id' => $data['provider_event_id'] ?? $operation->provider_event_id,
+                'last_error' => $data['last_error'] ?? null,
+                'started_at' => $data['status'] === 'running' ? ($operation->started_at ?? $now) : $operation->started_at,
+                'finished_at' => in_array($data['status'], ['succeeded', 'failed'], true) ? $now : null,
+                'updated_at' => $now,
+            ]);
+
+            $updated = DB::table('calendar_sync_operations')->where('id', $operation->id)->first();
+
+            return [
+                'status' => 200,
+                'data' => $this->operationResource($updated),
+            ];
+        });
+
+        if ($result['status'] !== 200) {
+            $messages = [
+                'calendar_sync_lease_lost' => 'The synchronization lease is missing or expired.',
+                'calendar_sync_operation_not_found' => 'The operation has not been recorded.',
+                'calendar_sync_attempt_regression' => 'Attempt count cannot move backwards.',
+                'calendar_sync_operation_transition_invalid' => 'The operation status transition is not allowed.',
+            ];
+            return response()->json([
+                'error' => [
+                    'code' => $result['error'],
+                    'message' => $messages[$result['error']] ?? 'The operation update was rejected.',
+                ],
+            ], $result['status']);
         }
 
-        $operation = DB::table('calendar_sync_operations')
-            ->where('owner_user_id', $request->user()->id)
-            ->where('run_id', $runId)
-            ->where('operation_key', $operationKey)
-            ->first();
-        if ($operation === null) {
-            return response()->json(['error' => ['code' => 'calendar_sync_operation_not_found', 'message' => 'The operation has not been recorded.']], 404);
-        }
-        if ($data['attempt_count'] < $operation->attempt_count) {
-            return response()->json(['error' => ['code' => 'calendar_sync_attempt_regression', 'message' => 'Attempt count cannot move backwards.']], 409);
-        }
-        $allowedTransitions = match ($operation->status) {
-            'prepared' => ['prepared', 'running', 'failed'],
-            'running' => ['running', 'succeeded', 'failed'],
-            'failed' => ['failed', 'running'],
-            'succeeded' => ['succeeded'],
-            default => [],
-        };
-        if (! in_array($data['status'], $allowedTransitions, true) ||
-            ($operation->status === 'failed' && $data['status'] === 'running' &&
-                $data['attempt_count'] <= $operation->attempt_count)) {
-            return response()->json(['error' => ['code' => 'calendar_sync_operation_transition_invalid', 'message' => 'The operation status transition is not allowed.']], 409);
-        }
-
-        $now = now();
-        DB::table('calendar_sync_operations')->where('id', $operation->id)->update([
-            'status' => $data['status'],
-            'attempt_count' => $data['attempt_count'],
-            'provider_event_id' => $data['provider_event_id'] ?? $operation->provider_event_id,
-            'last_error' => $data['last_error'] ?? null,
-            'started_at' => $data['status'] === 'running' ? ($operation->started_at ?? $now) : $operation->started_at,
-            'finished_at' => in_array($data['status'], ['succeeded', 'failed'], true) ? $now : null,
-            'updated_at' => $now,
-        ]);
-
-        $updated = DB::table('calendar_sync_operations')->where('id', $operation->id)->first();
-
-        return response()->json(['data' => $this->operationResource($updated)]);
+        return response()->json(['data' => $result['data']]);
     }
 
-    private function hasActiveLease(Request $request, string $runId, string $token): bool
+    /**
+     * Lock and validate the lease in the same transaction as the ledger write.
+     * This prevents a stale client from passing a separate preflight check and
+     * then writing after another client has reclaimed the Calendar lease.
+     */
+    private function lockActiveLease(Request $request, string $runId, string $token): bool
     {
         return DB::table('calendar_sync_leases')
             ->where('owner_user_id', $request->user()->id)
             ->where('run_id', $runId)
             ->where('lease_token', $token)
             ->where('expires_at', '>', now())
-            ->exists();
+            ->lockForUpdate()
+            ->first() !== null;
     }
 
     private function leaseLost(): JsonResponse
