@@ -3118,6 +3118,11 @@ class AppController extends ChangeNotifier implements ControllerState {
       return repository.save(next);
     }
 
+    if (base.id != next.id) {
+      return const PersistenceFailure(
+        'The Schedule identity changed during the edit. Reload before saving.',
+      );
+    }
     final currentResult = await repository.findById(next.id);
     if (currentResult case Failure<Schedule?>()) {
       return PersistenceFailure<Schedule>(
