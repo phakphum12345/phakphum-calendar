@@ -74,7 +74,20 @@ class ScheduleController extends Controller
                     'created_at' => now(),
                     'updated_at' => now(),
                 ]);
-            } catch (QueryException) {
+            } catch (QueryException $exception) {
+                if (!$this->isUniqueConstraintViolation($exception)) {
+                    throw $exception;
+                }
+
+                $recordExists = DB::table('schedule_records')
+                    ->where('owner_user_id', $ownerId)
+                    ->where('schedule_id', $scheduleId)
+                    ->exists();
+
+                if (!$recordExists) {
+                    throw $exception;
+                }
+
                 return $this->conflict($ownerId, $scheduleId);
             }
 
@@ -186,6 +199,27 @@ class ScheduleController extends Controller
                 : $this->revision($record),
             'current_state' => $record?->state ?? 'absent',
         ], 409);
+    }
+
+    private function isUniqueConstraintViolation(QueryException $exception): bool
+    {
+        $sqlState = $exception->errorInfo[0] ?? (string) $exception->getCode();
+        $driverCode = (int) ($exception->errorInfo[1] ?? 0);
+
+        if ($sqlState === '23505') {
+            return true;
+        }
+
+        if ($sqlState !== '23000') {
+            return false;
+        }
+
+        if (in_array($driverCode, [1062, 2601, 2627], true)) {
+            return true;
+        }
+
+        return $driverCode === 19
+            && str_contains(strtolower($exception->getMessage()), 'unique constraint');
     }
 
     private function revision(object $record): string
