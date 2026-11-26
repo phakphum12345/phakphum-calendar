@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -122,6 +122,7 @@ class CalendarSyncCoordinationController extends Controller
                 ]);
                 if ($inserted !== 1) {
                     DB::table('calendar_sync_runs')->where('id', $data['run_id'])->delete();
+
                     return ['status' => 409, 'error' => 'calendar_sync_already_running'];
                 }
             } else {
@@ -139,6 +140,7 @@ class CalendarSyncCoordinationController extends Controller
                     ]);
                 if ($updated !== 1) {
                     DB::table('calendar_sync_runs')->where('id', $data['run_id'])->delete();
+
                     return ['status' => 409, 'error' => 'calendar_sync_already_running'];
                 }
                 DB::table('calendar_sync_runs')->where('id', $lease->run_id)->update([
@@ -204,7 +206,9 @@ class CalendarSyncCoordinationController extends Controller
                 ->where('lease_token', $data['lease_token'])
                 ->lockForUpdate()
                 ->first();
-            if ($lease === null) return false;
+            if ($lease === null) {
+                return false;
+            }
 
             DB::table('calendar_sync_runs')->where('id', $runId)->where('owner_user_id', $request->user()->id)->update([
                 'status' => $data['status'],
