@@ -257,9 +257,10 @@ void main() {
   test('does not call Calendar when lease acquisition is rejected', () async {
     final coordination = _FakeCoordinationGateway()..rejectAcquire = true;
     final gateway = _FakeCalendarGateway();
+    final history = _MemoryHistoryRepository();
     final executor = ResilientCalendarSyncExecutor(
       gateway: gateway,
-      historyRepository: _MemoryHistoryRepository(),
+      historyRepository: history,
       coordinationGateway: coordination,
     );
 
@@ -283,6 +284,12 @@ void main() {
     );
     expect(gateway.insertCount, 0);
     expect(coordination.calls, ['acquire:primary:schedule-1']);
+    expect(history.entries.values.single.status, SyncHistoryStatus.failure);
+    expect(history.entries.values.single.failed, 1);
+    expect(
+      history.entries.values.single.message,
+      'Synchronization did not complete; no successful operation was confirmed.',
+    );
   });
 }
 
