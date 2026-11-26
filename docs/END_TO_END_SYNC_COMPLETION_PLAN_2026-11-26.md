@@ -690,3 +690,19 @@ No implementation PR has been merged. No Google Calendar provider write, product
 - On #196 head `990ba523367ca15794561ec27209723c87dcd525`, backend, format, dependency security, web, Linux, Android, Windows, Auto Detect, Cross-platform Runtime, and PR Gate passed. iOS and macOS Xcode jobs were cancelled without a runner name or step logs. Do not rerun blindly; verify the configured `IOS_RUNNER_LABEL` / `MACOS_RUNNER_LABEL` and actual available runner labels in repository settings first. No runner configuration has been changed in this work.
 - The iOS and macOS workflow files use repository variables with `macos-15` fallback. The CAS spike uses `MACOS_RUNNER_LABEL` with `macos-latest` fallback. Repository Actions variable and runner inventory endpoints were not readable through the available connector; the actual configured variable values and self-hosted runner availability remain unverified.
 - No implementation PR merged; no production data writes or deployment. Cancelled/queued/pending/in-progress/older-head checks are not PASS.
+
+
+### 8.27 Live execution checkpoint — 2026-11-27 (production local Schedule CAS)
+
+- PR #192 current head: `076f56831a5f4f553dac3aaa55cc718a5bfc9bf1`, base `d18454680879a10c6efe9e44ffb37cd0695f25a6`.
+- Production `SharedPreferencesScheduleRepository` now implements `ScheduleRevisionSource` and `ConditionalScheduleWriter`. It uses a per-Schedule asynchronous lock shared by repository instances in the same Dart isolate, persisted monotonic generation plus payload fingerprint, exact snapshot revisions, and versioned absent-state revisions.
+- Conditional local writes compare the caller-owned revision while holding the lock. Delete advances the generation and preserves a tombstone generation key; recreating the same content cannot reuse the old revision (ABA protection).
+- Dual-slot persistence remains intact. Generation advances before switching the active pointer, so a failed pointer write leaves the old active payload readable but invalidates stale editor revisions.
+- `ScheduleController` captures a current absent revision before creating a new Schedule, or verifies that its current in-memory content exactly matches the persisted snapshot before capturing that revision. Grid import, controller save, imported-schedule creation and the legacy AppController canonical writer now use conditional writes when the repository supports them.
+- AppController no longer replaces an in-memory roster with an empty Schedule merely because the local repository has no saved record.
+- Tests added for concurrent writes from two repository instances sharing one store, stale writer rejection, delete/recreate ABA protection, failed active-pointer fencing, and ScheduleController's first-save revision capture / mismatched snapshot rejection.
+- Local SharedPreferences CAS is process-scoped and is not a cross-process or cross-device lock. The authenticated Laravel repository remains required for shared multi-device CAS.
+- Exact-head CI for #192: Dart Format, Dependency Security and Laravel Backend CI passed. Windows, Linux, Android, Web, Cross-platform Runtime and PR Gate were in progress; the CAS Spike had Ubuntu/Windows in progress and macOS queued; iOS/macOS Xcode were pending. No incomplete result is PASS.
+- Previous #192 and #196 Apple Xcode jobs were cancelled with no runner name or step logs. Their workflow files use `IOS_RUNNER_LABEL` / `MACOS_RUNNER_LABEL` repository variables with hosted-label fallbacks. The actual variable values and runner inventory remain unverified through the available connector; no runner settings were changed.
+
+No implementation PR merged. No production data writes or deployment. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
