@@ -71,6 +71,10 @@ class ResilientCalendarSyncExecutor {
             calendarId: plan.calendarId,
             scheduleId: plan.scheduleId,
           );
+    if (lease != null) {
+      history = history.copyWith(serverRunId: lease.runId);
+      await _historyRepository.save(history);
+    }
     var leaseStatus = 'failed';
 
     Future<CalendarSyncOperationResult> trackOperation({
