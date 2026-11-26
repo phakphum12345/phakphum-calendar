@@ -384,3 +384,26 @@ Current exact PR heads after the latest CAS and coordination changes. Main basel
 5. Keep production Google Calendar writes disabled until a separate explicit authorization for a dedicated test calendar.
 
 Do not mark the repository complete or merge any PR until these gates and human review pass.
+
+### 8.11 Live execution checkpoint — 2026-11-26 13:12 UTC
+
+Current exact heads after the final writer-safety changes in this work session. Main remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`. No PR was merged, no backend was deployed, and no production Calendar event was changed.
+
+| PR | Current head | Current exact-head checks | State |
+|---|---|---|---|
+| #192 | `8643a86fb21fe33639e25577159a310ef15b98ef` | 15 queued; 0 failures; no completed checks on this head yet. | Snapshot-bound CAS writer changes are committed; validation UNKNOWN until queue runs. |
+| #196 | `e93d5cdd25ac0c076e544b1b87a5a06188073a16` | 12 queued; 0 failures; no completed checks on this head yet. | Executor and resume lease/ledger integration committed; validation UNKNOWN until queue runs. |
+| #191 | `69cf20b8eba1d073f87ddaad0587237a9c414e7a` | 8 successful; 0 failures; 0 pending. | Current CI PASS; Draft retained pending human review. |
+| #197 | `9a4e2acaff90016a14a2776dbd83efa7cb589787` | 2 successful, 1 in progress, 4 queued; 0 failures. | Documentation CI is still running on the current docs head. |
+
+#### Deployment and runtime prerequisite
+
+The Laravel coordination API exists in the repository and its dedicated backend feature verification passed on an earlier source revision. It has **not** been deployed or verified at a live `ORGANIZATION_API_BASE_URL` in this execution. Server-side CAS and cross-device Calendar leases activate only when the app is built/configured with that backend origin and a valid Google ID token. Without it, SharedPreferences/local-only behavior remains and is not cross-device safe. Do not interpret code or CI success as proof of live backend availability.
+
+#### Remaining blockers
+
+- Wait for all exact-head #192 and #196 CI jobs; their current queued checks are UNKNOWN, not PASS.
+- Confirm the configured backend URL, authentication middleware and production database provide the intended atomic transaction/locking semantics before any rollout.
+- Run controlled two-device Calendar sync tests against a dedicated test calendar only after separate explicit authorization.
+- Implement server-history-driven startup recovery after process termination; current UI history and failed-operation queue remain local even though resume operations are ledgered when explicitly resumed.
+- Keep all four PRs Draft and do not merge until exact-head CI, reviews, recovery acceptance and human approval are complete.
