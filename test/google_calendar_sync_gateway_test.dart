@@ -186,4 +186,111 @@ void main() {
     expect(events.single.start, DateTime(2026, 8, 20, 8));
     expect(events.single.end, DateTime(2026, 8, 20, 16));
   });
+
+  test('conditional update sends If-Match and adopts the resulting provider ETag', () async {
+    final requests = <http.Request>[];
+    final event = <String, dynamic>{
+      'id': 'managed-1',
+      'etag': 'etag-v1',
+      'summary': 'Old title',
+      'start': {'dateTime': '2026-11-26T01:00:00Z'},
+      'end': {'dateTime': '2026-11-26T09:00:00Z'},
+      'extendedProperties': {
+        'private': {'sceSyncId': 'sync-1'},
+      },
+    };
+    final client = MockClient((request) async {
+      requests.add(request);
+      if (request.method == 'GET') {
+        return http.Response(jsonEncode(event), 200,
+            headers: {'content-type': 'application/json'});
+      }
+      if (request.method == 'PUT') {
+        expect(request.headers['if-match'], 'etag-v1');
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        expect(body['id'], 'managed-1');
+        return http.Response(
+          jsonEncode({...event, 'etag': 'etag-v2', 'summary': 'New title'}),
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      }
+      return http.Response('', 500);
+    });
+    final gateway = GoogleCalendarSyncGateway(client);
+    final updated = await gateway.updateConditionally(
+      eventId: 'managed-1',
+      expectedEtag: 'etag-v1',
+      expectedSyncId: 'sync-1',
+      command: CalendarSyncCommand(
+        syncId: 'sync-1',
+        title: 'New title',
+        start: DateTime(2026, 11, 26, 8),
+        end: DateTime(2026, 11, 26, 16),
+      ),
+    );
+
+    expect(updated.etag, 'etag-v2');
+    expect(updated.title, 'New title');
+    expect(requests.map((request) => request.method), ['GET', 'PUT']);
+  });
+
+  test('conditional delete refuses a stale ETag and never sends DELETE', () async {
+    var deleteRequests = 0;
+    final client = MockClient((request) async {
+      if (request.method == 'GET') {
+        return http.Response(jsonEncode({
+          'id': 'managed-1',
+          'etag': 'etag-v2',
+          'extendedProperties': {
+            'private': {'sceSyncId': 'sync-1'},
+          },
+        }), 200, headers: {'content-type': 'application/json'});
+      }
+      if (request.method == 'DELETE') deleteRequests++;
+      return http.Response('', 204);
+    });
+    final gateway = GoogleCalendarSyncGateway(client);
+
+    await expectLater(
+      gateway.deleteConditionally(
+        eventId: 'managed-1',
+        calendarId: 'primary',
+        expectedEtag: 'etag-v1',
+        expectedSyncId: 'sync-1',
+      ),
+      throwsA(isA<StateError>()),
+    );
+    expect(deleteRequests, 0);
+  });
+
+  test('conditional delete sends If-Match and treats an already missing event as success', () async {
+    final requests = <http.Request>[];
+    final client = MockClient((request) async {
+      requests.add(request);
+      if (request.method == 'GET') {
+        return http.Response(jsonEncode({
+          'id': 'managed-1',
+          'etag': 'etag-v1',
+          'extendedProperties': {
+            'private': {'sceSyncId': 'sync-1'},
+          },
+        }), 200, headers: {'content-type': 'application/json'});
+      }
+      if (request.method == 'DELETE') {
+        expect(request.headers['if-match'], 'etag-v1');
+        return http.Response('', 204);
+      }
+      return http.Response('', 500);
+    });
+    final gateway = GoogleCalendarSyncGateway(client);
+    await gateway.deleteConditionally(
+      eventId: 'managed-1',
+      calendarId: 'primary',
+      expectedEtag: 'etag-v1',
+      expectedSyncId: 'sync-1',
+    );
+    expect(requests.map((request) => request.method), ['GET', 'DELETE']);
+  });
+
 }
