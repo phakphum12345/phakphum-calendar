@@ -35,6 +35,51 @@ class ResumeSyncService {
   final FailedSyncRepository _failedRepository;
   final CalendarSyncCoordinationGateway? coordinationGateway;
 
+  /// Rebuilds a local recovery queue from the owner-scoped durable ledger.
+  ///
+  /// This method is explicit; it is never invoked automatically at startup.
+  /// Provider mutations still pass through the normal lease, ETag and
+  /// idempotency checks in [resume].
+  Future<ResumeSyncResult> recoverRun(String runId) async {
+    final coordination = coordinationGateway;
+    if (coordination == null) {
+      throw StateError('Durable Calendar recovery requires a configured backend.');
+    }
+
+    final run = await coordination.getRun(runId);
+    final ledger = await coordination.listOperations(runId);
+    final succeeded = ledger.where((item) => item.status == 'succeeded');
+    final pending = ledger.where((item) => item.status != 'succeeded').toList();
+    final recovered = pending
+        .map((item) => _failedOperationFromLedger(run, item))
+        .toList(growable: false);
+
+    final history = SyncHistoryEntry(
+      id: run.runId,
+      startedAt: run.startedAt,
+      status: recovered.isEmpty
+          ? SyncHistoryStatus.success
+          : SyncHistoryStatus.running,
+      inserted: succeeded.where((item) => item.operationType == 'insert').length,
+      updated: succeeded.where((item) => item.operationType == 'update').length,
+      deleted: succeeded.where((item) => item.operationType == 'delete').length,
+      failed: recovered.length,
+      finishedAt: recovered.isEmpty ? (run.finishedAt ?? DateTime.now()) : null,
+      message: recovered.isEmpty
+          ? 'All durable Calendar operations are already complete.'
+          : 'Recovered ${recovered.length} unfinished operation(s) from the durable ledger.',
+      scheduleId: run.scheduleId,
+    );
+
+    await _historyRepository.save(history);
+    await _failedRepository.replaceForHistory(run.runId, recovered);
+
+    if (recovered.isEmpty) {
+      return ResumeSyncResult(historyEntry: history, operations: const []);
+    }
+    return resume(run.runId);
+  }
+
   Future<ResumeSyncResult> resume(String historyId) async {
     final original = await _historyRepository.findById(historyId);
     if (original == null) throw StateError('Sync history entry not found.');
@@ -234,6 +279,67 @@ class ResumeSyncService {
       }
     }
   }
+}
+
+FailedSyncOperation _failedOperationFromLedger(
+  CalendarSyncRunRecord run,
+  CalendarSyncOperationRecord record,
+) {
+  final type = CalendarSyncOperationType.values
+      .where((value) => value.name == record.operationType)
+      .firstOrNull;
+  if (type == null || !['prepared', 'running', 'failed'].contains(record.status)) {
+    throw FormatException(
+      'Durable operation ${record.operationKey} has an unsupported recovery state.',
+    );
+  }
+
+  final payload = record.operationPayload;
+  String requiredString(String key) {
+    final value = payload[key];
+    if (value is! String || value.trim().isEmpty) {
+      throw FormatException(
+        'Durable operation ${record.operationKey} is missing $key.',
+      );
+    }
+    return value;
+  }
+
+  final command = switch (type) {
+    CalendarSyncOperationType.insert || CalendarSyncOperationType.update =>
+      CalendarSyncCommand(
+        syncId: requiredString('sync_id'),
+        title: requiredString('title'),
+        start: DateTime.parse(requiredString('start')),
+        end: DateTime.parse(requiredString('end')),
+        description: payload['description']?.toString(),
+        colorId: payload['color_id']?.toString(),
+        calendarId: payload['calendar_id']?.toString() ?? run.calendarId,
+      ),
+    CalendarSyncOperationType.delete => null,
+  };
+  final eventId = payload['event_id']?.toString();
+  final referenceId = switch (type) {
+    CalendarSyncOperationType.insert || CalendarSyncOperationType.update =>
+      command!.syncId,
+    CalendarSyncOperationType.delete =>
+      eventId == null || eventId.isEmpty
+          ? throw FormatException('Delete operation is missing event_id.')
+          : eventId,
+  };
+
+  return FailedSyncOperation(
+    historyId: run.runId,
+    type: type,
+    referenceId: referenceId,
+    attempts: record.attemptCount,
+    command: command,
+    eventId: eventId,
+    calendarId: payload['calendar_id']?.toString() ?? run.calendarId,
+    message: record.lastError,
+    expectedEtag: payload['expected_etag']?.toString(),
+    expectedSyncId: payload['expected_sync_id']?.toString(),
+  );
 }
 
 String _ledgerOperationKey(CalendarSyncOperationType type, String referenceId) {
