@@ -706,3 +706,16 @@ No implementation PR has been merged. No Google Calendar provider write, product
 - Previous #192 and #196 Apple Xcode jobs were cancelled with no runner name or step logs. Their workflow files use `IOS_RUNNER_LABEL` / `MACOS_RUNNER_LABEL` repository variables with hosted-label fallbacks. The actual variable values and runner inventory remain unverified through the available connector; no runner settings were changed.
 
 No implementation PR merged. No production data writes or deployment. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
+
+
+### 8.28 Live execution checkpoint — 2026-11-27 (local CAS analyzer repair)
+
+- PR #192 current head is `825e54d4a46fdc0b1a60043e6c74e172b509a0dd`.
+- Previous head `076f56831a5f4f553dac3aaa55cc718a5bfc9bf1` exposed two CI failures: static analysis and Linux release compilation both rejected reading `.message` from `Result<Schedule>`; static analysis also found a stale repository variable in the two-instance contention test and a redundant cast.
+- Fixed by typing the revision-capture helper as `Failure<Schedule>?`, correcting the test to read from the first shared-store repository, and removing redundant casts. Commits: `e1cc31499eedb0217192514039052cc7a5985dc2`, `900b794c4b67e725caf8cc93eb6d2c188b829120`, `838a2c104174d8fae6022abc8e2abadbae8ad05a`.
+- Additional controller regression: the constructor captures the original Schedule before the month-view initializer can add an empty viewed month. When the controller has no cached revision, it compares the persisted Schedule with that original snapshot, not the UI-mutated current value. Commits: `67d95ef2c36cdb00aa31c3f15234cd64449656e5`, test `825e54d4a46fdc0b1a60043e6c74e172b509a0dd`.
+- Exact-head CI on `825e54d4a46fdc0b1a60043e6c74e172b509a0dd`: Dart Format Baseline Audit, Dependency Security and Laravel Backend CI passed. Linux, Windows, Web and Android were in progress; PR Gate and iOS Advisory were in progress; Cross-platform Runtime and CAS Spike were queued; iOS/macOS Xcode were pending. No other current-head result is PASS.
+- The latest tests cover local absent-revision creation, exact persisted snapshot matching, mismatched stale snapshot rejection, same-revision contention across two repository instances, stale-write rejection, delete/recreate ABA fencing and active-pointer failure fencing.
+- Local CAS remains limited to one Dart isolate/process. It is not advertised as cross-device synchronization. The backend Schedule CAS remains the multi-device source of truth when configured.
+
+No implementation PR merged. No production data writes or deployment. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
