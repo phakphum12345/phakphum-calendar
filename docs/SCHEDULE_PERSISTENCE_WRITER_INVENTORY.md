@@ -140,3 +140,18 @@ Grid recovery
 ## 9. Relationship to the persistence ADR
 
 This inventory is the first input to [ADR: Conditional Schedule Persistence and Journal Discovery](adr/CONDITIONAL_SCHEDULE_PERSISTENCE_AND_JOURNAL_DISCOVERY.md). The ADR remains **Proposed**. The native CAS prototype is validated on three operating systems but does not establish Web/mobile/browser durability or production suitability. This document does not accept a database choice, introduce a fake CAS implementation, change Schedule schema v1, or authorize production migration.
+
+
+## 2026-11-26 — Backend revision-token and Grid CAS follow-up
+
+**Evidence:** PR #192 branch source update. This section supersedes the earlier Grid writer status where noted; it does not claim repository-wide CAS.
+
+| Writer | Current repository path | Revision behavior | Status |
+|---|---|---|---|
+| W-01 / W-02 / W-03 | Legacy Schedule editor and AppController continue to use the local SharedPreferences repository | No caller-owned revision token or atomic CAS | OPEN — migrate with per-editor/per-controller snapshot tokens |
+| W-04 Grid commit | Backend mode uses `ScheduleRevisionSource` for the server generation token and `ConditionalScheduleWriter.saveIfRevision` for the exact reviewed token | Server compares and writes atomically; A→B→A is rejected | IMPLEMENTED FOR GRID BACKEND PATH; exact-head tests required |
+| W-05 Grid recovery | Uses the journal's original target revision in `saveIfRevision` | Server rejects a concurrent writer after the recovery read | IMPLEMENTED FOR GRID BACKEND PATH; exact-head tests required |
+| F-01 imported Schedule facade/controller | Uses the backend repository when configured, but generic `save` still depends on the repository's shared revision cache | Not yet caller-bound for concurrent stale editor instances | OPEN |
+| Local fallback | SharedPreferences two-slot repository | Crash-resilient staged write, no cross-instance CAS | OPEN — no global concurrency guarantee |
+
+The backend repository's legacy `save()` method still uses a mutable revision cache keyed by Schedule ID. It is not a substitute for passing the revision captured by the editor/session that is being saved. A stale controller must never be allowed to adopt a newer cache token and overwrite a newer Schedule. Only the explicit `saveIfRevision(schedule, expectedRevision)` path is caller-bound.
