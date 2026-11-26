@@ -131,4 +131,4 @@ Validation: `composer validate --strict`, `vendor/bin/pint --test app config dat
 
 ## Continuous integration
 
-The Laravel GitHub Actions workflow creates an empty `.env` file in its isolated test workspace. All test configuration is supplied through the workflow environment; developer and production secrets are not copied into CI. The workflow validates Composer, installs the locked dependencies, checks PHP formatting and bootstrap syntax, and runs the Laravel test suite. Dependency vulnerability auditing is tracked separately and is not yet a passing gate.
+The Laravel GitHub Actions workflow creates an empty `.env` file in its isolated test workspace. All test configuration is supplied through the workflow environment; developer and production secrets are not copied into CI. The workflow validates Composer, installs the locked dependencies, runs `composer audit --locked`, checks PHP formatting and bootstrap syntax, and runs the Laravel test suite. A successful Composer audit is evidence for the locked PHP dependency graph on that exact commit; it does not certify Flutter/Dart package advisories or later commits.
