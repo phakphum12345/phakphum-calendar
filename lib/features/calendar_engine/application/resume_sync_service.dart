@@ -131,6 +131,20 @@ class ResumeSyncService {
         calendarId: calendarId,
         scheduleId: original.scheduleId,
       );
+      await _historyRepository.save(
+        SyncHistoryEntry(
+          id: original.id,
+          startedAt: original.startedAt,
+          status: SyncHistoryStatus.running,
+          inserted: original.inserted,
+          updated: original.updated,
+          deleted: original.deleted,
+          failed: original.failed,
+          message: original.message,
+          scheduleId: original.scheduleId,
+          serverRunId: lease.runId,
+        ),
+      );
     }
 
     try {
@@ -149,7 +163,7 @@ class ResumeSyncService {
             lease: lease,
             operationKey: operationKey,
             status: 'running',
-            attemptCount: 0,
+            attemptCount: item.attempts + 1,
           );
         }
 
