@@ -9,11 +9,11 @@ typedef RecoverSyncHistory = Future<void> Function(String historyId);
 class SyncHistoryController extends ChangeNotifier implements ControllerState {
   SyncHistoryController(
     this._repository, {
-    this._recoverHistory,
+    this.recoverHistory,
   });
 
   final SyncHistoryRepository _repository;
-  final RecoverSyncHistory? _recoverHistory;
+  final RecoverSyncHistory? recoverHistory;
 
   List<SyncHistoryEntry> _entries = const <SyncHistoryEntry>[];
   bool _isLoading = false;
@@ -25,7 +25,7 @@ class SyncHistoryController extends ChangeNotifier implements ControllerState {
   bool get isLoading => _isLoading;
   String? get recoveryMessage => _recoveryMessage;
   String? get recoveringHistoryId => _recoveringHistoryId;
-  bool get hasRecoveryAction => _recoverHistory != null;
+  bool get hasRecoveryAction => recoverHistory != null;
   bool get canRecover => hasRecoveryAction && _recoveringHistoryId == null;
 
   @override
@@ -60,15 +60,15 @@ class SyncHistoryController extends ChangeNotifier implements ControllerState {
 
   /// Performs an explicit recovery action; this is never called at startup.
   Future<bool> recover(String historyId) async {
-    final recoverHistory = _recoverHistory;
-    if (recoverHistory == null || _recoveringHistoryId != null) return false;
+    final recover = recoverHistory;
+    if (recover == null || _recoveringHistoryId != null) return false;
 
     _recoveringHistoryId = historyId;
     _recoveryMessage = null;
     notifyListeners();
 
     try {
-      await recoverHistory(historyId);
+      await recover(historyId);
       _entries = await _repository.list();
       _recoveryMessage = 'กู้คืนการซิงก์เสร็จแล้ว';
       return true;
