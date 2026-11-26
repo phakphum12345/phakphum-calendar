@@ -61,6 +61,10 @@ class CalendarSyncCoordinationApiTest extends TestCase
 
         $this->travel(61)->seconds();
 
+        $this->deleteJson('/api/v1/calendar-sync/leases/00000000-0000-4000-8000-000000000006', [
+            'lease_token' => $first['lease_token'], 'status' => 'success',
+        ], $this->auth('alice-token'))->assertConflict();
+
         $second = $this->postJson('/api/v1/calendar-sync/leases', $this->lease('00000000-0000-4000-8000-000000000007', 'device-b'), $this->auth('alice-token'))
             ->assertCreated()->json('data');
 
