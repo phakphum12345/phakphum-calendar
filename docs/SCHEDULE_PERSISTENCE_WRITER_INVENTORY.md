@@ -187,7 +187,7 @@ This section supersedes the W-01 through F-01 backend-mode dispositions in secti
 
 ### 10.1 Legacy writer conflict behavior and non-destructive resets
 
-- W-02 and W-03 now compare the exact prior canonical Schedule snapshot with the live backend snapshot before submitting `saveIfRevision`. A mismatch is surfaced as a persistence error; a writer does not silently adopt a newer shared revision.
+- W-02 and W-03 now compare the exact prior canonical Schedule snapshot with the live backend snapshot before submitting `saveIfRevision`. A mismatch is surfaced as a persistence error; a writer does not silently adopt a newer shared revision. `AppController` loads its stable `legacy-runtime` canonical Schedule after Google account initialization/authorization before subsequent edits.
 - The AppController queue now reports a failed repository result and allows a later queued attempt to proceed after the previous failure. The queue remains local to one controller; server CAS is the actual cross-instance guard.
 - Sign-out, account-change, source-sheet switch, saved-sheet removal and local-source clearing now call `_replaceLegacyShifts(..., persist: false)`. Clearing an in-memory view no longer persists an empty Schedule or deletes/overwrites backend data.
 - F-01 is create-only in backend mode: it reads the target's absent revision and uses `saveIfRevision`; an existing Schedule must be replaced through the reviewed Grid workflow.
