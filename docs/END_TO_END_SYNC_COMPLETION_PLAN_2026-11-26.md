@@ -895,3 +895,15 @@ No implementation PR merged. No production data writes or deployment. Queued, pe
 - PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: Windows static analysis and Flutter tests passed (including row 33 and six-month/two-department regressions); Linux release, Backend, Web, Android, Dart Format and Dependency Security passed. Cross-platform Linux full quality passed; Windows PowerShell full quality and Auto Detect unit tests in progress; Windows release build and PR Gate in progress. CAS passed on Windows/Ubuntu; macOS queued. iOS Advisory in progress; native Apple builds pending.
 
 No implementation PR merged. The remaining blockers are exact-head PR #192/191 jobs, Apple native builds, CAS macOS, and notification delivery implementation. No production data writes or deployment.
+
+
+### 8.46 Live execution checkpoint — 2026-11-27 (Auto Detect and full-quality suites)
+
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: Auto Detect CI completed successfully, including static analysis and Flutter unit tests. The row-33 `เวรเช้า14 ชั้น` and six-month/two-department regressions therefore passed in this unit-test suite.
+- Cross-platform Runtime Linux/POSIX full quality suite passed. Windows CMD and Linux PowerShell launcher smoke tests passed. Windows PowerShell full quality remains in progress.
+- Windows Flutter static analysis and tests passed; the Windows release job reached application packaging. Linux release, Android, Web, Backend, Format and Dependency Security passed.
+- CAS Storage Spike passed on Windows and Ubuntu; macOS queued. Pull Request Gate and iOS Advisory remain in progress; native iOS/macOS builds pending.
+- PR #191 exact head `6787fe710ceb351581eb42c9b7045c49a93c9cfb`: all non-Apple checks including Windows and PR Gate passed; iOS Advisory remains in progress.
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: all non-Apple checks and iOS Advisory passed; native iOS queued and macOS pending.
+
+No implementation PR merged. No production data writes or deployment. CAS macOS and native Apple builds remain outstanding.
