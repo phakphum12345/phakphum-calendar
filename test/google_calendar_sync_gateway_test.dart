@@ -366,4 +366,41 @@ void main() {
     expect(deleteRequests, 0);
   });
 
+  test('conditional update surfaces a provider 412 race without retrying stale content', () async {
+    final requests = <http.Request>[];
+    final client = MockClient((request) async {
+      requests.add(request);
+      if (request.method == 'GET') {
+        return http.Response(jsonEncode({
+          'id': 'managed-412',
+          'etag': 'etag-v1',
+          'summary': 'Old title',
+          'start': {'dateTime': '2026-11-26T01:00:00Z'},
+          'end': {'dateTime': '2026-11-26T09:00:00Z'},
+          'extendedProperties': {
+            'private': {'sceSyncId': 'sync-412'},
+          },
+        }), 200, headers: {'content-type': 'application/json'});
+      }
+      return http.Response('precondition failed', 412);
+    });
+    final gateway = GoogleCalendarSyncGateway(client);
+
+    await expectLater(
+      gateway.updateConditionally(
+        eventId: 'managed-412',
+        expectedEtag: 'etag-v1',
+        expectedSyncId: 'sync-412',
+        command: CalendarSyncCommand(
+          syncId: 'sync-412',
+          title: 'New title',
+          start: DateTime(2026, 11, 26, 8),
+          end: DateTime(2026, 11, 26, 16),
+        ),
+      ),
+      throwsA(isA<StateError>()),
+    );
+    expect(requests.map((request) => request.method), ['GET', 'PUT']);
+  });
+
 }
