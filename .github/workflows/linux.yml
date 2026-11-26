@@ -78,6 +78,18 @@ jobs:
       - name: Enable Linux desktop
         run: flutter config --enable-linux-desktop
 
+      - name: Require shared backend for production artifact
+        if: github.ref == 'refs/heads/main'
+        env:
+          ORGANIZATION_API_BASE_URL: ${{ vars.ORGANIZATION_API_BASE_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${ORGANIZATION_API_BASE_URL//[[:space:]]/}" || "$ORGANIZATION_API_BASE_URL" != https://* ]]; then
+            echo "Production artifacts require an HTTPS ORGANIZATION_API_BASE_URL."
+            exit 1
+          fi
+
       - name: Build Linux release
         env:
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
