@@ -670,3 +670,11 @@ No queued, pending, in-progress, skipped, cancelled or older-head result is PASS
 - The guard is intentionally limited to configured shared-backend mode. Local-only compatibility behavior remains unchanged. The durable correction for the compatibility workflow is still to propagate a real Schedule ID from the canonical Schedule, or to make that legacy path unavailable in shared mode.
 
 No implementation PR has been merged. No Google Calendar provider write, production migration or deployment was performed. Cancelled, queued, pending, in-progress, skipped and older-head checks are not PASS.
+
+
+### 8.25 Live execution checkpoint — 2026-11-27 (after targeted rerun)
+
+- #192's previously cancelled macOS/Xcode job was explicitly re-queued with a single-job rerun. Its workflow run now reports the macOS job as queued; this is not PASS. The three-platform Schedule CAS Storage Spike remains completed successfully on Ubuntu, Windows and macOS.
+- #196 latest head remains `990ba523367ca15794561ec27209723c87dcd525`. Backend CI, Dart Format Baseline Audit and Dependency Security have now completed successfully on this head. Windows and Android are in progress; Web, iOS advisory and PR Gate are in progress; Linux, Cross-platform Runtime and Auto Detect are queued; iOS/macOS Xcode are pending. No queued or in-progress result is PASS.
+- #197 latest documentation head `5be4da36d9cb8068d5d67d7822c7b0ae977f8e3f` now has Cross-platform Runtime and Auto Detect CI queued. The previous docs head `8a5db3b5f02e3cd753f29bc4fb4eac7be6a6808f` passed both workflows, but that older-head evidence does not certify the new docs commit.
+- No PR was merged. The #196 shared-mode Schedule identity guard and regression test remain subject to the full current-head matrix.
