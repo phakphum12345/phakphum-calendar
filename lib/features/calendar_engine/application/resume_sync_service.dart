@@ -288,7 +288,6 @@ class ResumeSyncService {
             ? 'All failed operations resumed successfully.'
             : '${remaining.length} operation(s) still failed.',
         serverRunId: lease?.runId ?? original.serverRunId,
-        serverRunId: lease?.runId ?? original.serverRunId,
       );
       await _historyRepository.save(history);
       leaseStatus = remaining.isEmpty ? 'success' : 'partial_success';
