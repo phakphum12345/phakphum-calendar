@@ -35,7 +35,7 @@ class ScheduleImportJournalController extends Controller
             'schedule.format' => ['required_with:schedule', 'in:shift-tools.canonical-schedule'],
             'schedule.version' => ['required_with:schedule', 'integer', 'in:1'],
             'schedule.schedule' => ['required_with:schedule', 'array:id,name,departments,employees,shiftTypes,months'],
-            'schedule.schedule.id' => ['required_with:schedule', 'string', 'max:128', 'in:'.$scheduleId],
+            'schedule.schedule.id' => ['required_with:schedule', 'string', 'max:128', 'in:' . $scheduleId],
             'schedule.schedule.name' => ['required_with:schedule', 'string', 'max:200'],
         ]);
 
@@ -100,7 +100,7 @@ class ScheduleImportJournalController extends Controller
         try {
             $id = DB::table('schedule_import_journals')->insertGetId($attributes);
         } catch (QueryException $exception) {
-            if (!$this->isUniqueConstraintViolation($exception)) {
+            if (! $this->isUniqueConstraintViolation($exception)) {
                 throw $exception;
             }
 
