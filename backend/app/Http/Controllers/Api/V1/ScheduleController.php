@@ -49,7 +49,7 @@ class ScheduleController extends Controller
             'schedule.format' => ['required', 'in:shift-tools.canonical-schedule'],
             'schedule.version' => ['required', 'integer', 'in:1'],
             'schedule.schedule' => ['required', 'array:id,name,departments,employees,shiftTypes,months'],
-            'schedule.schedule.id' => ['required', 'string', 'max:128', 'in:'.$scheduleId],
+            'schedule.schedule.id' => ['required', 'string', 'max:128', 'in:' . $scheduleId],
             'schedule.schedule.name' => ['required', 'string', 'max:200'],
             'schedule.schedule.departments' => ['sometimes', 'array'],
             'schedule.schedule.employees' => ['sometimes', 'array'],
@@ -75,7 +75,7 @@ class ScheduleController extends Controller
                     'updated_at' => now(),
                 ]);
             } catch (QueryException $exception) {
-                if (!$this->isUniqueConstraintViolation($exception)) {
+                if (! $this->isUniqueConstraintViolation($exception)) {
                     throw $exception;
                 }
 
@@ -224,11 +224,11 @@ class ScheduleController extends Controller
 
     private function revision(object $record): string
     {
-        return 'v'.$record->generation.':'.($record->fingerprint ?? str_repeat('0', 64));
+        return 'v' . $record->generation . ':' . ($record->fingerprint ?? str_repeat('0', 64));
     }
 
     private function absentRevision(int $ownerId, string $scheduleId): string
     {
-        return 'absent:'.hash('sha256', $ownerId."\0".$scheduleId);
+        return 'absent:'.hash('sha256', $ownerId . "\0" . $scheduleId);
     }
 }
