@@ -222,6 +222,6 @@ class ScheduleApiTest extends TestCase
 
     private function auth(string $token): array
     {
-        return ['Authorization' => 'Bearer ' . $token];
+        return ['Authorization' => 'Bearer '.$token];
     }
 }
