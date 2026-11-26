@@ -104,11 +104,17 @@ class BackendCalendarSyncCoordinationGateway
   }
 
   @override
-  Future<CalendarSyncRunRecord> getRun(String runId) async {
-    final response = await _request(
-      'GET',
-      'api/v1/calendar-sync/runs/${Uri.encodeComponent(runId)}',
-    );
+  Future<CalendarSyncRunRecord?> getRun(String runId) async {
+    final Map<String, dynamic> response;
+    try {
+      response = await _request(
+        'GET',
+        'api/v1/calendar-sync/runs/${Uri.encodeComponent(runId)}',
+      );
+    } on CalendarSyncCoordinationException catch (error) {
+      if (error.statusCode == 404) return null;
+      rethrow;
+    }
     final data = response['data'];
     if (data is! Map) {
       throw const FormatException('The backend returned an invalid sync run.');
