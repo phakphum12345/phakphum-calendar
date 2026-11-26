@@ -3139,7 +3139,9 @@ class AppController extends ChangeNotifier implements ControllerState {
       );
     }
 
-    final expectedRevision = repository.currentRevisionFor(next.id);
+    final expectedRevision = current == null
+        ? repository.revisionForAbsentSchedule(next.id)
+        : repository.revisionForSnapshot(current);
     if (expectedRevision == null || expectedRevision.trim().isEmpty) {
       return const PersistenceFailure(
         'The backend did not provide a caller-owned Schedule revision.',
