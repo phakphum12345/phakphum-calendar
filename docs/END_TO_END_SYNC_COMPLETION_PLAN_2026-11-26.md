@@ -556,3 +556,21 @@ Main remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`. No implementation PR ha
 - Calendar lease scope remains authenticated Google owner + Calendar ID; different Google accounts sharing a Calendar require a separate tenant-level lock design.
 
 Keep all implementation PRs Draft. No queued, pending, skipped, cancelled or older-head result is PASS. Do not merge until #192/#196 exact-head gates, #191 remaining checks, Apple runner allocation and live backend readiness are verified.
+
+
+### 8.17 Live execution checkpoint — 2026-11-26 23:30 Asia/Bangkok
+
+| PR | Current head | Latest status |
+|---|---|---|
+| #191 | `12dc4a5a1902f62998e65cc85f880614f9919110` | Laravel, Web, Windows, Android, Linux, Cross-platform Runtime, Auto Detect CI, Pull Request Gate and recursive Dependency Security PASS. iOS Advisory Evidence remains in progress. The OSV log explicitly scanned the identical Dart/PHP lockfiles and reported no issues. |
+| #192 | `10875734d0a956c76933cd8cc94cfa1108585cd3` | Laravel Backend CI PASS; other exact-head jobs are running/queued after the CAS workflow runner-routing change. Previous head `0507995...` had Web, Android, Linux, Windows, Auto Detect CI, Pull Request Gate and Dart Format PASS. |
+| #196 | `937708ee9f0e596556a019b2d999e7bbc68485cd` | Latest code includes History recovery UI and local-only fail-closed behavior. Current-head Auto Detect CI is pending; most platform/core jobs are still queued. The prior head's Windows analyzer failure was one `prefer_initializing_formals` lint, fixed by using an initializing formal; the next exact-head Windows run has not completed yet. |
+| #197 | `67bb93a8ef297e74d1b4d5ac59d024c6cbaab424` | Documentation checkpoint updated; current documentation CI is pending. |
+
+#### Apple runner allocation detail
+
+The Schedule CAS spike run reports its macOS matrix job as `Native SQLite CAS contract (macos-latest)`, which confirms it is currently using the hosted fallback rather than a configured custom runner label. The iOS and macOS workflows already accept `IOS_RUNNER_LABEL` and `MACOS_RUNNER_LABEL`; the CAS spike now also consumes `MACOS_RUNNER_LABEL`.
+
+To route all Apple jobs to a self-hosted Mac, the repository must have an online macOS runner registered with a custom label (for example `calendar-macos`) and the repository variables `IOS_RUNNER_LABEL` and `MACOS_RUNNER_LABEL` must both be set to that label. This configuration cannot be completed or verified from the repository code alone. Until the Mac runner is online and the variables are set, the Apple jobs remain pending on hosted macOS capacity.
+
+No implementation PR has been merged. PR #191's green checks do not make #192 or #196 green; each PR must pass its own exact-head gates. The production HTTPS backend origin and live database are also not verified. Keep all PRs Draft.
