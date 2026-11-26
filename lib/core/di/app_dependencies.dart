@@ -231,7 +231,11 @@ class AppDependencies {
     if (baseUrl.trim().isEmpty) return null;
     return BackendCalendarSyncCoordinationGateway(
       baseUrl: baseUrl,
-      idTokenProvider: () async => googleAuthService.account?.authentication.idToken,
+      idTokenProvider: () async {
+        final account = googleAuthService.account;
+        if (account == null) return null;
+        return (await account.authentication).idToken;
+      },
     );
   }();
   final ImportRepository? importRepository;
