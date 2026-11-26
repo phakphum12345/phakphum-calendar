@@ -615,3 +615,13 @@ No current implementation PR has been merged. #192's core PR Gate is PASS but Ap
 - #197 current documentation checks remain in progress/queued.
 
 No PR has been merged. Keep #192/#196 Draft until the full exact-head platform matrix, Cross-platform Runtime, Apple builds and current-head security scan complete.
+
+
+### 8.22 Live execution checkpoint — 2026-11-27 00:05 Asia/Bangkok
+
+- #191 (`12dc4a5...`): Laravel, Web, Windows, Android, Linux, Cross-platform Runtime, Auto Detect CI, Pull Request Gate and recursive Dependency Security all PASS. iOS Advisory Evidence completed successfully as a non-blocking observer; this backend-only PR did not trigger a native iOS build.
+- #192 (`10875734...`): Laravel, Web, Android, Linux, Windows, Auto Detect CI, Pull Request Gate, Dart Format, recursive Dependency Security and Cross-platform Runtime all PASS. iOS build remains queued; macOS/Xcode is pending; CAS spike remains queued on its macOS leg (Ubuntu/Windows legs passed).
+- #196 (`3dc978f...`): Laravel Backend CI, Dart Format Baseline Audit and recursive Dependency Security PASS. The recursive OSV scan checked both lockfiles (110 PHP and 132 Dart packages) with no issues. Windows, Linux, Web, Android, Auto Detect CI, Cross-platform Runtime and Pull Request Gate are still running/in progress; Apple builds remain pending.
+- #197 latest documentation checks remain in progress/queued.
+
+#192 has a green core PR Gate but is not fully platform-complete because Apple build and macOS CAS evidence are pending. #196's exact-head test matrix is still running after the SharedPreferencesAsync test-platform fix. No implementation PR has been merged.
