@@ -38,6 +38,10 @@ class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionS
   @override
   String? currentRevisionFor(String scheduleId) => _revisions[scheduleId];
 
+  @override
+  String? revisionForSnapshot(Schedule schedule) =>
+      _snapshotRevisions[_snapshotKey(schedule)];
+
   static Uri _normalizeBaseUri(String value) {
     final parsed = Uri.tryParse(value.trim());
     if (parsed == null || !parsed.hasScheme || parsed.host.isEmpty) {
