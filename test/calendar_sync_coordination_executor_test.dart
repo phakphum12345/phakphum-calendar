@@ -106,6 +106,53 @@ void main() {
     },
   );
 
+  test('recovers an interrupted insert from the encrypted durable ledger', () async {
+    final history = _MemoryHistoryRepository();
+    final failed = _MemoryFailedSyncRepository();
+    final gateway = _FakeCalendarGateway();
+    final coordination = _FakeCoordinationGateway()
+      ..runRecord = CalendarSyncRunRecord(
+        runId: 'remote-run-1',
+        calendarId: 'primary',
+        scheduleId: 'schedule-1',
+        status: 'expired',
+        startedAt: DateTime(2026, 11, 26, 8),
+        heartbeatAt: DateTime(2026, 11, 26, 8, 1),
+      )
+      ..operationRecords = [
+        CalendarSyncOperationRecord(
+          operationKey: 'insert:stable-sync-id',
+          operationType: 'insert',
+          status: 'running',
+          payloadHash: 'a' * 64,
+          operationPayload: {
+            'sync_id': 'stable-sync-id',
+            'title': 'OPD',
+            'start': DateTime(2026, 11, 26, 8).toIso8601String(),
+            'end': DateTime(2026, 11, 26, 16).toIso8601String(),
+            'description': null,
+            'color_id': null,
+            'calendar_id': 'primary',
+          },
+          attemptCount: 1,
+        ),
+      ];
+
+    final result = await ResumeSyncService(
+      gateway: gateway,
+      historyRepository: history,
+      failedRepository: failed,
+      coordinationGateway: coordination,
+    ).recoverRun('remote-run-1');
+
+    expect(result.completed, isTrue);
+    expect(result.historyEntry.id, 'remote-run-1');
+    expect(result.historyEntry.scheduleId, 'schedule-1');
+    expect(gateway.insertCount, 1);
+    expect(failed.operations, isEmpty);
+    expect(coordination.recorded.single.payload['sync_id'], 'stable-sync-id');
+  });
+
   test('does not call Calendar when lease acquisition is rejected', () async {
     final coordination = _FakeCoordinationGateway()..rejectAcquire = true;
     final gateway = _FakeCalendarGateway();
@@ -181,6 +228,8 @@ class _FakeCoordinationGateway implements CalendarSyncCoordinationGateway {
   final updates = <({String status, String? providerEventId})>[];
   final released = <({String status})>[];
   bool rejectAcquire = false;
+  CalendarSyncRunRecord? runRecord;
+  List<CalendarSyncOperationRecord> operationRecords = [];
 
   final lease = CalendarSyncLease(
     runId: '00000000-0000-4000-8000-000000000001',
@@ -204,6 +253,19 @@ class _FakeCoordinationGateway implements CalendarSyncCoordinationGateway {
   Future<void> heartbeat(CalendarSyncLease lease) async {
     calls.add('heartbeat');
   }
+
+  @override
+  Future<CalendarSyncRunRecord> getRun(String runId) async {
+    final value = runRecord;
+    if (value == null || value.runId != runId) {
+      throw StateError('run not found');
+    }
+    return value;
+  }
+
+  @override
+  Future<List<CalendarSyncOperationRecord>> listOperations(String runId) async =>
+      operationRecords;
 
   @override
   Future<void> recordOperation({
