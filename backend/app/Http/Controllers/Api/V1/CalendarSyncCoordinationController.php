@@ -356,6 +356,7 @@ class CalendarSyncCoordinationController extends Controller
             if ($operation === null) {
                 return ['status' => 404, 'error' => 'calendar_sync_operation_not_found'];
             }
+
             if ($data['attempt_count'] < $operation->attempt_count) {
                 return ['status' => 409, 'error' => 'calendar_sync_attempt_regression'];
             }
