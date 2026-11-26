@@ -793,3 +793,14 @@ No implementation PR merged. No production data writes or deployment. Queued, pe
 - This remains an outbox, not delivery. No push transport, queue worker, inbox/read API or client display has been implemented; no production notification was sent.
 
 No implementation PR merged. No production data writes or deployment. Delivery and device-level acceptance remain release blockers.
+
+
+### 8.35 Live execution checkpoint — 2026-11-27 (row 33 test executed successfully)
+
+- PR #192 exact head `8af2471200cc5f3cbe8b8778b37ab528c3f90403`: the row-33 `เวรเช้า14 ชั้น` regression fixture has executed under the passing Cross-platform Runtime suite. The test verifies the 30 date columns, 20 non-empty assignments, B33–AE33 source coordinates, U14 conversion and 07:00–08:00 times.
+- On this exact head, Dart Format, Dependency Security, Laravel Backend CI, Linux, Android, Web, Cross-platform Runtime and Auto Detect CI passed. Windows, Pull Request Gate and iOS Advisory were in progress; CAS Storage Spike was queued; iOS/macOS Xcode were pending.
+- This validates the row-33 parser regression on the cross-platform quality suite but does not certify the remaining Windows PR gate, CAS macOS leg or Apple builds.
+- PR #191 head `43bdc2ebd94ac8e223d1dc43b532f4a9691d0eb9`: Backend CI, Linux POSIX full quality suite and Dependency Security passed; Windows, Android, Cross-platform Runtime, PR Gate and Auto Detect were in progress. Notification enqueue integration remains not delivery.
+- PR #196 head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: Backend, Web, Linux, Android, Cross-platform Runtime, Auto Detect, Format and Dependency Security passed; Windows, PR Gate and iOS Advisory were in progress; Apple Xcode pending.
+
+No implementation PR merged. No production data writes, Calendar writes or deployment. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
