@@ -444,6 +444,9 @@ class AppController extends ChangeNotifier implements ControllerState {
     }
     auth.addListener(_onAuthChanged);
     await auth.initialize(webClientId: settings.googleWebClientId);
+    if (auth.account != null) {
+      await _loadCanonicalRuntimeSchedule();
+    }
     initialized = true;
     notifyListeners();
   }
@@ -2682,6 +2685,9 @@ class AppController extends ChangeNotifier implements ControllerState {
       _shiftOverrides.clear();
       recentSheetHistoryLoaded = false;
       lastRefresh = null;
+      if (accountId != null && _scheduleRepository is ConditionalScheduleWriter) {
+        unawaited(_loadCanonicalRuntimeSchedule());
+      }
     }
     notifyListeners();
   }
@@ -3106,6 +3112,25 @@ class AppController extends ChangeNotifier implements ControllerState {
             notifyListeners();
           });
     }
+  }
+
+  Future<void> _loadCanonicalRuntimeSchedule() async {
+    if (_scheduleRepository is! ConditionalScheduleWriter) return;
+    final result = await _scheduleRepository.findById(_runtimeScheduleId);
+    switch (result) {
+      case Success<Schedule?>(value: final schedule):
+        _legacySchedule = schedule == null
+            ? _legacyScheduleAdapter.toCanonical(
+                const [],
+                id: _runtimeScheduleId,
+                name: _runtimeScheduleName,
+              )
+            : _legacyScheduleAdapter.wrapCanonical(schedule);
+        _rebuildAlerts();
+      case Failure<Schedule?>():
+        error ??= 'โหลดตารางหลักจาก Backend ไม่สำเร็จ: ${result.message}';
+    }
+    notifyListeners();
   }
 
   Future<Result<Schedule>> _saveCanonicalSchedule({
