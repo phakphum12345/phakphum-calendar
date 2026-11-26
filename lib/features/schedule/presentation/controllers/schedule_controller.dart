@@ -286,6 +286,13 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
           _expectedRevision = source is ScheduleRevisionSource
               ? source.currentRevisionFor(scheduleId)
               : null;
+          _service.replaceSchedule(
+            Schedule(
+              id: scheduleId,
+              name: _service.schedule.name,
+              months: _service.schedule.months,
+            ),
+          );
           _message = 'No saved schedule was found.';
         }
       case Failure<Schedule?>():
