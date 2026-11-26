@@ -129,7 +129,7 @@ class _SyncHistoryEntryTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final recovering = controller.recoveringHistoryId == entry.id;
-    final canRecover = controller.canRecover &&
+    final canRecover = controller.hasRecoveryAction &&
         entry.status != SyncHistoryStatus.success &&
         (entry.failed > 0 || entry.serverRunId != null);
 
@@ -148,7 +148,7 @@ class _SyncHistoryEntryTile extends StatelessWidget {
       isThreeLine: true,
       trailing: canRecover
           ? TextButton.icon(
-              onPressed: recovering
+              onPressed: recovering || !controller.canRecover
                   ? null
                   : () => _confirmRecovery(context),
               icon: recovering
