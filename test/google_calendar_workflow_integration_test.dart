@@ -43,6 +43,36 @@ void main() {
     expect(controller.requiresConfirmation, isTrue);
   });
 
+  test('compatibility preview carries stable Schedule identity and clears canonical state', () async {
+    final gateway = _CalendarGateway();
+    final history = _RecordingHistoryRepository();
+    final dependencies = AppDependencies(
+      scheduleRules: const [],
+      syncHistoryRepository: history,
+      failedSyncRepository: _InMemoryFailedSyncRepository(),
+    );
+    final controller = dependencies.createShiftCalendarWorkflowController(
+      gateway,
+    );
+    addTearDown(controller.dispose);
+    final schedule = canonicalScheduleFixture();
+
+    await controller.prepareSchedule(schedule);
+    final desired = const CanonicalScheduleEventMapper().map(schedule);
+    await controller.prepareCandidatePreview(
+      desired: desired,
+      scheduleId: schedule.id,
+    );
+
+    expect(controller.schedule, isNull);
+    expect(controller.schedulePreparation, isNull);
+    await controller.synchronize();
+
+    expect(controller.lastResult, isNotNull);
+    expect(controller.lastResult!.historyEntry.scheduleId, schedule.id);
+    expect(controller.lastResult!.hasFailures, isFalse);
+  });
+
   test('blocking validation prevents diff and execution', () async {
     final calls = <String>[];
     final gateway = _CalendarGateway(calls: calls);
