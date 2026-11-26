@@ -86,11 +86,12 @@ class ShiftCalendarWorkflowController extends ChangeNotifier
     required List<CalendarEventCandidate> existing,
     required String scheduleId,
   }) {
-    _validateScheduleIdentity(scheduleId);
+    _preview = null;
     _schedule = null;
     _schedulePreparation = null;
     _validationResult = null;
     _lastResult = null;
+    _validateScheduleIdentity(scheduleId);
     _compatibilityScheduleId = scheduleId;
     _preview = _previewBuilder.build(changes: changes, existing: existing);
     _message = null;
@@ -103,6 +104,10 @@ class ShiftCalendarWorkflowController extends ChangeNotifier
     required String scheduleId,
     String calendarId = 'primary',
   }) async {
+    _preview = null;
+    _schedule = null;
+    _schedulePreparation = null;
+    _validationResult = null;
     _validateScheduleIdentity(scheduleId);
     _isBusy = true;
     _message = null;
@@ -132,6 +137,7 @@ class ShiftCalendarWorkflowController extends ChangeNotifier
     Schedule schedule, {
     String calendarId = 'primary',
   }) async {
+    _preview = null;
     _isBusy = true;
     _message = null;
     _lastResult = null;
