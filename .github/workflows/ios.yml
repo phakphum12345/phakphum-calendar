@@ -31,7 +31,8 @@ permissions:
 # iOS owns its own runner lifecycle. No dependency on other platform workflows.
 # Unique run IDs ensure that queued builds are not cancelled by later PR updates.
 concurrency:
-  group: ios-xcode-${{ github.workflow }}-${{ github.run_id }}
+  group: ios-xcode-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # Let a running Xcode build finish; GitHub replaces only the older pending run.
   cancel-in-progress: false
 
 jobs:
