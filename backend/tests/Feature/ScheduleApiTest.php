@@ -53,6 +53,59 @@ class ScheduleApiTest extends TestCase
             ->assertJsonPath('revision', $updated['revision']);
     }
 
+    public function test_schedule_insert_database_failure_is_not_reported_as_a_revision_conflict(): void
+    {
+        $this->signIn('alice-token');
+        $absent = $this->getJson('/api/v1/schedules/insert-failure', $this->auth('alice-token'))
+            ->assertOk()->json('revision');
+
+        DB::unprepared("CREATE TRIGGER fail_schedule_record_insert BEFORE INSERT ON schedule_records
+            BEGIN SELECT RAISE(ABORT, 'forced schedule insert failure'); END;");
+
+        try {
+            $this->withoutExceptionHandling();
+            $this->putJson('/api/v1/schedules/insert-failure', [
+                'expected_revision' => $absent,
+                'schedule' => $this->schedulePayload('insert-failure', 'Must not be saved'),
+            ], $this->auth('alice-token'));
+            $this->fail('Expected the original database exception to be rethrown.');
+        } catch (QueryException $exception) {
+            $this->assertStringContainsString('forced schedule insert failure', $exception->getMessage());
+        }
+
+        $this->assertDatabaseMissing('schedule_records', [
+            'owner_user_id' => 1,
+            'schedule_id' => 'insert-failure',
+        ]);
+    }
+
+    public function test_journal_insert_database_failure_is_not_reported_as_an_import_conflict(): void
+    {
+        $this->signIn('alice-token');
+
+        DB::unprepared("CREATE TRIGGER fail_schedule_journal_insert BEFORE INSERT ON schedule_import_journals
+            BEGIN SELECT RAISE(ABORT, 'forced journal insert failure'); END;");
+
+        try {
+            $this->withoutExceptionHandling();
+            $this->postJson('/api/v1/schedules/journal-failure/import-journals', [
+                'import_run_id' => 'grid-journal-failure',
+                'lifecycle' => 'prepared',
+                'base_revision' => 'absent:test',
+                'source_fingerprint' => str_repeat('b', 64),
+                'provenance' => ['source' => 'failure-fixture.xlsx'],
+            ], $this->auth('alice-token'));
+            $this->fail('Expected the original database exception to be rethrown.');
+        } catch (QueryException $exception) {
+            $this->assertStringContainsString('forced journal insert failure', $exception->getMessage());
+        }
+
+        $this->assertDatabaseMissing('schedule_import_journals', [
+            'import_run_id' => 'grid-journal-failure',
+            'lifecycle' => 'prepared',
+        ]);
+    }
+
     public function test_schedule_records_are_isolated_between_authenticated_accounts(): void
     {
         $this->signIn('alice-token');
