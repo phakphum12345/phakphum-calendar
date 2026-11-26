@@ -224,12 +224,12 @@ class GoogleCalendarSyncGateway
     required String eventId,
     required String calendarId,
     required String expectedEtag,
-    required String expectedSyncId,
+    required String? expectedSyncId,
   }) async {
     final existing = await _readEvent(calendarId, eventId);
     // A missing event is the desired terminal state for a delete retry.
     if (existing == null) return;
-    if (_managedSyncId(existing) != expectedSyncId) {
+    if (!_matchesExpectedProviderIdentity(existing, expectedSyncId)) {
       throw StateError('Refusing to delete Calendar event $eventId: provider identity changed after preview.');
     }
     if (existing.etag == null || existing.etag != expectedEtag) {
