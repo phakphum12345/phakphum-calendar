@@ -331,9 +331,11 @@ class GridRosterImportWorkflow {
       'sha256:${sha256.convert(utf8.encode(scheduleCodec.encode(schedule)))}';
 
   String revisionFor(Schedule? schedule, String scheduleId) {
-    final authoritative = _scheduleRepository is ScheduleRevisionSource
-        ? (_scheduleRepository as ScheduleRevisionSource)
-              .currentRevisionFor(scheduleId)
+    final source = _scheduleRepository;
+    final authoritative = source is ScheduleRevisionSource
+        ? schedule == null
+            ? source.revisionForAbsentSchedule(scheduleId)
+            : source.revisionForSnapshot(schedule)
         : null;
     if (authoritative != null) return authoritative;
     return schedule == null ? 'absent:$scheduleId' : scheduleFingerprint(schedule);
