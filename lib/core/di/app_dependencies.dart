@@ -34,6 +34,7 @@ import '../../features/calendar_engine/domain/failed_sync_repository.dart';
 import '../../features/calendar_engine/infrastructure/google_calendar_sync_gateway.dart';
 import '../../features/calendar_engine/infrastructure/shared_preferences_failed_sync_repository.dart';
 import '../../features/history/domain/sync_history_repository.dart';
+import '../../features/history/application/sync_history_controller.dart';
 import '../../features/history/infrastructure/shared_preferences_sync_history_repository.dart';
 import '../../features/rule_engine/application/rule_engine.dart'
     as legacy_rules;
@@ -396,6 +397,34 @@ class AppDependencies {
   /// Creates the production-facing canonical schedule validation service.
   ScheduleValidationService createScheduleValidationService() {
     return ScheduleValidationService(engine: createRuleEngine());
+  }
+
+  /// Creates the sync-history controller with an explicit, authenticated
+  /// recovery action. Recovery is never started automatically at app startup.
+  SyncHistoryController createSyncHistoryController() {
+    return SyncHistoryController(
+      syncHistoryRepository,
+      recoverHistory: (historyId) async {
+        final client = await googleAuthService.clientFor([
+          calendar.CalendarApi.calendarEventsScope,
+        ]);
+        try {
+          final service = ResumeSyncService(
+            gateway: calendarSyncGatewayFactory(client),
+            historyRepository: syncHistoryRepository,
+            failedRepository: failedSyncRepository,
+            coordinationGateway: calendarSyncCoordinationGateway,
+          );
+          if (calendarSyncCoordinationGateway == null) {
+            await service.resume(historyId);
+          } else {
+            await service.recoverHistory(historyId);
+          }
+        } finally {
+          client.close();
+        }
+      },
+    );
   }
 
   /// Creates the resilient executor used for one authorized sync session.
