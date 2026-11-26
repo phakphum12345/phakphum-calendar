@@ -178,8 +178,7 @@ class AppDependencies {
        shiftTemplateRepository =
            shiftTemplateRepository ??
            SharedPreferencesShiftTemplateRepository(),
-       scheduleRepository =
-           scheduleRepository ?? SharedPreferencesScheduleRepository(),
+       _providedScheduleRepository = scheduleRepository,
        workflowMessageProvider =
            workflowMessageProviderOverride ??
            ((key) => workflowMessageFor(AppLocalizationsTh(), key));
@@ -224,18 +223,25 @@ class AppDependencies {
 
   final EmployeeRepository employeeRepository;
   final ShiftTemplateRepository shiftTemplateRepository;
-  final ScheduleRepository scheduleRepository;
+  final ScheduleRepository? _providedScheduleRepository;
 
-  /// Uses the authenticated Laravel backend for Grid imports when configured.
-  /// Existing local storage remains the fallback for unconfigured development.
-  late final ScheduleRepository gridScheduleRepository = () {
+  /// Uses the same configured backend for every production Schedule writer.
+  /// If the backend is not configured, existing local storage remains the
+  /// development fallback. Backend writes without a snapshot revision fail closed.
+  late final ScheduleRepository scheduleRepository =
+      _providedScheduleRepository ?? _createDefaultScheduleRepository();
+
+  ScheduleRepository _createDefaultScheduleRepository() {
     const baseUrl = String.fromEnvironment('ORGANIZATION_API_BASE_URL');
-    if (baseUrl.trim().isEmpty) return scheduleRepository;
+    if (baseUrl.trim().isEmpty) return SharedPreferencesScheduleRepository();
     return BackendScheduleRepository(
       baseUrl: baseUrl,
       idTokenProvider: () async => googleAuthService.account?.authentication.idToken,
     );
-  }();
+  }
+
+  /// Grid imports share the same repository instance and snapshot revision cache.
+  late final ScheduleRepository gridScheduleRepository = scheduleRepository;
   /// Uses the same configured backend origin as Schedule persistence.
   /// When no backend origin is configured, the existing local journal remains
   /// the only journal and all legacy local workflows continue unchanged.
