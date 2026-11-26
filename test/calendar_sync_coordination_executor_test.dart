@@ -285,10 +285,10 @@ void main() {
     expect(gateway.insertCount, 0);
     expect(coordination.calls, ['acquire:primary:schedule-1']);
     expect(history.entries.values.single.status, SyncHistoryStatus.failure);
-    expect(history.entries.values.single.failed, 1);
+    expect(history.entries.values.single.failed, 0);
     expect(
       history.entries.values.single.message,
-      'Synchronization did not complete; no successful operation was confirmed.',
+      'Synchronization was blocked before Calendar writes; another run may hold the lease. Retry after it finishes.',
     );
   });
 }
