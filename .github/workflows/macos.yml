@@ -71,6 +71,18 @@ jobs:
       - name: Verify generated macOS Xcode project
         run: xcodebuild -list -project macos/Runner.xcodeproj
 
+      - name: Require shared backend for production artifact
+        if: github.ref == 'refs/heads/main'
+        env:
+          ORGANIZATION_API_BASE_URL: ${{ vars.ORGANIZATION_API_BASE_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${ORGANIZATION_API_BASE_URL//[[:space:]]/}" || "$ORGANIZATION_API_BASE_URL" != https://* ]]; then
+            echo "Production artifacts require an HTTPS ORGANIZATION_API_BASE_URL."
+            exit 1
+          fi
+
       - name: Build macOS application with the project ad-hoc signing identity
         shell: bash
         env:
