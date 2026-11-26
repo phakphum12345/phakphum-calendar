@@ -523,3 +523,36 @@ This checkpoint supersedes 8.14 for current heads and statuses. Main remains `d1
 - Schedule CAS is per Schedule revision. Calendar coordination is per authenticated Google owner plus Calendar ID, so it serializes devices using the same Google account; it is not a tenant-wide lock for different Google accounts sharing one Calendar.
 
 No current exact-head gate is fully green for #192 or #196. Queued, pending, skipped, cancelled and older-head results are not PASS. Keep all PRs Draft and do not merge until the full acceptance matrix, review and production backend readiness are verified.
+
+
+### 8.16 Live execution checkpoint — 2026-11-26 23:20 Asia/Bangkok
+
+Main remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`. No implementation PR has been merged. The latest exact-head facts below supersede earlier checkpoint statuses.
+
+| PR | Head | PASS evidence | Still pending |
+|---|---|---|---|
+| #192 | `0507995bbd6533a369f0850d9e21a3fee9a94d94` | Laravel Backend CI, Web, Android, Linux, Windows, Auto Detect CI, Pull Request Gate and Dart Format Baseline Audit. | iOS build/advisory, macOS/Xcode, Cross-platform Runtime, macOS CAS Storage Spike and branch-specific OSV workflow are queued/in progress. |
+| #191 | `12dc4a5a1902f62998e65cc85f880614f9919110` | Laravel Backend CI, Web, Windows, Android, Linux and recursive Dependency Security. OSV log confirms `pubspec.lock` (132 packages) and `backend/composer.lock` (110 packages) were scanned; no issues found. | iOS advisory and Pull Request Gate are in progress; Cross-platform Runtime and Auto Detect CI are pending. Base remains current main, 0 commits behind. |
+| #196 | `032790e4c18feda7f7d1dbf09580c6bc1d092479` | Previous head `4d3f1b9...` passed Laravel Backend CI, Web and Dart Format, but these are stale after subsequent recovery and History UI changes. | Current-head full CI has not completed; Laravel, Web, Format, platform builds, Cross-platform Runtime, Auto Detect, PR Gate and branch-specific OSV confirmation remain queued/in progress. |
+| #197 | `32f575ecd3e4480c0ca10f334cb0c4fa6e830ff0` | Previous documentation checks passed. | Current documentation-head checks pending. |
+
+#### Dependency security evidence shared by all implementation PRs
+
+- Git blob SHA for `pubspec.lock` is identical on #191, #192 and #196: `5786b7243fbfbc765b2d6d72d6da5c78fecb90fc`.
+- Git blob SHA for `backend/composer.lock` is identical on #191, #192 and #196: `ea34e82baa0567e4bebea5e990b302685c468d2d`.
+- #191's exact-head recursive OSV scan covered both lockfiles (132 Dart and 110 PHP packages) and reported no issues. Composer audit also passed on #191 and #192; #196's previous head ran the same locked graph and passed Composer audit.
+- #192/#196 branch-specific OSV jobs are still queued; they remain workflow confirmations, not evidence of different dependency content.
+
+#### Apple runner allocation
+
+- The iOS and macOS workflows accept repository variables `IOS_RUNNER_LABEL` and `MACOS_RUNNER_LABEL`; if unset they default to GitHub-hosted `macos-15`.
+- To route to a self-hosted Mac, register an online macOS runner with a custom label (for example `calendar-macos`) and set both variables to that label. A Windows self-hosted runner cannot execute Xcode or produce native iOS/macOS builds.
+- Current iOS/macOS jobs are still queued. The presence of the Windows runner does not satisfy the Apple build gate, and no self-hosted macOS runner availability has been verified.
+
+#### Recovery UI and scope
+
+- #196 now includes a confirmation-gated History utility recovery action, but its new exact-head UI/controller tests have not yet completed.
+- Recovery is offered only when local history contains a server Run ID. Local-only entries without a server Run ID are explicitly not recoverable from the History utility, avoiding cross-account replay of an unscoped local queue.
+- Calendar lease scope remains authenticated Google owner + Calendar ID; different Google accounts sharing a Calendar require a separate tenant-level lock design.
+
+Keep all implementation PRs Draft. No queued, pending, skipped, cancelled or older-head result is PASS. Do not merge until #192/#196 exact-head gates, #191 remaining checks, Apple runner allocation and live backend readiness are verified.
