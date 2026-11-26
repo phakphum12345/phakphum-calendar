@@ -6,6 +6,7 @@ import '../../../core/result/result.dart';
 import '../../../domain/entities/schedule.dart';
 import '../../../domain/entities/schedule_month.dart';
 import '../../../domain/repositories/schedule_repository.dart';
+import '../../../domain/repositories/conditional_schedule_writer.dart';
 import '../../../domain/repositories/schedule_revision_source.dart';
 import 'schedule_json_codec.dart';
 
@@ -14,7 +15,7 @@ import 'schedule_json_codec.dart';
 /// The revision cache is populated by reads and updated only from successful
 /// server responses. A stale cached token is safe: the backend rejects it with
 /// HTTP 409 rather than replacing a newer Schedule.
-class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionSource {
+class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionSource, ConditionalScheduleWriter {
   BackendScheduleRepository({
     required String baseUrl,
     required this.idTokenProvider,
@@ -97,6 +98,46 @@ class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionS
       Success<Schedule?>(value: final schedule) => Success(schedule?.month(month)),
       Failure<Schedule?>() => _copyFailure<Schedule?, ScheduleMonth?>(result),
     };
+  }
+
+  @override
+  Future<Result<Schedule>> saveIfRevision(
+    Schedule schedule,
+    String expectedRevision,
+  ) async {
+    try {
+      if (expectedRevision.trim().isEmpty) {
+        return const PersistenceFailure('An expected Schedule revision is required.');
+      }
+      final response = await _request(
+        'PUT',
+        _schedulePath(schedule.id),
+        body: {
+          'expected_revision': expectedRevision,
+          'schedule': jsonDecode(codec.encode(schedule)),
+        },
+      );
+      return _decodeSavedSchedule(response, schedule.id);
+    } on BackendScheduleApiException catch (error, stackTrace) {
+      return NetworkFailure(
+        error.message,
+        statusCode: error.statusCode,
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    } on ScheduleCodecException catch (error, stackTrace) {
+      return ValidationFailure(
+        error.message,
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    } on Object catch (error, stackTrace) {
+      return NetworkFailure(
+        'Could not conditionally save Schedule "${schedule.id}" to the backend.',
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   @override
