@@ -202,7 +202,7 @@ class GoogleCalendarSyncGateway
         'Content-Type': 'application/json',
         'If-Match': expectedEtag,
       })
-      ..body = jsonEncode(_toEvent(command).toJson());
+      ..body = jsonEncode((_toEvent(command)..id = eventId).toJson());
     final response = await _send(request);
     if (response.statusCode == 412) {
       throw StateError('Calendar event $eventId failed the ETag precondition. Refresh the preview.');
