@@ -7,6 +7,7 @@ import '../../../domain/entities/employee.dart';
 import '../../../domain/entities/schedule.dart';
 import '../../../domain/entities/shift_template.dart';
 import '../../../domain/repositories/schedule_repository.dart';
+import '../../../domain/repositories/conditional_schedule_writer.dart';
 import '../../../domain/repositories/schedule_revision_source.dart';
 import '../../excel_import/domain/workbook_info.dart';
 import '../../schedule/data/schedule_json_codec.dart';
@@ -240,7 +241,7 @@ class GridRosterImportWorkflow {
           'The journal is retained for conflict-aware recovery.',
         );
       }
-      return await _scheduleRepository.save(journalled.schedule);
+      return await _saveWithRevision(journalled.schedule, liveRevision);
     } on Object catch (error, stackTrace) {
       return PersistenceFailure(
         'The Grid bundle could not be committed or saved. '
@@ -297,7 +298,10 @@ class GridRosterImportWorkflow {
           'Recovery target changed during replay. No Schedule was overwritten.',
         );
       }
-      final saved = await _scheduleRepository.save(snapshot.schedule);
+      final saved = await _saveWithRevision(
+        snapshot.schedule,
+        snapshot.provenance.targetScheduleRevision,
+      );
       return switch (saved) {
         Success<Schedule>(value: final schedule) => Success(schedule),
         Failure<Schedule>() => _copyFailure<Schedule, Schedule?>(saved),
@@ -309,6 +313,17 @@ class GridRosterImportWorkflow {
         stackTrace: stackTrace,
       );
     }
+  }
+
+  Future<Result<Schedule>> _saveWithRevision(
+    Schedule schedule,
+    String expectedRevision,
+  ) {
+    final repository = _scheduleRepository;
+    if (repository is ConditionalScheduleWriter) {
+      return repository.saveIfRevision(schedule, expectedRevision);
+    }
+    return repository.save(schedule);
   }
 
   String scheduleFingerprint(Schedule schedule) =>
