@@ -25,7 +25,8 @@ class SyncHistoryController extends ChangeNotifier implements ControllerState {
   bool get isLoading => _isLoading;
   String? get recoveryMessage => _recoveryMessage;
   String? get recoveringHistoryId => _recoveringHistoryId;
-  bool get canRecover => _recoverHistory != null && _recoveringHistoryId == null;
+  bool get hasRecoveryAction => _recoverHistory != null;
+  bool get canRecover => hasRecoveryAction && _recoveringHistoryId == null;
 
   @override
   String? get message => _message;
