@@ -8,6 +8,12 @@ on:
       - "lib/features/calendar_engine/application/calendar_sync_plan.dart"
       - "lib/features/calendar_engine/application/calendar_sync_plan_builder.dart"
       - "lib/features/calendar_engine/application/resilient_calendar_sync_executor.dart"
+      - "lib/features/calendar_engine/application/resume_sync_service.dart"
+      - "lib/features/history/domain/sync_history_entry.dart"
+      - "lib/features/history/infrastructure/sync_history_json_codec.dart"
+      - "lib/features/calendar_engine/application/resume_sync_service.dart"
+      - "lib/features/history/domain/sync_history_entry.dart"
+      - "lib/features/history/infrastructure/sync_history_json_codec.dart"
       - "lib/features/calendar_engine/domain/calendar_sync_coordination_gateway.dart"
       - "lib/features/calendar_engine/domain/calendar_sync_operation_result.dart"
       - "lib/features/calendar_engine/infrastructure/backend_calendar_sync_coordination_gateway.dart"
@@ -60,7 +66,10 @@ jobs:
           dart format \
             lib/features/calendar_engine/application/calendar_sync_plan.dart \
             lib/features/calendar_engine/application/calendar_sync_plan_builder.dart \
-            lib/features/calendar_engine/application/resilient_calendar_sync_executor.dart \
+            lib/features/calendar_engine/application/resilient_calendar_sync_executor.dart lib/features/calendar_engine/application/resume_sync_service.dart lib/features/history/domain/sync_history_entry.dart lib/features/history/infrastructure/sync_history_json_codec.dart \
+            lib/features/calendar_engine/application/resume_sync_service.dart \
+            lib/features/history/domain/sync_history_entry.dart \
+            lib/features/history/infrastructure/sync_history_json_codec.dart \
             lib/features/calendar_engine/domain/calendar_sync_coordination_gateway.dart \
             lib/features/calendar_engine/domain/calendar_sync_operation_result.dart \
             lib/features/calendar_engine/infrastructure/backend_calendar_sync_coordination_gateway.dart \
@@ -81,7 +90,7 @@ jobs:
           else
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add -- lib/features/calendar_engine/application/calendar_sync_plan.dart lib/features/calendar_engine/application/calendar_sync_plan_builder.dart lib/features/calendar_engine/application/resilient_calendar_sync_executor.dart lib/features/calendar_engine/domain/calendar_sync_coordination_gateway.dart lib/features/calendar_engine/domain/calendar_sync_operation_result.dart lib/features/calendar_engine/infrastructure/backend_calendar_sync_coordination_gateway.dart lib/features/workflow/application/calendar_sync_coordinator.dart lib/core/di/app_dependencies.dart test/calendar_sync_coordination_executor_test.dart
+            git add -- lib/features/calendar_engine/application/calendar_sync_plan.dart lib/features/calendar_engine/application/calendar_sync_plan_builder.dart lib/features/calendar_engine/application/resilient_calendar_sync_executor.dart lib/features/calendar_engine/application/resume_sync_service.dart lib/features/history/domain/sync_history_entry.dart lib/features/history/infrastructure/sync_history_json_codec.dart lib/features/calendar_engine/domain/calendar_sync_coordination_gateway.dart lib/features/calendar_engine/domain/calendar_sync_operation_result.dart lib/features/calendar_engine/infrastructure/backend_calendar_sync_coordination_gateway.dart lib/features/workflow/application/calendar_sync_coordinator.dart lib/core/di/app_dependencies.dart test/calendar_sync_coordination_executor_test.dart
             git commit -m "style(sync): format coordinated Calendar executor"
             git push origin "HEAD:${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
           fi
