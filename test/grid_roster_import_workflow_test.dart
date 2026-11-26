@@ -370,6 +370,19 @@ void main() {
     expect(repository.value, conversion.schedule);
   });
 
+  test('review revision rejects an A to B to A Schedule change (ABA)', () async {
+    final original = Schedule(id: 'schedule-1', name: 'Original A');
+    repository.value = original;
+    final context = await prepareContext();
+    final conversion = convertContext(context);
+    repository.value = Schedule(id: 'schedule-1', name: 'Temporary B');
+    repository.value = original;
+    final result = await workflow.commit(context: context, conversion: conversion);
+    expect(result, isA<ValidationFailure<Schedule>>());
+    expect(repository.value, same(original));
+    expect(store.values, isEmpty);
+  });
+
   test('commit rejects a Schedule changed after the review snapshot', () async {
     final context = await prepareContext();
     final conversion = convertContext(context);
