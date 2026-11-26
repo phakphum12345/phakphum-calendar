@@ -125,6 +125,54 @@ class CalendarSyncCoordinationApiTest extends TestCase
             ->assertOk()->assertJsonPath('data.0.provider_event_id', 'provider-event-123');
     }
 
+    public function test_reclaimed_lease_cannot_append_or_update_the_previous_run_ledger(): void
+    {
+        $firstRunId = '00000000-0000-4000-8000-000000000009';
+        $first = $this->postJson(
+            '/api/v1/calendar-sync/leases',
+            $this->lease($firstRunId, 'device-a'),
+            $this->auth('alice-token'),
+        )->assertCreated()->json('data');
+
+        $this->postJson('/api/v1/calendar-sync/leases/'.$firstRunId.'/operations', [
+            'lease_token' => $first['lease_token'],
+            'operation_key' => 'prepared-before-expiry',
+            'operation_type' => 'insert',
+            'payload_hash' => hash('sha256', 'original-payload'),
+        ], $this->auth('alice-token'))->assertCreated();
+
+        $this->travel(61)->seconds();
+
+        $secondRunId = '00000000-0000-4000-8000-000000000010';
+        $this->postJson(
+            '/api/v1/calendar-sync/leases',
+            $this->lease($secondRunId, 'device-b'),
+            $this->auth('alice-token'),
+        )->assertCreated();
+
+        $this->postJson('/api/v1/calendar-sync/leases/'.$firstRunId.'/operations', [
+            'lease_token' => $first['lease_token'],
+            'operation_key' => 'late-write-after-reclaim',
+            'operation_type' => 'insert',
+            'payload_hash' => hash('sha256', 'late-payload'),
+        ], $this->auth('alice-token'))
+            ->assertConflict()
+            ->assertJsonPath('error.code', 'calendar_sync_lease_lost');
+
+        $this->patchJson('/api/v1/calendar-sync/leases/'.$firstRunId.'/operations/prepared-before-expiry', [
+            'lease_token' => $first['lease_token'],
+            'status' => 'running',
+            'attempt_count' => 1,
+        ], $this->auth('alice-token'))
+            ->assertConflict()
+            ->assertJsonPath('error.code', 'calendar_sync_lease_lost');
+
+        $this->getJson('/api/v1/calendar-sync/runs/'.$firstRunId.'/operations', $this->auth('alice-token'))
+            ->assertOk()
+            ->assertJsonPath('data.0.status', 'prepared')
+            ->assertJsonCount(1, 'data');
+    }
+
     private function lease(string $runId, string $client): array
     {
         return [
