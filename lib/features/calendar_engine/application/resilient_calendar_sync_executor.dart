@@ -65,16 +65,7 @@ class ResilientCalendarSyncExecutor {
     var deleted = 0;
     var failed = 0;
     final coordination = coordinationGateway;
-    final lease = coordination == null || plan.operationCount == 0
-        ? null
-        : await coordination.acquire(
-            calendarId: plan.calendarId,
-            scheduleId: plan.scheduleId,
-          );
-    if (lease != null) {
-      history = history.copyWith(serverRunId: lease.runId);
-      await _historyRepository.save(history);
-    }
+    CalendarSyncLease? lease;
     var leaseStatus = 'failed';
 
     Future<CalendarSyncOperationResult> trackOperation({
@@ -83,21 +74,22 @@ class ResilientCalendarSyncExecutor {
       required Map<String, Object?> payload,
       required Future<CalendarSyncOperationResult> Function() operation,
     }) async {
-      if (coordination == null || lease == null) return operation();
+      final activeLease = lease;
+      if (coordination == null || activeLease == null) return operation();
       final operationKey = _ledgerOperationKey(type, referenceId);
       final payloadHash = sha256
           .convert(utf8.encode(_canonicalJson(payload)))
           .toString();
-      await coordination.heartbeat(lease);
+      await coordination.heartbeat(activeLease);
       await coordination.recordOperation(
-        lease: lease,
+        lease: activeLease,
         operationKey: operationKey,
         operationType: type.name,
         payloadHash: payloadHash,
         operationPayload: payload,
       );
       await coordination.updateOperation(
-        lease: lease,
+        lease: activeLease,
         operationKey: operationKey,
         status: 'running',
         attemptCount: 0,
@@ -105,7 +97,7 @@ class ResilientCalendarSyncExecutor {
       try {
         final result = await operation();
         await coordination.updateOperation(
-          lease: lease,
+          lease: activeLease,
           operationKey: operationKey,
           status: result.success ? 'succeeded' : 'failed',
           attemptCount: result.attempts,
@@ -115,7 +107,7 @@ class ResilientCalendarSyncExecutor {
         return result;
       } catch (error) {
         await coordination.updateOperation(
-          lease: lease,
+          lease: activeLease,
           operationKey: operationKey,
           status: 'failed',
           attemptCount: 1,
@@ -182,6 +174,15 @@ class ResilientCalendarSyncExecutor {
     }
 
     try {
+      if (coordination != null && plan.operationCount > 0) {
+        lease = await coordination.acquire(
+          calendarId: plan.calendarId,
+          scheduleId: plan.scheduleId,
+        );
+        history = history.copyWith(serverRunId: lease.runId);
+        await _historyRepository.save(history);
+      }
+
       for (final operation in plan.deletes.where(
         (operation) => operation.beforeWrites,
       )) {
@@ -306,10 +307,29 @@ class ResilientCalendarSyncExecutor {
         historyEntry: history,
         operations: operations,
       );
+    } catch (_) {
+      final hasCompletedOperation = inserted + updated + deleted > 0;
+      history = history.copyWith(
+        finishedAt: DateTime.now(),
+        status: hasCompletedOperation
+            ? SyncHistoryStatus.partialSuccess
+            : SyncHistoryStatus.failure,
+        inserted: inserted,
+        updated: updated,
+        deleted: deleted,
+        failed: failed == 0 ? plan.operationCount : failed + 1,
+        message: hasCompletedOperation
+            ? 'Synchronization stopped unexpectedly; review the durable operation ledger before retrying.'
+            : 'Synchronization did not complete; no successful operation was confirmed.',
+      );
+      await failedRepository?.replaceForHistory(historyId, failedOperations);
+      await _historyRepository.save(history);
+      rethrow;
     } finally {
-      if (coordination != null && lease != null) {
+      final activeLease = lease;
+      if (coordination != null && activeLease != null) {
         try {
-          await coordination.release(lease: lease, status: leaseStatus);
+          await coordination.release(lease: activeLease, status: leaseStatus);
         } catch (_) {
           // The lease expires automatically if release cannot be confirmed.
         }
