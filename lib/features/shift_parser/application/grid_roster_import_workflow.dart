@@ -321,7 +321,8 @@ class GridRosterImportWorkflow {
   ) {
     final repository = _scheduleRepository;
     if (repository is ConditionalScheduleWriter) {
-      return repository.saveIfRevision(schedule, expectedRevision);
+      return (repository as ConditionalScheduleWriter)
+          .saveIfRevision(schedule, expectedRevision);
     }
     return repository.save(schedule);
   }
