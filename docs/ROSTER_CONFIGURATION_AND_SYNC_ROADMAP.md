@@ -350,3 +350,131 @@ The following PR heads were checked before merge. All listed PR-triggered requir
 ### 17.5 Phase disposition
 
 The roster review, template-resolution, synthetic-layout, preview, and local-confirmation slices listed above are delivered. The overall configuration-and-sync roadmap remains **in progress** because the remaining items in 17.4 and the target exit criteria in sections 12–13 are not all verified. This status is intentionally conservative.
+
+
+---
+
+## 18. Universal multi-source roster ingestion — reconciliation plan (2026-11-26)
+
+**Status:** Source-level reconciliation completed for the current `main` snapshot. Implementation is not yet complete. This section extends the existing roadmap; it deliberately does not create a second import specification or a parallel parser.
+
+- Repository: `phakphum12345/phakphum-calendar`
+- Audited base: `main@7ae6b3020c0cc331e2ab730591df44646b0ef530`
+- Audit date: 2026-11-26
+- Governing rule: inspect and extend existing boundaries; add a new file/class only when the gap is proven and no existing equivalent can be extended.
+- Release rule: no merge while a required check is failing, pending, skipped, or unknown; no Calendar write without the existing explicit confirmation workflow.
+
+### 18.1 Target outcome
+
+A user must be able to bring a roster from any supported entry point—device file, Google Sheets/Drive, a supported web link, camera capture, or an image selected from the device—without having to choose a fixed spreadsheet layout first.
+
+All supported source adapters must feed one shared analysis and review lifecycle:
+
+`Select source → acquire/read → normalize → detect layout/sections → analyze → resolve ambiguities → preview → explicit confirmation → save roster → optional Calendar sync`
+
+The input method must not determine a different set of roster rules. The same source content should produce equivalent normalized roster records regardless of whether it arrived as a local workbook, a Google Sheet, or a supported image/document extraction path.
+
+A source provider is responsible for acquisition and access. A format reader is responsible for decoding its content. Layout detection and roster interpretation are shared downstream capabilities. Do not create one parser per provider.
+
+### 18.2 Current-state reconciliation from source
+
+| Entry point / capability | Existing implementation observed on audited `main` | Reconciled status |
+|---|---|---|
+| Device workbook and delimited files | `LocalRosterFileService` reads `.xlsx`, `.csv`, `.tsv`, and `.txt`; limits are 15 MB and 200,000 cells. `AppController.importLocalRosterFile()` and `importLocalMonthlyRosterFile()` feed existing roster parsing paths. | **EXISTS / PARTIAL** |
+| Simple Excel import screen | `ExcelReaderService` uses `file_picker`, accepts `.xlsx`, reads worksheets, and exposes a 50-row preview. `ExcelImportController` and `ImportEngine` apply a six-field column mapping. | **EXISTS / PARTIAL**; a second file-reader path must be reconciled, not copied |
+| Google Sheets URL | `AppShell._selectSourceByUrl()` accepts a Google Sheets URL and delegates to `AppController.selectSourceForCurrentAccount()`; `#gid=` selects a tab. | **EXISTS** for Google Sheets URLs, not arbitrary web URLs |
+| Google Sheets / Drive selection | Existing recent-sheet selection, Drive picker UI, `GoogleSheetsImportDataSource`, `SheetsGateway`, `SpreadsheetSnapshot`, and ownership checks are present. | **EXISTS / PARTIAL**; preserve account/ownership checks |
+| Camera capture | `image_picker` is used by `AppShell`; capture preview and size checks exist. The current capture flow saves the image and opens manual entry. | **EXISTS / PARTIAL**; capture is not table extraction |
+| Device image / gallery | The monthly roster workspace can select an image and preview it before manual entry. | **EXISTS / PARTIAL**; no image-to-roster OCR pipeline was found |
+| Image text/table extraction | The current manual-source dialog explicitly tells users that OCR is not used and asks them to read and enter the source manually. | **GAP** |
+| General website/document URL | The source URL dialog is specifically for Google Sheets. The manual source-kind list includes “เว็บไซต์”, but that option does not fetch a web page or parse a linked roster. | **GAP** for general URL ingestion |
+| Reusable layout configuration | `RosterLayoutProfile` contains date-header, name-column, shift-label, row-boundary, date-pattern, and alias fields. The inspected parser boundary does not establish a complete profile repository/editor lifecycle. `ImportProfile` and `ImportService` are also only a domain/service contract in the inspected tree. | **PARTIAL**; trace all persistence call sites before adding anything |
+| Shared interpretation | The simple `ImportEngine` path and monthly `MonthlyRosterWorkbookScanner → MonthlyRosterSectionParser` path have different assumptions. `SnapshotNormalizer` already converts Sheets snapshots into parser inputs. | **PARTIAL**; reconcile the paths around shared normalized data and staging |
+
+Key source files already present (do not recreate them): 
+
+- `lib/ui/app_shell.dart`
+- `lib/controller/app_controller.dart`
+- `lib/services/local_roster_file_service.dart`
+- `lib/features/excel_import/data/excel_reader_service.dart`
+- `lib/features/excel_import/application/import_engine.dart`
+- `lib/features/excel_import/presentation/controllers/excel_import_controller.dart`
+- `lib/features/excel_import/presentation/pages/import_excel_page.dart`
+- `lib/features/excel_import/data/google_sheets_import_data_source.dart`
+- `lib/features/google_sheets/domain/spreadsheet_snapshot.dart`
+- `lib/features/shift_parser/application/snapshot_normalizer.dart`
+- `lib/features/shift_parser/application/monthly_roster_workbook_scanner.dart`
+- `lib/features/shift_parser/application/monthly_roster_section_parser.dart`
+- `lib/features/shift_parser/domain/roster_layout_profile.dart`
+- `lib/features/excel_import/application/import_staging_planner.dart` and the existing staging/review/apply components.
+
+### 18.3 Architecture rules
+
+1. **One source-neutral import lifecycle.** Reuse the existing source, snapshot, parser, canonical schedule, staging, review, and Calendar workflow boundaries. Provider-specific code must not create a second schedule model or write directly to Calendar.
+2. **Separate acquisition from interpretation.** Local files, Google Sheets/Drive, camera/gallery, and supported URLs may use different acquisition adapters. Once decoded, they must enter the same normalized representation with source identity and provenance preserved.
+3. **Format readers are capability-based.** A file extension is a hint, not proof of content. Validate actual file type, size, encoding, worksheet availability, and supported features before parsing. Unsupported content must produce a clear actionable result, not a guessed conversion.
+4. **Flexible layout detection.** Do not require a fixed first header row, first column, or one table per sheet. Detect candidate header rows, date rows/columns, section boundaries, merged cells where source metadata permits, repeated blocks, blank spacer rows, non-contiguous date columns, and multiple tables. Let users correct the detected mapping.
+5. **Date and shift interpretation remain configurable.** Support explicit dates, date cells, numeric day headers, section headings, Buddhist/Gregorian years, cross-month/year periods, aliases, and user-defined shift rules. If evidence conflicts or remains ambiguous, ask for correction; do not silently guess.
+6. **Image extraction is an evidence-producing adapter.** Camera/gallery input must retain the original image, allow crop/rotate/perspective correction where appropriate, extract text/table candidates with confidence and coordinates, and send uncertain cells to user review. Do not treat OCR output as confirmed roster data. Prefer on-device/offline processing where feasible; do not introduce paid/cloud OCR without a separate cost, privacy, and consent review.
+7. **General URL handling is constrained.** Recognize supported providers (initially Google Sheets/Drive) and supported downloadable document types. Validate scheme, host, redirects, content type, size, and authentication. Never fetch arbitrary internal/private network addresses or follow unsafe redirects. A URL labelled “website” is not an import until content acquisition and parsing are implemented.
+8. **One review/commit boundary.** Every source produces a draft with source provenance, detected mappings, confidence, warnings/errors, duplicates, and proposed row-level create/update/skip decisions. Changes to source/profile/target after preview must invalidate or revalidate that preview.
+9. **Keep mutations separate.** Importing/reading an asset, analyzing it, and previewing it must not replace the active source, delete records, or write Calendar. Local roster save, active-source activation, and Google Calendar sync remain distinct user-confirmed operations.
+10. **Privacy and cancellation.** Keep files/images local unless the user explicitly authorizes remote processing. Do not log roster content, staff names, raw URLs with secrets, or image bytes. Cancellation and permission denial must leave the prior roster unchanged.
+
+### 18.4 Gap-only implementation phases
+
+| Phase | Work to perform in existing boundaries | Exit criteria |
+|---|---|---|
+| A — Entry-point reconciliation | Trace every UI action to its reader, controller, source identity, and destination. Reconcile the two local-file flows and the two image/manual-entry flows. | Source-to-code call graph and capability matrix are accurate; no duplicate path is added |
+| B — Shared source normalization | Reuse or extend existing `LocalRosterSource`, Sheets snapshot, `SnapshotNormalizer`, `ShiftParserInput`, and staging contracts. Add only missing metadata/adapter capability. | Equivalent tabular sources produce the same normalized cells and provenance |
+| C — Universal layout and rule resolution | Extend the existing scanner/parser/profile/mapping UI for variable headers, rows/columns, sections, date origins, aliases, and corrections. | Synthetic fixtures pass for irregular layouts, multiple sections, non-contiguous dates, BE/CE, and cross-month/year periods |
+| D — Image/document extraction | Add extraction only after confirming supported platform libraries and privacy/cost constraints. Reuse the camera/gallery preview and existing review/staging path. | Camera and gallery fixtures produce editable candidates; low-confidence or missing cells block confirmation; manual entry remains available |
+| E — Link/provider completion | Extend the existing URL/Drive/Sheets selection path with provider detection and safe acquisition for explicitly supported links. | Google Sheets continues to work; supported document links import through the same pipeline; unsupported/unsafe URLs fail closed |
+| F — Unified review and persistence | Route all adapters through the existing staging, employee/shift resolution, preview, and canonical schedule persistence. Keep Calendar sync separately confirmed. | All channels share create/update/skip, duplicate, correction, cancel, retry, and preview invalidation behavior |
+| G — End-to-end and release reconciliation | Run source-specific tests, shared golden-corpus tests, full Flutter checks, platform checks, security/privacy review, exact-head PR gates, and post-merge verification. | Every required check for the exact head is green; main is checked after merge; no pending/skipped/unknown gate is counted as pass |
+
+### 18.5 Regression and acceptance matrix
+
+Use synthetic fixtures only. For the same logical roster, create equivalent examples as XLSX, CSV, TSV, Google Sheets snapshots, camera photographs, and gallery images. Compare canonical output rather than requiring the internal reader implementation to be identical.
+
+Required cases:
+
+- A clean rectangular table; headers on rows other than row 1; blank/title rows; merged headings; repeated header blocks; multiple sections per sheet.
+- Dates across rows or columns; explicit date cells; numeric day headers; non-contiguous dates; BE/CE; 28/29/30/31-day months; 16th-to-15th periods; year rollover; duplicate, missing, out-of-order, and contradictory dates.
+- Different employee/shift column positions; multiple name/shift columns; aliases; unknown shifts; duplicate names; ambiguous employee identity; empty cells and non-work labels.
+- CSV/TSV quoting, delimiter detection, UTF-8 and Thai text, malformed encoding, formula/date cells, file-size and cell-count limits, corrupt files, cancellation, and unsupported file types.
+- Images with rotation, perspective, shadows, low contrast, handwriting, overlapping cells, cropped dates, and low-confidence OCR. Every uncertain value must be reviewable and must not be silently committed.
+- Google Sheets URL with and without `gid`, Drive selection, revoked access, non-owned/unauthorized documents, inaccessible tabs, expired credentials, and unsupported URLs.
+- Equivalent source fixtures must yield equivalent normalized assignments; source provenance must still identify the original provider/file/sheet/page/image and source coordinates.
+- Existing import, parser, template, employee-review, schedule-preview, persistence, Timeline, Personal/Organization edition, and Calendar-confirmation tests must remain green.
+
+Existing tests to extend before considering new test files include:
+
+- `test/local_roster_file_service_test.dart`
+- `test/excel_import_controller_test.dart`
+- `test/import_engine_test.dart`
+- `test/import_excel_page_test.dart`
+- `test/google_sheets_import_data_source_test.dart`
+- `test/monthly_roster_workbook_scanner_test.dart`
+- `test/monthly_roster_section_parser_test.dart`
+- `test/monthly_roster_layout_profile_test.dart`
+- `test/synthetic_roster_corpus_test.dart`
+- `test/import_staging_planner_test.dart`
+- `test/import_staging_review_integration_test.dart`
+- `test/import_preview_review_confirm_vertical_slice_test.dart`
+- `test/roster_import_calendar_preview_e2e_test.dart`
+
+### 18.6 PR and repository reconciliation
+
+- `main` remains the audited baseline for this section. Open PRs are not counted as delivered functionality until merged and verified on `main`.
+- PR #192 (`feat(roster): add reviewed Grid import and persistence recovery foundations`) was Open/Draft at the audit snapshot. Its changed-file diff and tests must be reviewed as an existing workstream before implementing overlapping grid, staging, or persistence behavior. Reuse its accepted changes after merge; do not copy its implementation into a second path.
+- PR #193 concerns Xcode runner queue behavior, not roster ingestion. PR #191 concerns notification outbox behavior, not roster ingestion. Do not pull either into this workstream.
+- The existing `ROSTER_CONFIGURATION_AND_SYNC_ROADMAP.md` is the governing plan. This section is an additive reconciliation; the historical Phase 0 snapshot and prior implementation evidence remain unchanged.
+- No new Markdown file, parser, source provider, image pipeline, profile repository, or test file is authorized by this plan alone. First extend the relevant existing file and test. A new file is justified only when the audit proves there is no suitable existing boundary and the addition is directly required by a verified gap.
+- Keep implementation PRs narrow and dependency-ordered. Record exact base/head SHAs, changed files, reviews, workflow runs, job-level results, and merge commit. Merge only after required gates pass and merge authorization is explicit; then verify the merged commit and main branch.
+
+### 18.7 Current disposition
+
+The current app has useful source-specific entry points, but they do not yet provide a universal, source-neutral import lifecycle. In particular, image capture currently leads to manual entry rather than OCR/table extraction, and the general website option is metadata/manual entry rather than URL ingestion. The two local-file/import paths and two monthly/legacy parsing paths must be reconciled before adding more adapters.
+
+**Overall status: IN PROGRESS.** Phase A source-level audit is complete for the paths listed above. Phases B–G are planned, not implemented or passed. This document update does not claim OCR, arbitrary URL import, universal layout detection, or end-to-end cross-source parity is already available.
