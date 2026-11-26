@@ -305,7 +305,7 @@ class MonthlyRosterSectionParser {
     } on FormatException {
       // Do not downgrade a malformed or ambiguous explicit range to a
       // month-only period. That would silently discard the dates in the title.
-      if (RegExp(r'\d{1,2}\s*[ก-๙.]+(?:\s*\d{2,4})?\s*(?:-|ถึง)\s*\d{1,2}\s*[ก-๙.]+').hasMatch(text)) {
+      if (_hasExplicitRangeExpression(text)) {
         rethrow;
       }
 
@@ -344,9 +344,14 @@ class MonthlyRosterSectionParser {
   }
 
   bool _hasExplicitRangeExpression(String text) {
-    return RegExp(
-      r'\d{1,2}\s*[ก-๙.]+(?:\s*\d{2,4})?\s*(?:-|ถึง)\s*\d{1,2}\s*[ก-๙.]+' ,
+    final rangeWithMonthsOnBothEnds = RegExp(
+      r'(?<!\d)\d{1,2}\s*[ก-๙.]+(?:\s*\d{2,4})?\s*(?:-|ถึง|\\bto\\b)\s*\d{1,2}\s*[ก-๙.]+',
+      caseSensitive: false,
     ).hasMatch(text);
+    final compactSameMonthRange = RegExp(
+      r'(?<!\d)\d{1,2}\s*(?:-|ถึง)\s*\d{1,2}\s*[ก-๙.]+(?:\s*(?:พ\\.?\\s*ศ\\.?)?\\s*\\d{2,4})?(?!\d)',
+    ).hasMatch(text);
+    return rangeWithMonthsOnBothEnds || compactSameMonthRange;
   }
 
   bool _canUseSingleMonthTabFallback(
