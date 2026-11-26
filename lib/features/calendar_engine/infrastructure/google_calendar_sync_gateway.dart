@@ -340,7 +340,7 @@ class GoogleCalendarSyncGateway
     final timelineSection = existing.substring(markerIndex).trimRight();
     return baseDescription.isEmpty
         ? timelineSection
-        : '$baseDescription\\n\\n$timelineSection';
+        : '$baseDescription\n\n$timelineSection';
   }
 
   bool _matchesExpectedProviderIdentity(calendar.Event event, String? expectedSyncId) =>
