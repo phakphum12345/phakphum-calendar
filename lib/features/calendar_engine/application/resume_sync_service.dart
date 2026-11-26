@@ -6,6 +6,7 @@ import '../../history/domain/sync_history_entry.dart';
 import '../../history/domain/sync_history_repository.dart';
 import '../domain/calendar_sync_gateway.dart';
 import '../domain/calendar_sync_coordination_gateway.dart';
+import '../domain/calendar_sync_command.dart';
 import '../domain/calendar_sync_operation_result.dart';
 import '../domain/failed_sync_operation.dart';
 import '../domain/failed_sync_repository.dart';
