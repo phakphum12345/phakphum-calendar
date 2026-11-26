@@ -234,7 +234,7 @@ class AppDependencies {
       idTokenProvider: () async {
         final account = googleAuthService.account;
         if (account == null) return null;
-        return (await account.authentication).idToken;
+        return account.authentication.idToken;
       },
     );
   }();
