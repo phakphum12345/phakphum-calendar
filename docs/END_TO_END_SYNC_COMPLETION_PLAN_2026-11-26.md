@@ -876,3 +876,13 @@ No implementation PR merged. No production data writes, notifications, Calendar 
 - PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: Backend, Linux, Web, Android, Dart Format and Dependency Security passed. Windows, Cross-platform Runtime, Auto Detect, PR Gate and iOS Advisory were still in progress; CAS Windows/Ubuntu passed while macOS queued. The six-month multi-department test is still running in the quality suite.
 
 No implementation PR merged. Apple native build evidence and the remaining exact-head PR #192 tests are still outstanding. No production notifications, Calendar writes, Schedule writes or deployment.
+
+
+### 8.44 Live execution checkpoint — 2026-11-27 (six-month import tests executed)
+
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: Windows static analysis and the full Flutter test suite completed successfully. This includes the new six-month, two-department 181-day parser regression and the row-33 `เวรเช้า14 ชั้น` regression.
+- Windows release build remains in progress. Linux x64 release build, Backend CI, Web build, Android build, Dart Format and Dependency Security passed. Cross-platform Runtime Linux full quality passed; Windows PowerShell full quality is in progress. Auto Detect static analysis passed; unit tests in progress. PR Gate and iOS Advisory in progress.
+- Schedule CAS Storage Spike passed on Windows and Ubuntu; macOS CAS queued. Native iOS/macOS Xcode pending.
+- These test results validate the parser and local CAS/controller tests on the Windows Flutter test suite, but they do not certify the remaining release artifact, Auto Detect, CAS macOS or Apple builds.
+
+No implementation PR merged. No production data writes or deployment. Queued, pending and in-progress checks are not PASS.
