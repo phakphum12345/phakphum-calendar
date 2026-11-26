@@ -11,4 +11,8 @@ abstract interface class ScheduleRevisionSource {
 
   /// Returns the revision bound to this exact loaded Schedule snapshot.
   String? revisionForSnapshot(Schedule schedule);
+
+  /// Returns the exact absent-state revision captured by the last read.
+  /// Implementations must not substitute a later shared revision.
+  String? revisionForAbsentSchedule(String scheduleId);
 }
