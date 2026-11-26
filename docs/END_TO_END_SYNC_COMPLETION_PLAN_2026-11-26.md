@@ -826,3 +826,13 @@ No implementation PR merged. No production data writes or deployment. Notificati
 - Exact-head CI for `bde4107660ceaa6031b495ef7e8904f55f1d97b9` has not yet appeared in the workflow listing. Previous head `8af2471200cc5f3cbe8b8778b37ab528c3f90403` passed Dart Format, Dependency Security, Backend, Linux, Android, Web, Cross-platform Runtime and Auto Detect; Windows, PR Gate and iOS Advisory were still in progress, with CAS macOS and Apple builds incomplete.
 
 No implementation PR merged. No production data writes or deployment. The six-month regression requires exact-head CI before it can be accepted.
+
+
+### 8.38 Live execution checkpoint — 2026-11-27 (notification lifecycle CI)
+
+- PR #191 exact current head `6787fe710ceb351581eb42c9b7045c49a93c9cfb`: Laravel Backend CI, Linux, Web and Dependency Security passed. Windows, Android, Cross-platform Runtime, Pull Request Gate, Auto Detect and iOS Advisory were in progress; Apple Xcode builds pending.
+- The current backend pass includes the new transaction lifecycle enqueue code and feature test, but no push sender/worker is part of this head.
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: Backend, Web, Linux, Android, Windows, Cross-platform Runtime, Auto Detect, Format, Dependency Security and PR Gate passed. iOS Advisory remained in progress; iOS/macOS Xcode pending.
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: fresh workflow runs queued; the prior row-33 test head passed its core cross-platform suite. The new six-month multi-department test remains unverified until exact-head CI finishes.
+
+No implementation PR merged. No production notification sent, no Calendar write, no Schedule write or deployment. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
