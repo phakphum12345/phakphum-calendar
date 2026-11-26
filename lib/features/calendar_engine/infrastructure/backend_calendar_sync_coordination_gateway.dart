@@ -104,6 +104,78 @@ class BackendCalendarSyncCoordinationGateway
   }
 
   @override
+  Future<CalendarSyncRunRecord> getRun(String runId) async {
+    final response = await _request(
+      'GET',
+      'api/v1/calendar-sync/runs/${Uri.encodeComponent(runId)}',
+    );
+    final data = response['data'];
+    if (data is! Map) {
+      throw const FormatException('The backend returned an invalid sync run.');
+    }
+    final record = data.map((key, value) => MapEntry(key.toString(), value));
+    final startedAt = DateTime.tryParse(record['started_at']?.toString() ?? '');
+    final heartbeatAt = DateTime.tryParse(record['heartbeat_at']?.toString() ?? '');
+    if (record['run_id'] is! String ||
+        record['calendar_id'] is! String ||
+        record['schedule_id'] is! String ||
+        record['status'] is! String ||
+        startedAt == null ||
+        heartbeatAt == null) {
+      throw const FormatException('The backend sync run is missing required fields.');
+    }
+    final finishedAt = DateTime.tryParse(record['finished_at']?.toString() ?? '');
+    return CalendarSyncRunRecord(
+      runId: record['run_id'] as String,
+      calendarId: record['calendar_id'] as String,
+      scheduleId: record['schedule_id'] as String,
+      status: record['status'] as String,
+      startedAt: startedAt,
+      heartbeatAt: heartbeatAt,
+      finishedAt: finishedAt,
+    );
+  }
+
+  @override
+  Future<List<CalendarSyncOperationRecord>> listOperations(String runId) async {
+    final response = await _request(
+      'GET',
+      'api/v1/calendar-sync/runs/${Uri.encodeComponent(runId)}/operations',
+    );
+    final data = response['data'];
+    if (data is! List) {
+      throw const FormatException('The backend returned an invalid sync operation list.');
+    }
+    return data.map((entry) {
+      if (entry is! Map) {
+        throw const FormatException('The backend returned an invalid sync operation.');
+      }
+      final record = entry.map((key, value) => MapEntry(key.toString(), value));
+      final payload = record['operation_payload'];
+      if (record['operation_key'] is! String ||
+          record['operation_type'] is! String ||
+          record['status'] is! String ||
+          record['payload_hash'] is! String ||
+          payload is! Map ||
+          record['attempt_count'] is! num) {
+        throw const FormatException('The backend sync operation is missing required fields.');
+      }
+      return CalendarSyncOperationRecord(
+        operationKey: record['operation_key'] as String,
+        operationType: record['operation_type'] as String,
+        status: record['status'] as String,
+        payloadHash: record['payload_hash'] as String,
+        operationPayload: payload.map(
+          (key, value) => MapEntry(key.toString(), value),
+        ),
+        attemptCount: (record['attempt_count'] as num).toInt(),
+        providerEventId: record['provider_event_id']?.toString(),
+        lastError: record['last_error']?.toString(),
+      );
+    }).toList(growable: false);
+  }
+
+  @override
   Future<void> recordOperation({
     required CalendarSyncLease lease,
     required String operationKey,
