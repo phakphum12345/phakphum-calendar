@@ -32,6 +32,19 @@ class CalendarSyncCoordinationController extends Controller
         })]);
     }
 
+    public function show(Request $request, string $runId): JsonResponse
+    {
+        $run = DB::table('calendar_sync_runs')
+            ->where('owner_user_id', $request->user()->id)
+            ->where('id', $runId)
+            ->first();
+        if ($run === null) {
+            return response()->json(['error' => ['code' => 'calendar_sync_run_not_found', 'message' => 'The synchronization run was not found.']], 404);
+        }
+
+        return response()->json(['data' => $this->runResource($run)]);
+    }
+
     public function operations(Request $request, string $runId): JsonResponse
     {
         $run = DB::table('calendar_sync_runs')
