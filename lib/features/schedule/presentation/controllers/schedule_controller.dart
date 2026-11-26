@@ -9,6 +9,7 @@ import '../../../../domain/repositories/schedule_revision_source.dart';
 import '../../../rules/application/schedule_validation_service.dart';
 import '../../../rules/domain/rule_result.dart';
 import '../../data/schedule_service.dart';
+import '../../data/schedule_json_codec.dart';
 import '../../domain/department.dart';
 import '../../domain/employee.dart';
 import '../../domain/schedule_day.dart';
@@ -224,10 +225,21 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
         scheduleRepositoryForCas is ScheduleRevisionSource) {
       final conditionalWriter = scheduleRepositoryForCas as ConditionalScheduleWriter;
       final revisionSource = scheduleRepositoryForCas as ScheduleRevisionSource;
-      final expectedRevision = _expectedRevision;
+      var expectedRevision = _expectedRevision;
+      if (expectedRevision == null || expectedRevision.trim().isEmpty) {
+        final revisionFailure = await _captureExpectedRevision(revisionSource);
+        if (revisionFailure != null) {
+          _loading = false;
+          _error = revisionFailure;
+          _message = revisionFailure.message;
+          notifyListeners();
+          return revisionFailure;
+        }
+        expectedRevision = _expectedRevision;
+      }
       if (expectedRevision == null || expectedRevision.trim().isEmpty) {
         const failure = PersistenceFailure<Schedule>(
-          'Load the exact Schedule snapshot before saving with revision-aware CAS.',
+          'Could not capture an exact Schedule revision before saving.',
         );
         _loading = false;
         _error = failure;
@@ -255,6 +267,51 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
     _loading = false;
     notifyListeners();
     return result;
+  }
+
+  Future<Result<Schedule>?> _captureExpectedRevision(
+    ScheduleRevisionSource revisionSource,
+  ) async {
+    final scheduleRepository = repository;
+    if (scheduleRepository == null) {
+      return const PersistenceFailure(
+        'Schedule persistence is not configured.',
+      );
+    }
+    final loaded = await scheduleRepository.findById(canonicalSchedule.id);
+    if (loaded case Failure<Schedule?>()) {
+      return PersistenceFailure(
+        'Could not verify the current Schedule before saving.',
+        cause: loaded,
+      );
+    }
+    final current = (loaded as Success<Schedule?>).value;
+    if (current == null) {
+      final absentRevision = revisionSource.revisionForAbsentSchedule(
+        canonicalSchedule.id,
+      );
+      if (absentRevision == null || absentRevision.trim().isEmpty) {
+        return const PersistenceFailure(
+          'The repository did not provide an exact absent-Schedule revision.',
+        );
+      }
+      _expectedRevision = absentRevision;
+      return null;
+    }
+    if (const ScheduleJsonCodec().encode(current) !=
+        const ScheduleJsonCodec().encode(canonicalSchedule)) {
+      return const ValidationFailure(
+        'The editor does not contain the exact persisted Schedule snapshot. Reload it before saving.',
+      );
+    }
+    final revision = revisionSource.revisionForSnapshot(current);
+    if (revision == null || revision.trim().isEmpty) {
+      return const PersistenceFailure(
+        'The repository did not provide a revision for the loaded Schedule snapshot.',
+      );
+    }
+    _expectedRevision = revision;
+    return null;
   }
 
   /// Loads a persisted canonical aggregate by stable schedule identity.
