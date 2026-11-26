@@ -127,6 +127,13 @@ class CalendarSyncCoordinationApiTest extends TestCase
             'payload_hash' => hash('sha256', json_encode(['sync_id' => 'different-event-payload'])),
         ], $this->auth('alice-token'))->assertConflict();
 
+        $this->postJson('/api/v1/calendar-sync/leases/00000000-0000-4000-8000-000000000005/operations', [
+            ...$payload,
+            'payload_hash' => hash('sha256', 'not-the-payload-hash'),
+        ], $this->auth('alice-token'))
+            ->assertUnprocessable()
+            ->assertJsonPath('error.code', 'calendar_sync_payload_hash_mismatch');
+
         $this->patchJson('/api/v1/calendar-sync/leases/00000000-0000-4000-8000-000000000005/operations/event-sync-1', [
             'lease_token' => $lease['lease_token'],
             'status' => 'running',
@@ -140,6 +147,10 @@ class CalendarSyncCoordinationApiTest extends TestCase
         ], $this->auth('alice-token'))->assertOk()->assertJsonPath('data.status', 'succeeded');
         $this->getJson('/api/v1/calendar-sync/runs', $this->auth('alice-token'))
             ->assertOk()->assertJsonPath('data.0.operation_count', 1);
+        $this->getJson('/api/v1/calendar-sync/runs/00000000-0000-4000-8000-000000000005', $this->auth('alice-token'))
+            ->assertOk()->assertJsonPath('data.schedule_id', 'schedule-1');
+        $this->getJson('/api/v1/calendar-sync/runs/00000000-0000-4000-8000-000000000005', $this->auth('bob-token'))
+            ->assertNotFound();
         $this->getJson('/api/v1/calendar-sync/runs/00000000-0000-4000-8000-000000000005/operations', $this->auth('alice-token'))
             ->assertOk()->assertJsonPath('data.0.provider_event_id', 'provider-event-123');
     }
