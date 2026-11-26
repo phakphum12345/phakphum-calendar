@@ -44,6 +44,83 @@ void main() {
     expect(report.assignments.last.sourceCell, 'B10');
   });
 
+  test('preserves row 33 เวรเช้า14 ชั้น across a 16th-to-15th schedule block', () {
+    const workers = <Object?>[
+      'ธราวุธ',
+      'บุบผา',
+      'บุบผา',
+      'ประภาพร',
+      'บุบผา',
+      null,
+      null,
+      'ธราวุธ',
+      'อดิศักดิ์',
+      'ธราวุธ',
+      'ธนพร',
+      'วรรณิกานต์',
+      null,
+      null,
+      'อัมพร',
+      'ธราวุธ',
+      'จักรกฤษณ์',
+      'สุวดี',
+      'ธราวุธ',
+      null,
+      null,
+      null,
+      'กรรทร',
+      'ธราวุธ',
+      null,
+      'ธราวุธ',
+      null,
+      null,
+      'วรวุฒิ',
+      'ธราวุธ',
+    ];
+    expect(workers, hasLength(30));
+    final days = [
+      ...List<int>.generate(15, (index) => index + 16),
+      ...List<int>.generate(15, (index) => index + 1),
+    ];
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'ตารางเวร',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['ประจำเดือน 16 พฤศจิกายน พ.ศ. 2569 - 15 ธันวาคม พ.ศ. 2569']),
+        ..._row(1, ['วันที่', ...days]),
+        ..._row(32, ['เวรเช้า14 ชั้น', ...workers]),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+    final rowAssignments = report.assignments
+        .where((assignment) => assignment.rowIndex == 32)
+        .toList();
+    final shifts = const MonthlyRosterShiftAdapter().parseForWorkers(
+      report,
+      targetNames: const ['ธราวุธ'],
+    );
+
+    expect(report.warnings, isEmpty);
+    expect(report.sections, hasLength(1));
+    expect(report.sections.single.startDate, DateTime(2026, 11, 16));
+    expect(report.sections.single.endDate, DateTime(2026, 12, 15));
+    expect(report.sections.single.rosterRows.single.label, 'เวรเช้า14 ชั้น');
+    expect(rowAssignments, hasLength(20));
+    expect(rowAssignments.first.date, DateTime(2026, 11, 16));
+    expect(rowAssignments.first.sourceCell, 'B33');
+    expect(rowAssignments.last.date, DateTime(2026, 12, 15));
+    expect(rowAssignments.last.sourceCell, 'AE33');
+    expect(shifts, hasLength(8));
+    expect(shifts.every((shift) => shift.code == 'U14'), isTrue);
+    expect(shifts.first.start, DateTime(2026, 11, 16, 7));
+    expect(shifts.last.start, DateTime(2026, 12, 15, 7));
+    expect(shifts.last.end, DateTime(2026, 12, 15, 8));
+  });
+
   test('does not require fixed names for exten or future sections', () {
     final input = ShiftParserInput(
       spreadsheetId: 'spreadsheet',
