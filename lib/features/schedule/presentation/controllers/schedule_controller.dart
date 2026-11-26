@@ -4,6 +4,8 @@ import '../../../../core/state/controller_state.dart';
 import '../../../../core/result/result.dart';
 import '../../../../domain/entities/schedule.dart';
 import '../../../../domain/repositories/schedule_repository.dart';
+import '../../../../domain/repositories/conditional_schedule_writer.dart';
+import '../../../../domain/repositories/schedule_revision_source.dart';
 import '../../../rules/application/schedule_validation_service.dart';
 import '../../../rules/domain/rule_result.dart';
 import '../../data/schedule_service.dart';
@@ -23,6 +25,11 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
     DateTime? initialMonth,
   }) : _service = service ?? ScheduleService(),
        _currentMonth = _normalizeMonth(initialMonth ?? DateTime.now()) {
+    final source = repository;
+    if (source is ScheduleRevisionSource) {
+      _expectedRevision = source.revisionForSnapshot(_service.schedule) ??
+          source.currentRevisionFor(_service.schedule.id);
+    }
     loadMonth(_currentMonth);
   }
 
@@ -35,6 +42,7 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
   bool _loading = false;
   Object? _error;
   String? _message;
+  String? _expectedRevision;
   String _staffNameQuery = '';
   String _positionQuery = '';
   String? _employeeId;
@@ -210,7 +218,31 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
     _error = null;
     _message = null;
     notifyListeners();
-    final result = await scheduleRepository.save(canonicalSchedule);
+    final ScheduleRepositoryResult = scheduleRepository;
+    final Result<Schedule> result;
+    if (ScheduleRepositoryResult is ConditionalScheduleWriter &&
+        ScheduleRepositoryResult is ScheduleRevisionSource) {
+      final expectedRevision = _expectedRevision;
+      if (expectedRevision == null || expectedRevision.trim().isEmpty) {
+        _loading = false;
+        _error = const PersistenceFailure(
+          'Load the exact Schedule snapshot before saving with backend CAS.',
+        );
+        _message = _error.toString();
+        notifyListeners();
+        return _error as Result<Schedule>;
+      }
+      result = await ScheduleRepositoryResult.saveIfRevision(
+        canonicalSchedule,
+        expectedRevision,
+      );
+      if (result case Success<Schedule>(value: final saved)) {
+        _expectedRevision =
+            ScheduleRepositoryResult.currentRevisionFor(saved.id);
+      }
+    } else {
+      result = await scheduleRepository.save(canonicalSchedule);
+    }
     switch (result) {
       case Success<Schedule>():
         _message = 'Schedule saved.';
@@ -241,11 +273,19 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
     switch (result) {
       case Success<Schedule?>(value: final schedule):
         if (schedule != null) {
+          final source = scheduleRepository;
+          _expectedRevision = source is ScheduleRevisionSource
+              ? source.revisionForSnapshot(schedule)
+              : null;
           _service.replaceSchedule(schedule);
           _validationResult = null;
           loadMonth(schedule.months.firstOrNull?.month ?? _currentMonth);
           _message = 'Schedule loaded.';
         } else {
+          final source = scheduleRepository;
+          _expectedRevision = source is ScheduleRevisionSource
+              ? source.currentRevisionFor(scheduleId)
+              : null;
           _message = 'No saved schedule was found.';
         }
       case Failure<Schedule?>():
