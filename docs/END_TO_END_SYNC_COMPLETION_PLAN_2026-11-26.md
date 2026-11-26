@@ -719,3 +719,15 @@ No implementation PR merged. No production data writes or deployment. Queued, pe
 - Local CAS remains limited to one Dart isolate/process. It is not advertised as cross-device synchronization. The backend Schedule CAS remains the multi-device source of truth when configured.
 
 No implementation PR merged. No production data writes or deployment. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
+
+
+### 8.29 Live execution checkpoint — 2026-11-27 (sequential AppController CAS)
+
+- PR #192 exact head: `483cab074abb8d0daf73a71f7a424c7072dcdc3c`.
+- A further writer audit found that AppController retained the pre-save in-memory Schedule object after a successful conditional write. A later edit could therefore carry an old/unmapped snapshot revision. The controller now tracks the last successfully persisted Schedule and uses it as the base for queued writes, updating it only after a successful CAS.
+- `LegacyScheduleConversion.withSchedule` rebinds the saved canonical snapshot while preserving source sheet, source cell, category, exclusion, generated, linked-shift, source-color, custom-title, Calendar color and relationship-comment metadata.
+- `adoptCanonicalSchedule` waits for queued writes before adopting a new canonical snapshot. Regression tests cover three sequential local AppController writes and metadata preservation after rebinding.
+- Current exact-head CI for #192: Laravel Backend CI passed. Linux, Windows, Android, iOS advisory, Dart Format, Auto Detect, Cross-platform Runtime, PR Gate and CAS Spike are queued/in progress; Web and Apple Xcode builds are pending. The latest head has no other certified PASS yet.
+- Earlier compile/analyzer issues on head `076f56831a5f4f553dac3aaa55cc718a5bfc9bf1` were corrected on later commits. Head `825e54d4a46fdc0b1a60043e6c74e172b509a0dd` had several jobs cancelled as a newer commit superseded it; those cancellations are not PASS. Only exact-head checks count for merge.
+
+No implementation PR merged. No production data writes or deployment. Local CAS is process-scoped; multi-device CAS remains server-enforced. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
