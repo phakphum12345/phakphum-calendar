@@ -8,6 +8,8 @@
 
 When `ORGANIZATION_API_BASE_URL` is configured, the Grid import workflow uses the authenticated Schedule API and the append-only remote import-journal API together with the existing local two-slot journal.
 
+The remote journal's `COMMITTED` lifecycle has a deliberately narrow meaning: **the user-approved import payload and provenance have been durably recorded as a recoverable commit intent**. It does not assert that the canonical Schedule API write has already succeeded. The canonical Schedule is saved afterward with its expected revision (CAS); if that save fails, the committed journal is the recovery source. Recovery must still compare the current canonical revision/fingerprint before applying anything. The journal row and Schedule row are not written in one database transaction, so this protocol is recoverable and conflict-aware, not cross-table atomic.
+
 The write order is deliberately fail-closed:
 
 1. Re-read the canonical Schedule and verify the review base revision.
