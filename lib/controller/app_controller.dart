@@ -463,7 +463,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     timelineLoading = false;
     await auth.signOut();
     _autoRefreshTimer?.cancel();
-    _replaceLegacyShifts(const []);
+    _replaceLegacyShifts(const [], persist: false);
     _shiftTransactions = const [];
     alerts = [];
     calendarPeriods = [];
@@ -647,7 +647,7 @@ class AppController extends ChangeNotifier implements ControllerState {
 
       localSourceLabel = null;
       _autoRefreshTimer?.cancel();
-      _replaceLegacyShifts(const []);
+      _replaceLegacyShifts(const [], persist: false);
       alerts = [];
       calendarPeriods = [];
       existingKeys = {};
@@ -798,7 +798,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           sections: [],
           warnings: [],
         );
-        _replaceLegacyShifts(const []);
+        _replaceLegacyShifts(const [], persist: false);
         localSourceLabel = null;
         status = 'เลือก “${saved.displayTitle}” เป็นไฟล์หลักของบัญชีนี้แล้ว';
         await _addAudit(
@@ -850,7 +850,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       );
       await _settingsService.saveSavedSheets(savedSheets);
       if (wasCurrent) {
-        _replaceLegacyShifts(const []);
+        _replaceLegacyShifts(const [], persist: false);
         alerts = [];
         calendarPeriods = [];
         existingKeys = {};
@@ -2653,7 +2653,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       _shiftTransactions = const [];
       settings = settings.clearRosterSelection();
       _autoRefreshTimer?.cancel();
-      _replaceLegacyShifts(const []);
+      _replaceLegacyShifts(const [], persist: false);
       alerts = [];
       calendarPeriods = [];
       existingKeys = {};
