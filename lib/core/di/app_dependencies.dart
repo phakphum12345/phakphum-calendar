@@ -402,9 +402,34 @@ class AppDependencies {
     return gridScheduleRepository.findById('imported');
   }
 
-  /// Persists a successfully converted canonical import aggregate.
-  Future<Result<Schedule>> saveImportedSchedule(Schedule schedule) {
-    return gridScheduleRepository.save(schedule);
+  /// Creates a new imported Schedule. Replacing an existing backend
+  /// Schedule must go through the reviewed Grid import workflow and its
+  /// caller-owned revision token.
+  Future<Result<Schedule>> saveImportedSchedule(Schedule schedule) async {
+    final repository = gridScheduleRepository;
+    if (repository is ConditionalScheduleWriter &&
+        repository is ScheduleRevisionSource) {
+      final current = await repository.findById(schedule.id);
+      if (current case Failure<Schedule?>()) {
+        return PersistenceFailure<Schedule>(
+          current.message,
+          cause: current,
+        );
+      }
+      if ((current as Success<Schedule?>).value != null) {
+        return const PersistenceFailure(
+          'An existing Schedule can only be replaced through the reviewed Grid import workflow.',
+        );
+      }
+      final revision = repository.currentRevisionFor(schedule.id);
+      if (revision == null || revision.trim().isEmpty) {
+        return const PersistenceFailure(
+          'The backend did not provide an absent-Schedule revision.',
+        );
+      }
+      return repository.saveIfRevision(schedule, revision);
+    }
+    return repository.save(schedule);
   }
 
   /// Creates a rule engine from the rules registered at the composition root.
