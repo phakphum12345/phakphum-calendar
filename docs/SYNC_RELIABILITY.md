@@ -111,14 +111,14 @@ A rejected lease acquisition is recorded as a failed local history entry before 
 
 Recovery is explicit and is not automatically replayed at application startup.
 The History utility now displays local sync-history entries and exposes a
-confirmation-gated **กู้คืน** action for failed, partial or interrupted entries.
-With a configured backend origin, the action follows the stored server Run ID
-and reads the owner-scoped encrypted ledger before resuming; without a backend
-origin it uses only the local failed-operation queue. A missing server Run ID
-in server-coordinated mode fails closed. The history list and failed-operation
-queue remain local SharedPreferences views; the server ledger is the durable
-cross-device recovery source. No production Calendar write is authorized by
-these backend endpoints alone.
+confirmation-gated **กู้คืน** action only for failed, partial or interrupted
+entries that carry a server Run ID. The action follows that Run ID and reads the
+owner-scoped encrypted ledger before resuming. Local-only history without a
+server Run ID is explicitly shown as not recoverable from the History utility;
+this avoids replaying an unscoped local queue after an account switch. The
+history list and failed-operation queue remain local SharedPreferences views;
+the server ledger is the durable cross-device recovery source. No production
+Calendar write is authorized by these backend endpoints alone.
 
 ## Partial success
 
