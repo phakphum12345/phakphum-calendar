@@ -490,3 +490,36 @@ This checkpoint supersedes earlier PR-head and CI snapshots above where they dif
 8. Obtain human code review and explicit merge authorization. Keep all PRs Draft until exact-head checks and review are complete.
 
 Queued, pending, skipped, cancelled, or older-head checks are not PASS. No merge, deployment, production migration, notification delivery or real-calendar write is authorized by this checkpoint.
+
+
+### 8.15 Live execution checkpoint — 2026-11-26 23:10 Asia/Bangkok
+
+This checkpoint supersedes 8.14 for current heads and statuses. Main remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`. All implementation PRs remain Draft; no merge, deployment, production migration, notification delivery or real Calendar write has occurred.
+
+| PR | Current head | Exact-head evidence now | Remaining exact-head checks |
+|---|---|---|---|
+| #192 Grid / Schedule CAS | `0507995bbd6533a369f0850d9e21a3fee9a94d94` | Laravel Backend CI, Web, Android, Linux, Windows and Auto Detect CI PASS. The targeted Dart/Flutter quality job reports one targeted test passed. | PR Gate, iOS build/advisory, macOS/Xcode, Cross-platform Runtime, Schedule CAS Storage Spike, Dart Format Baseline Audit and recursive Dependency Security are queued/pending. |
+| #196 Calendar sync / durable recovery | `07f27fd7b31021049ea4ae4753decdb36c7672ba` | Prior head `4d3f1b9...` passed Laravel Backend CI, Web and Dart Format, but those results are stale after timeout, recovery, history UI and failure-state changes. | Current-head Dart Format is in progress; all other current-head jobs, including Laravel, platform builds, Cross-platform Runtime, PR Gate and recursive Dependency Security, are queued/pending. |
+| #191 Notification Outbox | `12dc4a5a1902f62998e65cc85f880614f9919110` | Laravel Backend CI, Web, Windows, Android and Linux PASS. | iOS advisory and PR Gate are in progress; Cross-platform Runtime, Auto Detect CI and recursive Dependency Security are queued/pending. Base remains current main with 0 commits behind; no rebase is needed. |
+| #197 execution documentation | `d0da7d297a27d9be69fcd472faf500d8ed9f554a` | Earlier Auto Detect CI and Cross-platform Runtime passed on the prior docs head. | Both checks for the current documentation head are queued. |
+
+#### Recovery UI and lease-contention hardening
+
+- The existing History utility now includes sync history and a confirmation-gated `กู้คืน` action. It calls the authenticated recovery service; it does not automatically replay at startup.
+- Tests cover confirmation, successful history refresh and a missing-run/recovery error path.
+- A Calendar lease conflict now leaves a failed history record with no failed-operation count and no provider write, so the UI does not offer an invalid recovery action for a run that never acquired a lease.
+- A resume lease conflict preserves a failed history state rather than leaving a stale `running` entry. A newly acquired server Run ID is persisted before replay so a process crash can resume from the correct ledger.
+
+#### Dependency security
+
+- `composer audit --locked` passed on exact current heads #191 and #192; #196's current-head Laravel run is pending.
+- The recursive OSV-Scanner workflow is present on all three implementation branches and is queued on each current head. Its first non-recursive run scanned 132 Dart packages and found no issue, but did not scan nested PHP dependencies; that earlier result remains insufficient.
+- Do not mark Dependency Security PASS until the recursive run logs confirm both root `pubspec.lock` and `backend/composer.lock` were scanned and the scan completed without blocking advisories.
+
+#### Remaining deployment boundary
+
+- Production release workflows now require an HTTPS `ORGANIZATION_API_BASE_URL`; PR builds may still compile without production configuration.
+- This is a configuration gate, not proof of a live API deployment. Verify that the configured endpoint is reachable, authenticated, backed by a persistent production database with supported transaction/locking behavior, and protected by a backed-up Laravel `APP_KEY` before release.
+- Schedule CAS is per Schedule revision. Calendar coordination is per authenticated Google owner plus Calendar ID, so it serializes devices using the same Google account; it is not a tenant-wide lock for different Google accounts sharing one Calendar.
+
+No current exact-head gate is fully green for #192 or #196. Queued, pending, skipped, cancelled and older-head results are not PASS. Keep all PRs Draft and do not merge until the full acceptance matrix, review and production backend readiness are verified.
