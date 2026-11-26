@@ -26,6 +26,8 @@ import '../../features/employees/presentation/controllers/employee_directory_con
 import '../../features/employees/infrastructure/shared_preferences_employee_repository.dart';
 import '../../features/calendar_engine/application/calendar_sync_plan_builder.dart';
 import '../../features/calendar_engine/application/resilient_calendar_sync_executor.dart';
+import '../../features/calendar_engine/domain/calendar_sync_coordination_gateway.dart';
+import '../../features/calendar_engine/infrastructure/backend_calendar_sync_coordination_gateway.dart';
 import '../../features/calendar_engine/application/resume_sync_service.dart';
 import '../../features/calendar_engine/domain/calendar_sync_gateway.dart';
 import '../../features/calendar_engine/domain/failed_sync_repository.dart';
@@ -221,6 +223,17 @@ class AppDependencies {
   final EmployeeRepository employeeRepository;
   final ShiftTemplateRepository shiftTemplateRepository;
   final ScheduleRepository scheduleRepository;
+
+  /// Server-side sync coordination is enabled only when an authenticated
+  /// backend origin is configured. Without it, local-only mode remains local.
+  late final CalendarSyncCoordinationGateway? calendarSyncCoordinationGateway = () {
+    const baseUrl = String.fromEnvironment('ORGANIZATION_API_BASE_URL');
+    if (baseUrl.trim().isEmpty) return null;
+    return BackendCalendarSyncCoordinationGateway(
+      baseUrl: baseUrl,
+      idTokenProvider: () async => googleAuthService.account?.authentication.idToken,
+    );
+  }();
   final ImportRepository? importRepository;
   final SettingsRepository? settingsRepository;
   final ImportService? importService;
@@ -388,6 +401,7 @@ class AppDependencies {
       gateway: gateway,
       historyRepository: syncHistoryRepository,
       failedRepository: failedSyncRepository,
+      coordinationGateway: calendarSyncCoordinationGateway,
     );
   }
 
