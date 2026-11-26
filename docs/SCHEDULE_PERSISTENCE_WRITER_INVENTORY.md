@@ -171,11 +171,18 @@ This section supersedes the W-01 through F-01 backend-mode dispositions in secti
 
 ### Repository and composition-root changes
 
-- `BackendScheduleRepository` now binds revisions to a canonical Schedule snapshot fingerprint. A later read of the same Schedule cannot silently replace an older editor's token. `save()` only accepts an exact snapshot that was previously read; unknown snapshots fail closed.
+- `BackendScheduleRepository` now binds revisions to the exact loaded Schedule object identity, not only a content fingerprint. A later A → B → A read cannot replace the original A editor's token with the newer generation. `save()` only accepts the exact snapshot instance that was previously read; unknown snapshots fail closed.
 - The snapshot revision cache is bounded to 256 entries. Successful conditional writes bind the returned revision to the saved snapshot.
 - `AppDependencies` now uses the configured BackendScheduleRepository as the single ScheduleRepository instance for production consumers when `ORGANIZATION_API_BASE_URL` is set; Grid import shares the same instance. With no backend origin, the existing SharedPreferences repository remains the local-development fallback.
 - Empty roster resets during sign-out, account changes, source-sheet switching and local-source clearing are now local-only (`persist: false`). They no longer overwrite or clear the durable Schedule.
 - `test/backend_schedule_repository_test.dart` now covers a stale editor after a second read, an unobserved snapshot failing closed, and backend delete making no request. `test/schedule_controller_revision_test.dart` covers two editors loaded at one revision: exactly one save can succeed.
+
+### Snapshot identity and absent-state revision hardening
+
+- ScheduleRevisionSource.revisionForSnapshot(schedule) resolves the revision attached to that exact object instance. The bounded identity-keyed cache deliberately retains separate revisions for equal-content snapshots, preventing ABA token substitution.
+- revisionForAbsentSchedule(scheduleId) returns the absent-state token captured by the read that observed absence. It is not taken from the mutable latest-revision cache, so a concurrent read of a newly-created Schedule cannot authorize a stale create.
+- W-02/W-03, Grid commit/recovery, Schedule editor create, and tabular import now use snapshot-bound or absent-state-bound revisions in backend mode.
+- test/backend_schedule_repository_test.dart includes an A → B → A regression proving that an older A snapshot still submits its original revision and receives a server conflict.
 
 ### Remaining CAS boundaries
 
