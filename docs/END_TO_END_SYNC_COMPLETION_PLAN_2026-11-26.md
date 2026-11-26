@@ -919,3 +919,15 @@ No implementation PR merged. No production data writes or deployment. CAS macOS 
 - PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: all non-Apple checks and iOS Advisory passed; native iOS queued and macOS pending.
 
 No implementation PR merged. PR #192 has a green core gate but is not merge-ready while cross-platform Windows, CAS macOS and Apple native checks remain incomplete.
+
+
+### 8.48 Live execution checkpoint — 2026-11-27 (cross-platform runtime fully green)
+
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: Cross-platform Runtime passed on all four legs — Linux POSIX full quality, Linux PowerShell launcher smoke, Windows CMD launcher smoke and Windows PowerShell full quality.
+- The Windows x64 Analyze/Test/Build job passed, including full Flutter tests and release artifact packaging. Linux x64 release, Android, Web, Backend, Auto Detect, Dart Format, Dependency Security and Pull Request Gate passed.
+- The row-33 `เวรเช้า14 ชั้น` and six-month/two-department regressions are included in passing unit-test suites on Windows and Auto Detect.
+- Schedule CAS Storage Spike passed on Windows and Ubuntu; macOS remains queued. iOS Advisory is still waiting for the native iOS build; native iOS/macOS Xcode remain pending.
+- PR #196 has all non-Apple checks and iOS Advisory passed; native iOS queued and macOS pending.
+- PR #191 has all non-Apple checks and PR Gate passed; iOS Advisory still waits on native iOS.
+
+No implementation PR merged. PR #192's core and cross-platform test gates are green, but the macOS CAS leg and Apple native builds are still outstanding.
