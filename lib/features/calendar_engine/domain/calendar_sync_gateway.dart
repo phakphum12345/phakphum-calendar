@@ -25,7 +25,7 @@ abstract interface class ConditionalCalendarSyncGateway {
   Future<ManagedCalendarEvent> updateConditionally({
     required String eventId,
     required String expectedEtag,
-    required String expectedSyncId,
+    required String? expectedSyncId,
     required CalendarSyncCommand command,
   });
 
