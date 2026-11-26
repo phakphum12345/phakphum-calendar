@@ -847,3 +847,13 @@ No implementation PR merged. No production notification sent, no Calendar write,
 - PR #192 latest head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: all workflows were still queued/pending at the latest poll because a new six-month multi-department regression commit had restarted CI.
 
 No implementation PR merged. No production Calendar writes or deployment. Apple builds and remaining current-head CI are still required.
+
+
+### 8.40 Live execution checkpoint — 2026-11-27 (notification lifecycle core matrix)
+
+- PR #191 exact head `6787fe710ceb351581eb42c9b7045c49a93c9cfb`: Backend, Linux, Web, Android, Cross-platform Runtime, Auto Detect and Dependency Security passed. Windows, Pull Request Gate and iOS Advisory remain in progress; native Apple builds pending.
+- The lifecycle test for transactional enqueue and duplicate suppression is included in the passing Laravel Backend CI on this exact head.
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: all non-Apple core checks including PR Gate passed; iOS Advisory still in progress; native iOS/macOS Xcode pending.
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: Dart Format, Backend, Dependency Security, Linux and Web passed; Windows, Android, iOS Advisory and PR Gate in progress; CAS Windows passed and Ubuntu in progress; Cross-platform Runtime queued; Apple builds pending.
+
+No implementation PR merged. No production notification, Schedule or Calendar data writes, or deployment. Queued, pending and in-progress checks are not PASS.
