@@ -411,6 +411,8 @@ class AppDependencies {
     final repository = gridScheduleRepository;
     if (repository is ConditionalScheduleWriter &&
         repository is ScheduleRevisionSource) {
+      final conditionalWriter = repository as ConditionalScheduleWriter;
+      final revisionSource = repository as ScheduleRevisionSource;
       final current = await repository.findById(schedule.id);
       if (current case Failure<Schedule?>()) {
         return PersistenceFailure<Schedule>(
@@ -423,13 +425,13 @@ class AppDependencies {
           'An existing Schedule can only be replaced through the reviewed Grid import workflow.',
         );
       }
-      final revision = repository.revisionForAbsentSchedule(schedule.id);
+      final revision = revisionSource.revisionForAbsentSchedule(schedule.id);
       if (revision == null || revision.trim().isEmpty) {
         return const PersistenceFailure(
           'The backend did not provide an absent-Schedule revision.',
         );
       }
-      return repository.saveIfRevision(schedule, revision);
+      return conditionalWriter.saveIfRevision(schedule, revision);
     }
     return repository.save(schedule);
   }
