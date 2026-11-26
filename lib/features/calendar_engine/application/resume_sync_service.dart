@@ -61,12 +61,40 @@ class ResumeSyncService {
           if (command == null || eventId == null) {
             throw StateError('Update payload incomplete.');
           }
-          await _gateway.update(eventId: eventId, command: command);
+          if (_gateway is ConditionalCalendarSyncGateway) {
+            final etag = item.expectedEtag;
+            final syncId = item.expectedSyncId;
+            if (etag == null || syncId == null) {
+              throw StateError('Cannot resume a stale Calendar update without its original ETag and managed identity.');
+            }
+            await (_gateway as ConditionalCalendarSyncGateway).updateConditionally(
+              eventId: eventId,
+              expectedEtag: etag,
+              expectedSyncId: syncId,
+              command: command,
+            );
+          } else {
+            await _gateway.update(eventId: eventId, command: command);
+          }
           updated++;
         } else {
           final eventId = item.eventId;
           if (eventId == null) throw StateError('Delete event ID missing.');
-          await _gateway.delete(eventId: eventId, calendarId: item.calendarId);
+          if (_gateway is ConditionalCalendarSyncGateway) {
+            final etag = item.expectedEtag;
+            final syncId = item.expectedSyncId;
+            if (etag == null || syncId == null) {
+              throw StateError('Cannot resume a stale Calendar delete without its original ETag and managed identity.');
+            }
+            await (_gateway as ConditionalCalendarSyncGateway).deleteConditionally(
+              eventId: eventId,
+              calendarId: item.calendarId,
+              expectedEtag: etag,
+              expectedSyncId: syncId,
+            );
+          } else {
+            await _gateway.delete(eventId: eventId, calendarId: item.calendarId);
+          }
           deleted++;
         }
         results.add(
@@ -87,6 +115,8 @@ class ResumeSyncService {
             command: item.command,
             eventId: item.eventId,
             calendarId: item.calendarId,
+            expectedEtag: item.expectedEtag,
+            expectedSyncId: item.expectedSyncId,
             message: error.toString(),
           ),
         );
