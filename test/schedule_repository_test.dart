@@ -138,9 +138,9 @@ void main() {
     final store = InMemoryScheduleKeyValueStore();
     final firstRepository = SharedPreferencesScheduleRepository(store: store);
     final secondRepository = SharedPreferencesScheduleRepository(store: store);
-    final firstWriter = firstRepository as ConditionalScheduleWriter;
-    final secondWriter = secondRepository as ConditionalScheduleWriter;
-    final revisionSource = firstRepository as ScheduleRevisionSource;
+    final ConditionalScheduleWriter firstWriter = firstRepository;
+    final ConditionalScheduleWriter secondWriter = secondRepository;
+    final ScheduleRevisionSource revisionSource = firstRepository;
     await firstRepository.findById('schedule-1');
     final absentRevision = revisionSource.revisionForAbsentSchedule('schedule-1')!;
 
@@ -157,7 +157,7 @@ void main() {
 
     expect(results.whereType<Success<Schedule>>(), hasLength(1));
     expect(results.whereType<ValidationFailure<Schedule>>(), hasLength(1));
-    final latest = await repository.findById('schedule-1');
+    final latest = await firstRepository.findById('schedule-1');
     expect(
       ['Writer A', 'Writer B'],
       contains((latest as Success<Schedule?>).value!.name),
@@ -168,8 +168,8 @@ void main() {
     final repository = SharedPreferencesScheduleRepository(
       store: InMemoryScheduleKeyValueStore(),
     );
-    final writer = repository as ConditionalScheduleWriter;
-    final revisionSource = repository as ScheduleRevisionSource;
+    final ConditionalScheduleWriter writer = repository;
+    final ScheduleRevisionSource revisionSource = repository;
     await repository.findById('schedule-1');
     final originalAbsent = revisionSource.revisionForAbsentSchedule('schedule-1')!;
 
@@ -197,8 +197,8 @@ void main() {
   test('failed pointer switch advances the revision and rejects stale writers', () async {
     final store = InMemoryScheduleKeyValueStore();
     final repository = SharedPreferencesScheduleRepository(store: store);
-    final writer = repository as ConditionalScheduleWriter;
-    final revisionSource = repository as ScheduleRevisionSource;
+    final ConditionalScheduleWriter writer = repository;
+    final ScheduleRevisionSource revisionSource = repository;
     final original = canonicalScheduleFixture(name: 'Original');
     await repository.save(original);
     final loaded = await repository.findById(original.id);
@@ -215,8 +215,9 @@ void main() {
     expect(failed, isA<PersistenceFailure<Schedule>>());
     final stillActive = await repository.findById(original.id);
     expect((stillActive as Success<Schedule?>).value!.name, 'Original');
+    final stillActiveSchedule = (stillActive as Success<Schedule?>).value!;
     final latestRevision = revisionSource.revisionForSnapshot(
-      (stillActive as Success<Schedule?>).value!,
+      stillActiveSchedule,
     )!;
     expect(latestRevision, isNot(staleRevision));
     expect(
