@@ -315,3 +315,37 @@ This update supersedes earlier PR-head and CI snapshots in sections 8.2 and 8.7 
 | Controlled Google Calendar verification | NOT AUTHORIZED | Separate explicit authorization for a dedicated test calendar only. |
 
 All Draft PRs remain Draft. No merge, deployment, production migration or real-calendar write is authorized by this checkpoint.
+
+### 8.9 Live execution checkpoint — 2026-11-26 12:44 UTC
+
+This checkpoint supersedes the earlier implementation notes in section 8.8 where they differ. Main baseline remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`. All four PRs remain Draft; no merge, deployment, production migration or real-calendar write has occurred.
+
+| PR | Current head | Latest observed checks | Current assessment |
+|---|---|---|---|
+| #192 Grid import / persistence | `c9bc708f5047bd232b7b4ca7cac15342f9af5ea2` | 17 successful; 0 failed; macOS and iOS unsigned builds queued; iOS evidence in progress; Pages deploy skipped. | Backend security audit and Laravel CI pass; Web, Linux, Windows, Android and CAS contract checks pass. iOS/macOS exact-head build evidence is still outstanding. Production-wide Schedule CAS is still not proven: general Schedule writers continue to default to local SharedPreferences. |
+| #196 Calendar sync coordination | `1f564a81a1bd707ca789c260239a284151d36b3f` | Exact-head CI has 13 queued and 1 in progress at this snapshot; no failures reported yet. | Added Laravel lease/run/operation APIs, Flutter executor integration, per-operation heartbeat/ledger updates, release, and coordinated ResumeSyncService. Schedule ID is persisted in local history. Backend feature suite passed 79 tests / 620 assertions in the dedicated verification run. Flutter exact-head quality/platform matrix is still pending. |
+| #191 Notification Outbox | `69cf20b8eba1d073f87ddaad0587237a9c414e7a` | 8 successful; 0 failed; no pending checks. | Branch includes main (0 behind) and patched Symfony lockfile. Outbox remains enqueue-only; no worker or external delivery is enabled. |
+| #197 execution documentation | `b431511ba504a0ee18fdfcd926448a20c0c20783` | 7 successful; 0 failed; no pending checks. | Documentation checkpoint passes. |
+
+#### #196 coordination and recovery boundary
+
+- When `ORGANIZATION_API_BASE_URL` is configured, the production `ResilientCalendarSyncExecutor` acquires the server lease before Calendar mutations, heartbeats between operations, records payload-hashed operation intents, stores provider outcomes and releases the lease.
+- `ResumeSyncService` now uses the same lease and ledger. New sync history persists the original Schedule ID; old history without that ID fails closed in server-coordinated mode.
+- Local-only mode remains usable but does not serialize across devices. The user-facing history and failed-operation queue remain local SharedPreferences; startup recovery does not yet load server operation history to reconcile an interrupted run. This is still an acceptance gap.
+- Dedicated backend verification passed `composer audit --locked`, Pint, and 79 Laravel tests / 620 assertions. The initial CI failures exposed and fixed: Composer `--locked` misuse, route newline escapes, missing Carbon import, Dart nullable map lint, unused test import, and an incorrect await on the synchronous Google authentication getter.
+- The Flutter formatter/analyzer/test workflow and exact-head cross-platform matrix are still running; do not mark them PASS until their own exact-head conclusions are success.
+
+#### Updated acceptance matrix
+
+| Requirement | Status | Remaining evidence |
+|---|---|---|
+| Symfony dependency security | PASS on #192/#191/#196 lockfiles | Standard exact-head Laravel CI on the latest commit. |
+| Grid parser, web/Linux/Windows/Android and native CAS contract | PASS on #192 | iOS/macOS unsigned app builds and final core PR gate. |
+| PR #191 base freshness and current CI | PASS | Independent review; delivery worker remains future scope. |
+| Backend Calendar lease and durable operation API | PASS in dedicated verification | Standard exact-head backend CI and security review of server locking on supported production DB. |
+| Flutter executor and resume lease integration | IMPLEMENTED, TESTING | Exact-head Flutter analyze/tests, E2E two-client race, timeout, ambiguous response, process-restart recovery. |
+| Server history-driven restart recovery | NOT IMPLEMENTED | Read old server operations, reconcile provider state, resume safely after app restart. |
+| Production-wide Schedule CAS | NOT PROVEN | Migrate every Schedule writer to caller-owned server revision tokens or fail closed in backend mode. |
+| Real Google Calendar test writes | NOT AUTHORIZED | Separate explicit authorization for a dedicated test calendar only. |
+
+Never count queued, in-progress, skipped or missing platform evidence as PASS. Keep all PRs Draft until the complete acceptance matrix and human review are satisfied.
