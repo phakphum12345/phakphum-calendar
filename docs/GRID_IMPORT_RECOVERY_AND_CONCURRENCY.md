@@ -38,26 +38,28 @@ The current UI uses `grid-<microseconds>` import-run identifiers. The backend th
 
 | Capability | Current state |
 |---|---|
-| Review snapshot and target revision fingerprint | Implemented |
+| Review snapshot and target revision | Implemented; uses the backend generation-bearing token through `ScheduleRevisionSource`, with a content-fingerprint fallback only for local storage |
 | Pre-journal stale revision check | Implemented |
 | Journal PREPARED/read-back/COMMITTED protocol | Implemented |
 | Committed provenance preserves prepared review decisions | Implemented |
-| Read-before-save guard after journal commit | Implemented |
+| Explicit conditional save after journal commit | Implemented for backend Grid path through `ConditionalScheduleWriter.saveIfRevision`; local fallback remains non-atomic |
 | Recovery when canonical save failed and base revision is unchanged | Implemented |
 | Recovery conflict rejection | Implemented; regression test added |
 | Idempotent recovery when accepted Schedule is already present | Implemented; regression test added |
-| Atomic compare-and-set across concurrent writers | Not implemented |
-| Cross-process/device writer exclusion | Not implemented |
+| Atomic compare-and-set for Grid backend commit/recovery | Implemented for this path only; other production writers are not yet migrated |
+| Cross-process/device protection for Grid backend writes | Backend server rejects stale caller-bound revisions; no global guarantee for other writers or local fallback |
 | Automatic startup discovery of all journaled Schedule IDs | Not implemented |
 | Recovery of every journal before any schedule is edited | Not implemented |
 
 ## 3. Why the current guard is not atomic CAS
 
-The current `ScheduleRepository` contract exposes `findById`, `save`, and `delete`. It has no conditional write operation. The production SharedPreferences repository performs a read, writes an inactive slot, verifies the payload, and updates an active-slot pointer. These steps improve crash resilience, but they do not make a conditional write atomic against another writer.
+The local `ScheduleRepository` fallback still exposes ordinary `findById` and `save` without an atomic conditional write. Its two-slot SharedPreferences protocol improves crash resilience but does not provide cross-instance compare-and-set.
 
-The Grid workflow performs multiple revision reads around journal commit and before canonical save. This detects many stale-write cases, but a concurrent writer can still modify the Schedule between the final read and the subsequent save. A process-local mutex would not close this gap for legacy writers, other app processes, or another device.
+When the authenticated backend is configured, the Grid workflow now carries the authoritative generation-bearing revision from `ScheduleRevisionSource` through review and provenance, then calls `ConditionalScheduleWriter.saveIfRevision` with that exact caller-owned token after the journal commit. The backend performs the comparison and write at the server boundary. This closes the final read/save race and ABA gap for Grid commit/recovery on the backend path.
 
-**Do not describe the current implementation as atomic, transaction-safe, or concurrency-proof.**
+This is not yet a repository-wide guarantee. Legacy `ScheduleController` and `AppController` writers still use the local repository; imported-schedule and other generic `save` call sites also need snapshot-bound revision migration. The backend repository's legacy `save` method uses a shared revision cache and must not be treated as safe for concurrent stale editor instances. A process-local mutex does not close these gaps.
+
+**Do not describe the entire application as atomic, transaction-safe, or concurrency-proof until every production writer uses the same caller-bound revision protocol.**
 
 ## 4. Required architecture for real conditional writes
 
