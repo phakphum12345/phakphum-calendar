@@ -192,6 +192,9 @@ class GoogleCalendarSyncGateway
     required String? expectedSyncId,
     required CalendarSyncCommand command,
   }) async {
+    if (expectedEtag.trim().isEmpty) {
+      throw StateError('Calendar update requires the ETag captured by preview.');
+    }
     final existing = await _readEvent(command.calendarId, eventId);
     if (existing == null) {
       throw StateError('Calendar event $eventId no longer exists; refresh the preview.');
@@ -235,6 +238,9 @@ class GoogleCalendarSyncGateway
     required String expectedEtag,
     required String? expectedSyncId,
   }) async {
+    if (expectedEtag.trim().isEmpty) {
+      throw StateError('Calendar delete requires the ETag captured by preview.');
+    }
     final existing = await _readEvent(calendarId, eventId);
     // A missing event is the desired terminal state for a delete retry.
     if (existing == null) return;
