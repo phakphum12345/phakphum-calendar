@@ -92,15 +92,24 @@ persisted with local history. Resume acquires the same Calendar lease and
 records each resumed operation using that original Schedule ID. Legacy history
 entries without a Schedule ID fail closed in server-coordinated mode.
 
-This is not yet complete shared recovery. The user-facing history and failed
-operation queue remain in local SharedPreferences. Resume now records its
-operations in the server ledger, but the app does not yet load old server
-operation records to reconcile/recover an interrupted run after a process
-restart. The backend history read APIs are available, but startup recovery and
-history UI integration remain open. If no backend origin is configured,
-local-only mode remains usable but does not serialize syncs across devices.
-Do not claim cross-device safety in local-only mode. No production Calendar
-write is authorized by these backend endpoints alone.
+Durable operation records now include the exact replay payload required for
+insert/update/delete reconciliation. The backend canonicalizes and verifies
+the payload hash, encrypts the payload with the Laravel application key, and
+returns it only through owner-scoped run/operation reads. The explicit
+`ResumeSyncService.recoverRun(runId)` path loads an interrupted run, rebuilds
+its unfinished operations, and resumes them under a newly acquired Calendar
+lease. Inserts reconcile by stable Sync ID; updates first compare the current
+provider event with the desired command before enforcing the original ETag;
+deletes treat an already-missing event as complete and reject changed events.
+
+Recovery is explicit and is not automatically replayed at application startup.
+The user-facing history and failed-operation queue remain local
+SharedPreferences views; the server ledger is the durable recovery source.
+The app must have a configured backend origin and the authenticated owner
+must request recovery. If no backend origin is configured, local-only mode
+remains usable but does not serialize syncs across devices or provide
+cross-device recovery. No production Calendar write is authorized by these
+backend endpoints alone.
 
 ## Partial success
 
