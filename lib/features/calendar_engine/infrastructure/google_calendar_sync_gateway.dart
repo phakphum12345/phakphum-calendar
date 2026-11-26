@@ -99,6 +99,7 @@ class GoogleCalendarSyncGateway
             description: event.description,
             colorId: event.colorId,
             etag: event.etag,
+            providerSyncId: _managedSyncId(event),
           ),
         )
         .toList(growable: false);
@@ -179,15 +180,15 @@ class GoogleCalendarSyncGateway
   Future<ManagedCalendarEvent> updateConditionally({
     required String eventId,
     required String expectedEtag,
-    required String expectedSyncId,
+    required String? expectedSyncId,
     required CalendarSyncCommand command,
   }) async {
     final existing = await _readEvent(command.calendarId, eventId);
     if (existing == null) {
       throw StateError('Calendar event $eventId no longer exists; refresh the preview.');
     }
-    if (_managedSyncId(existing) != expectedSyncId) {
-      throw StateError('Calendar event $eventId is no longer owned by this sync identity.');
+    if (!_matchesExpectedProviderIdentity(existing, expectedSyncId)) {
+      throw StateError('Calendar event $eventId is no longer the provider event shown in the preview.');
     }
     if (_matchesCommand(existing, command)) {
       return _toManaged(existing, command.syncId);
@@ -229,7 +230,7 @@ class GoogleCalendarSyncGateway
     // A missing event is the desired terminal state for a delete retry.
     if (existing == null) return;
     if (_managedSyncId(existing) != expectedSyncId) {
-      throw StateError('Refusing to delete Calendar event $eventId: managed identity does not match.');
+      throw StateError('Refusing to delete Calendar event $eventId: provider identity changed after preview.');
     }
     if (existing.etag == null || existing.etag != expectedEtag) {
       throw StateError('Calendar event $eventId changed after preview; refusing stale delete.');
@@ -266,6 +267,9 @@ class GoogleCalendarSyncGateway
     'www.googleapis.com',
     '/calendar/v3/calendars/${Uri.encodeComponent(calendarId)}/events/${Uri.encodeComponent(eventId)}',
   );
+
+  bool _matchesExpectedProviderIdentity(calendar.Event event, String? expectedSyncId) =>
+      _managedSyncId(event) == expectedSyncId;
 
   bool _matchesCommand(calendar.Event event, CalendarSyncCommand command) {
     final start = event.start?.dateTime;
@@ -317,6 +321,7 @@ class GoogleCalendarSyncGateway
       description: event.description,
       colorId: event.colorId,
       etag: event.etag,
+      providerSyncId: _managedSyncId(event),
     );
   }
 
