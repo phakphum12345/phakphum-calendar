@@ -178,6 +178,10 @@ class ShiftTransactionService
                         'status' => 'pending_response',
                         'version' => 1,
                         'transfer_count' => count($transfers),
+                        'title' => 'New shift request',
+                        'body' => $this->notificationBody('created', $input['type']),
+                        'tag' => "shift-transaction:$id:v1",
+                        'url' => '../',
                     ],
                     $now,
                 );
@@ -551,6 +555,7 @@ class ShiftTransactionService
             ->where('user_id', '<>', $actor->id)
             ->pluck('user_id');
 
+        [$title, $body] = $this->notificationCopy($action, $transaction->type);
         foreach ($recipients as $recipientUserId) {
             $recipientUserId = (int) $recipientUserId;
             $this->notificationOutbox->enqueue(
@@ -564,10 +569,45 @@ class ShiftTransactionService
                     'status' => $status,
                     'sync_status' => $syncStatus,
                     'version' => $version,
+                    'title' => $title,
+                    'body' => $body,
+                    'tag' => "shift-transaction:$transaction->id:v$version",
+                    'url' => '../',
                 ],
                 $availableAt,
             );
         }
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private function notificationCopy(string $action, string $transactionType): array
+    {
+        $kind = match ($transactionType) {
+            'give_up' => 'shift handoff',
+            'exchange' => 'shift exchange',
+            'exchange_and_return' => 'shift exchange and return',
+            default => 'shift request',
+        };
+
+        return match ($action) {
+            'created' => ['New shift request', "A colleague sent you a $kind request."],
+            'confirm' => ['Shift request accepted', 'Another participant confirmed the request.'],
+            'reject' => ['Shift request rejected', 'A participant rejected the request.'],
+            'approve' => ['Shift request approved', 'The organization approved the request.'],
+            'reject_by_approver' => ['Shift request not approved', 'The organization did not approve the request.'],
+            'cancel' => ['Shift request cancelled', 'The requester cancelled the request.'],
+            'sync_complete' => ['Calendar sync completed', 'The shift request Calendar events were synchronized.'],
+            'sync_fail' => ['Calendar sync needs attention', 'Calendar sync failed. Open the request to review it.'],
+            'fulfill' => ['Shift handoff confirmed', 'A recipient confirmed fulfillment of a transferred shift.'],
+            default => ['Shift request updated', "Your $kind has been updated."],
+        };
+    }
+
+    private function notificationBody(string $action, string $transactionType): string
+    {
+        return $this->notificationCopy($action, $transactionType)[1];
     }
 
     private function normalizeCalendarEvents(string $transactionId, array $input): array
