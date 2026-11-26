@@ -57,7 +57,7 @@ void main() {
   testWidgets('local-only history does not expose cross-session recovery', (
     tester,
   ) async {
-    final entry = _failedEntry().copyWith(serverRunId: null);
+    final entry = _failedEntry(serverRunId: null);
     final controller = SyncHistoryController(
       _MemorySyncHistoryRepository([entry]),
       recoverHistory: (_) async {},
@@ -121,7 +121,8 @@ void main() {
   });
 }
 
-SyncHistoryEntry _failedEntry() => SyncHistoryEntry(
+SyncHistoryEntry _failedEntry({String? serverRunId = 'remote-run-1'}) =>
+    SyncHistoryEntry(
   id: 'local-history-1',
   startedAt: DateTime(2026, 11, 26, 8),
   status: SyncHistoryStatus.failure,
@@ -130,7 +131,7 @@ SyncHistoryEntry _failedEntry() => SyncHistoryEntry(
   deleted: 0,
   failed: 1,
   scheduleId: 'schedule-1',
-  serverRunId: 'remote-run-1',
+  serverRunId: serverRunId,
 );
 
 class _MemorySyncHistoryRepository implements SyncHistoryRepository {
