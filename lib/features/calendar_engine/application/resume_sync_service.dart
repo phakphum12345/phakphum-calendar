@@ -83,8 +83,8 @@ class ResumeSyncService {
           if (_gateway is ConditionalCalendarSyncGateway) {
             final etag = item.expectedEtag;
             final syncId = item.expectedSyncId;
-            if (etag == null || syncId == null) {
-              throw StateError('Cannot resume a stale Calendar delete without its original ETag and managed identity.');
+            if (etag == null) {
+              throw StateError('Cannot resume a stale Calendar delete without its original provider ETag.');
             }
             await (_gateway as ConditionalCalendarSyncGateway).deleteConditionally(
               eventId: eventId,
