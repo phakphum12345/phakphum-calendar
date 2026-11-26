@@ -33,7 +33,7 @@ abstract interface class ConditionalCalendarSyncGateway {
     required String eventId,
     required String calendarId,
     required String expectedEtag,
-    required String expectedSyncId,
+    required String? expectedSyncId,
   });
 }
 
