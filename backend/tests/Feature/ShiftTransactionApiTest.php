@@ -460,6 +460,14 @@ class ShiftTransactionApiTest extends TestCase
                 ->where('notification_type', 'shift_transaction.created')
                 ->count(),
         );
+        $createdNotification = DB::table('notification_outbox')
+            ->where('user_id', $bobId)
+            ->where('notification_type', 'shift_transaction.created')
+            ->first();
+        $createdPayload = json_decode($createdNotification->payload, true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame('New shift request', $createdPayload['title']);
+        $this->assertSame("shift-transaction:{$created['id']}:v1", $createdPayload['tag']);
+        $this->assertSame('../', $createdPayload['url']);
 
         // Replaying the idempotent create request must not enqueue again.
         $this->postJson('/api/v1/shift-transactions', $payload, [
