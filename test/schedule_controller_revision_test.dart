@@ -30,6 +30,24 @@ void main() {
     expect((loaded as Success<Schedule?>).value!.name, 'New local roster');
   });
 
+  test('local controller verifies the original snapshot before adding the viewed month', () async {
+    final repository = SharedPreferencesScheduleRepository(
+      store: InMemoryScheduleKeyValueStore(),
+    );
+    final original = canonicalScheduleFixture(name: 'Persisted roster');
+    await repository.save(original);
+    final controller = ScheduleController(
+      service: ScheduleService(schedule: original),
+      repository: repository,
+    );
+
+    final saved = await controller.saveSchedule();
+
+    expect(saved, isA<Success<Schedule>>());
+    final loaded = await repository.findById(original.id);
+    expect((loaded as Success<Schedule?>).value!.name, 'Persisted roster');
+  });
+
   test('local controller refuses a different unreviewed persisted snapshot', () async {
     final repository = SharedPreferencesScheduleRepository(
       store: InMemoryScheduleKeyValueStore(),
