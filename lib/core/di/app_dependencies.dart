@@ -405,6 +405,12 @@ class AppDependencies {
     return SyncHistoryController(
       syncHistoryRepository,
       recoverHistory: (historyId) async {
+        final coordination = calendarSyncCoordinationGateway;
+        if (coordination == null) {
+          throw StateError(
+            'History recovery requires a configured shared backend; local-only history cannot be replayed across sessions.',
+          );
+        }
         final client = await googleAuthService.clientFor([
           calendar.CalendarApi.calendarEventsScope,
         ]);
@@ -413,13 +419,9 @@ class AppDependencies {
             gateway: calendarSyncGatewayFactory(client),
             historyRepository: syncHistoryRepository,
             failedRepository: failedSyncRepository,
-            coordinationGateway: calendarSyncCoordinationGateway,
+            coordinationGateway: coordination,
           );
-          if (calendarSyncCoordinationGateway == null) {
-            await service.resume(historyId);
-          } else {
-            await service.recoverHistory(historyId);
-          }
+          await service.recoverHistory(historyId);
         } finally {
           client.close();
         }
