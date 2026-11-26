@@ -210,6 +210,16 @@ class ShiftCalendarWorkflowController extends ChangeNotifier
     }
   }
 
+  /// Explicitly rebuilds an interrupted run from its owner-scoped server ledger.
+  /// This is never invoked automatically at application startup.
+  Future<ResumeSyncResult> recoverInterruptedRun(String runId) {
+    final service = resumeSyncService;
+    if (service == null) {
+      throw StateError('Resume synchronization is not configured.');
+    }
+    return service.recoverRun(runId);
+  }
+
   /// Resumes failed operations recorded by the resilient executor.
   Future<ResumeSyncResult> resume(String historyId) {
     final service = resumeSyncService;
