@@ -886,3 +886,12 @@ No implementation PR merged. Apple native build evidence and the remaining exact
 - These test results validate the parser and local CAS/controller tests on the Windows Flutter test suite, but they do not certify the remaining release artifact, Auto Detect, CAS macOS or Apple builds.
 
 No implementation PR merged. No production data writes or deployment. Queued, pending and in-progress checks are not PASS.
+
+
+### 8.45 Live execution checkpoint — 2026-11-27 (core PRs nearing completion)
+
+- PR #191 exact head `6787fe710ceb351581eb42c9b7045c49a93c9cfb`: Backend, Linux, Web, Android, Windows, Cross-platform Runtime, Auto Detect, Dependency Security and Pull Request Gate all passed. iOS Advisory remains in progress; native iOS/macOS Xcode pending. The PR still does not deliver push notifications.
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: all non-Apple checks including PR Gate and iOS Advisory passed. Native iOS queued; macOS Xcode pending.
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: Windows static analysis and Flutter tests passed (including row 33 and six-month/two-department regressions); Linux release, Backend, Web, Android, Dart Format and Dependency Security passed. Cross-platform Linux full quality passed; Windows PowerShell full quality and Auto Detect unit tests in progress; Windows release build and PR Gate in progress. CAS passed on Windows/Ubuntu; macOS queued. iOS Advisory in progress; native Apple builds pending.
+
+No implementation PR merged. The remaining blockers are exact-head PR #192/191 jobs, Apple native builds, CAS macOS, and notification delivery implementation. No production data writes or deployment.
