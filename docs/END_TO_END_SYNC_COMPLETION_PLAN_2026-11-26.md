@@ -17,9 +17,9 @@ A release is complete only when the exact production path is reachable in the UI
 
 - PR #194 (multi-source roster ingestion roadmap) is merged.
 - Its post-merge commit `c6ad63a5f9e7925dc1848deccb37bbba53768069` has 7/7 post-merge checks completed successfully.
-- PR #193 (Xcode runner queue coalescing) remains Draft. Its inspected head had 15 successful checks and one skipped Pages deployment; it has no submitted review. PR #192 also edits the same iOS/macOS workflow files, so #193 must be resolved before rebasing/revalidating #192.
-- PR #192 (Grid import, Schedule API and recovery foundations) remains Draft. Its inspected head had successful workflow checks, including Flutter, backend, cross-platform and native SQLite spike jobs; Pages deployment was skipped. It is a large change and requires code-level review, migration-order review, exact-head tests, and production-writer inventory reconciliation.
-- PR #191 (notification outbox foundation) remains Draft and requires independent migration, idempotency, retry and delivery-path review.
+- PR #193 (Xcode runner queue coalescing) was merged into main as d18454680879a10c6efe9e44ffb37cd0695f25a6 on 2026-11-26. The exact main commit has 15/15 checks completed successfully. PR #192 still overlaps the iOS/macOS workflow files and must be reviewed against this merged baseline.
+- PR #192 (Grid import, Schedule API and recovery foundations) remains Draft at head 12e9245ba3c7df89428de48f6e73b2106a525973, based on current main d18454680879a10c6efe9e44ffb37cd0695f25a6. Its latest exact-head run has multiple failures: Dart static analysis, Composer dependency audit, macOS build, Linux release, Windows/Linux quality suites, Web build, Android build, Windows build and the core evidence gate; iOS is still queued and Pages is skipped. The three isolated SQLite CAS spike jobs passed, but this does not validate production CAS. It requires failure-by-failure repair, code-level review, migration-order review and production-writer inventory reconciliation.
+- PR #191 (notification outbox foundation) remains Draft on an older base (7ae6b3020c0cc331e2ab730591df44646b0ef530) and requires rebasing, independent migration-order, idempotency, retry, worker and delivery-path review. It is not a Calendar sync fix.
 - No Draft state is to be silently converted to Ready. No PR is merged solely because CI is green.
 
 ### 2.2 Existing foundations
@@ -40,7 +40,7 @@ Relevant source-of-truth documents:
 ### 2.3 Confirmed gaps and risk statements
 
 1. The production sync-history repository is currently local SharedPreferences. This is not cross-device sync or a shared server-side operation ledger.
-2. The sync reliability specification explicitly states that simultaneous update/delete coordination across independent clients is not yet guaranteed. The current Calendar gateway model does not carry provider ETags into update/delete operations; the executor retries update and delete calls without a provider read-back reconciliation step (insert has a dedicated reconciler). A stale preview can therefore target an event that changed after comparison, and an ambiguous update/delete timeout is not handled with the same safety as inserts.
+2. Main still lacks provider-conditional update/delete protection. Draft PR #196 (28552f0f06556d7bbf11e0ce5e38765d18d2203a) adds ETag/managed-identity capture, HTTP If-Match, stale-preview rejection and update/delete outcome reconciliation, but it is not merged, is based on the pre-#193 main SHA, and its iOS check is still queued while Pages is skipped. Even if #196 passes and merges, it explicitly does not serialize whole sync runs or provide a shared cross-device operation ledger; local sync history remains insufficient for cross-device coordination.
 3. The Calendar preview document still lists integration work: build concrete plans with existing provider event IDs, timezone-aware event creation, connect preview to import/comparison, and persist/communicate retry and partial-failure outcomes. These statements must be reconciled with source and tests before marking any item complete.
 4. The Grid recovery design says local two-slot journal and remote journal/Schedule writes are not one cross-table database transaction. The remote committed journal is a recoverable commit intent, not proof that the canonical Schedule write completed.
 5. The #192 backend Schedule repository is not yet the repository for all Schedule writers: the inspected dependency graph still passes the legacy local repository to the main AppController and the general Schedule/Roster editor factories. Therefore backend CAS is not global even if the Grid import route uses it. The Schedule CAS ADR remains a prototype/evidence gate. Do not promote the isolated spike or claim global writer safety until every production Schedule writer is inventoried and migrated or safely coordinated. The #192 Grid workflow currently derives its review revision from a Schedule content fingerprint, while the backend repository maintains a generation-bearing server revision internally; the workflow does not consume that generation token. This leaves an ABA/stale-review gap (A → B → A) that must be closed by exposing and carrying the authoritative revision through review, journal and commit.
@@ -206,3 +206,60 @@ The project may be called complete only when:
 - documentation matches the shipped implementation.
 
 Until then, report the remaining items as open.
+---
+
+## 8. Live execution checkpoint — 2026-11-26 18:01 Asia/Bangkok
+
+This checkpoint supersedes the older PR snapshot above where they conflict. It is an evidence update, not a completion claim.
+
+### 8.1 Exact repository baseline
+
+- Current main: d18454680879a10c6efe9e44ffb37cd0695f25a6.
+- PR #193 merged at 2026-11-26T09:39:24Z; merge commit is the current main SHA.
+- Post-merge checks on that exact main SHA: 15 completed / 15 success.
+- PR #194 remains merged; its earlier merge commit checks were 7/7 success.
+
+### 8.2 Current open delivery units
+
+| PR | Current state | Exact head | Base relationship | Evidence / disposition |
+|---|---|---|---|---|
+| #196 Calendar ETag safety | Draft | 28552f0f06556d7bbf11e0ce5e38765d18d2203a | Based on pre-#193 main c6ad63a...; update/rebase required | 15 checks successful, iOS Xcode queued, Pages skipped; no review. Not merge-ready. |
+| #192 Grid import and persistence recovery | Draft | 12e9245ba3c7df89428de48f6e73b2106a525973 | Base is current main d184546... | Multiple exact-head failures (static analysis, Composer audit, macOS/Linux/Windows/Web/Android builds and quality gates); iOS queued; Pages skipped. Repair before review/merge. |
+| #191 Notification outbox | Draft | 62f0a2007ff9c105354044f52467bfd14e28a348 | Older base 7ae6b302... | No current-base certification. Separate from Calendar sync; review migration and delivery boundaries. |
+| #193 Xcode queue | Merged | 20973ff9f48ae4476a74b060769cbab93821f5ea | Merged to current main | Post-merge main checks 15/15 success. |
+
+### 8.3 Calendar sync defect boundary
+
+- Current main's production ResilientCalendarSyncExecutor still retries update/delete through the unconditional gateway methods. Current main's Google gateway still uses ordinary update/delete calls. The Draft #196 change is therefore not yet active in production.
+- #196 improves per-event stale-write safety through provider ETags and managed identity, but its own PR description confirms that whole sync runs are not globally serialized and history/failed-operation storage remain local SharedPreferences.
+- The complete sync fix therefore needs both provider-level conditional writes and operation-level coordination/recovery. A local in-memory mutex alone is not sufficient across browser tabs, devices or app processes.
+- Required server-side operation ledger/lease work must use the existing authenticated backend and existing persistence where viable; do not introduce a paid provider or new hosted dependency without approval.
+- Do not test by writing to the user's real Calendar. Use fakes and a dedicated test calendar only after separate explicit authorization.
+
+### 8.4 Immediate execution order
+
+1. Rebase/update #196 onto current main, inspect the full diff, finish iOS CI and add tests for 412, 404/410, ambiguous timeout, legacy adoption, unrelated-field preservation and resume. Keep Draft until ready.
+2. Design and implement the shared sync-operation ledger/lease: stable idempotency key, per-calendar/operation scope, owner authorization, lease expiry/reclaim, state transitions, per-item provider IDs/ETags, attempt/backoff, and read-back reconciliation. Prove two independent clients cannot execute conflicting plans concurrently.
+3. Reconcile #192 against current main and repair every failing exact-head check. Complete backend ownership isolation, all Schedule-writer revision/CAS inventory, generation-bearing revision propagation, journal recovery and UI integration before merge.
+4. Rebase and independently review #191. Decide whether notification delivery is in the requested release scope; do not imply an outbox foundation sends notifications.
+5. Complete source-provider and parser acceptance: local workbook/text formats, Google Sheets/Drive, camera/photo OCR only with a verified on-device/approved engine, URL safety, Thai BE/CE and cross-period dates, provenance and ambiguity review.
+6. Complete production UI path: acquire → analyze → correct → preview → confirm → persist → Calendar preview → explicit Calendar confirmation → sync → provider read-back → durable history → retry/recovery.
+7. Run exact-SHA Flutter, backend, migration, integration and supported-platform checks; then controlled test-calendar verification and post-merge main checks.
+
+### 8.5 Updated acceptance status
+
+| ID | Current status | Evidence required to change to PASS |
+|---|---|---|
+| PR-193 | PASS | Merged current main; 15/15 post-merge checks |
+| PR-196 | IN PROGRESS | Rebased exact-head full CI + review + provider conditional-write tests |
+| CAL-01 conditional mutation | PARTIAL | #196 merged and exact-head provider integration tests |
+| CAL-02 cross-device serialization | NOT PROVEN | Shared lease/ledger + two-client race/reclaim tests |
+| CAL-03 retry/resume | PARTIAL | Ambiguous update/delete, no-repeat-success, stale lease and process restart tests |
+| CAL-04 durable history | NOT PROVEN | Server-backed per-item ledger and restart/cross-device read-back |
+| DATA-01 Schedule writer concurrency | NOT PROVEN | All production writers use the same authoritative generation/CAS |
+| DATA-02 import journal recovery | NOT PROVEN | Restart/interruption/orphan/conflict/rollback tests |
+| SRC-01 multi-source ingestion | PARTIAL | Each declared provider works through the real review/preview path |
+| UI-01 review and confirmation | NOT PROVEN | Production UI integration tests prove no writes before explicit confirmation |
+| CAL-05 real Google provider | NOT PROVEN | Dedicated test-calendar create/update/read-back/recovery evidence |
+
+No row becomes PASS from a roadmap, a Draft PR, a skipped check, or a mock-only test. Do not mark the overall project complete until every mandatory row has exact evidence and the shipped implementation matches these documents.
