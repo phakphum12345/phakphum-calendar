@@ -65,6 +65,9 @@ class ResilientCalendarSyncExecutor {
     var deleted = 0;
     var failed = 0;
     final coordination = coordinationGateway;
+    final invalidSharedScheduleIdentity = coordination != null &&
+        (plan.scheduleId.trim().isEmpty ||
+            plan.scheduleId.trim().toLowerCase() == 'unknown');
     CalendarSyncLease? lease;
     var leaseStatus = 'failed';
 
@@ -174,6 +177,11 @@ class ResilientCalendarSyncExecutor {
     }
 
     try {
+      if (invalidSharedScheduleIdentity) {
+        throw StateError(
+          'Shared Calendar synchronization requires a stable Schedule ID; compatibility previews cannot use the shared backend.',
+        );
+      }
       if (coordination != null && plan.operationCount > 0) {
         final acquiredLease = await coordination.acquire(
           calendarId: plan.calendarId,
@@ -326,7 +334,9 @@ class ResilientCalendarSyncExecutor {
                 ? 0
                 : plan.operationCount
             : failed + 1,
-        message: leaseWasNotAcquired
+        message: invalidSharedScheduleIdentity
+            ? 'Synchronization was blocked before Calendar writes because this preview has no stable Schedule ID.'
+            : leaseWasNotAcquired
             ? 'Synchronization was blocked before Calendar writes; another run may hold the lease. Retry after it finishes.'
             : hasCompletedOperation
             ? 'Synchronization stopped unexpectedly; review the durable operation ledger before retrying.'
