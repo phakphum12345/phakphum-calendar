@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Contracts\GoogleIdentityTokenVerifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 use Tests\Fakes\FakeGoogleIdentityTokenVerifier;
 use Tests\TestCase;
 
@@ -84,9 +86,20 @@ class CalendarSyncCoordinationApiTest extends TestCase
             'payload_hash' => hash('sha256', json_encode(['sync_id' => 'owner-private-op', 'title' => 'Private shift'])),
         ], $this->auth('alice-token'))->assertCreated();
 
+        $ciphertext = DB::table('calendar_sync_operations')
+            ->where('operation_key', 'owner-private-op')
+            ->value('payload_ciphertext');
+        $this->assertIsString($ciphertext);
+        $this->assertStringNotContainsString('Private shift', $ciphertext);
+        $this->assertSame(
+            ['sync_id' => 'owner-private-op', 'title' => 'Private shift'],
+            json_decode(Crypt::decryptString($ciphertext), true),
+        );
+
         $this->getJson('/api/v1/calendar-sync/runs/00000000-0000-4000-8000-000000000008/operations', $this->auth('alice-token'))
             ->assertOk()
-            ->assertJsonPath('data.0.operation_payload.sync_id', 'owner-private-op');
+            ->assertJsonPath('data.0.operation_payload.sync_id', 'owner-private-op')
+            ->assertJsonPath('data.0.operation_payload.title', 'Private shift');
         $this->getJson('/api/v1/calendar-sync/runs/00000000-0000-4000-8000-000000000008/operations', $this->auth('bob-token'))
             ->assertNotFound();
     }
