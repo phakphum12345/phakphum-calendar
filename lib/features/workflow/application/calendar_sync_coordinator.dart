@@ -254,6 +254,8 @@ class CalendarSyncCoordinator {
             end: duplicate.end,
             description: duplicate.description,
             colorId: duplicate.colorId,
+            etag: duplicate.etag,
+            providerSyncId: duplicate.providerSyncId,
           ),
         );
       }
@@ -315,6 +317,8 @@ class CalendarSyncCoordinator {
           end: event.end,
           description: event.description,
           colorId: event.colorId,
+          etag: event.etag,
+          providerSyncId: event.providerSyncId,
         ),
       );
     }
