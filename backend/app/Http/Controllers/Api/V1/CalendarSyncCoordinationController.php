@@ -405,6 +405,7 @@ class CalendarSyncCoordinationController extends Controller
                 'calendar_sync_attempt_regression' => 'Attempt count cannot move backwards.',
                 'calendar_sync_operation_transition_invalid' => 'The operation status transition is not allowed.',
             ];
+
             return response()->json([
                 'error' => [
                     'code' => $result['error'],
