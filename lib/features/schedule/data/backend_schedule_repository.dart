@@ -6,6 +6,7 @@ import '../../../core/result/result.dart';
 import '../../../domain/entities/schedule.dart';
 import '../../../domain/entities/schedule_month.dart';
 import '../../../domain/repositories/schedule_repository.dart';
+import '../../../domain/repositories/schedule_revision_source.dart';
 import 'schedule_json_codec.dart';
 
 /// Authenticated Laravel Schedule persistence using server-enforced revisions.
@@ -13,7 +14,7 @@ import 'schedule_json_codec.dart';
 /// The revision cache is populated by reads and updated only from successful
 /// server responses. A stale cached token is safe: the backend rejects it with
 /// HTTP 409 rather than replacing a newer Schedule.
-class BackendScheduleRepository implements ScheduleRepository {
+class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionSource {
   BackendScheduleRepository({
     required String baseUrl,
     required this.idTokenProvider,
@@ -29,6 +30,9 @@ class BackendScheduleRepository implements ScheduleRepository {
   final bool _ownsHttpClient;
   final ScheduleJsonCodec codec;
   final Map<String, String> _revisions = {};
+
+  @override
+  String? currentRevisionFor(String scheduleId) => _revisions[scheduleId];
 
   static Uri _normalizeBaseUri(String value) {
     final parsed = Uri.tryParse(value.trim());
