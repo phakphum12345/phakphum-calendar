@@ -228,8 +228,8 @@ class AppDependencies {
   final ScheduleRepository? _providedScheduleRepository;
 
   /// Uses the same configured backend for every production Schedule writer.
-  /// If the backend is not configured, existing local storage remains the
-  /// development fallback. Backend writes without a snapshot revision fail closed.
+  /// If the backend is not configured, local storage uses process-scoped
+  /// revision-aware CAS. Shared multi-device writes require the backend CAS.
   late final ScheduleRepository scheduleRepository =
       _providedScheduleRepository ?? _createDefaultScheduleRepository();
 
