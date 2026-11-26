@@ -12,11 +12,13 @@ import 'shift_calendar_workflow_controller.dart';
 class CalendarWorkflowComparison {
   const CalendarWorkflowComparison({
     required this.preview,
+    required this.scheduleId,
     required this.sourceKeys,
     required this.busyPeriods,
   });
 
   final WorkflowPreview preview;
+  final String scheduleId;
   final Set<String> sourceKeys;
   final List<CalendarBusyPeriod> busyPeriods;
 }
@@ -38,12 +40,14 @@ class CalendarWorkflowFacade {
     required auth.AuthClient client,
     required List<Shift> shifts,
     required List<RosterPeriod> periods,
+    required String scheduleId,
     String calendarId = 'primary',
   }) async {
     final prepared = await _prepare(
       client: client,
       shifts: shifts,
       periods: periods,
+      scheduleId: scheduleId,
       calendarId: calendarId,
     );
     return prepared.comparison;
@@ -59,12 +63,14 @@ class CalendarWorkflowFacade {
     required auth.AuthClient client,
     required List<Shift> shifts,
     required List<RosterPeriod> periods,
+    required String scheduleId,
     required String calendarId,
   }) async {
     final calendarSnapshot = await _readCalendarPeriods(client, periods);
     final workflow = CalendarWorkflowFactory.create(client: client);
     await workflow.prepareCandidatePreview(
       desired: _desiredEvents(shifts),
+      scheduleId: scheduleId,
       calendarId: calendarId,
     );
     final preview = workflow.preview;
@@ -73,6 +79,7 @@ class CalendarWorkflowFacade {
     }
     final comparison = CalendarWorkflowComparison(
       preview: preview,
+      scheduleId: scheduleId,
       sourceKeys: calendarSnapshot.sourceKeys,
       busyPeriods: calendarSnapshot.busyPeriods,
     );
@@ -84,13 +91,20 @@ class CalendarWorkflowFacade {
     required List<Shift> shifts,
     required List<RosterPeriod> periods,
     CalendarWorkflowComparison? comparison,
+    required String scheduleId,
     String calendarId = 'primary',
   }) async {
+    if (comparison != null && comparison.scheduleId != scheduleId) {
+      throw StateError(
+        'The Calendar comparison belongs to a different Schedule. Prepare a new preview.',
+      );
+    }
     final prepared = comparison == null
         ? await _prepare(
             client: client,
             shifts: shifts,
             periods: periods,
+            scheduleId: scheduleId,
             calendarId: calendarId,
           )
         : null;
@@ -99,6 +113,7 @@ class CalendarWorkflowFacade {
     if (prepared == null) {
       await workflow.prepareCandidatePreview(
         desired: _desiredEvents(shifts),
+        scheduleId: scheduleId,
         calendarId: calendarId,
       );
     }
