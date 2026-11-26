@@ -73,6 +73,33 @@ void main() {
     expect(controller.lastResult!.hasFailures, isFalse);
   });
 
+  test('compatibility preview rejects unknown Schedule identity before provider reads', () async {
+    final calls = <String>[];
+    final gateway = _CalendarGateway(calls: calls);
+    final dependencies = AppDependencies(
+      scheduleRules: const [],
+      syncHistoryRepository: _RecordingHistoryRepository(),
+      failedSyncRepository: _InMemoryFailedSyncRepository(),
+    );
+    final controller = dependencies.createShiftCalendarWorkflowController(
+      gateway,
+    );
+    addTearDown(controller.dispose);
+    final desired = const CanonicalScheduleEventMapper().map(
+      canonicalScheduleFixture(),
+    );
+
+    await expectLater(
+      controller.prepareCandidatePreview(
+        desired: desired,
+        scheduleId: 'unknown',
+      ),
+      throwsArgumentError,
+    );
+    expect(calls, isEmpty);
+    expect(controller.preview, isNull);
+  });
+
   test('blocking validation prevents diff and execution', () async {
     final calls = <String>[];
     final gateway = _CalendarGateway(calls: calls);
