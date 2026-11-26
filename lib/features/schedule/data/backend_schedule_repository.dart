@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
+
 import 'package:http/http.dart' as http;
 
 import '../../../core/result/result.dart';
@@ -31,6 +33,7 @@ class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionS
   final bool _ownsHttpClient;
   final ScheduleJsonCodec codec;
   final Map<String, String> _revisions = {};
+  final Map<String, String> _snapshotRevisions = {};
 
   @override
   String? currentRevisionFor(String scheduleId) => _revisions[scheduleId];
@@ -68,6 +71,7 @@ class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionS
       if (schedule.id != id) {
         throw const FormatException('The backend returned a different Schedule identity.');
       }
+      _rememberSnapshotRevision(schedule, revision);
       return Success(schedule);
     } on BackendScheduleApiException catch (error, stackTrace) {
       return NetworkFailure(
@@ -142,91 +146,20 @@ class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionS
 
   @override
   Future<Result<Schedule>> save(Schedule schedule) async {
-    try {
-      var expectedRevision = _revisions[schedule.id];
-      if (expectedRevision == null) {
-        final current = await findById(schedule.id);
-        if (current case Failure<Schedule?>()) {
-          return _copyFailure<Schedule?, Schedule>(current);
-        }
-        expectedRevision = _revisions[schedule.id];
-      }
-      if (expectedRevision == null) {
-        return PersistenceFailure('The backend did not provide a Schedule revision.');
-      }
-
-      final response = await _request(
-        'PUT',
-        _schedulePath(schedule.id),
-        body: {
-          'expected_revision': expectedRevision,
-          'schedule': jsonDecode(codec.encode(schedule)),
-        },
-      );
-      return _decodeSavedSchedule(response, schedule.id);
-    } on BackendScheduleApiException catch (error, stackTrace) {
-      return NetworkFailure(
-        error.message,
-        statusCode: error.statusCode,
-        cause: error,
-        stackTrace: stackTrace,
-      );
-    } on ScheduleCodecException catch (error, stackTrace) {
-      return ValidationFailure(
-        error.message,
-        cause: error,
-        stackTrace: stackTrace,
-      );
-    } on Object catch (error, stackTrace) {
-      return NetworkFailure(
-        'Could not save Schedule "${schedule.id}" to the backend.',
-        cause: error,
-        stackTrace: stackTrace,
+    final expectedRevision = _snapshotRevisions[_snapshotKey(schedule)];
+    if (expectedRevision == null) {
+      return const PersistenceFailure(
+        'Cannot save a Schedule snapshot without the revision captured when it was loaded.',
       );
     }
+    return saveIfRevision(schedule, expectedRevision);
   }
 
   @override
   Future<Result<void>> delete(String id) async {
-    try {
-      var expectedRevision = _revisions[id];
-      if (expectedRevision == null) {
-        final current = await findById(id);
-        if (current case Failure<Schedule?>()) {
-          return _copyFailure<Schedule?, void>(current);
-        }
-        if ((current as Success<Schedule?>).value == null) {
-          return const Success(null);
-        }
-        expectedRevision = _revisions[id];
-      }
-      if (expectedRevision == null) return const Success(null);
-
-      final response = await _request(
-        'DELETE',
-        _schedulePath(id),
-        body: {'expected_revision': expectedRevision},
-      );
-      final revision = response['revision'];
-      if (revision is! String || response['state'] != 'deleted') {
-        throw const FormatException('The backend returned an invalid delete response.');
-      }
-      _revisions[id] = revision;
-      return const Success(null);
-    } on BackendScheduleApiException catch (error, stackTrace) {
-      return NetworkFailure(
-        error.message,
-        statusCode: error.statusCode,
-        cause: error,
-        stackTrace: stackTrace,
-      );
-    } on Object catch (error, stackTrace) {
-      return PersistenceFailure(
-        'Could not delete Schedule "$id" from the backend.',
-        cause: error,
-        stackTrace: stackTrace,
-      );
-    }
+    return PersistenceFailure(
+      'Schedule deletion is disabled until an explicit caller-owned revision is supplied. No data was deleted.',
+    );
   }
 
   Result<Schedule> _decodeSavedSchedule(Map<String, dynamic> response, String id) {
@@ -240,7 +173,17 @@ class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionS
       throw const FormatException('The saved Schedule identity does not match the request.');
     }
     _revisions[id] = revision;
+    _rememberSnapshotRevision(schedule, revision);
     return Success(schedule);
+  }
+
+  String _snapshotKey(Schedule schedule) {
+    final digest = sha256.convert(utf8.encode(codec.encode(schedule)));
+    return '${schedule.id}:$digest';
+  }
+
+  void _rememberSnapshotRevision(Schedule schedule, String revision) {
+    _snapshotRevisions[_snapshotKey(schedule)] = revision;
   }
 
   String _schedulePath(String id) {
