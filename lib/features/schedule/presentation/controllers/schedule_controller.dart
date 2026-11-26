@@ -27,7 +27,8 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
        _currentMonth = _normalizeMonth(initialMonth ?? DateTime.now()) {
     final source = repository;
     if (source is ScheduleRevisionSource) {
-      _expectedRevision = source.revisionForSnapshot(_service.schedule);
+      _expectedRevision = (source as ScheduleRevisionSource)
+          .revisionForSnapshot(_service.schedule);
     }
     loadMonth(_currentMonth);
   }
@@ -221,6 +222,8 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
     final Result<Schedule> result;
     if (scheduleRepositoryForCas is ConditionalScheduleWriter &&
         scheduleRepositoryForCas is ScheduleRevisionSource) {
+      final conditionalWriter = scheduleRepositoryForCas as ConditionalScheduleWriter;
+      final revisionSource = scheduleRepositoryForCas as ScheduleRevisionSource;
       final expectedRevision = _expectedRevision;
       if (expectedRevision == null || expectedRevision.trim().isEmpty) {
         const failure = PersistenceFailure<Schedule>(
@@ -232,13 +235,12 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
         notifyListeners();
         return failure;
       }
-      result = await scheduleRepositoryForCas.saveIfRevision(
+      result = await conditionalWriter.saveIfRevision(
         canonicalSchedule,
         expectedRevision,
       );
       if (result case Success<Schedule>(value: final saved)) {
-        _expectedRevision =
-            scheduleRepositoryForCas.currentRevisionFor(saved.id);
+        _expectedRevision = revisionSource.revisionForSnapshot(saved);
       }
     } else {
       result = await scheduleRepository.save(canonicalSchedule);
@@ -275,7 +277,7 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
         if (schedule != null) {
           final source = scheduleRepository;
           _expectedRevision = source is ScheduleRevisionSource
-              ? source.revisionForSnapshot(schedule)
+              ? (source as ScheduleRevisionSource).revisionForSnapshot(schedule)
               : null;
           _service.replaceSchedule(schedule);
           _validationResult = null;
@@ -284,7 +286,7 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
         } else {
           final source = scheduleRepository;
           _expectedRevision = source is ScheduleRevisionSource
-              ? source.revisionForAbsentSchedule(scheduleId)
+              ? (source as ScheduleRevisionSource).revisionForAbsentSchedule(scheduleId)
               : null;
           _service.replaceSchedule(
             Schedule(
