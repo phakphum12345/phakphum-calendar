@@ -952,3 +952,36 @@ No implementation PR merged. No production data writes or deployment.
 - All these Xcode jobs remain in progress; bundle verification, packaging and artifact upload have not completed.
 
 No implementation PR merged. No production data writes or deployment. Native build success requires completed Xcode build, bundle verification, package and artifact upload steps.
+
+
+### 8.51 Live execution checkpoint — 2026-11-27 (exact-head CI and Apple artifacts completed)
+
+**Repository baseline**
+- `main` remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`.
+- Implementation branches #191, #192 and #196 are still based on that SHA. All four PRs remain open, Draft and unmerged. No review submissions were recorded.
+- Exact current heads: #191 `6787fe710ceb351581eb42c9b7045c49a93c9cfb`; #192 `bde4107660ceaa6031b495ef7e8904f55f1d97b9`; #196 `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`; #197 `b5ca4ba2d2f2d99f048a8d4782981f1a6ce0ddb1`.
+
+**Exact-head workflow results**
+- #191: 10/10 observed workflows completed successfully: Laravel Backend CI, Android, Web, Linux, Windows, Cross-platform Runtime, Auto Detect CI, Dependency Security, iOS Advisory Evidence and Pull Request Gate. The iOS Advisory job is an evidence observer, not a native iOS build.
+- #192: 14/14 observed workflows completed successfully: Dart Format Baseline Audit, Laravel Backend CI, Dependency Security, Schedule CAS Storage Spike, macOS Xcode, iOS Xcode, iOS Advisory Evidence, Linux, Web, Android, Auto Detect CI, Cross-platform Runtime, Pull Request Gate and Windows.
+- #196: 13/13 observed workflows completed successfully: Dependency Security, Dart Format Baseline Audit, Web, Auto Detect CI, Linux, Laravel Backend CI, Android, Cross-platform Runtime, Windows, Pull Request Gate, macOS Xcode, iOS Xcode and iOS Advisory Evidence.
+- #197: both observed workflows completed successfully: Auto Detect CI and Cross-platform Runtime (four platform/shell legs).
+
+**Apple build artifacts**
+- #192 macOS artifact `phakphum-calendar-macos-adhoc`, artifact ID `15147658798`, SHA-256 `99e4d6aef2df765cc6721ece8193be5bbe7378152a10447704736decd16e648e`.
+- #192 unsigned iOS artifact `phakphum-calendar-ios-unsigned`, artifact ID `15147928763`, SHA-256 `12a8e468e481dfb7a5b5b4954a458d0af4bdd795e40ba8a8c9c51cd66d764ac7`.
+- #196 macOS artifact `phakphum-calendar-macos-adhoc`, artifact ID `15147773660`, SHA-256 `730846c8dca84d1d75bb662f67299dd0dacc1dad337de6e640d2b63d4dc843b0`.
+- #196 unsigned iOS artifact `phakphum-calendar-ios-unsigned`, artifact ID `15147798731`, SHA-256 `d73064953854cb963ce24939e90685f04e1d34ec7d4f4dd0f6d14436f29e6aa8`.
+- Both platform jobs completed bundle verification, packaging and artifact upload. These are unsigned/ad-hoc CI artifacts, not signed App Store releases or proof of production backend configuration.
+- #192's `Require shared backend for production artifact` step was skipped by the pull_request workflow condition. This is not a pass for production backend configuration; production still requires HTTPS `ORGANIZATION_API_BASE_URL`.
+
+**CAS and source review reconciliation**
+- #192 Schedule CAS Storage Spike passed on Ubuntu, Windows and macOS. This spike is separate from the production repository implementation.
+- Source review at #192 exact head confirms the backend repository binds revision tokens to exact Schedule snapshot identity; ScheduleController, AppController legacy writers, Grid commit/recovery and the tabular-import facade use snapshot-bound/absent-state conditional writes in backend mode. The earlier review comments about missing writer propagation are superseded by the later source changes and the writer inventory's sections 10–10.1.
+- The SharedPreferences fallback remains process/isolate-scoped only; it is not cross-device CAS. Backend configuration/reachability, production DB locking, auth and APP_KEY backup/restore are not verified. Conditional delete remains fail-closed in the Flutter backend repository. Grid journal and canonical Schedule writes remain separate durable requests/stores; startup journal discovery is still open.
+- #196 implements owner + Calendar ID scoped server leases, a durable operation ledger and provider ETag guards. Its documented scope is not a tenant-wide lock across different Google accounts sharing a Calendar. Production backend and controlled Google test-calendar acceptance remain outstanding.
+
+**Release boundaries**
+- #191 persists notification intents transactionally but still has no VAPID sender/worker, retry/dead-letter delivery loop, opt-in UI or end-to-end device delivery. No push notification has been sent.
+- No implementation PR has been merged. No production Schedule write, Google Calendar mutation, migration or deployment has been performed.
+- All PRs remain Draft pending independent review and remaining product/operational acceptance. Passing CI and successful unsigned artifacts do not by themselves authorize merge or production release.
