@@ -931,3 +931,13 @@ No implementation PR merged. PR #192 has a green core gate but is not merge-read
 - PR #191 has all non-Apple checks and PR Gate passed; iOS Advisory still waits on native iOS.
 
 No implementation PR merged. PR #192's core and cross-platform test gates are green, but the macOS CAS leg and Apple native builds are still outstanding.
+
+
+### 8.49 Live execution checkpoint — 2026-11-27 (Apple jobs allocated)
+
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: all non-Apple build/test gates passed. macOS Xcode build is now in progress; iOS build remains pending; iOS Advisory in progress; Schedule CAS Storage Spike remains queued.
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: all non-Apple checks and iOS Advisory passed. Both native macOS Xcode and iOS builds are now in progress.
+- PR #191 exact head `6787fe710ceb351581eb42c9b7045c49a93c9cfb`: all non-Apple checks and PR Gate passed; iOS Advisory still in progress. This PR has no native Apple build job.
+- Apple jobs have moved from pending/queued into in-progress. This is allocation/progress only, not a successful build result. Do not merge until the exact-head Apple jobs and remaining CAS/Advisory checks complete successfully.
+
+No implementation PR merged. No production data writes or deployment.
