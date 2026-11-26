@@ -31,7 +31,8 @@ permissions:
 # This workflow owns its runner lifecycle. It does not depend on, wait for,
 # or cancel Windows, Linux, Android, Web, or iOS workflows.
 concurrency:
-  group: macos-xcode-${{ github.workflow }}-${{ github.run_id }}
+  group: macos-xcode-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # Let a running Xcode build finish; GitHub replaces only the older pending run.
   cancel-in-progress: false
 
 jobs:
