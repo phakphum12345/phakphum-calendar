@@ -26,6 +26,7 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
     DateTime? initialMonth,
   }) : _service = service ?? ScheduleService(),
        _currentMonth = _normalizeMonth(initialMonth ?? DateTime.now()) {
+    _initialScheduleSnapshot = _service.schedule;
     final source = repository;
     if (source is ScheduleRevisionSource) {
       _expectedRevision = (source as ScheduleRevisionSource)
@@ -37,6 +38,7 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
   final ScheduleService _service;
   final ScheduleValidationService? validationService;
   final ScheduleRepository? repository;
+  late final Schedule _initialScheduleSnapshot;
   DateTime _currentMonth;
   late ScheduleMonth _schedule;
   RuleResult? _validationResult;
@@ -299,7 +301,7 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
       return null;
     }
     if (const ScheduleJsonCodec().encode(current) !=
-        const ScheduleJsonCodec().encode(canonicalSchedule)) {
+        const ScheduleJsonCodec().encode(_initialScheduleSnapshot)) {
       return const ValidationFailure(
         'The editor does not contain the exact persisted Schedule snapshot. Reload it before saving.',
       );
