@@ -46,6 +46,7 @@ class CalendarSyncCoordinator {
   Future<CalendarSyncPreparation> prepareSchedule(
     Schedule schedule, {
     String calendarId = 'primary',
+    String scheduleId = 'unknown',
   }) async {
     final desired = scheduleMapper.map(schedule);
     final range = _range(desired);
@@ -115,6 +116,7 @@ class CalendarSyncCoordinator {
       diff: diff,
       existingEvents: adopted,
       calendarId: calendarId,
+      scheduleId: schedule.id,
     );
     return CalendarSyncPreparation(
       diff: diff,
@@ -150,6 +152,7 @@ class CalendarSyncCoordinator {
       diff: diff,
       existingEvents: existing,
       calendarId: calendarId,
+      scheduleId: scheduleId,
     );
     return _executor.execute(plan);
   }
