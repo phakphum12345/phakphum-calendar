@@ -226,18 +226,19 @@ class AppDependencies {
 
   /// Server-side sync coordination is enabled only when an authenticated
   /// backend origin is configured. Without it, local-only mode remains local.
-  late final CalendarSyncCoordinationGateway? calendarSyncCoordinationGateway = () {
-    const baseUrl = String.fromEnvironment('ORGANIZATION_API_BASE_URL');
-    if (baseUrl.trim().isEmpty) return null;
-    return BackendCalendarSyncCoordinationGateway(
-      baseUrl: baseUrl,
-      idTokenProvider: () async {
-        final account = googleAuthService.account;
-        if (account == null) return null;
-        return account.authentication.idToken;
-      },
-    );
-  }();
+  late final CalendarSyncCoordinationGateway? calendarSyncCoordinationGateway =
+      () {
+        const baseUrl = String.fromEnvironment('ORGANIZATION_API_BASE_URL');
+        if (baseUrl.trim().isEmpty) return null;
+        return BackendCalendarSyncCoordinationGateway(
+          baseUrl: baseUrl,
+          idTokenProvider: () async {
+            final account = googleAuthService.account;
+            if (account == null) return null;
+            return account.authentication.idToken;
+          },
+        );
+      }();
   final ImportRepository? importRepository;
   final SettingsRepository? settingsRepository;
   final ImportService? importService;

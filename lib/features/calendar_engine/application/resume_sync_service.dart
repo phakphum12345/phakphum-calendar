@@ -53,8 +53,11 @@ class ResumeSyncService {
       if (failed.any((item) => item.calendarId != calendarId)) {
         throw StateError('A resume batch cannot span multiple Calendar IDs.');
       }
-      if (original.scheduleId.trim().isEmpty || original.scheduleId == 'unknown') {
-        throw StateError('Cannot resume server-coordinated sync without the original Schedule ID.');
+      if (original.scheduleId.trim().isEmpty ||
+          original.scheduleId == 'unknown') {
+        throw StateError(
+          'Cannot resume server-coordinated sync without the original Schedule ID.',
+        );
       }
       lease = await coordination.acquire(
         calendarId: calendarId,
@@ -107,14 +110,17 @@ class ResumeSyncService {
               final etag = item.expectedEtag;
               final syncId = item.expectedSyncId;
               if (etag == null) {
-                throw StateError('Cannot resume a stale Calendar update without its original provider ETag.');
+                throw StateError(
+                  'Cannot resume a stale Calendar update without its original provider ETag.',
+                );
               }
-              await (_gateway as ConditionalCalendarSyncGateway).updateConditionally(
-                eventId: eventId,
-                expectedEtag: etag,
-                expectedSyncId: syncId,
-                command: command,
-              );
+              await (_gateway as ConditionalCalendarSyncGateway)
+                  .updateConditionally(
+                    eventId: eventId,
+                    expectedEtag: etag,
+                    expectedSyncId: syncId,
+                    command: command,
+                  );
             } else {
               await _gateway.update(eventId: eventId, command: command);
             }
@@ -126,16 +132,22 @@ class ResumeSyncService {
               final etag = item.expectedEtag;
               final syncId = item.expectedSyncId;
               if (etag == null) {
-                throw StateError('Cannot resume a stale Calendar delete without its original provider ETag.');
+                throw StateError(
+                  'Cannot resume a stale Calendar delete without its original provider ETag.',
+                );
               }
-              await (_gateway as ConditionalCalendarSyncGateway).deleteConditionally(
+              await (_gateway as ConditionalCalendarSyncGateway)
+                  .deleteConditionally(
+                    eventId: eventId,
+                    calendarId: item.calendarId,
+                    expectedEtag: etag,
+                    expectedSyncId: syncId,
+                  );
+            } else {
+              await _gateway.delete(
                 eventId: eventId,
                 calendarId: item.calendarId,
-                expectedEtag: etag,
-                expectedSyncId: syncId,
               );
-            } else {
-              await _gateway.delete(eventId: eventId, calendarId: item.calendarId);
             }
             deleted++;
           }
@@ -222,10 +234,7 @@ class ResumeSyncService {
   }
 }
 
-String _ledgerOperationKey(
-  CalendarSyncOperationType type,
-  String referenceId,
-) {
+String _ledgerOperationKey(CalendarSyncOperationType type, String referenceId) {
   final digest = sha256.convert(utf8.encode(referenceId));
   return '${type.name}:$digest';
 }

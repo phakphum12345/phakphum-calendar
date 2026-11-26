@@ -44,55 +44,67 @@ void main() {
     expect(result.historyEntry.status, SyncHistoryStatus.success);
     expect(result.operations.single.success, isTrue);
     expect(coordination.recorded.single.operationType, 'insert');
-    expect(coordination.recorded.single.payloadHash, matches(RegExp(r'^[a-f0-9]{64}$')));
-    expect(coordination.updates.map((value) => value.status), ['running', 'succeeded']);
+    expect(
+      coordination.recorded.single.payloadHash,
+      matches(RegExp(r'^[a-f0-9]{64}$')),
+    );
+    expect(coordination.updates.map((value) => value.status), [
+      'running',
+      'succeeded',
+    ]);
     expect(coordination.updates.last.providerEventId, 'provider-event-1');
     expect(coordination.released.single.status, 'success');
     expect(coordination.calls.first, 'acquire:primary:schedule-1');
     expect(coordination.calls.last, 'release:success');
   });
 
-  test('coordinates resumed operations under the original Schedule lease', () async {
-    final history = _MemoryHistoryRepository();
-    history.entries['history-1'] = SyncHistoryEntry(
-      id: 'history-1',
-      startedAt: DateTime(2026, 11, 26, 8),
-      status: SyncHistoryStatus.failure,
-      inserted: 0,
-      updated: 0,
-      deleted: 0,
-      failed: 1,
-      scheduleId: 'schedule-1',
-    );
-    final command = CalendarSyncCommand(
-      syncId: 'resume-sync-id',
-      title: 'OPD',
-      start: DateTime(2026, 11, 26, 8),
-      end: DateTime(2026, 11, 26, 16),
-    );
-    final failed = _MemoryFailedSyncRepository([
-      FailedSyncOperation(
-        historyId: 'history-1',
-        type: CalendarSyncOperationType.insert,
-        referenceId: command.syncId,
-        attempts: 1,
-        command: command,
-      ),
-    ]);
-    final coordination = _FakeCoordinationGateway();
-    final result = await ResumeSyncService(
-      gateway: _FakeCalendarGateway(),
-      historyRepository: history,
-      failedRepository: failed,
-      coordinationGateway: coordination,
-    ).resume('history-1');
+  test(
+    'coordinates resumed operations under the original Schedule lease',
+    () async {
+      final history = _MemoryHistoryRepository();
+      history.entries['history-1'] = SyncHistoryEntry(
+        id: 'history-1',
+        startedAt: DateTime(2026, 11, 26, 8),
+        status: SyncHistoryStatus.failure,
+        inserted: 0,
+        updated: 0,
+        deleted: 0,
+        failed: 1,
+        scheduleId: 'schedule-1',
+      );
+      final command = CalendarSyncCommand(
+        syncId: 'resume-sync-id',
+        title: 'OPD',
+        start: DateTime(2026, 11, 26, 8),
+        end: DateTime(2026, 11, 26, 16),
+      );
+      final failed = _MemoryFailedSyncRepository([
+        FailedSyncOperation(
+          historyId: 'history-1',
+          type: CalendarSyncOperationType.insert,
+          referenceId: command.syncId,
+          attempts: 1,
+          command: command,
+        ),
+      ]);
+      final coordination = _FakeCoordinationGateway();
+      final result = await ResumeSyncService(
+        gateway: _FakeCalendarGateway(),
+        historyRepository: history,
+        failedRepository: failed,
+        coordinationGateway: coordination,
+      ).resume('history-1');
 
-    expect(result.completed, isTrue);
-    expect(result.historyEntry.scheduleId, 'schedule-1');
-    expect(failed.operations, isEmpty);
-    expect(coordination.updates.map((value) => value.status), ['running', 'succeeded']);
-    expect(coordination.released.single.status, 'success');
-  });
+      expect(result.completed, isTrue);
+      expect(result.historyEntry.scheduleId, 'schedule-1');
+      expect(failed.operations, isEmpty);
+      expect(coordination.updates.map((value) => value.status), [
+        'running',
+        'succeeded',
+      ]);
+      expect(coordination.released.single.status, 'success');
+    },
+  );
 
   test('does not call Calendar when lease acquisition is rejected', () async {
     final coordination = _FakeCoordinationGateway()..rejectAcquire = true;
@@ -148,7 +160,10 @@ class _FakeCalendarGateway implements CalendarSyncGateway {
   }) async => throw UnimplementedError();
 
   @override
-  Future<void> delete({required String eventId, String calendarId = 'primary'}) async {
+  Future<void> delete({
+    required String eventId,
+    String calendarId = 'primary',
+  }) async {
     throw UnimplementedError();
   }
 

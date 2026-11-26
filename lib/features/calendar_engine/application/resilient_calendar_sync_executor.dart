@@ -81,7 +81,9 @@ class ResilientCalendarSyncExecutor {
     }) async {
       if (coordination == null || lease == null) return operation();
       final operationKey = _ledgerOperationKey(type, referenceId);
-      final payloadHash = sha256.convert(utf8.encode(jsonEncode(payload))).toString();
+      final payloadHash = sha256
+          .convert(utf8.encode(jsonEncode(payload)))
+          .toString();
       await coordination.heartbeat(lease);
       await coordination.recordOperation(
         lease: lease,
@@ -129,25 +131,31 @@ class ResilientCalendarSyncExecutor {
           'expected_sync_id': operation.expectedSyncId,
         },
         operation: () => _retry(
-        type: CalendarSyncOperationType.delete,
-        referenceId: operation.eventId,
-        operation: () {
-          if (_gateway is ConditionalCalendarSyncGateway) {
-            final etag = operation.expectedEtag;
-            final syncId = operation.expectedSyncId;
-            if (etag == null) {
-              throw StateError('Calendar delete is blocked because its preview has no provider ETag or managed identity.');
+          type: CalendarSyncOperationType.delete,
+          referenceId: operation.eventId,
+          operation: () {
+            if (_gateway is ConditionalCalendarSyncGateway) {
+              final etag = operation.expectedEtag;
+              final syncId = operation.expectedSyncId;
+              if (etag == null) {
+                throw StateError(
+                  'Calendar delete is blocked because its preview has no provider ETag or managed identity.',
+                );
+              }
+              return (_gateway as ConditionalCalendarSyncGateway)
+                  .deleteConditionally(
+                    eventId: operation.eventId,
+                    calendarId: operation.calendarId,
+                    expectedEtag: etag,
+                    expectedSyncId: syncId,
+                  );
             }
-            return (_gateway as ConditionalCalendarSyncGateway).deleteConditionally(
+            return _gateway.delete(
               eventId: operation.eventId,
               calendarId: operation.calendarId,
-              expectedEtag: etag,
-              expectedSyncId: syncId,
             );
-          }
-          return _gateway.delete(eventId: operation.eventId, calendarId: operation.calendarId);
-        },
-      ),
+          },
+        ),
       );
       operations.add(result);
       if (!result.success) {
@@ -169,123 +177,130 @@ class ResilientCalendarSyncExecutor {
     }
 
     try {
-    for (final operation in plan.deletes.where(
-      (operation) => operation.beforeWrites,
-    )) {
-      await executeDelete(operation);
-    }
-
-    final insertReconciler = CalendarSyncInsertReconciler(_gateway);
-    for (final command in plan.inserts) {
-      final result = await trackOperation(
-        type: CalendarSyncOperationType.insert,
-        referenceId: command.syncId,
-        payload: _commandPayload(command),
-        operation: () async => (await _retryInsert(command, insertReconciler)).result,
-      );
-      operations.add(result);
-      if (!result.success) {
-        failedOperations.add(
-          FailedSyncOperation(
-            historyId: historyId,
-            type: CalendarSyncOperationType.insert,
-            referenceId: command.syncId,
-            attempts: result.attempts,
-            command: command,
-            message: result.message,
-          ),
-        );
+      for (final operation in plan.deletes.where(
+        (operation) => operation.beforeWrites,
+      )) {
+        await executeDelete(operation);
       }
-      result.success ? inserted++ : failed++;
-    }
 
-    for (final operation in plan.updates) {
-      final result = await trackOperation(
-        type: CalendarSyncOperationType.update,
-        referenceId: operation.command.syncId,
-        payload: {
-          'event_id': operation.eventId,
-          'expected_etag': operation.expectedEtag,
-          'expected_sync_id': operation.expectedSyncId,
-          ..._commandPayload(operation.command),
-        },
-        operation: () => _retry(
-        type: CalendarSyncOperationType.update,
-        referenceId: operation.command.syncId,
-        operation: () {
-          if (_gateway is ConditionalCalendarSyncGateway) {
-            final etag = operation.expectedEtag;
-            final syncId = operation.expectedSyncId;
-            if (etag == null) {
-              throw StateError('Calendar update is blocked because its preview has no provider ETag or managed identity.');
-            }
-            return (_gateway as ConditionalCalendarSyncGateway).updateConditionally(
-              eventId: operation.eventId,
-              expectedEtag: etag,
-              expectedSyncId: syncId,
-              command: operation.command,
-            );
-          }
-          return _gateway.update(eventId: operation.eventId, command: operation.command);
-        },
-      ),
-      );
-      operations.add(result);
-      if (!result.success) {
-        failedOperations.add(
-          FailedSyncOperation(
-            historyId: historyId,
+      final insertReconciler = CalendarSyncInsertReconciler(_gateway);
+      for (final command in plan.inserts) {
+        final result = await trackOperation(
+          type: CalendarSyncOperationType.insert,
+          referenceId: command.syncId,
+          payload: _commandPayload(command),
+          operation: () async =>
+              (await _retryInsert(command, insertReconciler)).result,
+        );
+        operations.add(result);
+        if (!result.success) {
+          failedOperations.add(
+            FailedSyncOperation(
+              historyId: historyId,
+              type: CalendarSyncOperationType.insert,
+              referenceId: command.syncId,
+              attempts: result.attempts,
+              command: command,
+              message: result.message,
+            ),
+          );
+        }
+        result.success ? inserted++ : failed++;
+      }
+
+      for (final operation in plan.updates) {
+        final result = await trackOperation(
+          type: CalendarSyncOperationType.update,
+          referenceId: operation.command.syncId,
+          payload: {
+            'event_id': operation.eventId,
+            'expected_etag': operation.expectedEtag,
+            'expected_sync_id': operation.expectedSyncId,
+            ..._commandPayload(operation.command),
+          },
+          operation: () => _retry(
             type: CalendarSyncOperationType.update,
             referenceId: operation.command.syncId,
-            attempts: result.attempts,
-            command: operation.command,
-            eventId: operation.eventId,
-            expectedEtag: operation.expectedEtag,
-            expectedSyncId: operation.expectedSyncId,
-            message: result.message,
+            operation: () {
+              if (_gateway is ConditionalCalendarSyncGateway) {
+                final etag = operation.expectedEtag;
+                final syncId = operation.expectedSyncId;
+                if (etag == null) {
+                  throw StateError(
+                    'Calendar update is blocked because its preview has no provider ETag or managed identity.',
+                  );
+                }
+                return (_gateway as ConditionalCalendarSyncGateway)
+                    .updateConditionally(
+                      eventId: operation.eventId,
+                      expectedEtag: etag,
+                      expectedSyncId: syncId,
+                      command: operation.command,
+                    );
+              }
+              return _gateway.update(
+                eventId: operation.eventId,
+                command: operation.command,
+              );
+            },
           ),
         );
+        operations.add(result);
+        if (!result.success) {
+          failedOperations.add(
+            FailedSyncOperation(
+              historyId: historyId,
+              type: CalendarSyncOperationType.update,
+              referenceId: operation.command.syncId,
+              attempts: result.attempts,
+              command: operation.command,
+              eventId: operation.eventId,
+              expectedEtag: operation.expectedEtag,
+              expectedSyncId: operation.expectedSyncId,
+              message: result.message,
+            ),
+          );
+        }
+        result.success ? updated++ : failed++;
       }
-      result.success ? updated++ : failed++;
-    }
 
-    for (final operation in plan.deletes.where(
-      (operation) => !operation.beforeWrites,
-    )) {
-      await executeDelete(operation);
-    }
+      for (final operation in plan.deletes.where(
+        (operation) => !operation.beforeWrites,
+      )) {
+        await executeDelete(operation);
+      }
 
-    final status = failed == 0
-        ? SyncHistoryStatus.success
-        : inserted + updated + deleted == 0
-        ? SyncHistoryStatus.failure
-        : SyncHistoryStatus.partialSuccess;
+      final status = failed == 0
+          ? SyncHistoryStatus.success
+          : inserted + updated + deleted == 0
+          ? SyncHistoryStatus.failure
+          : SyncHistoryStatus.partialSuccess;
 
-    history = history.copyWith(
-      finishedAt: DateTime.now(),
-      status: status,
-      inserted: inserted,
-      updated: updated,
-      deleted: deleted,
-      failed: failed,
-      message: failed == 0
-          ? 'Synchronization completed successfully.'
-          : 'Synchronization completed with $failed failed operation(s).',
-    );
+      history = history.copyWith(
+        finishedAt: DateTime.now(),
+        status: status,
+        inserted: inserted,
+        updated: updated,
+        deleted: deleted,
+        failed: failed,
+        message: failed == 0
+            ? 'Synchronization completed successfully.'
+            : 'Synchronization completed with $failed failed operation(s).',
+      );
 
-    await failedRepository?.replaceForHistory(historyId, failedOperations);
-    await _historyRepository.save(history);
-    leaseStatus = switch (status) {
-      SyncHistoryStatus.success => 'success',
-      SyncHistoryStatus.partialSuccess => 'partial_success',
-      SyncHistoryStatus.failure => 'failed',
-      SyncHistoryStatus.running => 'failed',
-    };
+      await failedRepository?.replaceForHistory(historyId, failedOperations);
+      await _historyRepository.save(history);
+      leaseStatus = switch (status) {
+        SyncHistoryStatus.success => 'success',
+        SyncHistoryStatus.partialSuccess => 'partial_success',
+        SyncHistoryStatus.failure => 'failed',
+        SyncHistoryStatus.running => 'failed',
+      };
 
-    return ResilientCalendarSyncResult(
-      historyEntry: history,
-      operations: operations,
-    );
+      return ResilientCalendarSyncResult(
+        historyEntry: history,
+        operations: operations,
+      );
     } finally {
       if (coordination != null && lease != null) {
         try {
@@ -326,8 +341,9 @@ class ResilientCalendarSyncExecutor {
                 type: CalendarSyncOperationType.insert,
                 referenceId: command.syncId,
                 success: true,
-                providerEventId:
-                    existing.eventId.isEmpty ? null : existing.eventId,
+                providerEventId: existing.eventId.isEmpty
+                    ? null
+                    : existing.eventId,
                 attempts: attempt,
               ),
               attempts: attempt,
@@ -380,7 +396,8 @@ class ResilientCalendarSyncExecutor {
           type: type,
           referenceId: referenceId,
           success: true,
-          providerEventId: value is ManagedCalendarEvent && value.eventId.isNotEmpty
+          providerEventId:
+              value is ManagedCalendarEvent && value.eventId.isNotEmpty
               ? value.eventId
               : null,
           attempts: attempt,
@@ -403,10 +420,7 @@ class ResilientCalendarSyncExecutor {
   }
 }
 
-String _ledgerOperationKey(
-  CalendarSyncOperationType type,
-  String referenceId,
-) {
+String _ledgerOperationKey(CalendarSyncOperationType type, String referenceId) {
   final digest = sha256.convert(utf8.encode(referenceId));
   return '${type.name}:$digest';
 }
@@ -422,10 +436,7 @@ Map<String, Object?> _commandPayload(CalendarSyncCommand command) => {
 };
 
 class _RetryInsertResult {
-  const _RetryInsertResult({
-    required this.result,
-    required this.attempts,
-  });
+  const _RetryInsertResult({required this.result, required this.attempts});
 
   final CalendarSyncOperationResult result;
   final int attempts;

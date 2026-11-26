@@ -1,7 +1,12 @@
 import '../domain/calendar_sync_command.dart';
 
 class CalendarUpdateOperation {
-  const CalendarUpdateOperation({required this.eventId, required this.command, this.expectedEtag, this.expectedSyncId});
+  const CalendarUpdateOperation({
+    required this.eventId,
+    required this.command,
+    this.expectedEtag,
+    this.expectedSyncId,
+  });
 
   final String eventId;
   final CalendarSyncCommand command;

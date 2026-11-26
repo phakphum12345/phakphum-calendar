@@ -32,12 +32,21 @@ class BackendCalendarSyncCoordinationGateway
   static Uri _normalizeBaseUri(String value) {
     final parsed = Uri.tryParse(value.trim());
     if (parsed == null || !parsed.hasScheme || parsed.host.isEmpty) {
-      throw ArgumentError.value(value, 'baseUrl', 'An absolute HTTP(S) URL is required.');
+      throw ArgumentError.value(
+        value,
+        'baseUrl',
+        'An absolute HTTP(S) URL is required.',
+      );
     }
-    final localHttp = parsed.scheme == 'http' &&
+    final localHttp =
+        parsed.scheme == 'http' &&
         {'localhost', '127.0.0.1', '::1'}.contains(parsed.host);
     if (parsed.scheme != 'https' && !localHttp) {
-      throw ArgumentError.value(value, 'baseUrl', 'HTTPS is required outside loopback.');
+      throw ArgumentError.value(
+        value,
+        'baseUrl',
+        'HTTPS is required outside loopback.',
+      );
     }
     return parsed.replace(
       path: parsed.path.endsWith('/') ? parsed.path : '${parsed.path}/',
@@ -72,7 +81,9 @@ class BackendCalendarSyncCoordinationGateway
         data['run_id'] != runId ||
         data['lease_token'] is! String ||
         data['expires_at'] is! String) {
-      throw const FormatException('The backend returned an invalid Calendar sync lease.');
+      throw const FormatException(
+        'The backend returned an invalid Calendar sync lease.',
+      );
     }
     return CalendarSyncLease(
       runId: runId,
@@ -88,10 +99,7 @@ class BackendCalendarSyncCoordinationGateway
     await _request(
       'PUT',
       'api/v1/calendar-sync/leases/${Uri.encodeComponent(lease.runId)}',
-      body: {
-        'lease_token': lease.leaseToken,
-        'ttl_seconds': leaseTtlSeconds,
-      },
+      body: {'lease_token': lease.leaseToken, 'ttl_seconds': leaseTtlSeconds},
     );
   }
 
@@ -144,10 +152,7 @@ class BackendCalendarSyncCoordinationGateway
     await _request(
       'DELETE',
       'api/v1/calendar-sync/leases/${Uri.encodeComponent(lease.runId)}',
-      body: {
-        'lease_token': lease.leaseToken,
-        'status': status,
-      },
+      body: {'lease_token': lease.leaseToken, 'status': status},
     );
   }
 
@@ -213,7 +218,9 @@ class BackendCalendarSyncCoordinationGateway
     final bytes = List<int>.generate(16, (_) => random.nextInt(256));
     bytes[6] = (bytes[6] & 0x0f) | 0x40;
     bytes[8] = (bytes[8] & 0x3f) | 0x80;
-    final hex = bytes.map((value) => value.toRadixString(16).padLeft(2, '0')).join();
+    final hex = bytes
+        .map((value) => value.toRadixString(16).padLeft(2, '0'))
+        .join();
     return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
   }
 }
@@ -225,5 +232,6 @@ class CalendarSyncCoordinationException implements Exception {
   final String message;
 
   @override
-  String toString() => 'CalendarSyncCoordinationException($statusCode): $message';
+  String toString() =>
+      'CalendarSyncCoordinationException($statusCode): $message';
 }
