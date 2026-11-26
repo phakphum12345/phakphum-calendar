@@ -177,7 +177,7 @@ class _FakeCalendarGateway implements CalendarSyncGateway {
 
 class _FakeCoordinationGateway implements CalendarSyncCoordinationGateway {
   final calls = <String>[];
-  final recorded = <({String operationType, String payloadHash})>[];
+  final recorded = <({String operationType, String payloadHash, Map<String, Object?> payload})>[];
   final updates = <({String status, String? providerEventId})>[];
   final released = <({String status})>[];
   bool rejectAcquire = false;
@@ -211,9 +211,10 @@ class _FakeCoordinationGateway implements CalendarSyncCoordinationGateway {
     required String operationKey,
     required String operationType,
     required String payloadHash,
+    required Map<String, Object?> operationPayload,
   }) async {
     calls.add('record');
-    recorded.add((operationType: operationType, payloadHash: payloadHash));
+    recorded.add((operationType: operationType, payloadHash: payloadHash, payload: operationPayload));
   }
 
   @override
