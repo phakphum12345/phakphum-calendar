@@ -64,7 +64,7 @@ abstract interface class CalendarSyncCoordinationGateway {
 
   Future<void> heartbeat(CalendarSyncLease lease);
 
-  Future<CalendarSyncRunRecord> getRun(String runId);
+  Future<CalendarSyncRunRecord?> getRun(String runId);
 
   Future<List<CalendarSyncOperationRecord>> listOperations(String runId);
 
