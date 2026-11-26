@@ -193,10 +193,14 @@ void main() {
       'id': 'managed-1',
       'etag': 'etag-v1',
       'summary': 'Old title',
+      'location': 'Ward 7',
+      'attendees': [{'email': 'colleague@example.com'}],
+      'reminders': {'useDefault': true},
       'start': {'dateTime': '2026-11-26T01:00:00Z'},
       'end': {'dateTime': '2026-11-26T09:00:00Z'},
       'extendedProperties': {
-        'private': {'sceSyncId': 'sync-1'},
+        'private': {'sceSyncId': 'sync-1', 'customTag': 'keep'},
+        'shared': {'team': 'roster'},
       },
     };
     final client = MockClient((request) async {
@@ -209,6 +213,11 @@ void main() {
         expect(request.headers['If-Match'], 'etag-v1');
         final body = jsonDecode(request.body) as Map<String, dynamic>;
         expect(body['id'], 'managed-1');
+        expect(body['location'], 'Ward 7');
+        expect(body['attendees'], [{'email': 'colleague@example.com'}]);
+        expect(body['reminders'], {'useDefault': true});
+        expect(body['extendedProperties']['private']['customTag'], 'keep');
+        expect(body['extendedProperties']['shared']['team'], 'roster');
         return http.Response(
           jsonEncode({...event, 'etag': 'etag-v2', 'summary': 'New title'}),
           200,
