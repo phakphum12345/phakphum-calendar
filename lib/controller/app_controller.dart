@@ -3172,15 +3172,17 @@ class AppController extends ChangeNotifier implements ControllerState {
       );
     }
 
+    final revisionSource = repository as ScheduleRevisionSource;
+    final conditionalWriter = repository as ConditionalScheduleWriter;
     final expectedRevision = current == null
-        ? repository.revisionForAbsentSchedule(next.id)
-        : repository.revisionForSnapshot(current);
+        ? revisionSource.revisionForAbsentSchedule(next.id)
+        : revisionSource.revisionForSnapshot(current);
     if (expectedRevision == null || expectedRevision.trim().isEmpty) {
       return const PersistenceFailure(
         'The backend did not provide a caller-owned Schedule revision.',
       );
     }
-    return repository.saveIfRevision(next, expectedRevision);
+    return conditionalWriter.saveIfRevision(next, expectedRevision);
   }
 
   /// Waits until canonical schedule mutations queued by synchronous legacy
