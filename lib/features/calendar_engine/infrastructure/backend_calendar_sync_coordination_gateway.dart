@@ -175,13 +175,14 @@ class BackendCalendarSyncCoordinationGateway
       if (body != null) 'Content-Type': 'application/json',
     };
     final encodedBody = body == null ? null : jsonEncode(body);
-    final response = switch (method) {
-      'POST' => await _http.post(uri, headers: headers, body: encodedBody),
-      'PUT' => await _http.put(uri, headers: headers, body: encodedBody),
-      'PATCH' => await _http.patch(uri, headers: headers, body: encodedBody),
-      'DELETE' => await _http.delete(uri, headers: headers, body: encodedBody),
+    final pending = switch (method) {
+      'POST' => _http.post(uri, headers: headers, body: encodedBody),
+      'PUT' => _http.put(uri, headers: headers, body: encodedBody),
+      'PATCH' => _http.patch(uri, headers: headers, body: encodedBody),
+      'DELETE' => _http.delete(uri, headers: headers, body: encodedBody),
       _ => throw ArgumentError.value(method, 'method'),
     };
+    final response = await pending.timeout(const Duration(seconds: 15));
     final Object? decoded;
     try {
       decoded = jsonDecode(response.body);
