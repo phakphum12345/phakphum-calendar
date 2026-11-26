@@ -452,3 +452,41 @@ This checkpoint supersedes the older PR snapshots above where they differ. Main 
 7. Keep #191 Draft until independent review; no delivery worker or notification provider is authorized by the outbox foundation.
 8. Keep all PRs Draft until exact-head checks and human review are complete. No merge, deployment, production migration or real-calendar write is authorized by this plan.
 
+
+
+### 8.14 Live execution checkpoint — 2026-11-26 22:56 Asia/Bangkok
+
+This checkpoint supersedes earlier PR-head and CI snapshots above where they differ. Main remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`. All implementation PRs remain Draft. No PR was merged, no backend deployed, no production migration run, and no real Google Calendar event changed.
+
+| PR | Current head | Exact-head evidence at this checkpoint | Assessment |
+|---|---|---|---|
+| #192 Grid import / Schedule persistence | `0507995bbd6533a369f0850d9e21a3fee9a94d94` | Current full matrix has been created; jobs are queued/pending. Earlier root test failure (three widget tests) was traced to demo-controller tests using the async device-backed Schedule repository. The widget test helper now injects an in-memory Schedule repository. Current exact-head tests are not yet complete. | Snapshot-bound CAS and all inventoried backend-mode writers are implemented; SharedPreferences fallback remains local-only. Production artifact workflows now require the shared HTTPS backend origin outside PR builds. |
+| #196 Calendar ETag / global coordination / durable recovery | `4d3f1b92c7393b7fe683d190abb163a6ad6fc82d` | Laravel Backend CI, Web and Dart Format Baseline Audit PASS. Windows/Linux and iOS advisory are running; Android, iOS, macOS, Cross-platform Runtime, Auto Detect CI and Dependency Security are pending/queued. | Timeout tests exposed that the timeout wrapped response streaming but not the initial `http.Client.send`; the timeout now covers both send and response. Recovery now persists the newly acquired server run ID before replay and increments attempt count for valid failed→running ledger transitions. Exact-head Flutter/platform matrix remains incomplete. |
+| #191 Notification Outbox | `12dc4a5a1902f62998e65cc85f880614f9919110` | Laravel Backend CI and Web PASS; Windows/Android are running; Linux, iOS advisory, Cross-platform Runtime, Auto Detect CI, PR Gate and Dependency Security are queued/pending. Base is `main` at `d184546...`, 0 commits behind; no rebase is required. | Outbox service tests now also cover user-scoped keys, canonical associative payload order and same-type/different-payload conflicts. Outbox remains enqueue-only; no worker, retry/backoff, dead-letter or provider delivery is enabled. |
+| #197 execution documentation | `a18a9e5d00104bfcf23fd65da91162b9f4190ee4` | Earlier documentation checks passed; this checkpoint update will trigger new documentation CI. | Draft retained. |
+
+#### Dependency security
+
+- Laravel CI's `composer audit --locked` passed on the current #196 head and on #191's current head; #192's exact-head Laravel audit is queued.
+- The first OSV scan passed and reported no issues in 132 Dart packages, but its log showed it had scanned only the root `pubspec.lock`, not the nested PHP lockfile. The workflow was corrected to scan recursively (`-r ./`) so both `pubspec.lock` and `backend/composer.lock` are included. The corrected exact-head scans for #192, #196 and #191 are queued and must not be marked PASS until their logs confirm both lockfiles were scanned and no blocking advisories were reported.
+- An OSV scan, Composer audit or lockfile upgrade is evidence for known advisories at that exact lockfile revision; it is not proof that unknown vulnerabilities are absent.
+
+#### Production deployment boundary
+
+- The app uses backend Schedule CAS and Calendar coordination only when `ORGANIZATION_API_BASE_URL` is supplied at build time and the authenticated owner can reach the Laravel API.
+- Non-PR Android, iOS, macOS, Windows and Linux release builds, plus GitHub Pages deployment, now fail closed unless the configured origin is HTTPS. PR builds remain available for compile/test evidence without production configuration.
+- The repository contains the Laravel API and CI tests; this checkpoint does not prove that a live API is deployed or that the repository variable points to a healthy production database. Confirm the live origin, readiness, authentication, database locking semantics and `APP_KEY` backup/retention before rollout.
+- Local-only SharedPreferences mode remains usable for development but does not provide cross-device Schedule CAS, Calendar run serialization or durable server recovery.
+
+#### Current acceptance gates
+
+1. Complete exact-head #192 Flutter analyze/tests, Composer audit/Pint/Laravel tests, Windows/Linux/Web/Android/iOS/macOS builds, native CAS contract and core PR gate.
+2. Complete exact-head #196 Flutter format/analyze/full tests, Laravel audit/tests, all platform builds, cross-platform runtime and the corrected recursive Dependency Security scan.
+3. Complete exact-head #191 Laravel tests, all required platform/core checks and recursive Dependency Security scan; keep notification delivery explicitly out of scope until a separately reviewed worker/claim/retry design exists.
+4. Prove two independent Schedule clients using one revision yield exactly one commit; verify stale editors, A→B→A, absent-state creates and every inventoried writer.
+5. Prove two Calendar clients contend on the same owner/Calendar lease; verify expiry/reclaim, expired release rejection, stale-token ledger fencing, duplicate operation idempotency, timeout/ambiguous update/delete reconciliation, and recovery after process termination.
+6. Verify explicit history-linked recovery in the UI and show a safe error for missing server history without replay.
+7. Confirm live HTTPS backend origin, authenticated access, production database transaction/locking behavior, Laravel `APP_KEY` protection/backup and rollback before any deployment.
+8. Obtain human code review and explicit merge authorization. Keep all PRs Draft until exact-head checks and review are complete.
+
+Queued, pending, skipped, cancelled, or older-head checks are not PASS. No merge, deployment, production migration, notification delivery or real-calendar write is authorized by this checkpoint.
