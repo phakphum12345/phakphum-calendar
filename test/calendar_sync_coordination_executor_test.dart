@@ -128,7 +128,7 @@ class _FakeCoordinationGateway implements CalendarSyncCoordinationGateway {
     runId: '00000000-0000-4000-8000-000000000001',
     calendarId: 'primary',
     scheduleId: 'schedule-1',
-    leaseToken: 'a' * 64,
+    leaseToken: List.filled(64, 'a').join(),
     expiresAt: DateTime(2026, 11, 26, 12),
   );
 
