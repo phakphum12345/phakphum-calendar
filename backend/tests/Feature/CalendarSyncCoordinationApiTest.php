@@ -52,6 +52,41 @@ class CalendarSyncCoordinationApiTest extends TestCase
             ->assertCreated();
     }
 
+    public function test_expired_lease_can_be_reclaimed_and_old_token_is_rejected(): void
+    {
+        $first = $this->postJson('/api/v1/calendar-sync/leases', $this->lease('00000000-0000-4000-8000-000000000006', 'device-a'), $this->auth('alice-token'))
+            ->assertCreated()->json('data');
+
+        $this->travel(61)->seconds();
+
+        $second = $this->postJson('/api/v1/calendar-sync/leases', $this->lease('00000000-0000-4000-8000-000000000007', 'device-b'), $this->auth('alice-token'))
+            ->assertCreated()->json('data');
+
+        $this->putJson('/api/v1/calendar-sync/leases/00000000-0000-4000-8000-000000000006', [
+            'lease_token' => $first['lease_token'],
+        ], $this->auth('alice-token'))->assertConflict();
+
+        $this->putJson('/api/v1/calendar-sync/leases/00000000-0000-4000-8000-000000000007', [
+            'lease_token' => $second['lease_token'],
+        ], $this->auth('alice-token'))->assertOk();
+    }
+
+    public function test_sync_history_is_not_visible_to_another_authenticated_owner(): void
+    {
+        $lease = $this->postJson('/api/v1/calendar-sync/leases', $this->lease('00000000-0000-4000-8000-000000000008', 'alice-device'), $this->auth('alice-token'))
+            ->assertCreated()->json('data');
+
+        $this->postJson('/api/v1/calendar-sync/leases/00000000-0000-4000-8000-000000000008/operations', [
+            'lease_token' => $lease['lease_token'],
+            'operation_key' => 'owner-private-op',
+            'operation_type' => 'insert',
+            'payload_hash' => hash('sha256', 'owner-private-payload'),
+        ], $this->auth('alice-token'))->assertCreated();
+
+        $this->getJson('/api/v1/calendar-sync/runs/00000000-0000-4000-8000-000000000008/operations', $this->auth('bob-token'))
+            ->assertNotFound();
+    }
+
     public function test_operation_ledger_is_idempotent_and_rejects_key_reuse_with_different_payload(): void
     {
         $lease = $this->postJson('/api/v1/calendar-sync/leases', $this->lease('00000000-0000-4000-8000-000000000005', 'alice-device'), $this->auth('alice-token'))
