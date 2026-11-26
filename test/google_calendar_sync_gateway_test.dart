@@ -193,6 +193,7 @@ void main() {
       'id': 'managed-1',
       'etag': 'etag-v1',
       'summary': 'Old title',
+      'description': 'Old roster details\\n\\n--- Timeline ---\\nApproved by manager',
       'location': 'Ward 7',
       'attendees': [{'email': 'colleague@example.com'}],
       'reminders': {'useDefault': true},
@@ -213,13 +214,23 @@ void main() {
         expect(request.headers['If-Match'], 'etag-v1');
         final body = jsonDecode(request.body) as Map<String, dynamic>;
         expect(body['id'], 'managed-1');
+        expect(body['description'], 'New roster details\\n\\n--- Timeline ---\\nApproved by manager');
         expect(body['location'], 'Ward 7');
         expect(body['attendees'], [{'email': 'colleague@example.com'}]);
         expect(body['reminders'], {'useDefault': true});
         expect(body['extendedProperties']['private']['customTag'], 'keep');
         expect(body['extendedProperties']['shared']['team'], 'roster');
+        final updatedEvent = {
+          ...event,
+          'etag': 'etag-v2',
+          'summary': 'New title',
+          'description': body['description'],
+        };
+        event
+          ..clear()
+          ..addAll(updatedEvent);
         return http.Response(
-          jsonEncode({...event, 'etag': 'etag-v2', 'summary': 'New title'}),
+          jsonEncode(updatedEvent),
           200,
           headers: {'content-type': 'application/json'},
         );
@@ -234,6 +245,7 @@ void main() {
       command: CalendarSyncCommand(
         syncId: 'sync-1',
         title: 'New title',
+        description: 'New roster details',
         start: DateTime(2026, 11, 26, 8),
         end: DateTime(2026, 11, 26, 16),
       ),
@@ -241,7 +253,24 @@ void main() {
 
     expect(updated.etag, 'etag-v2');
     expect(updated.title, 'New title');
-    expect(requests.map((request) => request.method), ['GET', 'PUT']);
+    expect(updated.description, 'New roster details');
+
+    // Simulate a retry after the provider accepted the PUT but its response was lost.
+    // The timeline is provider-owned metadata and must not make the retry look stale.
+    final reconciled = await gateway.updateConditionally(
+      eventId: 'managed-1',
+      expectedEtag: 'etag-v1',
+      expectedSyncId: 'sync-1',
+      command: CalendarSyncCommand(
+        syncId: 'sync-1',
+        title: 'New title',
+        description: 'New roster details',
+        start: DateTime(2026, 11, 26, 8),
+        end: DateTime(2026, 11, 26, 16),
+      ),
+    );
+    expect(reconciled.etag, 'etag-v2');
+    expect(requests.map((request) => request.method), ['GET', 'PUT', 'GET']);
   });
 
   test('conditional delete refuses a stale ETag and never sends DELETE', () async {
