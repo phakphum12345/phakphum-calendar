@@ -61,10 +61,22 @@ class ResilientCalendarSyncExecutor {
       final result = await _retry(
         type: CalendarSyncOperationType.delete,
         referenceId: operation.eventId,
-        operation: () => _gateway.delete(
-          eventId: operation.eventId,
-          calendarId: operation.calendarId,
-        ),
+        operation: () {
+          if (_gateway is ConditionalCalendarSyncGateway) {
+            final etag = operation.expectedEtag;
+            final syncId = operation.expectedSyncId;
+            if (etag == null || syncId == null) {
+              throw StateError('Calendar delete is blocked because its preview has no provider ETag or managed identity.');
+            }
+            return (_gateway as ConditionalCalendarSyncGateway).deleteConditionally(
+              eventId: operation.eventId,
+              calendarId: operation.calendarId,
+              expectedEtag: etag,
+              expectedSyncId: syncId,
+            );
+          }
+          return _gateway.delete(eventId: operation.eventId, calendarId: operation.calendarId);
+        },
       );
       operations.add(result);
       if (!result.success) {
@@ -76,6 +88,8 @@ class ResilientCalendarSyncExecutor {
             attempts: maxAttempts,
             eventId: operation.eventId,
             calendarId: operation.calendarId,
+            expectedEtag: operation.expectedEtag,
+            expectedSyncId: operation.expectedSyncId,
             message: result.message,
           ),
         );
@@ -113,10 +127,22 @@ class ResilientCalendarSyncExecutor {
       final result = await _retry(
         type: CalendarSyncOperationType.update,
         referenceId: operation.command.syncId,
-        operation: () => _gateway.update(
-          eventId: operation.eventId,
-          command: operation.command,
-        ),
+        operation: () {
+          if (_gateway is ConditionalCalendarSyncGateway) {
+            final etag = operation.expectedEtag;
+            final syncId = operation.expectedSyncId;
+            if (etag == null || syncId == null) {
+              throw StateError('Calendar update is blocked because its preview has no provider ETag or managed identity.');
+            }
+            return (_gateway as ConditionalCalendarSyncGateway).updateConditionally(
+              eventId: operation.eventId,
+              expectedEtag: etag,
+              expectedSyncId: syncId,
+              command: operation.command,
+            );
+          }
+          return _gateway.update(eventId: operation.eventId, command: operation.command);
+        },
       );
       operations.add(result);
       if (!result.success) {
@@ -128,6 +154,8 @@ class ResilientCalendarSyncExecutor {
             attempts: maxAttempts,
             command: operation.command,
             eventId: operation.eventId,
+            expectedEtag: operation.expectedEtag,
+            expectedSyncId: operation.expectedSyncId,
             message: result.message,
           ),
         );
