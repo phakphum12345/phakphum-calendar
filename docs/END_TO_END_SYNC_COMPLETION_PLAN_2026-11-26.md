@@ -743,3 +743,15 @@ No implementation PR merged. No production data writes or deployment. Local CAS 
 - PR #197 docs head `23cf9e11aa780f37d323decc6cce766bac0cf7cc`: Auto Detect CI passed; Cross-platform Runtime in progress.
 
 No implementation PR merged. No production Calendar writes, production Schedule writes, migration or deployment. Apple build and CAS macOS queue are not PASS. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
+
+
+### 8.31 Live execution checkpoint — 2026-11-27 (compile-time Schedule identity enforcement)
+
+- PR #196 current head: `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`.
+- Exact-head Auto Detect CI on the prior head `3a0c7de7b2f0e520ceb3bd1b481a16c322d97ed4` found two facade callsites that omitted the newly required Schedule ID. The CalendarWorkflowFacade now requires the Schedule ID for compare/synchronize, stores it with the comparison, rejects a comparison reused for another Schedule, and validates the ID before Calendar reads.
+- `CalendarSyncPlanBuilder.build` and `CalendarSyncCoordinator.synchronize` now require `scheduleId` at compile time rather than defaulting to `unknown`. The plan-builder test asserts the identity is retained.
+- Current exact-head CI for #196 has restarted on `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`; all checks are queued, pending or in progress at this snapshot. No exact-head result is yet PASS.
+- Previous head #192 `483cab074abb8d0daf73a71f7a424c7072dcdc3c`: Dart Format, Dependency Security, Laravel Backend CI, Linux, Android, Web, Cross-platform Runtime and Auto Detect passed; Windows passed; PR Gate and iOS Advisory were still in progress. CAS Spike passed on Ubuntu and Windows; macOS queued. Apple Xcode builds remained pending.
+- Docs PR #197 head `3b388994e55423a0ae8b6e45a1271462ff9cfca5`: Auto Detect CI was queued and Cross-platform Runtime was in progress at the latest observed snapshot.
+
+No implementation PR merged. No production Calendar writes or deployment. Required Schedule identity is now enforced through the compatibility workflow, facade, coordinator and plan builder; exact-head CI remains mandatory. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
