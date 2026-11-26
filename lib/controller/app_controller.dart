@@ -456,6 +456,9 @@ class AppController extends ChangeNotifier implements ControllerState {
   Future<void> authorizeReadAccess() async {
     await _run('ขอสิทธิ์อ่าน Google Sheets, Drive และ Calendar', () async {
       await auth.requestReadAccess();
+      if (_scheduleRepository is ConditionalScheduleWriter) {
+        await _loadCanonicalRuntimeSchedule();
+      }
       status = 'อนุญาตสิทธิ์อ่าน Google Sheets, Drive และ Calendar สำเร็จ';
       await _addAudit('auth.read', status!, true);
     });
