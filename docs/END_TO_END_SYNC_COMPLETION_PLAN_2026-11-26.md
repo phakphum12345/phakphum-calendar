@@ -604,3 +604,14 @@ The #192 CAS spike's Ubuntu and Windows contracts have passed; its macOS contrac
 - #197 (`abf2041...`): current documentation-head Auto Detect CI and Cross-platform Runtime are in progress.
 
 No current implementation PR has been merged. #192's core PR Gate is PASS but Apple and Cross-platform Runtime evidence is still pending. #196's new History UI and test-platform fix have not yet completed their exact-head matrix. Keep all implementation PRs Draft.
+
+
+### 8.21 Live execution checkpoint — 2026-11-26 23:55 Asia/Bangkok
+
+- #191 (`12dc4a5...`): Laravel, Web, Windows, Android, Linux, Cross-platform Runtime, Auto Detect CI, Pull Request Gate and recursive Dependency Security PASS. iOS Advisory Evidence remains an observer in progress; no native iOS build was triggered by the backend-only change.
+- #192 (`10875734...`): Laravel, Web, Android, Linux, Windows, Auto Detect CI, Pull Request Gate, Dart Format and recursive Dependency Security PASS. Cross-platform Runtime remains in progress; iOS is queued, macOS/Xcode is pending, and the CAS spike's macOS leg is queued (Ubuntu/Windows legs passed).
+- #196 current head is now `3dc978f707a7ab9797e76fcab0b88f22b73dbd53`. The History widget-test fix now initializes the async SharedPreferences platform and declares `shared_preferences_platform_interface` as a direct dev dependency, resolving the analyzer's `depend_on_referenced_packages` issue. Current-head CI and OSV scan have restarted; no result is yet PASS.
+- Important lockfile correction: #196's `pubspec.lock` blob now differs from #191/#192 only because `shared_preferences_platform_interface` changed from transitive to direct-dev classification; package versions remain the same. Do not cite the older identical-blob SHA for current #196 until its new recursive OSV scan passes.
+- #197 current documentation checks remain in progress/queued.
+
+No PR has been merged. Keep #192/#196 Draft until the full exact-head platform matrix, Cross-platform Runtime, Apple builds and current-head security scan complete.
