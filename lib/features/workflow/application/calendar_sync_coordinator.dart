@@ -141,7 +141,7 @@ class CalendarSyncCoordinator {
     required DateTime timeMin,
     required DateTime timeMax,
     String calendarId = 'primary',
-    String scheduleId = 'unknown',
+    required String scheduleId,
   }) async {
     final existing = await _gateway.listManagedEvents(
       timeMin: timeMin,
