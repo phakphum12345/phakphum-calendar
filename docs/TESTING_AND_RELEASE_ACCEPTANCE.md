@@ -105,6 +105,8 @@ A successful parent workflow with a skipped deployment child is not a successful
 Release may be considered only when:
 - required product acceptance tests pass;
 - required Flutter and backend tests pass;
+- OSV-Scanner lockfile scan and `composer audit --locked` pass on the exact head;
+- every production release artifact is built with the configured HTTPS shared backend origin;
 - supported platform builds pass;
 - security/privacy review has no unresolved blocker;
 - migrations and recovery are verified;
