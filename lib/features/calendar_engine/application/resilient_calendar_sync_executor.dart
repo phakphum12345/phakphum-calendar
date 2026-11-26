@@ -105,7 +105,7 @@ class ResilientCalendarSyncExecutor {
           status: result.success ? 'succeeded' : 'failed',
           attemptCount: result.attempts,
           providerEventId: result.providerEventId,
-          lastError: result.message,
+          lastError: _safeLedgerErrorCode(result.message),
         );
         return result;
       } catch (error) {
@@ -114,7 +114,7 @@ class ResilientCalendarSyncExecutor {
           operationKey: operationKey,
           status: 'failed',
           attemptCount: 1,
-          lastError: error.toString(),
+          lastError: 'operation_exception',
         );
         rethrow;
       }
@@ -418,6 +418,21 @@ class ResilientCalendarSyncExecutor {
       attempts: maxAttempts,
     );
   }
+}
+
+String? _safeLedgerErrorCode(String? message) {
+  if (message == null || message.trim().isEmpty) return null;
+  final normalized = message.toLowerCase();
+  if (normalized.contains('etag') || normalized.contains('precondition')) {
+    return 'stale_precondition';
+  }
+  if (normalized.contains('timeout') || normalized.contains('timed out')) {
+    return 'provider_timeout';
+  }
+  if (normalized.contains('not found') || normalized.contains('404')) {
+    return 'provider_event_not_found';
+  }
+  return 'provider_operation_failed';
 }
 
 String _ledgerOperationKey(CalendarSyncOperationType type, String referenceId) {
