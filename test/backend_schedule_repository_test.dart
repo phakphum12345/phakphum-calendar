@@ -42,7 +42,8 @@ void main() {
 
     final loaded = await repository.findById('roster-1');
     expect(loaded, isA<Success<Schedule?>>());
-    final saved = await repository.save(schedule);
+    final loadedSchedule = (loaded as Success<Schedule?>).value!;
+    final saved = await repository.save(loadedSchedule);
     expect(saved, isA<Success<Schedule>>());
     expect(requests.map((request) => request.method).toList(), ['GET', 'PUT']);
   });
@@ -73,8 +74,8 @@ void main() {
       httpClient: client,
     );
 
-    await repository.findById('roster-2');
-    final result = await repository.save(schedule);
+    final loaded = await repository.findById('roster-2');
+    final result = await repository.save((loaded as Success<Schedule?>).value!);
     expect(result, isA<NetworkFailure<Schedule>>());
     expect((result as NetworkFailure<Schedule>).statusCode, 409);
   });
@@ -119,6 +120,54 @@ void main() {
 
     expect(result, isA<NetworkFailure<Schedule>>());
     expect(putRevision, 'v7:${List.filled(64, '7').join()}');
+  });
+
+  test('an ABA content cycle cannot replace an older snapshot revision', () async {
+    final original = Schedule(id: 'roster-aba', name: 'A');
+    final intervening = Schedule(id: 'roster-aba', name: 'B');
+    final originalPayload = jsonDecode(codec.encode(original));
+    final interveningPayload = jsonDecode(codec.encode(intervening));
+    var reads = 0;
+    String? expectedRevision;
+    final repository = BackendScheduleRepository(
+      baseUrl: 'https://roster.example.test',
+      idTokenProvider: () async => 'test-id-token',
+      httpClient: MockClient((request) async {
+        if (request.method == 'GET') {
+          reads++;
+          final isOriginal = reads == 1 || reads == 3;
+          return http.Response(jsonEncode({
+            'data': isOriginal ? originalPayload : interveningPayload,
+            'revision': reads == 1
+                ? 'v1:${List.filled(64, '1').join()}'
+                : reads == 2
+                ? 'v2:${List.filled(64, '2').join()}'
+                : 'v3:${List.filled(64, '3').join()}',
+            'state': 'live',
+          }), 200);
+        }
+        final body = jsonDecode(request.body) as Map<String, dynamic>;
+        expectedRevision = body['expected_revision'] as String;
+        return http.Response(jsonEncode({
+          'error': {
+            'code': 'schedule_revision_conflict',
+            'message': 'The original A snapshot is stale after an A-B-A cycle.',
+          },
+          'current_revision': 'v3:${List.filled(64, '3').join()}',
+          'current_state': 'live',
+        }), 409);
+      }),
+    );
+
+    final first = await repository.findById('roster-aba');
+    final originalSnapshot = (first as Success<Schedule?>).value!;
+    await repository.findById('roster-aba');
+    await repository.findById('roster-aba');
+
+    final result = await repository.save(originalSnapshot);
+
+    expect(result, isA<NetworkFailure<Schedule>>());
+    expect(expectedRevision, 'v1:${List.filled(64, '1').join()}');
   });
 
   test('save refuses an unobserved Schedule snapshot without making a request', () async {
