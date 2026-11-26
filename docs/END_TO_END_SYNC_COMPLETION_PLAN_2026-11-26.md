@@ -594,3 +594,13 @@ The latest #192 CAS spike has passed Ubuntu; Windows is still running and macOS 
 - #197 documentation checks remain pending on the latest documentation head.
 
 The #192 CAS spike's Ubuntu and Windows contracts have passed; its macOS contract remains queued on `macos-latest`. No current-head full gate is complete for #192 or #196. All implementation PRs remain Draft and unmerged.
+
+
+### 8.20 Live execution checkpoint — 2026-11-26 23:50 Asia/Bangkok
+
+- #191 (`12dc4a5...`): Laravel, Web, Windows, Android, Linux, Cross-platform Runtime, Auto Detect CI, Pull Request Gate and recursive Dependency Security PASS. Its remaining iOS Advisory Evidence job is a non-blocking observer; this backend-only PR did not trigger a native iOS build.
+- #192 (`10875734...`): Laravel, Web, Android, Linux, Windows, Auto Detect CI, Pull Request Gate, Dart Format and recursive Dependency Security PASS. The exact OSV log scanned both lockfiles (110 PHP + 132 Dart packages) and reported no issues. Cross-platform Runtime is in progress; iOS is queued, macOS/Xcode is pending, and the CAS spike remains queued on its macOS leg. Ubuntu/Windows CAS contract legs passed.
+- #196 (`8280b06...`): Laravel Backend CI PASS. Windows, Linux, Web and Android jobs are in progress; Auto Detect CI and Dependency Security are queued; iOS/macOS builds are pending. The prior exact-head run failed two widget tests because the History utility now reads SharedPreferencesAsync and the widget test setup mocked only the legacy SharedPreferences platform. The test setup now installs `InMemorySharedPreferencesAsync`; current-head test evidence is pending.
+- #197 (`abf2041...`): current documentation-head Auto Detect CI and Cross-platform Runtime are in progress.
+
+No current implementation PR has been merged. #192's core PR Gate is PASS but Apple and Cross-platform Runtime evidence is still pending. #196's new History UI and test-platform fix have not yet completed their exact-head matrix. Keep all implementation PRs Draft.
