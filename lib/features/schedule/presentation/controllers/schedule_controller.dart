@@ -284,7 +284,7 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
         } else {
           final source = scheduleRepository;
           _expectedRevision = source is ScheduleRevisionSource
-              ? source.currentRevisionFor(scheduleId)
+              ? source.revisionForAbsentSchedule(scheduleId)
               : null;
           _service.replaceSchedule(
             Schedule(
