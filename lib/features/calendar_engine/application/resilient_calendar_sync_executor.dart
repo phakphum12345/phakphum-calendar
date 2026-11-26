@@ -146,6 +146,7 @@ class ResilientCalendarSyncExecutor {
           }
           return _gateway.delete(eventId: operation.eventId, calendarId: operation.calendarId);
         },
+      ),
       );
       operations.add(result);
       if (!result.success) {
@@ -154,7 +155,7 @@ class ResilientCalendarSyncExecutor {
             historyId: historyId,
             type: CalendarSyncOperationType.delete,
             referenceId: operation.eventId,
-            attempts: maxAttempts,
+            attempts: result.attempts,
             eventId: operation.eventId,
             calendarId: operation.calendarId,
             expectedEtag: operation.expectedEtag,
