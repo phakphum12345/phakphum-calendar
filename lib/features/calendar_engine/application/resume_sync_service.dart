@@ -127,24 +127,47 @@ class ResumeSyncService {
           'Cannot resume server-coordinated sync without the original Schedule ID.',
         );
       }
-      lease = await coordination.acquire(
-        calendarId: calendarId,
-        scheduleId: original.scheduleId,
-      );
-      await _historyRepository.save(
-        SyncHistoryEntry(
-          id: original.id,
-          startedAt: original.startedAt,
-          status: SyncHistoryStatus.running,
-          inserted: original.inserted,
-          updated: original.updated,
-          deleted: original.deleted,
-          failed: original.failed,
-          message: original.message,
+      try {
+        final acquiredLease = await coordination.acquire(
+          calendarId: calendarId,
           scheduleId: original.scheduleId,
-          serverRunId: lease.runId,
-        ),
-      );
+        );
+        lease = acquiredLease;
+        await _historyRepository.save(
+          SyncHistoryEntry(
+            id: original.id,
+            startedAt: original.startedAt,
+            status: SyncHistoryStatus.running,
+            inserted: original.inserted,
+            updated: original.updated,
+            deleted: original.deleted,
+            failed: original.failed,
+            message: original.message,
+            scheduleId: original.scheduleId,
+            serverRunId: acquiredLease.runId,
+          ),
+        );
+      } catch (error) {
+        final activeLease = lease;
+        if (activeLease != null) {
+          try {
+            await coordination.release(
+              lease: activeLease,
+              status: 'failed',
+            );
+          } catch (_) {
+            // The lease expires automatically if release cannot be confirmed.
+          }
+        }
+        await _historyRepository.save(
+          original.copyWith(
+            finishedAt: DateTime.now(),
+            status: SyncHistoryStatus.failure,
+            message: 'Resume was blocked before Calendar operations started: $error',
+          ),
+        );
+        rethrow;
+      }
     }
 
     try {
