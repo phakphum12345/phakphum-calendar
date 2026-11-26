@@ -166,6 +166,78 @@ void main() {
     expect(coordination.recorded.single.payload['sync_id'], 'stable-sync-id');
   });
 
+  test('recovers update and delete with their original provider preconditions', () async {
+    final history = _MemoryHistoryRepository()
+      ..entries['local-history-2'] = SyncHistoryEntry(
+        id: 'local-history-2',
+        startedAt: DateTime(2026, 11, 26, 8),
+        status: SyncHistoryStatus.failure,
+        inserted: 0,
+        updated: 0,
+        deleted: 0,
+        failed: 2,
+        scheduleId: 'schedule-2',
+        serverRunId: 'remote-run-2',
+      );
+    final gateway = _FakeCalendarGateway();
+    final coordination = _FakeCoordinationGateway()
+      ..runRecord = CalendarSyncRunRecord(
+        runId: 'remote-run-2',
+        calendarId: 'primary',
+        scheduleId: 'schedule-2',
+        status: 'expired',
+        startedAt: DateTime(2026, 11, 26, 8),
+        heartbeatAt: DateTime(2026, 11, 26, 8, 1),
+      )
+      ..operationRecords = [
+        CalendarSyncOperationRecord(
+          operationKey: 'update:sync-update',
+          operationType: 'update',
+          status: 'failed',
+          payloadHash: List.filled(64, 'b').join(),
+          operationPayload: {
+            'event_id': 'provider-update',
+            'expected_etag': 'etag-update-original',
+            'expected_sync_id': 'sync-update',
+            'sync_id': 'sync-update',
+            'title': 'Updated OPD',
+            'start': DateTime(2026, 11, 26, 8).toIso8601String(),
+            'end': DateTime(2026, 11, 26, 16).toIso8601String(),
+            'description': null,
+            'color_id': null,
+            'calendar_id': 'primary',
+          },
+          attemptCount: 1,
+        ),
+        CalendarSyncOperationRecord(
+          operationKey: 'delete:provider-delete',
+          operationType: 'delete',
+          status: 'running',
+          payloadHash: List.filled(64, 'c').join(),
+          operationPayload: {
+            'event_id': 'provider-delete',
+            'calendar_id': 'primary',
+            'expected_etag': 'etag-delete-original',
+            'expected_sync_id': 'sync-delete',
+          },
+          attemptCount: 2,
+        ),
+      ];
+
+    final result = await ResumeSyncService(
+      gateway: gateway,
+      historyRepository: history,
+      failedRepository: _MemoryFailedSyncRepository(),
+      coordinationGateway: coordination,
+    ).recoverHistory('local-history-2');
+
+    expect(result.completed, isTrue);
+    expect(gateway.updatedEtags, ['etag-update-original']);
+    expect(gateway.deletedEtags, ['etag-delete-original']);
+    expect(gateway.updatedSyncIds, ['sync-update']);
+    expect(gateway.deletedSyncIds, ['sync-delete']);
+  });
+
   test('missing durable server run fails closed without replay', () async {
     final gateway = _FakeCalendarGateway();
     final coordination = _FakeCoordinationGateway();
@@ -214,8 +286,12 @@ void main() {
   });
 }
 
-class _FakeCalendarGateway implements CalendarSyncGateway {
+class _FakeCalendarGateway implements CalendarSyncGateway, ConditionalCalendarSyncGateway {
   int insertCount = 0;
+  final updatedEtags = <String>[];
+  final deletedEtags = <String>[];
+  final updatedSyncIds = <String?>[];
+  final deletedSyncIds = <String?>[];
 
   @override
   Future<ManagedCalendarEvent> insert(CalendarSyncCommand command) async {
@@ -227,6 +303,37 @@ class _FakeCalendarGateway implements CalendarSyncGateway {
       start: command.start,
       end: command.end,
     );
+  }
+
+  @override
+  Future<ManagedCalendarEvent> updateConditionally({
+    required String eventId,
+    required String expectedEtag,
+    required String? expectedSyncId,
+    required CalendarSyncCommand command,
+  }) async {
+    updatedEtags.add(expectedEtag);
+    updatedSyncIds.add(expectedSyncId);
+    return ManagedCalendarEvent(
+      eventId: eventId,
+      syncId: command.syncId,
+      title: command.title,
+      start: command.start,
+      end: command.end,
+      etag: 'etag-update-result',
+      providerSyncId: expectedSyncId,
+    );
+  }
+
+  @override
+  Future<void> deleteConditionally({
+    required String eventId,
+    required String calendarId,
+    required String expectedEtag,
+    required String? expectedSyncId,
+  }) async {
+    deletedEtags.add(expectedEtag);
+    deletedSyncIds.add(expectedSyncId);
   }
 
   @override
