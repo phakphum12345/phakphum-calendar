@@ -53,6 +53,7 @@ class ResilientCalendarSyncExecutor {
       updated: 0,
       deleted: 0,
       failed: 0,
+      scheduleId: plan.scheduleId,
     );
 
     await _historyRepository.save(history);
