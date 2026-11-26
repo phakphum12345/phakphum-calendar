@@ -305,6 +305,44 @@ void main() {
     expect(coordination.calls, ['acquire:primary:schedule-3']);
   });
 
+  test('blocks shared synchronization when Schedule identity is unknown', () async {
+    final coordination = _FakeCoordinationGateway();
+    final gateway = _FakeCalendarGateway();
+    final history = _MemoryHistoryRepository();
+    final executor = ResilientCalendarSyncExecutor(
+      gateway: gateway,
+      historyRepository: history,
+      coordinationGateway: coordination,
+    );
+
+    await expectLater(
+      executor.execute(
+        CalendarSyncPlan(
+          inserts: [
+            CalendarSyncCommand(
+              syncId: 'stable-sync-id',
+              title: 'OPD',
+              start: DateTime(2026, 11, 26, 8),
+              end: DateTime(2026, 11, 26, 16),
+            ),
+          ],
+          updates: const [],
+          deletes: const [],
+          scheduleId: 'unknown',
+        ),
+      ),
+      throwsStateError,
+    );
+
+    expect(gateway.insertCount, 0);
+    expect(coordination.calls, isEmpty);
+    expect(history.entries.values.single.status, SyncHistoryStatus.failure);
+    expect(
+      history.entries.values.single.message,
+      'Synchronization was blocked before Calendar writes because this preview has no stable Schedule ID.',
+    );
+  });
+
   test('does not call Calendar when lease acquisition is rejected', () async {
     final coordination = _FakeCoordinationGateway()..rejectAcquire = true;
     final gateway = _FakeCalendarGateway();
