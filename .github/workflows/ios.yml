@@ -32,7 +32,8 @@ permissions:
 # obsolete commits do not accumulate in the macOS runner queue.
 concurrency:
   group: ios-xcode-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # Let a running Xcode build finish; GitHub replaces only the older pending run.
+  cancel-in-progress: false
 
 jobs:
   build-ios:
