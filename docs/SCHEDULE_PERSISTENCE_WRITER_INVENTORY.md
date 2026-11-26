@@ -155,3 +155,32 @@ This inventory is the first input to [ADR: Conditional Schedule Persistence and 
 | Local fallback | SharedPreferences two-slot repository | Crash-resilient staged write, no cross-instance CAS | OPEN — no global concurrency guarantee |
 
 The backend repository's legacy `save()` method still uses a mutable revision cache keyed by Schedule ID. It is not a substitute for passing the revision captured by the editor/session that is being saved. A stale controller must never be allowed to adopt a newer cache token and overwrite a newer Schedule. Only the explicit `saveIfRevision(schedule, expectedRevision)` path is caller-bound.
+
+## 10. 2026-11-26 — backend snapshot-bound CAS migration follow-up
+
+This section supersedes the W-01 through F-01 backend-mode dispositions in section 9. It does not claim that the local SharedPreferences fallback is cross-device atomic.
+
+| Writer | Updated behavior when `ORGANIZATION_API_BASE_URL` is configured | Current disposition |
+|---|---|---|
+| W-01 `ScheduleController.saveSchedule()` | Captures the revision attached to the exact loaded Schedule snapshot and calls `saveIfRevision`. After a successful save it adopts the new server revision. A controller without an observed snapshot/absent token fails closed. | IMPLEMENTED; exact-head tests pending. |
+| W-02 `AppController._replaceLegacyShifts()` | Captures the previous canonical Schedule, reads the server target, compares the live payload with that exact base snapshot, then calls `saveIfRevision`. A remote change causes a visible persistence error rather than overwrite. The per-controller queue remains only an ordering aid. | IMPLEMENTED WITH CONFLICT GUARD; exact-head tests pending. |
+| W-03 `AppController.adoptCanonicalSchedule()` | Uses the same base-snapshot compare plus server CAS as W-02. | IMPLEMENTED WITH CONFLICT GUARD; exact-head tests pending. |
+| W-04 / W-05 Grid commit and recovery | Continue using the caller-owned revision captured by review/journal and `saveIfRevision`. | IMPLEMENTED FOR BACKEND PATH; exact-head tests pending. |
+| F-01 `saveImportedSchedule()` | Backend mode is create-only against the explicit absent revision. Existing Schedule replacement must use the reviewed Grid workflow; no generic overwrite is permitted. | IMPLEMENTED CREATE-ONLY; exact-head tests pending. |
+| S-01 Schedule delete | Backend repository refuses unconditional delete and reports that no data was deleted. | FAIL-CLOSED; conditional delete/tombstone is not implemented. |
+
+### Repository and composition-root changes
+
+- `BackendScheduleRepository` now binds revisions to a canonical Schedule snapshot fingerprint. A later read of the same Schedule cannot silently replace an older editor's token. `save()` only accepts an exact snapshot that was previously read; unknown snapshots fail closed.
+- The snapshot revision cache is bounded to 256 entries. Successful conditional writes bind the returned revision to the saved snapshot.
+- `AppDependencies` now uses the configured BackendScheduleRepository as the single ScheduleRepository instance for production consumers when `ORGANIZATION_API_BASE_URL` is set; Grid import shares the same instance. With no backend origin, the existing SharedPreferences repository remains the local-development fallback.
+- Empty roster resets during sign-out, account changes, source-sheet switching and local-source clearing are now local-only (`persist: false`). They no longer overwrite or clear the durable Schedule.
+- `test/backend_schedule_repository_test.dart` now covers a stale editor after a second read, an unobserved snapshot failing closed, and backend delete making no request. `test/schedule_controller_revision_test.dart` covers two editors loaded at one revision: exactly one save can succeed.
+
+### Remaining CAS boundaries
+
+- Backend mode now fails closed for unbound or stale legacy snapshots. This prevents an unsafe write, but a caller that does not first load the canonical base may show a persistence error until its load/review path is migrated.
+- The SharedPreferences fallback still has no cross-process/device CAS and must be described as local-only. It is not a production multi-device guarantee.
+- Conditional Schedule delete is deliberately disabled until a tombstone/expected-revision contract and recovery semantics are designed. No Schedule data was deleted by this work.
+- Generation-to-persistence approval flow and startup journal discovery/indexing remain separate open work packages.
+- These changes are committed but are not certified until Flutter analyze/tests and the exact-head platform matrix pass. No merge or production migration is authorized.
