@@ -12,6 +12,7 @@ class SyncHistoryEntry {
     this.finishedAt,
     this.message,
     this.scheduleId = 'unknown',
+    this.serverRunId,
   });
 
   final String id;
@@ -24,6 +25,7 @@ class SyncHistoryEntry {
   final int failed;
   final String? message;
   final String scheduleId;
+  final String? serverRunId;
 
   SyncHistoryEntry copyWith({
     DateTime? finishedAt,
@@ -34,6 +36,7 @@ class SyncHistoryEntry {
     int? failed,
     String? message,
     String? scheduleId,
+    String? serverRunId,
   }) {
     return SyncHistoryEntry(
       id: id,
@@ -46,6 +49,7 @@ class SyncHistoryEntry {
       failed: failed ?? this.failed,
       message: message ?? this.message,
       scheduleId: scheduleId ?? this.scheduleId,
+      serverRunId: serverRunId ?? this.serverRunId,
     );
   }
 }
