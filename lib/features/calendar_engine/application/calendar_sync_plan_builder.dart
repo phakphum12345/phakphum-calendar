@@ -35,6 +35,8 @@ class CalendarSyncPlanBuilder {
         CalendarUpdateOperation(
           eventId: existing.eventId,
           command: _toCommand(candidate, calendarId),
+          expectedEtag: existing.etag,
+          expectedSyncId: existing.syncId,
         ),
       );
     }
@@ -50,6 +52,8 @@ class CalendarSyncPlanBuilder {
           eventId: existing.eventId,
           calendarId: calendarId,
           beforeWrites: candidate.syncId.startsWith('legacy:'),
+          expectedEtag: existing.etag,
+          expectedSyncId: existing.syncId,
         ),
       );
     }
