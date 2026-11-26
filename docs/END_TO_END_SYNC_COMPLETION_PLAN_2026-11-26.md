@@ -867,3 +867,12 @@ No implementation PR merged. No production notification, Schedule or Calendar da
 - PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: all non-Apple CI including PR Gate passed; iOS Advisory in progress; iOS/macOS Xcode pending.
 
 No implementation PR merged. No production data writes, notifications, Calendar writes or deployment. Queued, pending and in-progress checks are not PASS.
+
+
+### 8.43 Live execution checkpoint — 2026-11-27 (notification and sync platform gates)
+
+- PR #191 exact head `6787fe710ceb351581eb42c9b7045c49a93c9cfb`: Backend, Linux, Web, Android, Windows, Cross-platform Runtime, Auto Detect, Dependency Security and Pull Request Gate all passed. iOS Advisory Evidence remains in progress; native iOS/macOS builds are pending. The transactional notification enqueue test is green; actual push delivery remains absent.
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: all non-Apple checks including PR Gate passed; iOS Advisory Evidence also passed. Native iOS is queued and macOS Xcode pending.
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: Backend, Linux, Web, Android, Dart Format and Dependency Security passed. Windows, Cross-platform Runtime, Auto Detect, PR Gate and iOS Advisory were still in progress; CAS Windows/Ubuntu passed while macOS queued. The six-month multi-department test is still running in the quality suite.
+
+No implementation PR merged. Apple native build evidence and the remaining exact-head PR #192 tests are still outstanding. No production notifications, Calendar writes, Schedule writes or deployment.
