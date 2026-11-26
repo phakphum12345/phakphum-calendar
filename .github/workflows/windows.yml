@@ -72,6 +72,17 @@ jobs:
       - name: Flutter tests
         run: flutter test
 
+      - name: Require shared backend for production artifact
+        if: github.ref == 'refs/heads/main'
+        env:
+          ORGANIZATION_API_BASE_URL: ${{ vars.ORGANIZATION_API_BASE_URL }}
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:ORGANIZATION_API_BASE_URL) -or
+              -not $env:ORGANIZATION_API_BASE_URL.StartsWith('https://')) {
+            throw 'Production artifacts require an HTTPS ORGANIZATION_API_BASE_URL.'
+          }
+
       - name: Build Windows release
         env:
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
