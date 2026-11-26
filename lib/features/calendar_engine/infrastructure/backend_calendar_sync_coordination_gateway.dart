@@ -130,8 +130,8 @@ class BackendCalendarSyncCoordinationGateway
         'lease_token': lease.leaseToken,
         'status': status,
         'attempt_count': attemptCount,
-        if (providerEventId != null) 'provider_event_id': providerEventId,
-        if (lastError != null) 'last_error': lastError,
+        'provider_event_id': providerEventId,
+        'last_error': lastError,
       },
     );
   }
