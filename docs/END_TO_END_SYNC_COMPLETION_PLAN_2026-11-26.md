@@ -907,3 +907,15 @@ No implementation PR merged. The remaining blockers are exact-head PR #192/191 j
 - PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: all non-Apple checks and iOS Advisory passed; native iOS queued and macOS pending.
 
 No implementation PR merged. No production data writes or deployment. CAS macOS and native Apple builds remain outstanding.
+
+
+### 8.47 Live execution checkpoint — 2026-11-27 (PR #192 core gate green)
+
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: Windows release build and Pull Request Gate completed successfully. Auto Detect CI (including Flutter unit tests), Linux release, Android, Web, Backend, Dart Format and Dependency Security also passed.
+- The row-33 and six-month/two-department parser regressions are included in the passing Windows Flutter tests and Auto Detect Flutter unit-test suite.
+- Cross-platform Runtime Linux/POSIX full quality passed; Windows PowerShell full quality remains in progress.
+- Schedule CAS Storage Spike passed on Windows and Ubuntu; macOS remains queued. iOS Advisory remains in progress; native iOS/macOS Xcode pending.
+- PR #191 exact head `6787fe710ceb351581eb42c9b7045c49a93c9cfb`: all non-Apple checks including PR Gate passed; iOS Advisory still in progress.
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: all non-Apple checks and iOS Advisory passed; native iOS queued and macOS pending.
+
+No implementation PR merged. PR #192 has a green core gate but is not merge-ready while cross-platform Windows, CAS macOS and Apple native checks remain incomplete.
