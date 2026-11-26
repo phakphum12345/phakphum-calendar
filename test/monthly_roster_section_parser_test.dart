@@ -133,6 +133,57 @@ void main() {
     expect(shifts.last.end, DateTime(2026, 12, 15, 8));
   });
 
+  test('supports two departments across a six-month date block', () {
+    final dates = List<DateTime>.generate(
+      181,
+      (index) => DateTime(2026, 11, 1).add(Duration(days: index)),
+    );
+    final secondDepartmentWorkers = List<Object?>.filled(dates.length, null)
+      ..[0] = 'นาง ค';
+    final firstDepartmentWorkers = List<Object?>.filled(dates.length, null)
+      ..[0] = 'นาย ก'
+      ..[180] = 'นาย ข';
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'ตารางเวรหลายแผนก',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, [
+          'เวรใหญ่ อายุรกรรม ประจำเดือน 1 พฤศจิกายน พ.ศ. 2569 - 30 เมษายน พ.ศ. 2570',
+        ]),
+        ..._row(1, ['วันที่', ...dates]),
+        ..._row(2, ['เวรเช้า', ...firstDepartmentWorkers]),
+        ..._row(4, [
+          'คลินิกพิเศษ กุมารเวช ประจำเดือน 1 พฤศจิกายน พ.ศ. 2569 - 30 เมษายน พ.ศ. 2570',
+        ]),
+        ..._row(5, ['วันที่', ...dates]),
+        ..._row(6, ['คลินิก', ...secondDepartmentWorkers]),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.warnings, isEmpty);
+    expect(report.sections, hasLength(2));
+    expect(report.sections[0].title, contains('อายุรกรรม'));
+    expect(report.sections[1].title, contains('กุมารเวช'));
+    expect(report.sections[0].dateColumns, hasLength(181));
+    expect(report.sections[1].dateColumns, hasLength(181));
+    expect(report.sections[0].startDate, DateTime(2026, 11, 1));
+    expect(report.sections[0].endDate, DateTime(2027, 4, 30));
+    expect(report.sections[1].startDate, DateTime(2026, 11, 1));
+    expect(report.sections[1].endDate, DateTime(2027, 4, 30));
+    expect(report.assignments, hasLength(3));
+    expect(report.assignments.map((item) => item.workerName), [
+      'นาย ก',
+      'นาย ข',
+      'นาง ค',
+    ]);
+    expect(report.assignments[1].date, DateTime(2027, 4, 30));
+  });
+
   test('does not require fixed names for exten or future sections', () {
     final input = ShiftParserInput(
       spreadsheetId: 'spreadsheet',
