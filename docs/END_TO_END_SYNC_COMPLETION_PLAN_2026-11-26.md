@@ -767,3 +767,14 @@ No implementation PR merged. No production Calendar writes or deployment. Requir
 - #196 current head remains `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`; Backend, Linux, Web, Dart Format and Dependency Security passed, while Windows, Android, Cross-platform Runtime, Auto Detect, PR Gate and iOS Advisory were still running. Apple builds remained pending.
 
 No implementation PR merged. No production data writes or deployment. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
+
+
+### 8.33 Live execution checkpoint — 2026-11-27 (row 33 fixture aligned to source layout)
+
+- PR #192 current head: `8af2471200cc5f3cbe8b8778b37ab528c3f90403`.
+- Refined the row-33 `เวรเช้า14 ชั้น` regression fixture to reproduce the source layout more faithfully: weekday header row, numeric date row, period heading immediately below the date row, and the assignment at spreadsheet row 33.
+- The fixture retains the 30-day sequence (16–30 November, then 1–15 December 2569), 20 non-empty assignments, B33–AE33 source-cell coordinates, U14 mapping and 07:00–08:00 shift times for the selected worker.
+- Exact-head CI for `8af2471200cc5f3cbe8b8778b37ab528c3f90403` has just started. Pull Request Gate is in progress; all other workflows are queued or pending. No current-head check is PASS yet.
+- Previous head `483cab074abb8d0daf73a71f7a424c7072dcdc3c` passed the non-Apple core matrix including Linux, Windows, Android, Web, Cross-platform Runtime, Auto Detect, Format, Dependency Security, Backend and PR Gate. CAS passed on Ubuntu/Windows; macOS CAS and Apple Xcode builds were not completed.
+
+No implementation PR merged. No production data writes or deployment. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
