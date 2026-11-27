@@ -147,6 +147,77 @@ void main() {
     expect(result.calculation.amount, 700);
   });
 
+  test('hybrid priority never hides a conflict in the selected source', () {
+    final profile = ShiftPayProfile(
+      id: 'profile-conflict',
+      mode: ShiftPayMode.hybrid,
+      organizationId: 'org-a',
+      hybridPriority: HybridShiftPayPriority.organizationFirst,
+      rules: [
+        ShiftPayRuleEntry(
+          source: ShiftPayRuleSource.personal,
+          rule: rule('personal-night', 700),
+        ),
+        ShiftPayRuleEntry(
+          source: ShiftPayRuleSource.organization,
+          organizationId: 'org-a',
+          rule: rule('org-night-a', 850),
+        ),
+        ShiftPayRuleEntry(
+          source: ShiftPayRuleSource.organization,
+          organizationId: 'org-a',
+          rule: rule('org-night-b', 900),
+        ),
+      ],
+    );
+
+    final result = profile.resolve(calculator: calculator, input: input);
+
+    expect(result.hasRule, isFalse);
+    expect(result.source, isNull);
+    expect(result.calculation.amount, isNull);
+    expect(result.calculation.hasRuleConflict, isTrue);
+    expect(
+      result.calculation.conflictingRuleIds,
+      ['organization:org-night-a', 'organization:org-night-b'],
+    );
+  });
+
+  test('hybrid require-selection exposes rule conflicts before source choice', () {
+    final profile = ShiftPayProfile(
+      id: 'profile-conflict-selection',
+      mode: ShiftPayMode.hybrid,
+      organizationId: 'org-a',
+      hybridPriority: HybridShiftPayPriority.requireSelection,
+      rules: [
+        ShiftPayRuleEntry(
+          source: ShiftPayRuleSource.personal,
+          rule: rule('personal-night-a', 700),
+        ),
+        ShiftPayRuleEntry(
+          source: ShiftPayRuleSource.personal,
+          rule: rule('personal-night-b', 750),
+        ),
+        ShiftPayRuleEntry(
+          source: ShiftPayRuleSource.organization,
+          organizationId: 'org-a',
+          rule: rule('org-night', 900),
+        ),
+      ],
+    );
+
+    final result = profile.resolve(calculator: calculator, input: input);
+
+    expect(result.sourceSelectionRequired, isFalse);
+    expect(result.hasRule, isFalse);
+    expect(result.calculation.amount, isNull);
+    expect(result.calculation.hasRuleConflict, isTrue);
+    expect(
+      result.calculation.conflictingRuleIds,
+      ['personal:personal-night-a', 'personal:personal-night-b'],
+    );
+  });
+
   test('unconfigured shifts remain explicitly unconfigured', () {
     final profile = ShiftPayProfile(
       id: 'profile-6',
