@@ -115,8 +115,18 @@ class ResumeSyncService {
       );
     }
     final ledger = await coordination.listOperations(runId);
+    if (ledger.isEmpty) {
+      throw StateError(
+        'The durable server run has no operation records; recovery cannot confirm completion or replay Calendar changes.',
+      );
+    }
     final succeeded = ledger.where((item) => item.status == 'succeeded');
     final pending = ledger.where((item) => item.status != 'succeeded').toList();
+    if (pending.isEmpty) {
+      throw StateError(
+        'The server run is not marked successful but has no unfinished operations; manual provider verification is required.',
+      );
+    }
     final recovered = pending
         .map((item) => _failedOperationFromLedger(run, item, historyId: historyId))
         .toList(growable: false);
@@ -124,27 +134,18 @@ class ResumeSyncService {
     final history = SyncHistoryEntry(
       id: historyId,
       startedAt: run.startedAt,
-      status: recovered.isEmpty
-          ? SyncHistoryStatus.success
-          : SyncHistoryStatus.running,
+      status: SyncHistoryStatus.running,
       inserted: succeeded.where((item) => item.operationType == 'insert').length,
       updated: succeeded.where((item) => item.operationType == 'update').length,
       deleted: succeeded.where((item) => item.operationType == 'delete').length,
       failed: recovered.length,
-      finishedAt: recovered.isEmpty ? (run.finishedAt ?? DateTime.now()) : null,
-      message: recovered.isEmpty
-          ? 'All durable Calendar operations are already complete.'
-          : 'Recovered ${recovered.length} unfinished operation(s) from the durable ledger.',
+      message: 'Recovered ${recovered.length} unfinished operation(s) from the durable ledger.',
       scheduleId: run.scheduleId,
       serverRunId: run.runId,
     );
 
     await _historyRepository.save(history);
     await _failedRepository.replaceForHistory(historyId, recovered);
-
-    if (recovered.isEmpty) {
-      return ResumeSyncResult(historyEntry: history, operations: const []);
-    }
     return resume(historyId);
   }
 
