@@ -13,7 +13,10 @@ class VerticalMonthlyRosterSectionParser {
 
   final ThaiRosterPeriodParser periodParser;
 
-  MonthlyRosterParseReport parse(ShiftParserInput input) {
+  MonthlyRosterParseReport parse(
+    ShiftParserInput input, {
+    bool populateAssignments = true,
+  }) {
     final byColumn = <int, List<NormalizedCell>>{};
     final byCoordinate = <(int, int), NormalizedCell>{};
     for (final cell in input.cells) {
@@ -206,6 +209,7 @@ class VerticalMonthlyRosterSectionParser {
               date: date,
             ),
           );
+          if (!populateAssignments) continue;
           for (final labelEntry in labelsByColumn.entries) {
             final workerCell = byCoordinate[(dateCell.rowIndex, labelEntry.key)];
             final worker = workerCell?.text?.trim() ?? '';
@@ -228,17 +232,14 @@ class VerticalMonthlyRosterSectionParser {
           }
         }
 
-        for (final column in labelsByColumn.keys) {
-          final hasAssignments = assignments.any((item) => item.columnIndex == column);
-          if (hasAssignments) {
-            rosterRows.add(
-              MonthlyRosterRow(
-                rowIndex: firstRow,
-                columnIndex: column,
-                label: labelsByColumn[column]!,
-              ),
-            );
-          }
+        for (final entry in labelsByColumn.entries) {
+          rosterRows.add(
+            MonthlyRosterRow(
+              rowIndex: firstRow,
+              columnIndex: entry.key,
+              label: entry.value,
+            ),
+          );
         }
 
         if (dateColumns.isEmpty) {
