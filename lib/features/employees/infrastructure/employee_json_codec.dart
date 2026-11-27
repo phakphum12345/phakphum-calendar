@@ -63,6 +63,7 @@ class EmployeeJsonCodec {
     'firstName': employee.firstName,
     'lastName': employee.lastName,
     'nickname': employee.nickname,
+    'alternateNames': employee.alternateNames,
     'position': employee.position,
     'active': employee.active,
     'department': {
@@ -83,6 +84,9 @@ class EmployeeJsonCodec {
       firstName: _requiredString(value['firstName'], '$path.firstName'),
       lastName: _string(value['lastName'], '$path.lastName'),
       nickname: _string(value['nickname'], '$path.nickname'),
+      alternateNames: value['alternateNames'] == null
+          ? ''
+          : _string(value['alternateNames'], '$path.alternateNames'),
       position: _string(value['position'], '$path.position'),
       active: _boolean(value['active'], '$path.active'),
       department: Department(
