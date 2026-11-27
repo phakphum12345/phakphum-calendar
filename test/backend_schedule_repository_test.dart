@@ -206,6 +206,42 @@ void main() {
     expect(requestCount, 0);
   });
 
+  test('conditional delete sends the exact caller revision and remembers the tombstone', () async {
+    final requests = <http.Request>[];
+    final repository = BackendScheduleRepository(
+      baseUrl: 'https://roster.example.test',
+      idTokenProvider: () async => 'test-id-token',
+      httpClient: MockClient((request) async {
+        requests.add(request);
+        return http.Response(jsonEncode({
+          'data': null,
+          'revision': 'v3:${List.filled(64, '0').join()}',
+          'state': 'deleted',
+        }), 200);
+      }),
+    );
+    const expectedRevision = 'v2:${'2' * 64}';
+
+    final result = await repository.deleteIfRevision(
+      'roster-8',
+      expectedRevision,
+    );
+
+    expect(result, isA<Success<void>>());
+    expect(requests, hasLength(1));
+    expect(requests.single.method, 'DELETE');
+    expect(requests.single.url.path, '/api/v1/schedules/roster-8');
+    expect(
+      jsonDecode(requests.single.body)['expected_revision'],
+      expectedRevision,
+    );
+    expect(
+      (repository as ScheduleRevisionSource)
+          .revisionForAbsentSchedule('roster-8'),
+      isNull,
+    );
+  });
+
   test('requires a Google ID token before sending Schedule data', () async {
     var requestCount = 0;
     final repository = BackendScheduleRepository(
