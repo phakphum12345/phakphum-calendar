@@ -153,7 +153,15 @@ void main() {
     final original = parsed.sections.single;
 
     expect(original.dateAnomalies, isNotEmpty);
-    expect(original.assignments, hasLength(2));
+    expect(original.hasBlockingDateAnomalies, isTrue);
+    expect(original.assignments, hasLength(3));
+    expect(
+      original.assignments
+          .singleWhere((item) => item.workerName == 'ข')
+          .date,
+      DateTime(2026, 11, 6),
+      reason: 'Positional alignment is review-only while the section is blocked.',
+    );
     expect(original.sourceCells, isNotEmpty);
     expect(original.startDate, DateTime(2026, 11, 1));
     expect(original.endDate, DateTime(2026, 11, 7));
