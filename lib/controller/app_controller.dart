@@ -1389,6 +1389,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       );
       _currentAllRosterShifts = _filterToSyncDateRange(_currentAllRosterShifts);
       _revisionTimelines = const {};
+      _revisionDocuments = const [];
       _loadedRevisionCount = 0;
       timelineWarning = null;
       _replaceLegacyShifts(
@@ -2681,6 +2682,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       _currentAllRosterShifts = [];
       _referenceAllRosterShifts = [];
       _revisionTimelines = const {};
+      _revisionDocuments = const [];
       _loadedRevisionCount = 0;
       timelineWarning = null;
       _loadedRosterShifts = [];
