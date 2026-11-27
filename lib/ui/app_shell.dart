@@ -9,6 +9,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../controller/app_controller.dart';
 import '../core/result/result.dart';
 import '../features/shift_parser/application/grid_roster_import_workflow.dart';
+import '../features/shift_parser/presentation/pages/grid_roster_review_page.dart';
+import '../features/history/application/roster_history_restore_workflow.dart';
 import '../features/google_drive/application/multi_sheet_picker_selection.dart';
 import '../domain/entities/schedule.dart';
 import '../features/reports/presentation/controllers/monthly_schedule_report_controller.dart';
@@ -42,6 +44,7 @@ import '../services/calendar_service.dart';
 import '../services/calendar_color_service.dart';
 import '../services/drive_ownership_service.dart';
 import '../services/google_auth_service.dart';
+import '../services/roster_revision_service.dart';
 import '../services/shift_color_service.dart';
 import 'app_shell_navigation.dart';
 import 'empty_roster_sync_diagnostic.dart';
@@ -782,6 +785,96 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
+  Future<void> _restoreRosterRevision(
+    RosterRevisionDocument revision,
+  ) async {
+    final gridWorkflow = _gridRosterRecoveryWorkflow;
+    if (gridWorkflow == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ยังไม่ได้ตั้งค่า Grid import workflow สำหรับกู้คืน'),
+        ),
+      );
+      return;
+    }
+
+    final employeeController = widget.employeeDirectoryControllerFactory(
+      widget.controller.effectiveSchedule,
+    );
+    final templateController = widget.shiftTemplateControllerFactory();
+    try {
+      await employeeController.load();
+      if (!mounted) return;
+      if (employeeController.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(employeeController.error!)),
+        );
+        return;
+      }
+      await templateController.load();
+      if (!mounted) return;
+      if (templateController.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(templateController.error!)),
+        );
+        return;
+      }
+
+      final employees = employeeController.employees;
+      final templates = templateController.templates
+          .where((template) => template.active)
+          .toList(growable: false);
+      final restoreWorkflow = RosterHistoryRestoreWorkflow(
+        gridImportWorkflow: gridWorkflow,
+      );
+      final prepared = await restoreWorkflow.prepareReview(
+        revision: revision,
+        targetScheduleId: 'imported',
+        targetScheduleName: 'Imported Roster',
+        employees: employees,
+        shiftTemplates: templates,
+      );
+      if (!mounted) return;
+      if (prepared case Failure<GridRosterImportReviewContext>()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(prepared.message)),
+        );
+        return;
+      }
+      final reviewContext =
+          (prepared as Success<GridRosterImportReviewContext>).value;
+      final saved = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (context) => GridRosterReviewPage(
+            workflow: gridWorkflow,
+            contextSnapshot: reviewContext,
+            employees: employees,
+            shiftTemplates: templates,
+          ),
+        ),
+      );
+      if (!mounted) return;
+      if (saved == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'กู้คืนจาก Drive revision ${revision.revisionId} ลง Imported Roster แล้ว',
+            ),
+          ),
+        );
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('เตรียมกู้คืน Revision ไม่สำเร็จ: $error')),
+        );
+      }
+    } finally {
+      employeeController.dispose();
+      templateController.dispose();
+    }
+  }
+
   Future<void> _openUtilityPage(_UtilityPage page) {
     final child = switch (page) {
       _UtilityPage.notifications => _NotificationsPage(
@@ -794,6 +887,7 @@ class _AppShellState extends State<AppShell> {
         activateSavedSheet: _activateSavedSheet,
         openSavedSheet: _openSavedSheet,
         deleteSavedSheet: _deleteSavedSheet,
+        restoreRevision: _restoreRosterRevision,
       ),
       _UtilityPage.tools => _ToolsPage(
         controller: widget.controller,
