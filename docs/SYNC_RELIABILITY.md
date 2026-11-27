@@ -152,3 +152,21 @@ Insert retries and resume re-check existing managed events by deterministic Sync
 ID before another insert. If verification fails or finds duplicate IDs, the
 operation remains failed for review rather than risking another provider write.
 This does not serialize simultaneous syncs from independent devices.
+
+
+## 2026-11-27 — Exact-head implementation and documentation reconciliation
+
+This section supersedes earlier broad statements in this document that whole-run serialization and the durable operation ledger were not yet present. PR #196 at head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1` wires the server coordination gateway into the production sync executor and explicit recovery service when `ORGANIZATION_API_BASE_URL` is configured.
+
+Verified source behavior:
+- The executor acquires an owner + Calendar ID lease before provider mutations, records each operation with a stable key and canonical payload hash, heartbeats between operations, updates terminal outcomes, and best-effort releases the lease.
+- The server stores run and operation records; operation replay payloads are encrypted with Laravel `APP_KEY`, and read APIs are owner-scoped.
+- Explicit history recovery follows the saved server Run ID, rebuilds unfinished work from the server ledger, and obtains a new lease before replay. It is not an automatic startup replay.
+- Provider updates/deletes require the preview ETag and managed Sync ID; ambiguous inserts are reconciled by stable Sync ID before another insert is attempted.
+- Lease scope is one authenticated Google owner + Calendar ID. It is not tenant-wide serialization for two different Google accounts sharing the same Calendar.
+
+Exact-head CI for #196 completed 13/13 observed workflows successfully, including native macOS and unsigned iOS builds with uploaded artifacts. This is code/build evidence, not deployment or live-provider acceptance.
+
+**Still local:** the History list and failed-operation UI read local SharedPreferences history/queue projections. The server run/operation ledger is the durable cross-device recovery source when configured; the local UI history itself is not a replicated server-side history list.
+
+**Operational acceptance still open:** no evidence in this CI run establishes that a production HTTPS backend is deployed/reachable, the production database provides the expected row-lock/unique-constraint semantics under contention, Laravel `APP_KEY` is durably backed up and recoverable, or a controlled Google test Calendar has passed multi-device contention, lease expiry/reclaim, ambiguous provider outcome, ETag conflict and explicit recovery scenarios. The production-backend workflow gate was skipped on pull_request. No production Calendar mutation, migration or deployment was performed.
