@@ -4140,7 +4140,7 @@ class _MonthlyRosterSectionCard extends StatelessWidget {
                               DataColumn(
                                 numeric: false,
                                 label: Text(
-                                  '${date.day}\\n${_shortWeekday(date)}',
+                                  '${date.day}\n${_shortWeekday(date)}',
                                 ),
                               ),
                           ],
