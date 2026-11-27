@@ -107,17 +107,16 @@ class GridRosterEmployeeIdentityResolver {
     }
 
     if (exact.isNotEmpty) {
+      // Keep every exact identity candidate, even when evidence kinds differ.
+      // Ranking orders the review list; it must not hide an alias collision
+      // behind a canonical-name or employee-code match.
       final ranked = exact.values.toList()..sort(_compareCandidates);
-      final bestRank = _rank(ranked.first.matchKind);
-      final bestCandidates = ranked
-          .where((candidate) => _rank(candidate.matchKind) == bestRank)
-          .toList(growable: false);
       return EmployeeIdentityResolution(
         sourceName: sourceName,
-        status: bestCandidates.length == 1
+        status: ranked.length == 1
             ? EmployeeIdentityResolutionStatus.exactUniqueCandidate
             : EmployeeIdentityResolutionStatus.ambiguousExactCandidates,
-        candidates: bestCandidates,
+        candidates: ranked,
       );
     }
 
