@@ -11,8 +11,8 @@ import '../../../domain/repositories/conditional_schedule_writer.dart';
 import '../../../domain/repositories/schedule_revision_source.dart';
 import '../../excel_import/domain/workbook_info.dart';
 import '../../schedule/data/schedule_json_codec.dart';
-import '../data/backend_grid_roster_import_journal_gateway.dart';
-import '../data/grid_roster_bundle_journal.dart';
+import '../data/backend_grid_roster_importjournal_gateway.dart';
+import '../data/grid_roster_bundlejournal.dart';
 import 'grid_roster_workbook_scanner.dart';
 import '../domain/monthly_roster_section.dart';
 import 'grid_roster_canonical_converter.dart';
@@ -73,18 +73,17 @@ class GridRosterImportReviewContext {
 /// Calendar synchronization is deliberately not part of this service.
 class GridRosterImportWorkflow {
   GridRosterImportWorkflow({
-    required ScheduleRepository scheduleRepository,
-    required GridRosterBundleJournal journal,
+    required this.scheduleRepository,
+    required this.journal,
     this.remoteJournalGateway,
     this.workbookScanner = const GridRosterWorkbookScanner(),
     this.reviewSessionBuilder = const GridRosterReviewSessionBuilder(),
     this.canonicalConverter = const GridRosterCanonicalConverter(),
     this.scheduleCodec = const ScheduleJsonCodec(),
-  }) : _scheduleRepository = scheduleRepository,
-       _journal = journal;
+  });
 
-  final ScheduleRepository _scheduleRepository;
-  final GridRosterBundleJournal _journal;
+  final ScheduleRepository scheduleRepository;
+  final GridRosterBundleJournal journal;
   final GridRosterImportJournalGateway? remoteJournalGateway;
   final GridRosterWorkbookScanner workbookScanner;
   final GridRosterReviewSessionBuilder reviewSessionBuilder;
@@ -128,7 +127,7 @@ class GridRosterImportWorkflow {
       );
     }
 
-    final loaded = await _scheduleRepository.findById(targetScheduleId);
+    final loaded = await scheduleRepository.findById(targetScheduleId);
     if (loaded case Failure<Schedule?>()) {
       return _copyFailure<Schedule?, GridRosterImportReviewContext>(loaded);
     }
@@ -224,7 +223,7 @@ class GridRosterImportWorkflow {
       );
     }
 
-    final liveResult = await _scheduleRepository.findById(
+    final liveResult = await scheduleRepository.findById(
       context.session.targetScheduleId,
     );
     if (liveResult case Failure<Schedule?>()) {
@@ -253,7 +252,7 @@ class GridRosterImportWorkflow {
         scheduleId: conversion.schedule.id,
         provenance: conversion.preparedProvenance,
       );
-      final journalled = await _journal.commit(
+      final journalled = await journal.commit(
         schedule: conversion.schedule,
         preparedProvenance: conversion.preparedProvenance,
         committedProvenance: committedProvenance,
@@ -263,7 +262,7 @@ class GridRosterImportWorkflow {
         schedule: journalled.schedule,
         provenance: committedProvenance,
       );
-      final beforeSaveResult = await _scheduleRepository.findById(
+      final beforeSaveResult = await scheduleRepository.findById(
         context.session.targetScheduleId,
       );
       if (beforeSaveResult case Failure<Schedule?>()) {
@@ -294,7 +293,7 @@ class GridRosterImportWorkflow {
   /// Discovery never replays a journal. Each returned ID must be presented for
   /// explicit review and passed to [recover] only after the user selects it.
   Future<List<String>> discoverLocalRecoveryScheduleIds() =>
-      _journal.discoverScheduleIds();
+      journal.discoverScheduleIds();
 
   Future<List<String>> discoverRemoteRecoveryScheduleIds() async =>
       await remoteJournalGateway?.discoverScheduleIds() ?? const <String>[];
@@ -318,14 +317,14 @@ class GridRosterImportWorkflow {
       return const ValidationFailure('A Schedule ID is required for recovery.');
     }
 
-    final liveResult = await _scheduleRepository.findById(scheduleId);
+    final liveResult = await scheduleRepository.findById(scheduleId);
     if (liveResult case Failure<Schedule?>()) {
       return _copyFailure<Schedule?, GridRosterRecoveryAssessment>(liveResult);
     }
     final live = (liveResult as Success<Schedule?>).value;
 
     try {
-      final localSnapshot = await _journal.recover(scheduleId);
+      final localSnapshot = await journal.recover(scheduleId);
       final remoteSnapshot = await remoteJournalGateway?.recover(scheduleId);
       final snapshot = _newerJournalSnapshot(localSnapshot, remoteSnapshot);
       if (snapshot == null) {
@@ -427,7 +426,7 @@ class GridRosterImportWorkflow {
     }
 
     try {
-      final localSnapshot = await _journal.recover(assessment.scheduleId);
+      final localSnapshot = await journal.recover(assessment.scheduleId);
       final remoteSnapshot =
           await remoteJournalGateway?.recover(assessment.scheduleId);
       final snapshot = _newerJournalSnapshot(localSnapshot, remoteSnapshot);
@@ -444,7 +443,7 @@ class GridRosterImportWorkflow {
       }
 
       final latestResult =
-          await _scheduleRepository.findById(assessment.scheduleId);
+          await scheduleRepository.findById(assessment.scheduleId);
       if (latestResult case Failure<Schedule?>()) return latestResult;
       final latest = (latestResult as Success<Schedule?>).value;
       if (latest != null &&
@@ -502,7 +501,7 @@ class GridRosterImportWorkflow {
     Schedule schedule,
     String expectedRevision,
   ) {
-    final repository = _scheduleRepository;
+    final repository = scheduleRepository;
     if (repository is ConditionalScheduleWriter) {
       return (repository as ConditionalScheduleWriter)
           .saveIfRevision(schedule, expectedRevision);
@@ -514,7 +513,7 @@ class GridRosterImportWorkflow {
       'sha256:${sha256.convert(utf8.encode(scheduleCodec.encode(schedule)))}';
 
   String revisionFor(Schedule? schedule, String scheduleId) {
-    final source = _scheduleRepository;
+    final source = scheduleRepository;
     final revisionSource = source is ScheduleRevisionSource
         ? source as ScheduleRevisionSource
         : null;
