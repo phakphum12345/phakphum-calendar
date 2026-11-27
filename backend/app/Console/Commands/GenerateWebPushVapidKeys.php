@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
+
 final class GenerateWebPushVapidKeys extends Command
 {
     protected $signature = 'notifications:vapid-keys';
@@ -24,8 +25,8 @@ final class GenerateWebPushVapidKeys extends Command
         $details = openssl_pkey_get_details($key);
         $ec = $details['ec'] ?? null;
         if (
-            ! is_array($ec)
-            || ! isset($ec['d'], $ec['x'], $ec['y'])
+            !is_array($ec)
+            || !isset($ec['d'], $ec['x'], $ec['y'])
             || strlen($ec['d']) !== 32
             || strlen($ec['x']) !== 32
             || strlen($ec['y']) !== 32
