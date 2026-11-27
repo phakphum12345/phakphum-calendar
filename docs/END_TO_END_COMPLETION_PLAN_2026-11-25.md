@@ -1,4 +1,4 @@
-# Phakphum Calendar — End-to-End Completion Plan
+undefined# Phakphum Calendar — End-to-End Completion Plan
 
 - Audit date: 2026-11-25
 - Repository: `phakphum12345/phakphum-calendar`
