@@ -511,7 +511,8 @@ void main() {
         .singleWhere((item) => item.code == 'missing_dates')
         .message;
     for (var day = 18; day <= 29; day++) {
-      expect(missingMessage, isNot(contains('/11/2026')));
+      final dateLabel = '${day.toString().padLeft(2, '0')}/11/2026';
+      expect(missingMessage, isNot(contains(dateLabel)));
     }
     expect(missingMessage, contains('17/11/2026'));
 
