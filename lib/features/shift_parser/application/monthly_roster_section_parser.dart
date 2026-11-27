@@ -134,19 +134,24 @@ class MonthlyRosterSectionParser {
 
     final warnings = <String>[];
     final configuredHeaderRows = layoutProfile?.dateHeaderRows ?? const <int>[];
-    final headerRows = (configuredHeaderRows.isNotEmpty
-            ? configuredHeaderRows.where((row) =>
-                cellsByRow.containsKey(row) &&
-                _daysByColumn(cellsByRow[row] ?? const []).isNotEmpty)
-            : cellsByRow.entries
-                .where((entry) => _isDateHeaderRow(entry.value))
-                .map((entry) => entry.key))
-        .toSet()
-        .toList()
+    final detectedHeaderRows = cellsByRow.entries
+        .where((entry) => _isDateHeaderRow(entry.value))
+        .map((entry) => entry.key)
+        .toSet();
+    // Profiles add candidate hints; they never disable automatic discovery.
+    final validConfiguredHeaderRows = configuredHeaderRows.where(
+      (row) =>
+          cellsByRow.containsKey(row) &&
+          _daysByColumn(cellsByRow[row] ?? const []).isNotEmpty,
+    );
+    final headerRows = <int>{
+      ...detectedHeaderRows,
+      ...validConfiguredHeaderRows,
+    }.toList()
       ..sort();
     if (configuredHeaderRows.isNotEmpty &&
-        headerRows.length != configuredHeaderRows.toSet().length) {
-      warnings.add('ไม่พบแถววันที่ตาม Layout Profile ครบทุกแถวที่กำหนด');
+        validConfiguredHeaderRows.length != configuredHeaderRows.toSet().length) {
+      warnings.add('ไม่พบแถววันที่ตาม Layout Profile ครบทุกแถวที่กำหนด; ใช้การค้นหาอัตโนมัติร่วมด้วย');
     }
     final sections = <MonthlyRosterSection>[];
     final tabPeriod = _tryParsePeriod(input.sheetTitle);
@@ -260,13 +265,22 @@ class MonthlyRosterSectionParser {
       final rosterRows = <MonthlyRosterRow>[];
       final configuredStart = layoutProfile?.dataStartRow;
       final configuredEnd = layoutProfile?.dataEndRow;
-      final firstDataRow = configuredStart == null
-          ? headerRow + 1
-          : (configuredStart > headerRow ? configuredStart : headerRow + 1);
-      final sectionEnd = configuredEnd == null ||
-              configuredEnd < headerRow + 1
-          ? nextHeader
-          : (configuredEnd + 1 < nextHeader ? configuredEnd + 1 : nextHeader);
+      final hasValidConfiguredStart = configuredStart != null &&
+          configuredStart > headerRow &&
+          configuredStart < nextHeader;
+      final firstDataRow = hasValidConfiguredStart
+          ? configuredStart
+          : headerRow + 1;
+      final hasValidConfiguredEnd = configuredEnd != null &&
+          configuredEnd >= firstDataRow &&
+          configuredEnd < nextHeader;
+      final sectionEnd = hasValidConfiguredEnd
+          ? configuredEnd + 1
+          : nextHeader;
+      if (configuredStart != null && !hasValidConfiguredStart ||
+          configuredEnd != null && !hasValidConfiguredEnd) {
+        warnings.add('Layout Profile ไม่ตรงกับขอบเขตส่วน "$title"; ใช้ขอบเขตที่ค้นพบจากแหล่งข้อมูลแทน');
+      }
       var previousWasGen = false;
       for (var rowIndex = firstDataRow; rowIndex < sectionEnd; rowIndex++) {
         final rowCells = cellsByRow[rowIndex] ?? const [];
@@ -334,10 +348,21 @@ class MonthlyRosterSectionParser {
     for (final section in structure.sections) {
       final assignments = <MonthlyRosterAssignment>[];
       final configuredNameColumns = layoutProfile?.nameColumns.toSet();
+      final resolvedDateColumns = section.dateColumns
+          .map((column) => column.columnIndex)
+          .toSet();
+      final hasMatchingNameColumnHint = configuredNameColumns != null &&
+          configuredNameColumns.isNotEmpty &&
+          configuredNameColumns.any(resolvedDateColumns.contains);
+      if (configuredNameColumns != null &&
+          configuredNameColumns.isNotEmpty &&
+          !hasMatchingNameColumnHint) {
+        // A stale profile must not suppress every assignment in a new layout.
+        // Keep automatic date-column mapping and surface the mismatch.
+      }
       for (final row in section.rosterRows) {
         for (final dateColumn in section.dateColumns) {
-          if (configuredNameColumns != null &&
-              configuredNameColumns.isNotEmpty &&
+          if (hasMatchingNameColumnHint &&
               !configuredNameColumns.contains(dateColumn.columnIndex)) {
             continue;
           }
@@ -492,18 +517,22 @@ class MonthlyRosterSectionParser {
     if (cells.isEmpty || dateColumns.isEmpty) return '';
     final configuredColumns = layoutProfile?.shiftLabelColumns ?? const <int>[];
     final firstDateColumn = dateColumns.reduce((a, b) => a < b ? a : b);
-    final candidateColumns = configuredColumns.isNotEmpty
-        ? configuredColumns
-        : cells
-            .where((cell) => cell.columnIndex < firstDateColumn)
-            .map((cell) => cell.columnIndex)
-            .toSet()
-            .toList();
-    final candidates = cells
-        .where((cell) => candidateColumns.contains(cell.columnIndex))
-        .where((cell) => cell.text?.toString().trim().isNotEmpty ?? false)
-        .toList()
-      ..sort((a, b) => b.columnIndex.compareTo(a.columnIndex));
+    final automaticColumns = cells
+        .where((cell) => cell.columnIndex < firstDateColumn)
+        .map((cell) => cell.columnIndex)
+        .toSet();
+    List<NormalizedCell> nonEmptyCandidates(Iterable<int> columns) =>
+        cells
+            .where((cell) => columns.contains(cell.columnIndex))
+            .where((cell) => cell.text?.toString().trim().isNotEmpty ?? false)
+            .toList()
+          ..sort((a, b) => b.columnIndex.compareTo(a.columnIndex));
+    final configuredCandidates = configuredColumns.isEmpty
+        ? <NormalizedCell>[]
+        : nonEmptyCandidates(configuredColumns);
+    final candidates = configuredCandidates.isNotEmpty
+        ? configuredCandidates
+        : nonEmptyCandidates(automaticColumns);
     return candidates.isEmpty ? '' : candidates.first.text.toString().trim();
   }
 
