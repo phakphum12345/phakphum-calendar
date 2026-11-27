@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('state', 16)->default('live');
             $table->longText('schedule_payload')->nullable();
             $table->char('fingerprint', 64)->nullable();
+            $table->string('deleted_from_revision', 160)->nullable();
             $table->timestamps();
             $table->unique(['owner_user_id', 'schedule_id'], 'schedule_owner_identity_unique');
             $table->index(['owner_user_id', 'state']);
