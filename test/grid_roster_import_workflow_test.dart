@@ -367,6 +367,7 @@ void main() {
     );
 
     expect(result, isA<PersistenceFailure<Schedule>>());
+    // Compare the canonical aggregate, not object identity after conversion.
     expect(
       const ScheduleJsonCodec().encode(repository.value!),
       const ScheduleJsonCodec().encode(conversion.schedule),
