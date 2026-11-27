@@ -335,7 +335,7 @@ class GridRosterImportWorkflow {
           'The journal is retained for conflict-aware recovery.',
         );
       }
-      return await _saveWithRevision(journalled.schedule, liveRevision);
+      return await _saveAndVerifyWithRevision(journalled.schedule, liveRevision);
     } on Object catch (error, stackTrace) {
       return PersistenceFailure(
         'The Grid bundle could not be committed or saved. '
@@ -521,7 +521,7 @@ class GridRosterImportWorkflow {
         );
       }
 
-      final saved = await _saveWithRevision(candidate, expectedRevision);
+      final saved = await _saveAndVerifyWithRevision(candidate, expectedRevision);
       return switch (saved) {
         Success<Schedule>(value: final schedule) => Success(schedule),
         Failure<Schedule>() => _copyFailure<Schedule, Schedule?>(saved),
@@ -580,6 +580,40 @@ class GridRosterImportWorkflow {
       schedule,
       expectedRevision,
     );
+  }
+
+  /// Saves with the caller-owned revision, then verifies the durable
+  /// read-back before reporting success. A committed journal remains available
+  /// for recovery if the repository acknowledges a write but returns stale,
+  /// missing, or different content.
+  Future<Result<Schedule>> _saveAndVerifyWithRevision(
+    Schedule schedule,
+    String expectedRevision,
+  ) async {
+    final saved = await _saveWithRevision(schedule, expectedRevision);
+    if (saved case Failure<Schedule>()) return saved;
+
+    final readbackResult = await scheduleRepository.findById(schedule.id);
+    if (readbackResult case Failure<Schedule?>()) {
+      return _copyFailure<Schedule?, Schedule>(readbackResult);
+    }
+    final readback = (readbackResult as Success<Schedule?>).value;
+    if (readback == null ||
+        scheduleCodec.encode(readback) != scheduleCodec.encode(schedule)) {
+      return const PersistenceFailure<Schedule>(
+        'Schedule write was acknowledged but read-back did not match the '
+        'approved candidate. The committed journal is retained for recovery.',
+      );
+    }
+
+    final readbackRevision = revisionFor(readback, schedule.id);
+    if (readbackRevision == null || readbackRevision == expectedRevision) {
+      return const PersistenceFailure<Schedule>(
+        'Schedule read-back did not provide an advanced authoritative revision. '
+        'The committed journal is retained for recovery.',
+      );
+    }
+    return Success(readback);
   }
 
   String scheduleFingerprint(Schedule schedule) =>
