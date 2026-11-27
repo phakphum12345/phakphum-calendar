@@ -151,6 +151,68 @@ void main() {
     expect(report.sourceFingerprint, startsWith('sha256:'));
   });
 
+  test('scans nested merged headers from an actual XLSX workbook', () {
+    final excelWorkbook = Excel.createExcel();
+    excelWorkbook.rename('Sheet1', 'Vertical');
+    final sheet = excelWorkbook['Vertical'];
+    sheet.appendRow([
+      TextCellValue(''),
+      TextCellValue('หน่วยบริการ'),
+      TextCellValue(''),
+    ]);
+    sheet.merge(
+      CellIndex.indexByString('B1'),
+      CellIndex.indexByString('C1'),
+      customValue: TextCellValue('หน่วยบริการ'),
+    );
+    sheet.appendRow([
+      TextCellValue(''),
+      TextCellValue('เช้า'),
+      TextCellValue('บ่าย'),
+    ]);
+    sheet.appendRow([
+      TextCellValue('ประจำเดือน พฤศจิกายน พ.ศ. 2569'),
+    ]);
+    for (var day = 1; day <= 7; day++) {
+      sheet.appendRow([
+        IntCellValue(day),
+        TextCellValue('บุคลากรเช้า $day'),
+        TextCellValue('บุคลากรบ่าย $day'),
+      ]);
+    }
+
+    final service = ExcelReaderService();
+    final workbook = service.openWorkbook(
+      ImportFile(
+        name: 'nested-merged-vertical.xlsx',
+        bytes: Uint8List.fromList(excelWorkbook.encode()!),
+      ),
+    );
+    final report = scanner.scan(
+      workbook: workbook,
+      readWorksheet: service.readWorksheetForImport,
+    );
+
+    expect(report.sections, hasLength(1));
+    expect(report.assignments, hasLength(14));
+    expect(
+      report.assignments.map((item) => item.rowLabel).toSet(),
+      {'หน่วยบริการ / เช้า', 'หน่วยบริการ / บ่าย'},
+    );
+    expect(report.assignments.first.sourceCell, 'B4');
+    expect(report.assignments[1].sourceCell, 'C4');
+    expect(report.sections.single.sourceCells.map((cell) => cell.a1),
+        containsAll(['B1', 'C1', 'B2', 'C2']));
+    expect(
+      report.sections.single.sourceCells
+          .singleWhere((cell) => cell.a1 == 'C1')
+          .text,
+      isEmpty,
+      reason: 'The XLSX reader must retain the merged child cell as blank.',
+    );
+    expect(report.warnings, isEmpty);
+  });
+
   test('scans CSV snapshots through the Grid parser with a byte fingerprint', () {
     const csv = '\uFEFFเวรประจำเดือน พฤศจิกายน พ.ศ. 2569\n'
         'วันที่,1,2,3,4,5,6,7\n'
