@@ -3,7 +3,7 @@
 - Audit date: 2026-11-25
 - Repository: `phakphum12345/phakphum-calendar`
 - Main SHA: `aed2f1177bdfc85f6ff53bb200116812a51bd9e3`
-- Status: current engineering plan; not a release-readiness declaration
+- Status: HISTORICAL SNAPSHOT (2026-11-25); not a current baseline or release-readiness declaration. Use [the live project completion master plan](project/PROJECT_COMPLETION_MASTER_PLAN.md) for current refs, CI, dependencies and blockers.
 
 ## Mission
 
