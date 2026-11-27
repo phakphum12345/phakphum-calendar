@@ -331,11 +331,9 @@ class ShiftPayStatementBuilder {
       value.year * 10000 + value.month * 100 + value.day;
 
   String _dateKey(DateTime value) =>
-      value.year.toString().padLeft(4, '0') +
-      '-' +
-      value.month.toString().padLeft(2, '0') +
-      '-' +
-      value.day.toString().padLeft(2, '0');
+      "${value.year.toString().padLeft(4, '0')}-"
+      "${value.month.toString().padLeft(2, '0')}-"
+      "${value.day.toString().padLeft(2, '0')}";
 
   int _decimalScale(int places) => switch (places) {
     0 => 1,
