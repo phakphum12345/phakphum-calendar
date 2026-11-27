@@ -1,6 +1,6 @@
 # Phakphum Calendar — End-to-End Completion Plan
 
-> Historical planning baseline from 2026-11-24. Current implementation and PR status is maintained in [IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md) and [PR_DELIVERY_TRACKER_2026-11-25.md](PR_DELIVERY_TRACKER_2026-11-25.md). Do not treat the old SHA below as current.
+> Historical planning baseline from 2026-11-24. Current implementation and PR status is maintained in [the live project completion master plan](project/PROJECT_COMPLETION_MASTER_PLAN.md), [work package status](project/WORK_PACKAGE_STATUS.md) and [PR dependency map](project/PR_DEPENDENCY_MAP.md). Do not treat the old SHA below as current.
 
 - Audit date: 2026-11-24
 - Repository: `phakphum12345/phakphum-calendar`
