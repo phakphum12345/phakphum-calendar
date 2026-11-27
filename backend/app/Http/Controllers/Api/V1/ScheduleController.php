@@ -115,7 +115,7 @@ class ScheduleController extends Controller
             ->where('fingerprint', $expectedFingerprint)
             ->update([
                 'generation' => DB::raw('generation + 1'),
-                'schedule_payload' => $payload,
+                'schedule_payload' => $storedPayload,
                 'fingerprint' => $fingerprint,
                 'updated_at' => now(),
             ]);
