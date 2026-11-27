@@ -6,7 +6,6 @@ import '../../../core/result/result.dart';
 import '../../../domain/entities/employee.dart';
 import '../../../domain/entities/schedule.dart';
 import '../../../domain/entities/shift_template.dart';
-import '../../../models/shift.dart' show SheetSnapshot;
 import '../../../services/roster_revision_service.dart';
 import '../../shift_parser/application/grid_roster_canonical_converter.dart';
 import '../../shift_parser/application/grid_roster_import_workflow.dart';
