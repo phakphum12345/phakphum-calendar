@@ -341,6 +341,14 @@ class MonthlyRosterSectionParser {
       final start = period.start;
       final end = period.end;
 
+      final expectedDayCount = DateTime.utc(
+        end.year,
+        end.month,
+        end.day,
+      ).difference(DateTime.utc(start.year, start.month, start.day)).inDays + 1;
+      final useExpectedSequence =
+          explicitDatesByColumn.isEmpty &&
+          daysByColumn.length == expectedDayCount;
       final datesByColumn = _resolveDatesByColumn(
         daysByColumn: daysByColumn,
         explicitDatesByColumn: explicitDatesByColumn,
@@ -348,6 +356,7 @@ class MonthlyRosterSectionParser {
         end: end,
         sectionTitle: title,
         warnings: warnings,
+        useExpectedSequence: useExpectedSequence,
       );
 
       final dateAnomalies = _validateDateColumns(
@@ -955,38 +964,63 @@ class MonthlyRosterSectionParser {
     }
 
     if (completeRangeHeader) {
-      final resolvedKeys = datesByColumn.values
-          .map((date) => '${date.year}-${date.month}-${date.day}')
-          .toSet();
-      final missing = <String>[];
+      final expectedDatesByDay = <int, List<DateTime>>{};
       for (var offset = 0; offset < expectedDayCount; offset++) {
         final expected = DateTime(start.year, start.month, start.day + offset);
-        final expectedKey = '${expected.year}-${expected.month}-${expected.day}';
-        if (!resolvedKeys.contains(expectedKey)) {
-          missing.add(_formatDate(expected));
+        expectedDatesByDay.putIfAbsent(expected.day, () => []).add(expected);
+      }
+
+      final missing = <String>[];
+      for (final entry in expectedDatesByDay.entries) {
+        final actualCount = columnsByDay[entry.key]?.length ?? 0;
+        final missingCount = entry.value.length - actualCount;
+        if (missingCount <= 0) continue;
+        if (entry.value.length == 1) {
+          missing.add(_formatDate(entry.value.single));
+        } else {
+          missing.add('วันที่ \${entry.key} ขาด $missingCount ครั้งในช่วงที่ระบุ');
         }
+      }
+
+      for (var offset = 0; offset < expectedDayCount; offset++) {
+        final expected = DateTime(start.year, start.month, start.day + offset);
         final actualDay = daysByColumn[columns[offset]]!;
-        if (actualDay != expected.day) {
+        if (actualDay == expected.day) continue;
+
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'day_sequence_mismatch',
+            columnIndex: columns[offset],
+            displayedDay: actualDay,
+            message: 'คอลัมน์ \${columns[offset] + 1} แสดงวันที่ $actualDay แต่ตามช่วงที่ระบุควรเป็น \${expected.day}',
+          ),
+        );
+
+        final expectedOccurrences = expectedDatesByDay[actualDay];
+        if (expectedOccurrences != null &&
+            !expectedOccurrences.any(
+              (date) => date.difference(start).inDays == offset,
+            )) {
           anomalies.add(
             MonthlyRosterDateAnomaly(
-              code: 'day_sequence_mismatch',
+              code: 'out_of_order',
               columnIndex: columns[offset],
               displayedDay: actualDay,
-              message: 'คอลัมน์ ${columns[offset] + 1} แสดงวันที่ $actualDay แต่ตามช่วงที่ระบุควรเป็น ${expected.day}',
+              message: 'วันที่ในคอลัมน์ \${columns[offset] + 1} ไม่เรียงตามช่วงที่ระบุ',
             ),
           );
         }
       }
+
       if (missing.isNotEmpty) {
         anomalies.add(
           MonthlyRosterDateAnomaly(
             code: 'missing_dates',
-            message: 'ไม่สามารถจับคู่วันที่ในช่วงที่ระบุได้ครบ: ${missing.join(', ')}',
+            message: 'ไม่สามารถจับคู่วันที่ในช่วงที่ระบุได้ครบ: \${missing.join(', ')}',
           ),
         );
       }
     }
-
     // A duplicate day in a declared period can leave a trailing portion of
     // the period unresolved even when the header is far shorter than 90% of
     // the expected range. Report the actual missing dates as well as the
@@ -1030,9 +1064,25 @@ class MonthlyRosterSectionParser {
     required DateTime end,
     required String sectionTitle,
     required List<String> warnings,
+    required bool useExpectedSequence,
   }) {
     final result = <int, DateTime>{};
     final columns = daysByColumn.keys.toList()..sort();
+
+    // A complete, explicitly bounded numeric header has a positional date
+    // sequence. Resolve every column from that sequence before validating its
+    // displayed day; one duplicated/out-of-order label must not shift or erase
+    // every later valid column.
+    if (useExpectedSequence) {
+      for (var offset = 0; offset < columns.length; offset++) {
+        result[columns[offset]] = DateTime(
+          start.year,
+          start.month,
+          start.day + offset,
+        );
+      }
+      return result;
+    }
 
     var cursor = DateTime(start.year, start.month, start.day);
 
