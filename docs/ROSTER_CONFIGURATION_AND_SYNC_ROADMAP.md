@@ -490,7 +490,7 @@ This section supersedes the earlier main-snapshot statements in sections 17–18
 | Delimited sources | PR #192 adds CSV/TSV/TXT to the shared Grid review lifecycle | Validate Thai encodings, large files and user-selected ambiguous orientation |
 | Date-first parsing | Existing date-first parser and diagnostics are extended in #192 | Validate cross-month/cross-year and long-range source fixtures, including real 6+ month schedules |
 | Employee/shift resolution | Existing template/identity review is reused; unknown or ambiguous records remain unresolved until review | Alias collision, multiple departments and profile lifecycle acceptance remain open |
-| Persistence/recovery | #192 consolidates caller-revision CAS, durable journal discovery and explicit recovery assessment | Cross-device backend transaction, conditional delete/tombstone and crash-restart acceptance remain open |
+| Persistence/recovery | #192 consolidates caller-revision CAS, durable journal discovery, explicit recovery assessment, conditional tombstones and APP_KEY-backed encryption of Schedule/journal payloads | Cross-device backend transaction, APP_KEY backup/restore, conditional delete/tombstone and crash-restart acceptance remain open |
 | Calendar Sync | #196 adds durable coordination/ETag-aware operation handling | Controlled Google test-calendar acceptance remains external |
 | Notifications | #191 adds Web Push sender/outbox worker/retry path | Registered-device and deployed scheduler acceptance remain external |
 | Schedule generation | #202 adds revision-bound preview/approval/commit foundation | Revalidate base against #192 and complete UI/read-back recovery |
