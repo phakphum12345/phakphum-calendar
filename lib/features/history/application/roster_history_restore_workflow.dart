@@ -11,7 +11,6 @@ import '../../shift_parser/application/grid_roster_canonical_converter.dart';
 import '../../shift_parser/application/grid_roster_import_workflow.dart';
 import '../../shift_parser/application/grid_roster_workbook_scanner.dart';
 import '../../shift_parser/domain/monthly_roster_section.dart';
-import '../../shift_parser/domain/grid_roster_import_provenance.dart';
 
 /// Restores a read-only Google Drive revision export through the same
 /// review, journal and conditional Schedule commit path as a live import.
