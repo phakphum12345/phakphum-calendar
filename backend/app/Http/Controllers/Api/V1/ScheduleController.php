@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -35,7 +36,7 @@ class ScheduleController extends Controller
         }
 
         return response()->json([
-            'data' => json_decode($record->schedule_payload, true, 512, JSON_THROW_ON_ERROR),
+            'data' => json_decode($this->decodeSchedulePayload($record->schedule_payload), true, 512, JSON_THROW_ON_ERROR),
             'revision' => $this->revision($record),
             'state' => 'live',
         ]);
@@ -59,6 +60,7 @@ class ScheduleController extends Controller
 
         $payload = json_encode($validated['schedule'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR);
         $fingerprint = hash('sha256', $payload);
+        $storedPayload = $this->encodeSchedulePayload($payload);
         $ownerId = $request->user()->id;
         $expected = $validated['expected_revision'];
 
@@ -69,7 +71,7 @@ class ScheduleController extends Controller
                     'schedule_id' => $scheduleId,
                     'generation' => 1,
                     'state' => 'live',
-                    'schedule_payload' => $payload,
+                    'schedule_payload' => $storedPayload,
                     'fingerprint' => $fingerprint,
                     'created_at' => now(),
                     'updated_at' => now(),
@@ -261,10 +263,25 @@ class ScheduleController extends Controller
     private function saved(object $record, int $status = 200): JsonResponse
     {
         return response()->json([
-            'data' => json_decode($record->schedule_payload, true, 512, JSON_THROW_ON_ERROR),
+            'data' => json_decode($this->decodeSchedulePayload($record->schedule_payload), true, 512, JSON_THROW_ON_ERROR),
             'revision' => $this->revision($record),
             'state' => 'live',
         ], $status);
+    }
+
+    private function encodeSchedulePayload(string $payload): string
+    {
+        return 'enc:v1:'.Crypt::encryptString($payload);
+    }
+
+    private function decodeSchedulePayload(string $payload): string
+    {
+        if (! str_starts_with($payload, 'enc:v1:')) {
+            // Backward compatibility for records created before field encryption.
+            return $payload;
+        }
+
+        return Crypt::decryptString(substr($payload, strlen('enc:v1:')));
     }
 
     private function conflict(int $ownerId, string $scheduleId): JsonResponse
