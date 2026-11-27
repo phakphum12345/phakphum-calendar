@@ -269,13 +269,13 @@ class MonthlyRosterSectionParser {
           configuredStart > headerRow &&
           configuredStart < nextHeader;
       final firstDataRow = hasValidConfiguredStart
-          ? configuredStart
+          ? configuredStart!
           : headerRow + 1;
       final hasValidConfiguredEnd = configuredEnd != null &&
           configuredEnd >= firstDataRow &&
           configuredEnd < nextHeader;
       final sectionEnd = hasValidConfiguredEnd
-          ? configuredEnd + 1
+          ? configuredEnd! + 1
           : nextHeader;
       if (configuredStart != null && !hasValidConfiguredStart ||
           configuredEnd != null && !hasValidConfiguredEnd) {
@@ -363,7 +363,7 @@ class MonthlyRosterSectionParser {
       for (final row in section.rosterRows) {
         for (final dateColumn in section.dateColumns) {
           if (hasMatchingNameColumnHint &&
-              !configuredNameColumns.contains(dateColumn.columnIndex)) {
+              !(configuredNameColumns?.contains(dateColumn.columnIndex) ?? false)) {
             continue;
           }
           final workerCell =
@@ -521,7 +521,7 @@ class MonthlyRosterSectionParser {
         .where((cell) => cell.columnIndex < firstDateColumn)
         .map((cell) => cell.columnIndex)
         .toSet();
-    List<NormalizedCell> nonEmptyCandidates(Iterable<int> columns) =>
+    List<dynamic> nonEmptyCandidates(Iterable<int> columns) =>
         cells
             .where((cell) => columns.contains(cell.columnIndex))
             .where((cell) => cell.text?.toString().trim().isNotEmpty ?? false)
