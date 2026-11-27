@@ -474,6 +474,37 @@ void main() {
     expect(store.values, isEmpty);
   });
 
+  test('re-imported source invalidates decisions from the previous review session', () async {
+    final oldContext = await prepareContext();
+    final oldConversion = convertContext(oldContext);
+    final originalReport = _report();
+    final refreshedReport = MonthlyRosterParseReport(
+      sections: originalReport.sections,
+      warnings: originalReport.warnings,
+      sourceSheetCount: originalReport.sourceSheetCount,
+      sourceFingerprint: 'sha256:source-refreshed',
+    );
+    final refreshedResult = await workflow.prepareReview(
+      report: refreshedReport,
+      targetScheduleId: 'schedule-1',
+      targetScheduleName: 'November roster',
+      employees: [_employee],
+      shiftTemplates: const [],
+    );
+    expect(refreshedResult, isA<Success<GridRosterImportReviewContext>>());
+    final refreshedContext =
+        (refreshedResult as Success<GridRosterImportReviewContext>).value;
+
+    final result = await workflow.commit(
+      context: refreshedContext,
+      conversion: oldConversion,
+    );
+
+    expect(result, isA<ValidationFailure<Schedule>>());
+    expect(repository.value, isNull);
+    expect(store.values, isEmpty);
+  });
+
   test('commit rejects a Schedule changed after the review snapshot', () async {
     final context = await prepareContext();
     final conversion = convertContext(context);
