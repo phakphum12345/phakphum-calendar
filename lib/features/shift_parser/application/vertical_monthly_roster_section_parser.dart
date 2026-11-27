@@ -66,6 +66,28 @@ class VerticalMonthlyRosterSectionParser {
         final axisKey = '${entry.key}:${dateCells.first.rowIndex}:${dateCells.last.rowIndex}';
         if (!occupiedDateAxes.add(axisKey)) continue;
         final firstRow = dateCells.first.rowIndex;
+        final headerRow = _findHeaderRow(
+          cells: input.cells,
+          firstDateRow: firstRow,
+          dateColumn: entry.key,
+        );
+        final hasAssignmentShape = input.cells
+            .where(
+              (cell) =>
+                  cell.rowIndex == headerRow &&
+                  cell.columnIndex != entry.key &&
+                  (cell.text?.trim().isNotEmpty ?? false) &&
+                  _day(cell) == null,
+            )
+            .any(
+              (headerCell) => dateCells.any((dateCell) {
+                final value =
+                    byCoordinate[(dateCell.rowIndex, headerCell.columnIndex)]
+                        ?.text;
+                return value?.trim().isNotEmpty ?? false;
+              }),
+            );
+        if (!hasAssignmentShape) continue;
         final periodEvidence = _periodEvidence(
           input: input,
           cells: input.cells,
@@ -155,11 +177,6 @@ class VerticalMonthlyRosterSectionParser {
           }
         }
 
-        final headerRow = _findHeaderRow(
-          cells: input.cells,
-          firstDateRow: firstRow,
-          dateColumn: entry.key,
-        );
         final nextDateAxis = dateAxisColumns
             .where((column) => column > entry.key)
             .fold<int?>(null, (current, column) =>
