@@ -523,8 +523,34 @@ class ScheduleGenerationReviewWorkflow {
       '${value.day.toString().padLeft(2, '0')}';
 }
 
-Result<T> _copyFailure<S, T>(Failure<S> failure) => Failure<T>(
-  failure.message,
-  cause: failure.cause,
-  stackTrace: failure.stackTrace,
-);
+Result<TTarget> _copyFailure<TSource, TTarget>(
+  Result<TSource> result,
+) {
+  final failure = result as Failure<TSource>;
+  return switch (failure) {
+    ValidationFailure<TSource>() => ValidationFailure(
+      failure.message,
+      fieldErrors: failure.fieldErrors,
+      cause: failure.cause,
+      stackTrace: failure.stackTrace,
+    ),
+    NetworkFailure<TSource>() => NetworkFailure(
+      failure.message,
+      statusCode: failure.statusCode,
+      cause: failure.cause,
+      stackTrace: failure.stackTrace,
+    ),
+    ImportFailure<TSource>() => ImportFailure(
+      failure.message,
+      rowNumber: failure.rowNumber,
+      column: failure.column,
+      cause: failure.cause,
+      stackTrace: failure.stackTrace,
+    ),
+    PersistenceFailure<TSource>() => PersistenceFailure(
+      failure.message,
+      cause: failure.cause,
+      stackTrace: failure.stackTrace,
+    ),
+  };
+}
