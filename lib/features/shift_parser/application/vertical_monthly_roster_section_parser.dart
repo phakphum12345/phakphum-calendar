@@ -157,8 +157,8 @@ class VerticalMonthlyRosterSectionParser {
                 message: anomalyCode == 'duplicate_date'
                     ? 'พบวันที่ $day ซ้ำที่ ${_cellReference(cell)}'
                     : anomalyCode == 'out_of_order'
-                    ? 'วันที่ $day ที่ ${cell.a1} ไม่เรียงตามปฏิทิน'
-                    : 'ไม่สามารถจับคู่วันที่ $day ที่ ${cell.a1} '
+                    ? 'วันที่ $day ที่ ${_cellReference(cell)} ไม่เรียงตามปฏิทิน'
+                    : 'ไม่สามารถจับคู่วันที่ $day ที่ ${_cellReference(cell)} '
                         'กับช่วงวันที่ที่ระบุได้',
               ),
             );
@@ -174,7 +174,7 @@ class VerticalMonthlyRosterSectionParser {
                 columnIndex: cell.columnIndex,
                 rowIndex: cell.rowIndex,
                 displayedDay: day,
-                message: 'พบวันที่ ${_formatDate(resolved)} ซ้ำที่ ${cell.a1}',
+                message: 'พบวันที่ ${_formatDate(resolved)} ซ้ำที่ ${_cellReference(cell)}',
               ),
             );
           } else if (previousResolvedDate != null &&
@@ -186,7 +186,7 @@ class VerticalMonthlyRosterSectionParser {
                 rowIndex: cell.rowIndex,
                 displayedDay: day,
                 message:
-                    'วันที่ ${_formatDate(resolved)} ที่ ${cell.a1} ไม่เรียงตามปฏิทิน',
+                    'วันที่ ${_formatDate(resolved)} ที่ ${_cellReference(cell)} ไม่เรียงตามปฏิทิน',
               ),
             );
           }
