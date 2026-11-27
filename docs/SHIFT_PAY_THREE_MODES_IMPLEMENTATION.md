@@ -2,7 +2,7 @@
 
 - Status: requirements contract with merged implementation foundations
 - Related PRs: #181 (Flutter source resolution), #183 (backend persistence), #186 (backend calculation and immutable snapshots)
-- Current status: modes, persistence and calculation APIs are merged; profile-specific decimal rounding is supported. PR #201 adds deterministic equal-specificity conflict detection in Dart and backend calculation snapshots; exact-head CI is pending. Confirmed-roster integration and monthly statements remain open.
+- Current status: modes, persistence and calculation APIs are merged; profile-specific decimal rounding is supported. PR #201 adds deterministic equal-specificity conflict detection in Dart and backend calculation snapshots; all 12 workflows passed on the prior exact head. Hybrid conflict and explicit source-selection API regression tests were then added and require a fresh exact-head CI run. Confirmed-roster integration and monthly statements remain open.
 - Existing foundation: `ShiftPayCalculator`, `ShiftPayRule`, `ShiftTypeDefinition`, shift templates
 
 ## 1. Product modes
