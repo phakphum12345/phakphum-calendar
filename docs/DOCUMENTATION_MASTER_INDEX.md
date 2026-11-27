@@ -167,7 +167,7 @@ Legacy root-level documents are retained and catalogued below. New canonical wor
 - [WEB_PUSH_NOTIFICATIONS.md](WEB_PUSH_NOTIFICATIONS.md)
 - [universal-generator-calendar-adapter.md](universal-generator-calendar-adapter.md)
 
-## 13. Maintenance rules
+## 14. Maintenance rules
 - New documents belong in their domain folder; update its README and this index.
 - A feature change updates requirements, architecture/data contracts, implementation/dependency map, acceptance tests and traceability.
 - Avoid duplicate specifications; link to canonical documents.
