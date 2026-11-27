@@ -43,7 +43,7 @@ See [PR Dependency Map](PR_DEPENDENCY_MAP.md) and [Work Package Status](WORK_PAC
 
 | PR | Head SHA at audit | Base | Exact-head CI observation | Disposition |
 |---|---|---|---|---|
-| #192 Grid import + persistence | `19e9d58f120ab63ecc2335bfa9c0c8199807ab1b` | main | All 14 exact-head workflows have started; most are queued/in progress after the Grid Review shift-suggestion wording and regression test change; no final matrix result yet | Draft; wait for complete exact-head CI, real workbook and review acceptance |
+| #192 Grid import + persistence | `fb6a5b84936cba62174b032dbc9f5347618051d2` | main | Latest head includes reviewer-facing shift-suggestion wording and anonymized row-33 fixture; Laravel Backend CI passed, other 13 workflows queued/in progress; no final matrix result yet | Draft; wait for complete exact-head CI, real workbook and review acceptance |
 | #205 reviewer orientation | `1cfceeeabd3af3f36421f9b06bd286966863b70b` | #192 feature branch | 12/12 listed workflows successful | Draft; rebase/reconcile and real workbook review |
 | #207 merged vertical headers | `7f6df4380ed60edf436402ca01264eb93dbd416b` | #192 feature branch | 12/12 listed workflows successful | Draft; GitHub reported mergeable=false at inspection; reconcile base |
 | #206 Schedule read-back | `997c249394bd02c4fd868f4532829e20df9f58fe` | #192 feature branch | 12/12 listed workflows successful | Draft; reconcile base and review writer coverage |
