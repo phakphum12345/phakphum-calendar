@@ -4,43 +4,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:phakphum_calendar/app.dart';
 import 'package:phakphum_calendar/controller/app_controller.dart';
 import 'package:phakphum_calendar/core/di/app_dependencies.dart';
-import 'package:phakphum_calendar/core/result/result.dart';
-import 'package:phakphum_calendar/domain/entities/schedule.dart';
-import 'package:phakphum_calendar/domain/entities/schedule_month.dart';
-import 'package:phakphum_calendar/domain/repositories/schedule_repository.dart';
 import 'package:phakphum_calendar/features/excel_import/presentation/pages/import_excel_page.dart';
 import 'package:phakphum_calendar/features/edition/domain/app_edition.dart';
+import 'package:phakphum_calendar/test/support/in_memory_conditional_schedule_repository.dart';
 import 'package:phakphum_calendar/models/shift.dart';
 import 'package:phakphum_calendar/models/shift_alert.dart';
 import 'package:phakphum_calendar/ui/app_shell.dart';
 import 'package:phakphum_calendar/ui/first_login_setup_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-class _MemoryScheduleRepository implements ScheduleRepository {
-  final Map<String, Schedule> _schedules = {};
-
-  @override
-  Future<Result<Schedule?>> findById(String id) async =>
-      Success(_schedules[id]);
-
-  @override
-  Future<Result<ScheduleMonth?>> loadMonth(
-    String scheduleId,
-    DateTime month,
-  ) async => Success(_schedules[scheduleId]?.month(month));
-
-  @override
-  Future<Result<Schedule>> save(Schedule schedule) async {
-    _schedules[schedule.id] = schedule;
-    return Success(schedule);
-  }
-
-  @override
-  Future<Result<void>> delete(String id) async {
-    _schedules.remove(id);
-    return const Success(null);
-  }
-}
 
 void main() {
   setUp(
@@ -49,9 +20,14 @@ void main() {
     }),
   );
 
-  AppController demoController() => AppDependencies(
-    scheduleRepository: _MemoryScheduleRepository(),
-  ).createDemoAppController();
+  AppController demoController() {
+    final repository = InMemoryConditionalScheduleRepository();
+    final controller = AppDependencies(
+      scheduleRepository: repository,
+    ).createDemoAppController();
+    repository.seed(controller.canonicalSchedule);
+    return controller;
+  }
 
   testWidgets('first launch asks for personal or organization edition', (
     tester,
