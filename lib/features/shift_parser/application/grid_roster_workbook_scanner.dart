@@ -149,10 +149,11 @@ class GridRosterSnapshotInputAdapter {
 ///
 /// A worksheet read failure is reported against that sheet and does not
 /// prevent successfully read worksheets from being parsed. Local XLSX input
-/// retains background colors and merged-cell anchor coordinates. Hidden-row,
-/// hidden-column and hidden-sheet metadata, formula cached values, and
-/// semantic propagation across multi-level merged headers remain separate
-/// reader/parser capabilities and are not inferred by this scanner.
+/// retains background colors and merged-cell anchor coordinates. Vertical
+/// section parsing resolves single-level merged header cells through their
+/// original anchor without rewriting source cells. Hidden-row, hidden-column
+/// and hidden-sheet metadata, formula cached values, and semantic grouping
+/// across nested/multi-level merged header rows remain separate capabilities.
 class GridRosterWorkbookScanner {
   const GridRosterWorkbookScanner({
     this.inputAdapter = const GridRosterExcelInputAdapter(),
