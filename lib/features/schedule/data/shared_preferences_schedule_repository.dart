@@ -182,6 +182,7 @@ class SharedPreferencesScheduleRepository
     if (state.schedule == null) {
       if (state.isDeleted) {
         _absentRevisions.remove(id);
+        _snapshotRevisions.removeWhere((schedule, _) => schedule.id == id);
       } else {
         _absentRevisions[id] = state.revision;
       }
