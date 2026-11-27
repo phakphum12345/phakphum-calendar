@@ -1,5 +1,12 @@
 # Schedule Persistence Writer Inventory
 
+> **Current reconciliation notice — 2026-11-27.** This file is a chronological audit log: the original sections and older dated follow-ups below are historical evidence and must not be read as the current state by themselves. At PR #192 source head `fb670c84d2ec521f7356342b0147777d6b4f0602`, the production composition root uses the configured revision-aware Schedule repository for the inventoried editor, AppController, import and Grid paths. Backend mode uses owner-scoped server CAS; the local SharedPreferences fallback uses a same-Dart-isolate lock and caller-bound revision/tombstone checks, but is **not** cross-process, cross-isolate or cross-device CAS. Grid journal and canonical Schedule writes remain separate durable operations, so read-back/recovery is required and they are not one database transaction. Generation approval remains a separate #202 slice.  
+>
+> Exact-head workflows returned 14 runs: 13 completed successfully (including Pull Request Gate and Laravel Backend CI); the separate `Schedule CAS Storage Spike` workflow concluded failure because its macOS job was cancelled while its other platform jobs completed. The cancelled job is not a pass. The PR Gate succeeded, but repository branch-protection requirements were not independently available in this audit. No independent review submission was returned for #192.  
+>
+> This notice records source and CI evidence for the parent implementation SHA above; a later documentation-only commit changes the PR head and requires a fresh exact-head CI run. It does not claim production-backend deployment, independent-client contention against the production database, startup journal recovery, real workbook acceptance or operational acceptance.
+
+
 **Review date:** 2026-11-25  
 **Inspected branch:** `feat/universal-roster-grid-reconciled-2026-11-25`  
 **Inspected head:** `1b2dafecf1f574ea5200905a4e524cd9fd38efa7` (before this inventory evidence update)  
