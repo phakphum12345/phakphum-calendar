@@ -1,5 +1,23 @@
 # End-to-End Completion Plan — Roster, Calendar Sync and Data Integrity
 
+## Superseding checkpoint — 2026-11-27
+
+The implementation state below supersedes earlier PR/CI snapshots in this plan.
+
+- Main SHA: `68ef85361c2d08e2970160a36475592010d908f7`.
+- #192 now carries the roster orientation/import and persistence work; latest head `2f6f9043db8876ea5ed49d85961658fac95942ac`, exact-head CI pending.
+- #196 Calendar Sync reliability head `8e186790e447f9278eda8612a1bb1b6f7e7b77c9`, 13/13 CI pass; real test-calendar acceptance pending.
+- #191 Web Push/outbox head `cf7eaa22eaf81e04b0b444acfc3aee2a8ca51e5e`, 13/13 CI pass; real-device delivery pending.
+- #202 generation preview/approval head `ca6ebd095ef6566fcce00e9bc49e9c820470b80d`, 12/12 CI pass; dependent on #192.
+- #203 monthly Shift Pay statement core head `9ddcca51de57b71c721f60665f3c9f8cf0e7bbcb`, 11/11 CI pass and 716 tests; persistence/UI remain open.
+- #204 historical Drive revision restore head `ba73d30f4e332105c05c95d00f61517da1cd9689`, exact-head CI pending; real Drive revision acceptance pending.
+- #199 is closed without merge; orientation work was superseded by #192.
+- All open PRs remain Draft and have no independent review. Main protection is disabled; no exact-main CI or deployment evidence is claimed.
+
+For the current work-package matrix and external blockers, see [Implementation Status](../IMPLEMENTATION_STATUS.md), [Requirements Traceability](../REQUIREMENTS_TRACEABILITY.md), and [Remaining Work Index](REMAINING_WORK_INDEX.md).
+
+
+
 **Prepared:** 2026-11-26  
 **Baseline:** `main@d18454680879a10c6efe9e44ffb37cd0695f25a6`
 **Status:** Execution plan; not a completion claim  
