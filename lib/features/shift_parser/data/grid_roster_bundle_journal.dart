@@ -44,16 +44,16 @@ class GridRosterBundleJournalException implements Exception {
 /// caller must load/revalidate the target revision immediately before commit.
 class GridRosterBundleJournal {
   GridRosterBundleJournal({
-    required ScheduleKeyValueStore store,
+    required this.store,
     this.scheduleCodec = const ScheduleJsonCodec(),
     this.provenanceCodec = const GridRosterImportProvenanceJsonCodec(),
-  }) : _store = store;
+  });
 
   static const storageKeyPrefix = 'shift_tools.grid_roster_bundle.v1.';
   static const _format = 'shift-tools.grid-roster-bundle-journal';
   static const _version = 1;
 
-  final ScheduleKeyValueStore _store;
+  final ScheduleKeyValueStore store;
   final ScheduleJsonCodec scheduleCodec;
   final GridRosterImportProvenanceJsonCodec provenanceCodec;
 
@@ -69,12 +69,12 @@ class GridRosterBundleJournal {
   /// This is discovery only: PREPARED records are included in the result but
   /// are not replayed. Callers must surface recovery outcomes explicitly.
   Future<List<String>> discoverScheduleIds() async {
-    if (_store is! ScheduleKeyEnumerator) {
+    if (store is! ScheduleKeyEnumerator) {
       throw const GridRosterBundleJournalException(
         'The journal store does not support key enumeration.',
       );
     }
-    final keys = await (_store as ScheduleKeyEnumerator).getKeys();
+    final keys = await (store as ScheduleKeyEnumerator).getKeys();
     final scheduleIds = <String>{};
     for (final key in keys) {
       if (!key.startsWith(storageKeyPrefix)) continue;
@@ -246,8 +246,8 @@ class GridRosterBundleJournal {
       provenancePayload: provenanceCodec.encode(preparedProvenance),
     );
     final key = _slotKey(schedule.id, targetSlot);
-    await _store.setString(key, preparedRecord);
-    final staged = await _store.getString(key);
+    await store.setString(key, preparedRecord);
+    final staged = await store.getString(key);
     if (staged == null) {
       throw const GridRosterBundleJournalException(
         'Prepared bundle could not be read back.',
@@ -268,8 +268,8 @@ class GridRosterBundleJournal {
       schedulePayload: schedulePayload,
       provenancePayload: provenanceCodec.encode(committedProvenance),
     );
-    await _store.setString(key, committedRecord);
-    final saved = await _store.getString(key);
+    await store.setString(key, committedRecord);
+    final saved = await store.getString(key);
     if (saved == null) {
       throw const GridRosterBundleJournalException(
         'Committed bundle could not be read back.',
@@ -297,7 +297,7 @@ class GridRosterBundleJournal {
     final records = <_JournalRecord>[];
     final errors = <Object>[];
     for (final slot in const ['a', 'b']) {
-      final payload = await _store.getString(_slotKey(scheduleId, slot));
+      final payload = await store.getString(_slotKey(scheduleId, slot));
       if (payload == null) continue;
       try {
         records.add(_decodeRecord(payload, slot));
