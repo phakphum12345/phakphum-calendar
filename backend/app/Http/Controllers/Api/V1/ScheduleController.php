@@ -168,26 +168,24 @@ class ScheduleController extends Controller
                 if (! $isAbsentRevision) {
                     return ['status' => 409];
                 }
-                try {
-                    $id = DB::table('schedule_records')->insertGetId([
-                        'owner_user_id' => $ownerId,
-                        'schedule_id' => $scheduleId,
-                        'generation' => 1,
-                        'state' => 'deleted',
-                        'schedule_payload' => null,
-                        'fingerprint' => null,
-                        'deleted_from_revision' => $expected,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                } catch (QueryException $exception) {
-                    if (! $this->isUniqueConstraintViolation($exception)) {
-                        throw $exception;
-                    }
-
+                $inserted = DB::table('schedule_records')->insertOrIgnore([
+                    'owner_user_id' => $ownerId,
+                    'schedule_id' => $scheduleId,
+                    'generation' => 1,
+                    'state' => 'deleted',
+                    'schedule_payload' => null,
+                    'fingerprint' => null,
+                    'deleted_from_revision' => $expected,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                if ($inserted !== 1) {
                     return ['status' => 409];
                 }
-                $record = DB::table('schedule_records')->where('id', $id)->first();
+                $record = DB::table('schedule_records')
+                    ->where('owner_user_id', $ownerId)
+                    ->where('schedule_id', $scheduleId)
+                    ->first();
 
                 return ['status' => 201, 'record' => $record];
             }
