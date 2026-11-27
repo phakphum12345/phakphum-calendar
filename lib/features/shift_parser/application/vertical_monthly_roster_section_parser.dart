@@ -77,7 +77,8 @@ class VerticalMonthlyRosterSectionParser {
                   cell.rowIndex == headerRow &&
                   cell.columnIndex != entry.key &&
                   (cell.text?.trim().isNotEmpty ?? false) &&
-                  _day(cell) == null,
+                  _day(cell) == null &&
+                  !_isPeriodEvidence(cell.text ?? ''),
             )
             .any(
               (headerCell) => dateCells.any((dateCell) {
@@ -188,7 +189,9 @@ class VerticalMonthlyRosterSectionParser {
             continue;
           }
           final label = cell.text?.trim() ?? '';
-          if (label.isNotEmpty && _day(cell) == null) {
+          if (label.isNotEmpty &&
+              _day(cell) == null &&
+              !_isPeriodEvidence(label)) {
             final hasData = dateCells.any((dateCell) {
               final value = byCoordinate[(dateCell.rowIndex, cell.columnIndex)]?.text;
               return value?.trim().isNotEmpty ?? false;
@@ -203,7 +206,11 @@ class VerticalMonthlyRosterSectionParser {
           for (final cell in input.cells.where((cell) => cell.rowIndex == headerRow)) {
             if (cell.columnIndex >= entry.key) continue;
             final label = cell.text?.trim() ?? '';
-            if (label.isEmpty || _day(cell) != null) continue;
+            if (label.isEmpty ||
+                _day(cell) != null ||
+                _isPeriodEvidence(label)) {
+              continue;
+            }
             final hasData = dateCells.any((dateCell) {
               final value = byCoordinate[(dateCell.rowIndex, cell.columnIndex)]?.text;
               return value?.trim().isNotEmpty ?? false;
@@ -307,7 +314,8 @@ class VerticalMonthlyRosterSectionParser {
             cell.rowIndex == row &&
             cell.columnIndex != dateColumn &&
             (cell.text?.trim().isNotEmpty ?? false) &&
-            _day(cell) == null,
+            _day(cell) == null &&
+            !_isPeriodEvidence(cell.text ?? ''),
       );
       if (hasOtherHeader) return row;
     }
