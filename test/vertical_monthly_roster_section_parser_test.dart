@@ -84,6 +84,38 @@ void main() {
     expect(report.assignments, hasLength(8));
   });
 
+  test('reports missing dates in a near-complete vertical date axis', () {
+    final days = <int>[...List<int>.generate(16, (index) => index + 1), ...List<int>.generate(13, (index) => index + 18)];
+    final report = const MonthlyRosterWorkbookScanner().scan(
+      snapshots: [
+        SheetSnapshot(
+          title: 'พฤศจิกายน 2569',
+          spreadsheetId: 'book-gap',
+          sheetId: 44,
+          rows: [
+            [null, 'เวรเช้า'],
+            ['ประจำเดือน พฤศจิกายน พ.ศ. 2569'],
+            for (final day in days) [day, 'นาย ก'],
+          ],
+        ),
+      ],
+      spreadsheetId: 'book-gap',
+      spreadsheetTitle: 'ตัวอย่างวันที่ขาด',
+    );
+
+    expect(report.sections, hasLength(1));
+    expect(
+      report.sections.single.dateAnomalies.map((anomaly) => anomaly.code),
+      contains('missing_dates'),
+    );
+    expect(
+      report.sections.single.dateAnomalies.any(
+        (anomaly) => anomaly.message.contains('2026-11-17'),
+      ),
+      isTrue,
+    );
+  });
+
   test('does not invent a month when a vertical date axis has no period evidence', () {
     final report = const MonthlyRosterWorkbookScanner().scan(
       snapshots: [
