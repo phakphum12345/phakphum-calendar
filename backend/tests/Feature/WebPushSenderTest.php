@@ -9,6 +9,15 @@ use Tests\TestCase;
 
 class WebPushSenderTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config([
+            'app.key' => 'base64:'.base64_encode(str_repeat('a', 32)),
+        ]);
+    }
+
     public function test_sender_posts_encrypted_payload_with_vapid_headers(): void
     {
         $subscription = $this->subscription();
