@@ -43,12 +43,14 @@ class VerticalMonthlyRosterSectionParser {
       }
       if (dateCells.length < 2) continue;
       final firstDateRow = dateCells.first.rowIndex;
-      final hasLocalPeriod = _periodEvidence(
+      final periodEvidence = _periodEvidence(
         input: input,
         cells: input.cells,
         firstDateRow: firstDateRow,
         dateColumn: entry.key,
-      )?.rowIndex != -1;
+      );
+      final hasLocalPeriod =
+          periodEvidence != null && periodEvidence.rowIndex >= 0;
       if (hasLocalPeriod ||
           _hasDateAxisLabel(input.cells, entry.key, firstDateRow)) {
         dateAxisColumns.add(entry.key);
@@ -470,7 +472,7 @@ class VerticalMonthlyRosterSectionParser {
       }
       final label = (cell.text ?? cell.rawValue?.toString() ?? '')
           .toLowerCase()
-          .replaceAll(RegExp(r'[\\s._:/-]+'), '');
+          .replaceAll(RegExp(r'[\s._:/-]+'), '');
       return label == 'date' ||
           label == 'day' ||
           label == 'วันที่' ||
