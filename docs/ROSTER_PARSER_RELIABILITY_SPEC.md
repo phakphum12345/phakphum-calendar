@@ -324,3 +324,19 @@ Universal-format readiness is not established by passing one named workbook. It 
 7. Regression coverage for every reported real-world failure, while keeping those workbooks as examples rather than hard-coded templates.
 
 A release may claim only the layout families exercised by the current exact-head test evidence. “Flexible” means new layouts can be discovered and reviewed without hard-coded workbook identity; it does not mean unsafe or unsupported inputs are silently accepted.
+
+
+## Vertical-layout implementation boundary (2026-11-27)
+
+An explicit domain mapping foundation now distinguishes `datesAcrossColumns` from `datesDownRows` and maps logical date/assignment offsets back to immutable zero-based worksheet coordinates. Focused tests cover both orientations and reject negative offsets/origins.
+
+This is **not yet end-to-end vertical roster support**. The current `MonthlyRosterSectionParser` still discovers date headers by worksheet row and populates assignments by date column. Before vertical layouts can be accepted, integration must:
+
+1. Detect or accept a reviewer-selected orientation per section, retaining the evidence and confidence for automatic detection.
+2. Resolve the date axis and assignment axis independently; do not transpose or rewrite the source grid.
+3. Extend section/date/assignment models to retain both row and column source coordinates and exact A1 provenance.
+4. Apply date anomaly validation along the selected date axis and assignment extraction along the orthogonal axis.
+5. Support merged cells, multi-level headers, multiple independent sections and mixed orientations in one worksheet.
+6. Add end-to-end parser, preview, correction, persistence and sync-gating tests for vertical and mixed-orientation workbooks.
+
+Until those steps pass, vertical orientation remains an explicit model primitive only; the UI and import pipeline must not claim vertical-layout support.
