@@ -108,7 +108,7 @@ class ExcelReaderService {
       throw ExcelReaderException(
         ImportError(
           code: ImportErrorCode.worksheetNotFound,
-          message: 'ไม่พบ Worksheet "${worksheet.name}"',
+          message: 'ไม่พบ Worksheet "' + worksheet.name + '"',
         ),
       );
     }
@@ -145,7 +145,7 @@ class ExcelReaderService {
       throw ExcelReaderException(
         ImportError(
           code: ImportErrorCode.worksheetReadFailed,
-          message: 'ไม่สามารถอ่าน Worksheet "${worksheet.name}" ได้',
+          message: 'ไม่สามารถอ่าน Worksheet "' + worksheet.name + '" ได้',
         ),
       );
     }
@@ -153,61 +153,15 @@ class ExcelReaderService {
 
   Map<(int, int), (int, int)> _mergedCellAnchors(excel.Sheet sheet) {
     final anchors = <(int, int), (int, int)>{};
-    final rangePattern = RegExp(r'^([A-Z]+)(\\d+):([A-Z]+)(\\d+)
-    if (file.extension != supportedExtension) {
-      return const ImportError(
-        code: ImportErrorCode.unsupportedExtension,
-        message: 'รองรับเฉพาะไฟล์ Excel นามสกุล .xlsx',
-      );
-    }
-    if (file.sizeInBytes == 0) {
-      return const ImportError(
-        code: ImportErrorCode.emptyFile,
-        message: 'ไฟล์ Excel ไม่มีข้อมูล',
-      );
-    }
-    if (file.sizeInBytes > maxFileSizeInBytes) {
-      return const ImportError(
-        code: ImportErrorCode.fileTooLarge,
-        message: 'ไฟล์ Excel ต้องมีขนาดไม่เกิน 15 MB',
-      );
-    }
-    return null;
-  }
-
-  Object? _cellValue(excel.CellValue? value) => switch (value) {
-    null => null,
-    excel.TextCellValue() => value.value.text,
-    excel.IntCellValue() => value.value,
-    excel.DoubleCellValue() => value.value,
-    excel.BoolCellValue() => value.value,
-    excel.DateCellValue() => value.asDateTimeLocal(),
-    excel.DateTimeCellValue() => value.asDateTimeLocal(),
-    excel.TimeCellValue() => value.asDuration(),
-    excel.FormulaCellValue() => value.formula,
-  };
-}
-
-class ExcelReaderException implements Exception {
-  const ExcelReaderException(this.error);
-
-  final ImportError error;
-
-  @override
-  String toString() => error.message;
-}
-);
     for (final range in sheet.spannedItems) {
-      final match = rangePattern.firstMatch(range.toUpperCase());
-      if (match == null) continue;
-      final startColumn = _columnIndex(match.group(1)!);
-      final startRow = int.parse(match.group(2)!) - 1;
-      final endColumn = _columnIndex(match.group(3)!);
-      final endRow = int.parse(match.group(4)!) - 1;
-      if (startRow < 0 || startColumn < 0 ||
-          endRow < startRow || endColumn < startColumn) {
-        continue;
-      }
+      final endpoints = range.toUpperCase().split(':');
+      if (endpoints.length != 2) continue;
+      final start = _parseCellAddress(endpoints[0]);
+      final end = _parseCellAddress(endpoints[1]);
+      if (start == null || end == null) continue;
+      final (startRow, startColumn) = start;
+      final (endRow, endColumn) = end;
+      if (endRow < startRow || endColumn < startColumn) continue;
       for (var row = startRow; row <= endRow; row++) {
         for (var column = startColumn; column <= endColumn; column++) {
           anchors[(row, column)] = (startRow, startColumn);
@@ -217,12 +171,19 @@ class ExcelReaderException implements Exception {
     return anchors;
   }
 
+  (int, int)? _parseCellAddress(String address) {
+    final match = RegExp(r'^([A-Z]+)([0-9]+)').firstMatch(address);
+    if (match == null || match.group(0) != address) return null;
+    final row = int.tryParse(match.group(2) ?? '');
+    final column = _columnIndex(match.group(1) ?? '');
+    if (row == null || row < 1 || column < 0) return null;
+    return (row - 1, column);
+  }
+
   int _columnIndex(String letters) {
     var value = 0;
     for (final code in letters.codeUnits) {
-      if (code < 65 || code > 90) {
-        throw FormatException('Invalid Excel column label: $letters');
-      }
+      if (code < 65 || code > 90) return -1;
       value = value * 26 + code - 64;
     }
     return value - 1;
