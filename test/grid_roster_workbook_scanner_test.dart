@@ -1,6 +1,9 @@
 import 'dart:typed_data';
 
+import 'package:excel/excel.dart';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:phakphum_calendar/features/excel_import/data/excel_reader_service.dart';
 import 'package:phakphum_calendar/features/excel_import/domain/excel_cell.dart';
 import 'package:phakphum_calendar/features/excel_import/domain/excel_row.dart';
 import 'package:phakphum_calendar/features/excel_import/domain/import_file.dart';
@@ -107,6 +110,43 @@ void main() {
     expect(report.assignments.first.rowIndex, 2);
     expect(report.assignments.first.columnIndex, 1);
     expect(report.sections.single.sourceCells, isNotEmpty);
+  });
+
+  test('reads a real vertical XLSX workbook through ExcelReaderService and Grid scanner', () {
+    final excelWorkbook = Excel.createExcel();
+    excelWorkbook.rename('Sheet1', 'Vertical');
+    final sheet = excelWorkbook['Vertical'];
+    sheet.appendRow([TextCellValue(''), TextCellValue('เวรเช้า')]);
+    sheet.appendRow([
+      TextCellValue('ประจำเดือน พฤศจิกายน พ.ศ. 2569'),
+    ]);
+    for (var day = 1; day <= 7; day++) {
+      sheet.appendRow([
+        IntCellValue(day),
+        TextCellValue('บุคลากร $day'),
+      ]);
+    }
+    final service = ExcelReaderService();
+    final workbook = service.openWorkbook(
+      ImportFile(
+        name: 'vertical.xlsx',
+        bytes: Uint8List.fromList(excelWorkbook.encode()!),
+      ),
+    );
+
+    final report = scanner.scan(
+      workbook: workbook,
+      readWorksheet: service.readWorksheetForImport,
+    );
+
+    expect(report.sections, hasLength(1));
+    expect(
+      report.sections.single.orientation,
+      RosterGridOrientation.datesDownRows,
+    );
+    expect(report.assignments, hasLength(7));
+    expect(report.assignments.first.sourceCell, 'B3');
+    expect(report.sourceFingerprint, startsWith('sha256:'));
   });
 
   test('source fingerprint is deterministic for the same workbook bytes', () {
