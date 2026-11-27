@@ -33,10 +33,17 @@ class ShiftPayCalculationService
                 ? $personalMatch['conflicting_rule_ids']
                 : $organizationMatch['conflicting_rule_ids'];
         } elseif ($priority === 'requireSelection') {
-            $selectedConflicts = array_values(array_unique(array_merge(
-                $personalMatch['conflicting_rule_ids'],
-                $organizationMatch['conflicting_rule_ids'],
-            )));
+            $selectedConflicts = array_merge(
+                array_map(
+                    static fn (string $id): string => 'personal:'.$id,
+                    $personalMatch['conflicting_rule_ids'],
+                ),
+                array_map(
+                    static fn (string $id): string => 'organization:'.$id,
+                    $organizationMatch['conflicting_rule_ids'],
+                ),
+            );
+            sort($selectedConflicts, SORT_STRING);
             if ($selectedConflicts !== []) {
                 $selectionRequired = false;
             } elseif ($personal !== null && $organization !== null) {
