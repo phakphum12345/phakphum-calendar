@@ -1,5 +1,18 @@
 # Integration Status
 
+## Current integration checkpoint — 2026-11-27
+
+The Sprint 6 foundations listed below remain part of the repository, but they do not mean all advertised product workflows are complete. Current end-to-end extensions are still in Draft PRs:
+
+- #192: universal roster import/orientation, CSV/TSV/TXT, source provenance and CAS/recovery.
+- #196: durable Calendar Sync coordination and provider outcome recovery.
+- #191: actual Web Push sender/outbox worker path.
+- #202: generation preview/approval/conditional commit.
+- #201/#203: Shift Pay rule conflict resolution and monthly statement calculation core.
+- #204: historical Drive revision restore through Grid review and conditional Schedule commit.
+
+All seven PRs are Draft and have no submitted reviews. Exact-head CI, live external acceptance and post-merge verification are separate gates. See [Implementation Status](../IMPLEMENTATION_STATUS.md) and [Requirements Traceability](../REQUIREMENTS_TRACEABILITY.md).
+
 ## Included
 
 Sprint 6 production architecture has been merged into the existing `phakphum_calendar` Flutter application without replacing its working entry point.
