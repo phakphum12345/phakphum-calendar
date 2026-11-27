@@ -48,6 +48,11 @@ class MonthlyRosterSectionParser {
     required MonthlyRosterSection section,
     required Map<int, DateTime> correctedDatesByColumn,
   }) {
+    if (section.orientation == RosterGridOrientation.datesDownRows) {
+      throw ArgumentError(
+        'Use correctDateRows for a date-down section.',
+      );
+    }
     if (correctedDatesByColumn.isEmpty) {
       throw ArgumentError(
         'At least one explicit date correction is required.',
@@ -114,6 +119,100 @@ class MonthlyRosterSectionParser {
     );
     final rebuilt = parse(input).sections.where(
       (candidate) =>
+          candidate.headerRowIndex == section.headerRowIndex &&
+          candidate.title == section.title &&
+          candidate.sourceSheetId == section.sourceSheetId,
+    );
+    if (rebuilt.length != 1) {
+      throw StateError(
+        'Could not uniquely rebuild the corrected source section.',
+      );
+    }
+    return rebuilt.single;
+  }
+
+  /// Rebuilds a date-down section from explicit row-bound corrections.
+  /// Keys are original zero-based worksheet row indices, not displayed days.
+  MonthlyRosterSection correctDateRows({
+    required MonthlyRosterSection section,
+    required Map<int, DateTime> correctedDatesByRow,
+  }) {
+    if (section.orientation != RosterGridOrientation.datesDownRows) {
+      throw ArgumentError('correctDateRows requires a date-down section.');
+    }
+    if (correctedDatesByRow.isEmpty) {
+      throw ArgumentError(
+        'At least one explicit date correction is required.',
+      );
+    }
+    if (section.sourceCells.isEmpty || section.dateColumns.isEmpty) {
+      throw StateError(
+        'The original worksheet grid is unavailable for correction.',
+      );
+    }
+    final dateColumn = section.dateColumns.first.columnIndex;
+    final validRows = section.dateColumns
+        .map((column) => column.rowIndex)
+        .whereType<int>()
+        .toSet();
+    for (final entry in correctedDatesByRow.entries) {
+      if (!validRows.contains(entry.key) ||
+          !section.sourceCells.any(
+            (cell) =>
+                cell.rowIndex == entry.key &&
+                cell.columnIndex == dateColumn,
+          )) {
+        throw ArgumentError(
+          'Row ${entry.key + 1} is not a date row in the source section.',
+        );
+      }
+      final date = DateTime(
+        entry.value.year,
+        entry.value.month,
+        entry.value.day,
+      );
+      final start = section.startDate;
+      final end = section.endDate;
+      if ((start != null &&
+              date.isBefore(DateTime(start.year, start.month, start.day))) ||
+          (end != null &&
+              date.isAfter(DateTime(end.year, end.month, end.day)))) {
+        throw ArgumentError(
+          'Corrected dates must remain inside the declared section period.',
+        );
+      }
+    }
+
+    final cells = section.sourceCells.map((cell) {
+      final corrected = correctedDatesByRow[cell.rowIndex];
+      if (cell.columnIndex != dateColumn || corrected == null) {
+        return cell;
+      }
+      final date = DateTime(corrected.year, corrected.month, corrected.day);
+      return NormalizedCell(
+        sheetId: cell.sheetId,
+        sheetTitle: cell.sheetTitle,
+        a1: cell.a1,
+        rowIndex: cell.rowIndex,
+        columnIndex: cell.columnIndex,
+        text: date.day.toString(),
+        rawValue: date,
+        backgroundColor: cell.backgroundColor,
+        isMerged: cell.isMerged,
+        mergedAnchorA1: cell.mergedAnchorA1,
+      );
+    }).toList(growable: false);
+    final input = ShiftParserInput(
+      spreadsheetId: section.sourceSpreadsheetId ?? '',
+      spreadsheetTitle: section.sourceSheetTitle ?? section.title,
+      sheetId: section.sourceSheetId ?? cells.first.sheetId,
+      sheetTitle: section.sourceSheetTitle ?? cells.first.sheetTitle,
+      timeZone: null,
+      cells: List.unmodifiable(cells),
+    );
+    final rebuilt = parse(input).sections.where(
+      (candidate) =>
+          candidate.orientation == RosterGridOrientation.datesDownRows &&
           candidate.headerRowIndex == section.headerRowIndex &&
           candidate.title == section.title &&
           candidate.sourceSheetId == section.sourceSheetId,
