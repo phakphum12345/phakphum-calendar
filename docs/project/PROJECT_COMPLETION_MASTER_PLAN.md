@@ -61,14 +61,14 @@ Workflow counts above describe the runs returned for the exact SHA at audit time
 
 ## 4. Critical path
 
-1. Finish and verify the #208 exact-head test correction; inspect any remaining failures from logs.
-2. Review #192 implementation and all Schedule writers; determine whether the isolated SQLite CAS spike is advisory or required and record its disposition.
-3. Reconcile #205, #207, #206, #208, #204 and #202 against the current #192 head. Preserve all unique changes and rerun CI after any rebase/update.
-4. Integrate Grid parser and persistence only after independent review, no blocking threads, required checks green and product acceptance evidence for real workbooks.
-5. Validate #196 server lease/ETag/ledger design, then controlled Google test-calendar behavior and backend deployment prerequisites.
+1. Complete #192's remaining Build iOS and iOS Advisory checks; its other 12 exact-head workflows, including the CAS spike, have passed.
+2. Complete #208's new exact-head matrix after its base merge; Linux/Android passed, Windows/PR Gate/iOS Advisory are in progress and other checks remain queued.
+3. Complete exact-head CI and review for #205, #207, #206, #204 and #202 after their non-force-pushed base merge commits; all six stacked branches now compare with `behind_by: 0`.
+4. Integrate Grid parser and persistence only after independent review, no blocking threads, required checks green and product acceptance evidence for original workbooks.
+5. Complete #196's remaining iOS/macOS/advisory checks, then run controlled Google test-calendar recovery and backend operational acceptance.
 6. Validate #191 outbox and real browser push behavior; do not claim native iOS/Android push.
-7. Integrate #201 before #203; complete persisted monthly statements, UI/API, authorization and payroll acceptance.
-8. Reconcile all Markdown to the resulting main SHA; complete cross-platform, security, recovery and operational acceptance.
+7. Integrate #201 before #203; define confirmed-assignment lifecycle and contractor classification, then complete persisted monthly statements, UI/API, authorization and payroll acceptance.
+8. Finish Markdown command/anchor/reference-link and paragraph-level reconciliation; complete cross-platform, security, recovery and operational acceptance.
 9. Verify post-merge main SHA and deployment SHA, if deployment is performed.
 
 ## 5. External acceptance blockers
