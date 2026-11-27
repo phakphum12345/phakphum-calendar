@@ -348,7 +348,7 @@ class ShiftPayStatementBuilder {
 }
 
 class ShiftPayStatementLine {
-  const ShiftPayStatementLine({
+  ShiftPayStatementLine({
     required this.assignmentKey,
     required this.date,
     required this.employeeId,
@@ -362,12 +362,12 @@ class ShiftPayStatementLine {
     required this.amount,
     required this.source,
     required this.ruleId,
-    required this.conflictingRuleIds,
+    required List<String> conflictingRuleIds,
     this.dayCategory,
     this.isCoveredBySalary = false,
     this.isCompensatoryTime = false,
     this.compensatesShiftTypeId,
-  });
+  }) : conflictingRuleIds = List.unmodifiable(conflictingRuleIds);
 
   final String assignmentKey;
   final DateTime date;
@@ -433,12 +433,15 @@ class ShiftPayStatement {
           }.contains(line.status))
       .length;
 
-  double get totalAmount => totalMinorUnits / switch (decimalPlaces) {
-    0 => 1,
-    1 => 10,
-    2 => 100,
-    3 => 1000,
-    4 => 10000,
-    _ => throw ArgumentError.value(decimalPlaces, 'decimalPlaces'),
-  };
+  double get totalAmount {
+    final scale = switch (decimalPlaces) {
+      0 => 1,
+      1 => 10,
+      2 => 100,
+      3 => 1000,
+      4 => 10000,
+      _ => throw ArgumentError.value(decimalPlaces, 'decimalPlaces'),
+    };
+    return totalMinorUnits / scale;
+  }
 }
