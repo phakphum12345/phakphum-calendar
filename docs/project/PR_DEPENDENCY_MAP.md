@@ -38,7 +38,7 @@ This graph reflects declared PR stacking and observed base branches, not permiss
 
 | PR | Base branch | Base SHA reported | Head SHA | Reconciliation |
 |---|---|---|---|---|
-| #192 | main | `68ef85361c2d08e2970160a36475592010d908f7` | `19e9d58f120ab63ecc2335bfa9c0c8199807ab1b` | Reviewer-facing built-in shift suggestions clarified and regression test added; all 14 exact-head workflows restarted |
+| #192 | main | `68ef85361c2d08e2970160a36475592010d908f7` | `fb6a5b84936cba62174b032dbc9f5347618051d2` | Reviewer-facing built-in shift suggestions clarified; row-33 test fixture anonymized; exact-head CI rerunning |
 | #205 | #192 feature branch | `4d6808d4943236c93a327a079474b0a9915b220a` | `1cfceeeabd3af3f36421f9b06bd286966863b70b` | Base predates current #192 head; GitHub currently reports mergeable=false; reconcile after #192 integration |
 | #207 | #192 feature branch | `4d6808d4943236c93a327a079474b0a9915b220a` | `7f6df4380ed60edf436402ca01264eb93dbd416b` | Base predates current #192 head; GitHub currently reports mergeable=false; reconcile after #192 integration |
 | #206 | #192 feature branch | `4d6808d4943236c93a327a079474b0a9915b220a` | `997c249394bd02c4fd868f4532829e20df9f58fe` | Base predates current #192 head; GitHub currently reports mergeable=false; reconcile after #192 integration |
