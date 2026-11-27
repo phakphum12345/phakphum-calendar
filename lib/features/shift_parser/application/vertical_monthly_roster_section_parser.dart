@@ -383,7 +383,7 @@ class VerticalMonthlyRosterSectionParser {
             sourceCells: List.unmodifiable(
               input.cells.where(
                 (cell) =>
-                    cell.rowIndex >= headerRow - 8 &&
+                    cell.rowIndex >= firstRow - 12 &&
                     cell.rowIndex <= axisCells.last.rowIndex,
               ),
             ),
