@@ -157,6 +157,63 @@ void main() {
     expect(statement.totalAmount, 123.46);
   });
 
+  test('requires an explicit hybrid source when both profiles match', () {
+    final profile = ShiftPayProfile(
+      id: 'hybrid-profile',
+      mode: ShiftPayMode.hybrid,
+      organizationId: 'org-1',
+      hybridPriority: HybridShiftPayPriority.requireSelection,
+      rules: [
+        ShiftPayRuleEntry(
+          source: ShiftPayRuleSource.personal,
+          rule: _rule('personal-night', 750),
+        ),
+        ShiftPayRuleEntry(
+          source: ShiftPayRuleSource.organization,
+          organizationId: 'org-1',
+          rule: _rule('organization-night', 900),
+        ),
+      ],
+    );
+    final schedule = _schedule([
+      ScheduleDay(
+        date: DateTime(2026, 10, 26),
+        assignments: [_assignment('employee-a')],
+      ),
+    ]);
+    final unresolved = builder.build(
+      statementId: 'hybrid-unresolved',
+      schedule: schedule,
+      scheduleRevision: 'revision-7',
+      profile: profile,
+      periodStart: DateTime(2026, 10, 1),
+      periodEnd: DateTime(2026, 10, 31),
+      generatedAtUtc: generatedAt,
+      isConfirmed: (_, _) => true,
+      employmentTypeFor: (_) => EmploymentType.salaried,
+    );
+    final selected = builder.build(
+      statementId: 'hybrid-selected',
+      schedule: schedule,
+      scheduleRevision: 'revision-7',
+      profile: profile,
+      periodStart: DateTime(2026, 10, 1),
+      periodEnd: DateTime(2026, 10, 31),
+      generatedAtUtc: generatedAt,
+      isConfirmed: (_, _) => true,
+      employmentTypeFor: (_) => EmploymentType.salaried,
+      selectedSourceFor: (_, _) => ShiftPayRuleSource.personal,
+    );
+
+    expect(
+      unresolved.lines.single.status,
+      ShiftPayStatementLineStatus.sourceSelectionRequired,
+    );
+    expect(unresolved.totalAmount, 0);
+    expect(selected.lines.single.source, ShiftPayRuleSource.personal);
+    expect(selected.totalAmount, 750);
+  });
+
   test('uses organization rule precision for organization-owned statements', () {
     final profile = ShiftPayProfile(
       id: 'organization-profile',
