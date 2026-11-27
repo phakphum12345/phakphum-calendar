@@ -329,6 +329,109 @@ void main() {
     expect(find.textContaining('2026-11-07'), findsOneWidget);
     expect(find.text('กำหนดวันที่คอลัมน์นี้'), findsNothing);
   });
+  testWidgets('reviewer can correct a vertical date row and rebuild assignments', (
+    tester,
+  ) async {
+    List<NormalizedCell> row(int rowIndex, List<Object?> values) => [
+      for (var columnIndex = 0; columnIndex < values.length; columnIndex++)
+        if (values[columnIndex] != null)
+          NormalizedCell(
+            sheetId: 1,
+            sheetTitle: 'Vertical',
+            a1: '',
+            rowIndex: rowIndex,
+            columnIndex: columnIndex,
+            text: values[columnIndex] is String
+                ? values[columnIndex] as String
+                : null,
+            rawValue: values[columnIndex],
+          ),
+    ];
+    final parsed = const MonthlyRosterSectionParser().parse(
+      ShiftParserInput(
+        spreadsheetId: 'spreadsheet-vertical',
+        spreadsheetTitle: 'Roster',
+        sheetId: 1,
+        sheetTitle: 'พฤศจิกายน 2569',
+        timeZone: 'Asia/Bangkok',
+        cells: [
+          ...row(0, [null, 'เวรเช้า']),
+          ...row(1, ['ประจำเดือน พฤศจิกายน พ.ศ. 2569']),
+          ...row(2, [1, 'นาย ก']),
+          ...row(3, [2, 'นาย ข']),
+          ...row(4, [2, 'นาย ค']),
+          ...row(5, [4, 'นาย ง']),
+          ...row(6, [5, 'นาย จ']),
+          ...row(7, [6, 'นาย ฉ']),
+          ...row(8, [7, 'นาย ช']),
+        ],
+      ),
+    );
+    final section = parsed.sections.single;
+    expect(section.dateAnomalies, hasLength(1));
+    expect(section.dateAnomalies.single.rowIndex, 4);
+    final report = MonthlyRosterParseReport(
+      sections: parsed.sections,
+      warnings: parsed.warnings,
+      sourceSheetCount: 1,
+      sourceFingerprint: 'sha256:vertical-correction-ui',
+    );
+    final session = const GridRosterReviewSessionBuilder().build(
+      report: report,
+      employees: const [],
+      shiftTemplates: const [],
+      sourceFingerprint: 'sha256:vertical-correction-ui',
+      targetScheduleId: 'schedule-vertical',
+      targetScheduleRevision: 'absent:schedule-vertical',
+    );
+    final workflow = GridRosterImportWorkflow(
+      scheduleRepository: _UnusedScheduleRepository(),
+      journal: GridRosterBundleJournal(store: _MemoryStore()),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GridRosterReviewPage(
+          workflow: workflow,
+          contextSnapshot: GridRosterImportReviewContext(
+            session: session,
+            targetSchedule: Schedule(
+              id: 'schedule-vertical',
+              name: 'Vertical roster',
+            ),
+            targetExisted: false,
+          ),
+          employees: const [],
+          shiftTemplates: const [],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final anomalyHeading = find.text('พบจุดผิดในหัวตารางวันที่');
+    await tester.scrollUntilVisible(
+      anomalyHeading,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
+    final correction = find.byKey(
+      const ValueKey('grid-roster-correct-date-1-2-4-duplicate_date'),
+    );
+    expect(correction, findsOneWidget);
+    await tester.ensureVisible(correction);
+    await tester.pumpAndSettle();
+    await tester.tap(correction);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('3').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ใช้วันที่นี้และตรวจตารางใหม่'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('พบจุดผิดในหัวตารางวันที่'), findsNothing);
+    expect(find.text('กำหนดวันที่แถวนี้'), findsNothing);
+  });
 }
 
 class _UnusedScheduleRepository implements ScheduleRepository {
