@@ -122,3 +122,57 @@ Specific:
 - Every advertised platform passes install, auth, chat, and failure-state tests.
 - Evidence records app version, environment, and exact deployed SHA.
 - Core calendar/roster workflows remain usable without a paid AI provider.
+
+
+## 9. Universal roster import
+
+- Horizontal, vertical and mixed orientation are detected independently per section.
+- Preserve original worksheet row/column coordinates and A1 source identity.
+- Multiple independent tables and departments in one sheet remain distinct.
+- Thai Buddhist Era/Gregorian date periods, month/year evidence, cross-month ranges and leap dates resolve without guessing.
+- Duplicate, missing, conflicting, unresolved and out-of-order dates are shown with source coordinates.
+- Ambiguous orientation requires reviewer selection; no silent transpose.
+- Preview is read-only; correction revalidates the exact source fingerprint; no Calendar sync occurs during import.
+- Actual X-OPD November 2569, 16 Nov–15 Dec 2569 and US Clinic ภปร.4 workbooks pass without template-specific hardcoding.
+- Re-import is fingerprinted and reconciled without duplicate assignments.
+
+## 10. Schedule persistence and recovery
+
+- Every production writer uses snapshot-bound atomic compare-and-set.
+- Concurrent writers with the same revision produce exactly one success.
+- Local transaction semantics and backend cross-device transaction semantics are tested separately.
+- Journal startup discovery, versioning, idempotent recovery and corrupt-journal reporting are tested.
+- Conditional delete/tombstone prevents stale clients from recreating deleted schedules.
+- Backup/restore and backward-compatible migration retain existing data.
+
+## 11. Calendar Sync and shift transactions
+
+- Per-calendar lease/ledger is durable, fenced, expiry/reclaim-safe and concurrency-tested.
+- Insert/update/delete use stable identities and ETags; ambiguous provider outcomes reconcile before retry.
+- Controlled Google test calendar verifies insert, update, delete and explicit recovery.
+- Canonical schedule approval and read-back verification precede external writes.
+- ยกเวร / รับเวร / แลกเวร have durable transaction state, audit and idempotency; a Calendar event update alone is not fulfillment.
+
+## 12. Notifications
+
+- Durable outbox has worker claim/fencing, retries, backoff, dead-letter and attempt history.
+- VAPID sender and RFC 8291 payload encryption are verified.
+- User opt-in/out and subscription ownership/lifecycle are enforced.
+- Delivery reaches a registered test device/browser; expired endpoints are cleaned safely.
+- Worker crash, duplicate, retry and timezone behavior are tested.
+
+## 13. Schedule generation, Shift Pay and restore
+
+- Generation preview binds exact schedule, employee/catalog, rules and policy revisions; stale approval is invalidated.
+- Commit reloads and validates exact revisions, uses conditional persistence and records provenance.
+- Shift Pay uses confirmed assignments, one explicit rule source, exact decimal/rounding policy and immutable historical statements.
+- History restore previews a diff, checks source revision, requires confirmation and commits conditionally with audit/recovery.
+
+## 14. Organization, quality and release
+
+- Backend authorization and tenant isolation are verified with cross-tenant negative tests.
+- Responsive, keyboard, screen-reader and accessibility flows pass on supported widths/devices.
+- Large-workbook, event-volume and history benchmarks record reproducible measurements.
+- Fuzz/property tests cover malformed XLSX/API payloads and migration/backup/restore.
+- Release evidence identifies exact deployment SHA, health/readiness, signed artifacts, rollback and restore drills.
+
