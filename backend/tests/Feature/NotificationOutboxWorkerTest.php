@@ -167,7 +167,7 @@ class NotificationOutboxWorkerTest extends TestCase
         $this->assertDatabaseHas('notification_deliveries', [
             'outbox_id' => $outbox['id'],
             'subscription_id' => $subscriptionId,
-            'status' => 'pending',
+            'status' => 'failed',
         ]);
     }
 
