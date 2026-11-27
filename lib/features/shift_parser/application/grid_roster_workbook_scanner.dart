@@ -4,6 +4,7 @@ import '../../excel_import/domain/excel_row.dart';
 import '../../excel_import/domain/import_file.dart';
 import '../../excel_import/domain/workbook_info.dart';
 import '../../excel_import/domain/worksheet_info.dart';
+import '../../../models/shift.dart' show SheetSnapshot;
 import '../domain/a1_notation.dart';
 import '../domain/monthly_roster_section.dart';
 import '../domain/normalized_cell.dart';
@@ -82,6 +83,68 @@ class GridRosterExcelInputAdapter {
   }
 }
 
+
+/// Converts delimited-file snapshots into the same source-neutral parser input.
+/// XLSX files should use [GridRosterExcelInputAdapter] so merge provenance is
+/// retained by the Excel reader.
+class GridRosterSnapshotInputAdapter {
+  const GridRosterSnapshotInputAdapter();
+
+  SheetColor? _sheetColor(int? value) {
+    if (value == null) return null;
+    return SheetColor(
+      red: ((value >> 16) & 0xFF) / 255,
+      green: ((value >> 8) & 0xFF) / 255,
+      blue: (value & 0xFF) / 255,
+      alpha: ((value >> 24) & 0xFF) / 255,
+    );
+  }
+
+  ShiftParserInput toParserInput({
+    required SheetSnapshot snapshot,
+    required int worksheetIndex,
+    required String spreadsheetTitle,
+    String? timeZone,
+  }) {
+    if (worksheetIndex < 0) {
+      throw ArgumentError.value(worksheetIndex, 'worksheetIndex');
+    }
+    final sheetId = snapshot.sheetId ?? worksheetIndex;
+    final cells = <NormalizedCell>[];
+    for (var rowIndex = 0; rowIndex < snapshot.rows.length; rowIndex++) {
+      final row = snapshot.rows[rowIndex];
+      for (var columnIndex = 0; columnIndex < row.length; columnIndex++) {
+        final value = row[columnIndex];
+        cells.add(
+          NormalizedCell(
+            sheetId: sheetId,
+            sheetTitle: snapshot.title,
+            a1: A1Notation.fromZeroBased(
+              rowIndex: rowIndex,
+              columnIndex: columnIndex,
+            ),
+            rowIndex: rowIndex,
+            columnIndex: columnIndex,
+            text: value?.toString(),
+            rawValue: value,
+            backgroundColor: _sheetColor(
+              snapshot.backgroundColorAt(rowIndex, columnIndex),
+            ),
+          ),
+        );
+      }
+    }
+    return ShiftParserInput(
+      spreadsheetId: snapshot.spreadsheetId ?? '',
+      spreadsheetTitle: spreadsheetTitle,
+      sheetId: sheetId,
+      sheetTitle: snapshot.title,
+      timeZone: timeZone,
+      cells: List.unmodifiable(cells),
+    );
+  }
+}
+
 /// Scans every worksheet in a selected local workbook independently.
 ///
 /// A worksheet read failure is reported against that sheet and does not
@@ -98,6 +161,66 @@ class GridRosterWorkbookScanner {
 
   final GridRosterExcelInputAdapter inputAdapter;
   final MonthlyRosterSectionParser sectionParser;
+
+  MonthlyRosterParseReport scanSnapshots({
+    required List<SheetSnapshot> snapshots,
+    required String spreadsheetTitle,
+    required String sourceFingerprint,
+    String? timeZone,
+    GridRosterSnapshotInputAdapter snapshotAdapter =
+        const GridRosterSnapshotInputAdapter(),
+  }) {
+    final sections = <MonthlyRosterSection>[];
+    final warnings = <String>[];
+    final summaries = <MonthlyRosterSheetScanSummary>[];
+    for (var index = 0; index < snapshots.length; index++) {
+      final snapshot = snapshots[index];
+      try {
+        final input = snapshotAdapter.toParserInput(
+          snapshot: snapshot,
+          worksheetIndex: index,
+          spreadsheetTitle: spreadsheetTitle,
+          timeZone: timeZone,
+        );
+        final report = sectionParser.parse(input);
+        sections.addAll(report.sections);
+        warnings.addAll(
+          report.warnings.map((warning) => snapshot.title + ': ' + warning),
+        );
+        summaries.add(
+          MonthlyRosterSheetScanSummary(
+            sheetId: snapshot.sheetId ?? index,
+            title: snapshot.title,
+            hidden: snapshot.hidden,
+            blockCount: report.sections.length,
+            assignmentCount: report.assignments.length,
+            warningCount: report.warnings.length,
+          ),
+        );
+      } on Object catch (error) {
+        warnings.add(
+          'อ่าน Worksheet "' + snapshot.title + '" ไม่สำเร็จ: ' + error.toString(),
+        );
+        summaries.add(
+          MonthlyRosterSheetScanSummary(
+            sheetId: snapshot.sheetId ?? index,
+            title: snapshot.title,
+            hidden: snapshot.hidden,
+            blockCount: 0,
+            assignmentCount: 0,
+            warningCount: 1,
+          ),
+        );
+      }
+    }
+    return MonthlyRosterParseReport(
+      sections: List.unmodifiable(sections),
+      warnings: List.unmodifiable(warnings),
+      sourceSheetCount: snapshots.length,
+      sheetSummaries: List.unmodifiable(summaries),
+      sourceFingerprint: sourceFingerprint,
+    );
+  }
 
   MonthlyRosterParseReport scan({
     required WorkbookInfo workbook,
