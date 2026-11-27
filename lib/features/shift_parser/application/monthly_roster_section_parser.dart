@@ -133,6 +133,7 @@ class MonthlyRosterSectionParser {
         for (final entry in datesByColumn.entries)
           MonthlyRosterDateColumn(
             columnIndex: entry.key,
+            rowIndex: headerRow,
             displayedDay: daysByColumn[entry.key]!,
             date: entry.value,
           ),
@@ -226,6 +227,7 @@ class MonthlyRosterSectionParser {
               sectionTitle: section.title,
               rowLabel: row.label,
               rowIndex: row.rowIndex,
+              columnIndex: dateColumn.columnIndex,
               workerName: worker,
               date: dateColumn.date,
               sourceCell: A1Notation.fromZeroBased(
