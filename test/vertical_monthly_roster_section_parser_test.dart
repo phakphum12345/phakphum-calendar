@@ -101,6 +101,41 @@ void main() {
     expect(populated.assignments.first.date, DateTime(2026, 11, 1));
   });
 
+  test('parses numeric Thai Buddhist Era and Gregorian date strings', () {
+    final dateValues = <String>[
+      '01/11/2569',
+      '2026-11-02',
+      '3 พฤศจิกายน 2569',
+      '04/11/2026',
+      '5 พ.ย. 2569',
+      '2026-11-06',
+      '07/11/2569',
+    ];
+    final report = const MonthlyRosterWorkbookScanner().scan(
+      snapshots: [
+        SheetSnapshot(
+          title: 'วันที่ระบุชัดเจน',
+          spreadsheetId: 'book-explicit-text',
+          sheetId: 49,
+          rows: [
+            [null, 'เวรเช้า'],
+            ['วันที่'],
+            for (var index = 0; index < dateValues.length; index++)
+              [dateValues[index], 'นาย ${index + 1}'],
+          ],
+        ),
+      ],
+      spreadsheetId: 'book-explicit-text',
+      spreadsheetTitle: 'วันที่ระบุชัดเจน',
+    );
+
+    expect(report.sections, hasLength(1));
+    expect(report.sections.single.startDate, DateTime(2026, 11, 1));
+    expect(report.sections.single.endDate, DateTime(2026, 11, 7));
+    expect(report.assignments, hasLength(7));
+    expect(report.sections.single.dateAnomalies, isEmpty);
+  });
+
   test('supports vertical and horizontal sections in one worksheet', () {
     final report = const MonthlyRosterWorkbookScanner().scan(
       snapshots: [
