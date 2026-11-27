@@ -73,8 +73,8 @@ class VapidTokenGeneratorTest extends TestCase
     {
         $r = ltrim(substr($signature, 0, 32), "\x00");
         $s = ltrim(substr($signature, 32, 32), "\x00");
-        if ((ord($r[0]) & 0x80) !== 0) $r = "\x00".$r;
-        if ((ord($s[0]) & 0x80) !== 0) $s = "\x00".$s;
+        if ((ord($r[0]) & 0x80) !== 0) {\n            $r = "\x00".$r;\n        }
+        if ((ord($s[0]) & 0x80) !== 0) {\n            $s = "\x00".$s;\n        }
         $body = "\x02".chr(strlen($r)).$r."\x02".chr(strlen($s)).$s;
 
         return "\x30".chr(strlen($body)).$body;
