@@ -141,11 +141,21 @@ void main() {
       const applier = ImportStagingApplier();
 
       final original = _existingSchedule();
-      expect(await repository.save(original), isA<Success<Schedule>>());
+      final absent = await repository.findById(original.id);
+      expect(absent, isA<Success<Schedule?>>());
+      expect((absent as Success<Schedule?>).value, isNull);
+      final absentRevision = repository.revisionForAbsentSchedule(original.id);
+      expect(absentRevision, isNotNull);
+      expect(
+        await repository.saveIfRevision(original, absentRevision!),
+        isA<Success<Schedule>>(),
+      );
 
       final loadedBeforeImport = await repository.findById(original.id);
       expect(loadedBeforeImport, isA<Success<Schedule?>>());
       final snapshot = (loadedBeforeImport as Success<Schedule?>).value!;
+      final snapshotRevision = repository.revisionForSnapshot(snapshot);
+      expect(snapshotRevision, isNotNull);
       final firstPlan = planner.plan(
         existingSchedule: snapshot,
         records: _importRows(),
@@ -161,7 +171,10 @@ void main() {
         plan: firstPlan,
         includedRowNumbers: {2, 3},
       );
-      expect(await repository.save(staged), isA<Success<Schedule>>());
+      expect(
+        await repository.saveIfRevision(staged, snapshotRevision!),
+        isA<Success<Schedule>>(),
+      );
 
       final loadedAfterImport = await repository.findById(original.id);
       expect(loadedAfterImport, isA<Success<Schedule?>>());
