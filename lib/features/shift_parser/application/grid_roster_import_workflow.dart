@@ -254,6 +254,17 @@ class GridRosterImportWorkflow {
     }
   }
 
+  /// Discovers Schedule IDs with local or account-owned remote import journals.
+  ///
+  /// Discovery never replays a journal. Each returned ID must be presented for
+  /// explicit review and passed to [recover] only after the user selects it.
+  Future<List<String>> discoverRecoveryScheduleIds() async {
+    final localIds = await _journal.discoverScheduleIds();
+    final remoteIds = await remoteJournalGateway?.discoverScheduleIds() ??
+        const <String>[];
+    return {...localIds, ...remoteIds}.toList()..sort();
+  }
+
   /// Replays a committed journal bundle only if the canonical repository is
   /// still at the exact base revision recorded by that import.
   Future<Result<Schedule?>> recover(String scheduleId) async {
