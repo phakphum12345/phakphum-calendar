@@ -506,8 +506,11 @@ class MonthlyRosterSectionParser {
                 columnIndex: sourceColumn,
                 workerName: worker,
                 date: dateColumn.date,
-                sourceCell: workerCell!.a1,
-                backgroundColor: workerCell.backgroundColor?.hex,
+                sourceCell: A1Notation.fromZeroBased(
+                  rowIndex: sourceRow,
+                  columnIndex: sourceColumn,
+                ),
+                backgroundColor: workerCell?.backgroundColor?.hex,
                 spreadsheetId: input.spreadsheetId,
                 sheetId: input.sheetId,
                 sheetTitle: input.sheetTitle,
