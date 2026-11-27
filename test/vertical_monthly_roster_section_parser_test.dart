@@ -203,6 +203,32 @@ void main() {
     }
   });
 
+  test('uses explicit Gregorian DateTime cells without inventing a period', () {
+    final report = const MonthlyRosterWorkbookScanner().scan(
+      snapshots: [
+        SheetSnapshot(
+          title: 'Explicit dates',
+          spreadsheetId: 'book-explicit',
+          sheetId: 48,
+          rows: [
+            [null, 'เวรเช้า'],
+            ['วันที่'],
+            for (var day = 1; day <= 7; day++)
+              [DateTime(2026, 11, day), 'นาย $day'],
+          ],
+        ),
+      ],
+      spreadsheetId: 'book-explicit',
+      spreadsheetTitle: 'Explicit dates',
+    );
+
+    expect(report.sections, hasLength(1));
+    expect(report.sections.single.startDate, DateTime(2026, 11, 1));
+    expect(report.sections.single.endDate, DateTime(2026, 11, 7));
+    expect(report.assignments, hasLength(7));
+    expect(report.assignments.first.date, DateTime(2026, 11, 1));
+  });
+
   test('reports missing dates in a near-complete vertical date axis', () {
     final days = <int>[...List<int>.generate(16, (index) => index + 1), ...List<int>.generate(13, (index) => index + 18)];
     final report = const MonthlyRosterWorkbookScanner().scan(
