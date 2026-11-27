@@ -7,6 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../controller/app_controller.dart';
+import '../core/result/result.dart';
+import '../features/shift_parser/application/grid_roster_import_workflow.dart';
 import '../features/google_drive/application/multi_sheet_picker_selection.dart';
 import '../domain/entities/schedule.dart';
 import '../features/reports/presentation/controllers/monthly_schedule_report_controller.dart';
@@ -70,6 +72,7 @@ class AppShell extends StatefulWidget {
     required this.dashboardSummaryService,
     required this.shiftTemplateControllerFactory,
     required this.scheduleControllerFactory,
+    this.gridRosterImportWorkflowFactory,
   });
 
   final AppController controller;
@@ -83,6 +86,7 @@ class AppShell extends StatefulWidget {
   final DashboardSummaryService dashboardSummaryService;
   final ShiftTemplateController Function() shiftTemplateControllerFactory;
   final Future<ScheduleController> Function(Schedule) scheduleControllerFactory;
+  final GridRosterImportWorkflow Function()? gridRosterImportWorkflowFactory;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -103,6 +107,12 @@ class _AppShellState extends State<AppShell> {
       );
   bool _setupDialogOpen = false;
   String? _setupDialogShownForEmail;
+  late final GridRosterImportWorkflow? _gridRosterRecoveryWorkflow =
+      widget.gridRosterImportWorkflowFactory?.call();
+  bool _gridRecoveryDiscoveryStarted = false;
+  bool _gridRecoveryLoading = false;
+  List<String> _gridRecoveryScheduleIds = [];
+  String? _gridRecoveryError;
 
   NavigationDestination _destination(
     BuildContext context,
@@ -151,6 +161,11 @@ class _AppShellState extends State<AppShell> {
     super.initState();
     widget.controller.addListener(_handleControllerChanged);
     unawaited(_loadEdition());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.controller.initialized) {
+        _startGridRecoveryDiscovery();
+      }
+    });
   }
 
   @override
@@ -161,6 +176,7 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _handleControllerChanged() {
+    if (widget.controller.initialized) _startGridRecoveryDiscovery();
     final auth = widget.controller.auth;
     final account = auth.account;
     if (account == null) {
@@ -206,6 +222,179 @@ class _AppShellState extends State<AppShell> {
         editionLoading = false;
       });
     }
+  }
+
+  void _startGridRecoveryDiscovery() {
+    if (_gridRecoveryDiscoveryStarted || _gridRosterRecoveryWorkflow == null) {
+      return;
+    }
+    _gridRecoveryDiscoveryStarted = true;
+    unawaited(_discoverGridRecovery());
+  }
+
+  Future<void> _discoverGridRecovery() async {
+    final workflow = _gridRosterRecoveryWorkflow;
+    if (workflow == null || _gridRecoveryLoading) return;
+    setState(() {
+      _gridRecoveryLoading = true;
+      _gridRecoveryError = null;
+    });
+    try {
+      final localIds = await workflow.discoverLocalRecoveryScheduleIds();
+      if (!mounted) return;
+      setState(() {
+        _gridRecoveryScheduleIds = localIds;
+      });
+      try {
+        final remoteIds = await workflow.discoverRemoteRecoveryScheduleIds();
+        if (!mounted) return;
+        setState(() {
+          _gridRecoveryScheduleIds = {...localIds, ...remoteIds}.toList()..sort();
+          _gridRecoveryError = null;
+        });
+      } on Object catch (error) {
+        if (!mounted) return;
+        setState(() {
+          _gridRecoveryError =
+              'ตรวจสอบ journal จาก backend ไม่สำเร็จ: $error';
+        });
+      }
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _gridRecoveryError = 'ตรวจสอบ journal ในเครื่องไม่สำเร็จ: $error';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _gridRecoveryLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _openGridRecoveryList() async {
+    if (_gridRecoveryScheduleIds.isEmpty || !mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('รายการนำเข้าที่ต้องตรวจสอบ'),
+        content: SizedBox(
+          width: 480,
+          height: 320,
+          child: ListView.builder(
+            itemCount: _gridRecoveryScheduleIds.length,
+            itemBuilder: (context, index) {
+              final scheduleId = _gridRecoveryScheduleIds[index];
+              return ListTile(
+                title: Text(scheduleId),
+                subtitle: const Text('ตรวจสอบ journal ก่อนกู้คืน'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.of(dialogContext).pop();
+                  unawaited(_reviewGridRecovery(scheduleId));
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('ปิด'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _reviewGridRecovery(String scheduleId) async {
+    final workflow = _gridRosterRecoveryWorkflow;
+    if (workflow == null || !mounted) return;
+    final inspected = await workflow.inspectRecovery(scheduleId);
+    if (!mounted) return;
+    if (inspected case Failure<GridRosterRecoveryAssessment>()) {
+      final failure = inspected as Failure<GridRosterRecoveryAssessment>;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('ตรวจสอบการกู้คืนไม่สำเร็จ'),
+          content: Text(failure.message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('ปิด'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final assessment =
+        (inspected as Success<GridRosterRecoveryAssessment>).value;
+    final dispositionLabel = switch (assessment.disposition) {
+      GridRosterRecoveryDisposition.noCommittedBundle =>
+        'ไม่พบรายการที่ commit แล้ว',
+      GridRosterRecoveryDisposition.ready => 'พบข้อมูลที่พร้อมกู้คืน',
+      GridRosterRecoveryDisposition.alreadyApplied =>
+        'ข้อมูลที่ยอมรับถูกบันทึกแล้ว',
+      GridRosterRecoveryDisposition.conflict =>
+        'พบข้อมูลเปลี่ยนแปลงหลังบันทึก journal',
+    };
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('ตรวจสอบข้อมูลก่อนกู้คืน'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Schedule: $scheduleId'),
+            const SizedBox(height: 8),
+            Text('สถานะ: $dispositionLabel'),
+            if (assessment.currentSchedule != null)
+              Text('ข้อมูลปัจจุบัน: ${assessment.currentSchedule!.name}'),
+            if (assessment.candidateSchedule != null)
+              Text('ข้อมูลจาก journal: ${assessment.candidateSchedule!.name}'),
+            if (assessment.importRunId != null)
+              Text('Import Run: ${assessment.importRunId}'),
+            if (assessment.message != null) ...[
+              const SizedBox(height: 8),
+              Text(assessment.message!),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('ปิด'),
+          ),
+          if (assessment.canRecover)
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('ยืนยันกู้คืน'),
+            ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final recovered = await workflow.recover(scheduleId);
+    if (!mounted) return;
+    if (recovered case Success<Schedule?>()) {
+      setState(() {
+        _gridRecoveryScheduleIds.remove(scheduleId);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('กู้คืน Schedule และตรวจสอบผลสำเร็จ')),
+      );
+      return;
+    }
+    final failure = recovered as Failure<Schedule?>;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('กู้คืนไม่สำเร็จ: ${failure.message}')),
+    );
   }
 
   Future<void> _selectEdition(AppEdition value) async {
@@ -436,6 +625,29 @@ class _AppShellState extends State<AppShell> {
                       unawaited(_openUtilityPage(_UtilityPage.tools)),
                 ),
                 const Divider(height: 1),
+                if (_gridRecoveryError != null ||
+                    _gridRecoveryScheduleIds.isNotEmpty)
+                  MaterialBanner(
+                    content: Text(
+                      _gridRecoveryError ??
+                          'พบ journal ของการนำเข้าตารางเวร ${_gridRecoveryScheduleIds.length} รายการ กรุณาตรวจสอบก่อนกู้คืน',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: _gridRecoveryLoading
+                            ? null
+                            : () => unawaited(_discoverGridRecovery()),
+                        child: Text(_gridRecoveryLoading ? 'กำลังตรวจสอบ...' : 'ตรวจอีกครั้ง'),
+                      ),
+                      if (_gridRecoveryScheduleIds.isNotEmpty)
+                        TextButton(
+                          onPressed: _gridRecoveryLoading
+                              ? null
+                              : () => unawaited(_openGridRecoveryList()),
+                          child: const Text('ดูรายการ'),
+                        ),
+                    ],
+                  ),
                 Expanded(child: mainContent),
               ],
             ),
