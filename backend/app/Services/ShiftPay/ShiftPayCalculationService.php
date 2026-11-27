@@ -187,7 +187,7 @@ class ShiftPayCalculationService
         return 'regularWeekday';
     }
 
-    private function match(array $input, string $dayCategory, array $rules): ?array
+    private function match(array $input, string $dayCategory, array $rules): array
     {
         $candidates = [];
         foreach ($rules as $index => $rule) {
