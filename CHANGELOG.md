@@ -7,6 +7,20 @@ Released versions follow semantic versioning where practical.
 
 ## [Unreleased]
 
+### Pending in open Draft PRs — not released
+
+The following changes are under review and are not part of a released build:
+
+- PR #191: VAPID Web Push sender, subscription lifecycle, durable outbox worker, retry/dead-letter handling and scheduler command. Real-device delivery remains unaccepted.
+- PR #192: per-section roster orientation, flexible XLSX/CSV/TSV/TXT import, source/merged-cell/color provenance, date correction and revision-bound persistence/recovery. Original workbook acceptance remains pending.
+- PR #196: ETag-aware Calendar Sync coordination, durable operation ledger and retry/recovery. Controlled Google test-calendar acceptance remains pending.
+- PR #201 and #203: rule conflict/precedence resolution and monthly Shift Pay statement calculation core. Statement persistence/UI and confirmed-assignment integration remain open.
+- PR #202: immutable schedule-generation preview, approval and conditional commit foundation. End-to-end UI and base reconciliation remain open.
+- PR #204: read-only Drive revision restore through Grid review, source-revision provenance and conditional Schedule commit. Per-assignment diff and real revision acceptance remain open.
+
+Do not interpret this section as a release note or claim that these features are available on `main`.
+
+
 ### Added
 
 - Shift Tools user-facing branding.
