@@ -101,11 +101,16 @@ Legacy root-level documents are retained and catalogued below. New canonical wor
   - [Document control and status policy](governance/DOCUMENT_CONTROL_AND_STATUS_POLICY.md)
 
 ## 12. Delivery and audit
-- [END_TO_END_COMPLETION_PLAN_2026-11-25.md](END_TO_END_COMPLETION_PLAN_2026-11-25.md)
-- [PR_DELIVERY_TRACKER_2026-11-25.md](PR_DELIVERY_TRACKER_2026-11-25.md)
-- [REMAINING_WORK_INDEX.md](REMAINING_WORK_INDEX.md)
+- [Live project completion plan](project/PROJECT_COMPLETION_MASTER_PLAN.md)
+- [Live work package status](project/WORK_PACKAGE_STATUS.md)
+- [Live PR dependency map](project/PR_DEPENDENCY_MAP.md)
+- [Live acceptance matrix](project/ACCEPTANCE_MATRIX.md)
+- [Live known limitations](project/KNOWN_LIMITATIONS.md)
+- [Historical end-to-end completion plan (2026-11-25)](END_TO_END_COMPLETION_PLAN_2026-11-25.md)
+- [Historical PR delivery tracker (2026-11-25)](PR_DELIVERY_TRACKER_2026-11-25.md)
+- [Historical remaining work index (2026-11-24)](REMAINING_WORK_INDEX.md)
 - [END_TO_END_ACCEPTANCE_MATRIX.md](END_TO_END_ACCEPTANCE_MATRIX.md)
-- [PR_DELIVERY_TRACKER_2026-11-25.md](PR_DELIVERY_TRACKER_2026-11-25.md) (current)
+- [PR_DELIVERY_TRACKER_2026-11-25.md](PR_DELIVERY_TRACKER_2026-11-25.md) (historical snapshot)
 - [PR_DELIVERY_TRACKER_2026-11-24.md](PR_DELIVERY_TRACKER_2026-11-24.md) (historical)
 - Audit history: [REPOSITORY_AUDIT.md](REPOSITORY_AUDIT.md), [PROJECT_AUDIT.md](PROJECT_AUDIT.md), [END_TO_END_REPOSITORY_AUDIT.md](END_TO_END_REPOSITORY_AUDIT.md), [END_TO_END_COMPLETION_AUDIT_2026-11-23.md](END_TO_END_COMPLETION_AUDIT_2026-11-23.md).
 
