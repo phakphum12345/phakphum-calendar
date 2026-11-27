@@ -10,7 +10,7 @@ import '../../../services/roster_revision_service.dart';
 import '../../shift_parser/application/grid_roster_canonical_converter.dart';
 import '../../shift_parser/application/grid_roster_import_workflow.dart';
 import '../../shift_parser/application/grid_roster_workbook_scanner.dart';
-import '../../shift_parser/application/monthly_roster_section_parser.dart';
+import '../../shift_parser/domain/monthly_roster_section.dart';
 import '../../shift_parser/domain/grid_roster_import_provenance.dart';
 
 /// Restores a read-only Google Drive revision export through the same
@@ -37,7 +37,7 @@ class RosterHistoryRestoreWorkflow {
     final fingerprint = _revisionFingerprint(revision);
     return workbookScanner.scanSnapshots(
       snapshots: revision.snapshots,
-      spreadsheetTitle: 'Drive revision ' + revision.revisionId,
+      spreadsheetTitle: 'Drive revision ${revision.revisionId}',
       sourceFingerprint: fingerprint,
       timeZone: timeZone,
     );
@@ -111,7 +111,7 @@ class RosterHistoryRestoreWorkflow {
           },
       ],
     };
-    return 'sha256:' + sha256.convert(utf8.encode(jsonEncode(payload))).toString();
+    return 'sha256:${sha256.convert(utf8.encode(jsonEncode(payload)))}';
   }
 
   Object? _jsonSafe(Object? value) {
