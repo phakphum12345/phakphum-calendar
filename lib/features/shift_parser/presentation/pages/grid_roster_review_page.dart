@@ -35,6 +35,7 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
   final Map<String, bool> _included = {};
   final Map<String, String?> _selectedEmployees = {};
   final Map<String, String?> _selectedTemplates = {};
+  final Map<String, String> _dateAnomalyChoices = {};
   bool _saving = false;
   String? _error;
 
@@ -138,6 +139,26 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
                                 ' – '
                                 '${_date(section.assessment.section.endDate!)}',
                               ),
+                            if (section.assessment.section.dateAnomalies.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              const Text(
+                                'พบจุดผิดในหัวตารางวันที่',
+                                style: TextStyle(fontWeight: FontWeight.w700),
+                              ),
+                              for (final anomaly
+                                  in section.assessment.section.dateAnomalies)
+                                _buildDateAnomalyCard(
+                                  context,
+                                  section.assessment.section,
+                                  anomaly,
+                                ),
+                              Text(
+                                _sectionDateChoiceLabel(
+                                  section.assessment.section,
+                                ),
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
                             for (final reason in section.assessment.reasonCodes)
                               Text(
                                 '• $reason',
@@ -193,6 +214,114 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
         ),
       ),
     );
+  }
+
+  String _dateAnomalyKey(
+    MonthlyRosterSection section,
+    MonthlyRosterDateAnomaly anomaly,
+  ) =>
+      '${section.headerRowIndex}|${anomaly.code}|${anomaly.columnIndex ?? -1}';
+
+  String _sectionDateChoiceLabel(MonthlyRosterSection section) {
+    final choices = section.dateAnomalies
+        .map((anomaly) => _dateAnomalyChoices[_dateAnomalyKey(section, anomaly)])
+        .toList(growable: false);
+    if (choices.isNotEmpty && choices.every((choice) => choice == 'skip')) {
+      return 'เลือกแล้ว: ข้าม Section นี้ทั้งส่วน จะไม่นำรายการเวรในส่วนนี้เข้า Schedule';
+    }
+    if (choices.any((choice) => choice == 'reimport')) {
+      return 'เลือกแล้ว: กลับไปแก้ไฟล์ต้นฉบับและนำเข้าใหม่ — ยังบันทึก Section นี้ไม่ได้';
+    }
+    return 'ยังไม่ได้เลือกวิธีจัดการครบทุกข้อ — Section นี้ยังถูกบล็อก';
+  }
+
+  Widget _buildDateAnomalyCard(
+    BuildContext context,
+    MonthlyRosterSection section,
+    MonthlyRosterDateAnomaly anomaly,
+  ) {
+    final key = _dateAnomalyKey(section, anomaly);
+    final choice = _dateAnomalyChoices[key];
+    final column = anomaly.columnIndex;
+    final location = [
+      if (section.sourceSheetTitle?.isNotEmpty ?? false)
+        'ชีต ${section.sourceSheetTitle}',
+      'แถวหัววันที่ ${section.headerRowIndex + 1}',
+      if (column != null) 'คอลัมน์ ${column + 1}',
+      if (anomaly.displayedDay != null) 'เลขวันที่ ${anomaly.displayedDay}',
+    ].join(' • ');
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.35),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Theme.of(context).colorScheme.error),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(anomaly.code, style: const TextStyle(fontWeight: FontWeight.w700)),
+          Text(location),
+          Text(anomaly.message),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => _chooseDateAnomalyAction(section, anomaly),
+                icon: const Icon(Icons.tune),
+                label: Text(choice == null ? 'เลือกวิธีจัดการ' : 'เปลี่ยนตัวเลือก'),
+              ),
+              if (choice != null)
+                Text(
+                  choice == 'skip' ? 'เลือกข้าม Section' : 'เลือกแก้ต้นฉบับ',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _chooseDateAnomalyAction(
+    MonthlyRosterSection section,
+    MonthlyRosterDateAnomaly anomaly,
+  ) async {
+    final key = _dateAnomalyKey(section, anomaly);
+    final selected = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('เลือกวิธีจัดการจุดผิด'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(anomaly.message),
+            const SizedBox(height: 12),
+            const Text('เลือกได้หนึ่งวิธีสำหรับข้อผิดพลาดนี้:'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop('reimport'),
+            child: const Text('กลับไปแก้ไฟล์ต้นฉบับและนำเข้าใหม่'),
+          ),
+          FilledButton.tonal(
+            onPressed: () => Navigator.of(dialogContext).pop('skip'),
+            child: const Text('ข้าม Section นี้ทั้งส่วน'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('ยังไม่เลือก'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || selected == null) return;
+    setState(() => _dateAnomalyChoices[key] = selected);
   }
 
   Widget _buildAssignmentCard(
@@ -302,6 +431,24 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
     if (reviewerId.isEmpty) {
       setState(() => _error = 'กรุณาระบุผู้ตรวจสอบก่อนบันทึก');
       return;
+    }
+
+    for (final section in widget.contextSnapshot.session.sections) {
+      final sourceSection = section.assessment.section;
+      if (sourceSection.dateAnomalies.isEmpty) continue;
+      final choices = sourceSection.dateAnomalies
+          .map((anomaly) => _dateAnomalyChoices[_dateAnomalyKey(sourceSection, anomaly)])
+          .toList(growable: false);
+      if (choices.any((choice) => choice == 'reimport')) {
+        setState(() => _error =
+            'กรุณาแก้ไขไฟล์ต้นฉบับแล้วนำเข้าใหม่ก่อนบันทึก Section "${sourceSection.title}"');
+        return;
+      }
+      if (choices.isEmpty || choices.any((choice) => choice != 'skip')) {
+        setState(() => _error =
+            'กรุณาเลือกวิธีจัดการจุดผิดวันที่ให้ครบทุกข้อใน Section "${sourceSection.title}"');
+        return;
+      }
     }
 
     final decisions = <String, GridRosterAssignmentDecision>{};
