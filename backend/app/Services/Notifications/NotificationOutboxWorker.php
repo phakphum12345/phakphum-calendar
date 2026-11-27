@@ -146,7 +146,7 @@ final class NotificationOutboxWorker
                         ->where('outbox_id', $outbox->id)
                         ->where('subscription_id', $subscription->id)
                         ->value('status');
-                    if (!in_array($existing, ['sent', 'expired', 'failed'], true)) {
+                    if (! in_array($existing, ['sent', 'expired', 'failed'], true)) {
                     }
                     if ($existing === 'failed') {
                         $permanent = true;
