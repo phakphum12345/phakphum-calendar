@@ -9,6 +9,9 @@ external JSBoolean _isSupported();
 @JS('shiftToolsPush.permission')
 external JSString _permission();
 
+@JS('shiftToolsPush.currentSubscription')
+external JSPromise<JSString?> _currentSubscription();
+
 @JS('shiftToolsPush.subscribe')
 external JSPromise<JSString> _subscribe(JSString publicKey);
 
@@ -34,6 +37,17 @@ class WebPushBrowserBridgeImpl implements WebPushBrowserBridge {
     } catch (_) {
       return 'unsupported';
     }
+  }
+
+  @override
+  Future<Map<String, dynamic>?> currentSubscription() async {
+    final result = await _currentSubscription().toDart;
+    if (result == null) return null;
+    final decoded = jsonDecode(result.toDart);
+    if (decoded is! Map) {
+      throw const FormatException('Invalid browser push subscription.');
+    }
+    return decoded.map((key, value) => MapEntry(key.toString(), value));
   }
 
   @override
