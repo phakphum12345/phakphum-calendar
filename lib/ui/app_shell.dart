@@ -5512,42 +5512,67 @@ class _AuditPage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-        Text(
-          'ประวัติ Revision ของตารางเวร',
-          style: Theme.of(context).textTheme.titleLarge,
+        AnimatedBuilder(
+          animation: controller,
+          builder: (context, _) {
+            final revisions = controller.revisionDocuments.reversed.toList();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'ประวัติ Revision ของตารางเวร',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                if (controller.timelineLoading)
+                  const LinearProgressIndicator(),
+                if (revisions.isEmpty)
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.history_toggle_off_outlined),
+                      title: const Text('ยังไม่มี Revision ที่อ่านเก็บไว้'),
+                      subtitle: Text(
+                        controller.timelineWarning ??
+                            'เลือกชีต Google Sheets แล้วกด “ซิงค์ Timeline ย้อนหลัง” '
+                                'เพื่ออ่านประวัติแบบ read-only ก่อนกู้คืน',
+                      ),
+                    ),
+                  )
+                else
+                  for (final revision in revisions)
+                    Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.history_outlined),
+                        title: Text('Revision ${revision.revisionId}'),
+                        subtitle: Text(
+                          '${_thaiDate(revision.modifiedAt)} '
+                          '${_clock(revision.modifiedAt)} • '
+                          '${revision.snapshots.length} worksheets',
+                        ),
+                        trailing: OutlinedButton.icon(
+                          onPressed: controller.busy
+                              ? null
+                              : () => unawaited(restoreRevision(revision)),
+                          icon: const Icon(Icons.restore),
+                          label: const Text('ตรวจสอบและกู้คืน'),
+                        ),
+                      ),
+                    ),
+                if (controller.timelineWarning != null &&
+                    revisions.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      controller.timelineWarning!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
-        const SizedBox(height: 8),
-        if (controller.revisionDocuments.isEmpty)
-          const Card(
-            child: ListTile(
-              leading: Icon(Icons.history_toggle_off_outlined),
-              title: Text('ยังไม่มี Revision ที่อ่านเก็บไว้'),
-              subtitle: Text(
-                'เลือกชีต Google Sheets แล้วกด “ซิงค์ Timeline ย้อนหลัง” '
-                'เพื่ออ่านประวัติแบบ read-only ก่อนกู้คืน',
-              ),
-            ),
-          )
-        else
-          for (final revision in controller.revisionDocuments.reversed)
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.history_outlined),
-                title: Text('Revision ${revision.revisionId}'),
-                subtitle: Text(
-                  '${_thaiDate(revision.modifiedAt)} '
-                  '${_clock(revision.modifiedAt)} • '
-                  '${revision.snapshots.length} worksheets',
-                ),
-                trailing: OutlinedButton.icon(
-                  onPressed: controller.busy
-                      ? null
-                      : () => unawaited(restoreRevision(revision)),
-                  icon: const Icon(Icons.restore),
-                  label: const Text('ตรวจสอบและกู้คืน'),
-                ),
-              ),
-            ),
         const SizedBox(height: 20),
         Text('ประวัติการทำงาน', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
