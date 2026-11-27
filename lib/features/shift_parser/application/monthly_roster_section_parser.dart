@@ -151,10 +151,14 @@ class MonthlyRosterSectionParser {
       );
     }
     final dateColumn = section.dateColumns.first.columnIndex;
-    final validRows = section.dateColumns
-        .map((column) => column.rowIndex)
-        .whereType<int>()
-        .toSet();
+    final validRows = <int>{
+      ...section.dateColumns
+          .map((column) => column.rowIndex)
+          .whereType<int>(),
+      ...section.dateAnomalies
+          .map((anomaly) => anomaly.rowIndex)
+          .whereType<int>(),
+    };
     for (final entry in correctedDatesByRow.entries) {
       if (!validRows.contains(entry.key) ||
           !section.sourceCells.any(
