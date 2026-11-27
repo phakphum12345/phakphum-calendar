@@ -1250,9 +1250,7 @@ void main() {
     expect(report.sections.single.dateAnomalies, isEmpty);
     expect(
       report.sections.single.dateColumns.map((column) => column.date),
-      [
-        for (var day = 1; day <= 7; day++) DateTime(2026, 11, day),
-      ],
+      [for (var day = 1; day <= 7; day++) DateTime(2026, 11, day)],
     );
     expect(report.assignments, hasLength(7));
     expect(report.assignments.first.date, DateTime(2026, 11, 1));
@@ -1288,9 +1286,7 @@ void main() {
     expect(report.sections.single.dateAnomalies, isEmpty);
     expect(
       report.sections.single.dateColumns.map((column) => column.date),
-      [
-        for (var day = 1; day <= 7; day++) DateTime(2026, 11, day),
-      ],
+      [for (var day = 1; day <= 7; day++) DateTime(2026, 11, day)],
     );
     expect(report.assignments, hasLength(7));
     expect(report.assignments.first.date, DateTime(2026, 11, 1));
