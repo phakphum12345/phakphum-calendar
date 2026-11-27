@@ -1,4 +1,14 @@
-# Remaining Work Index — 2026-11-24
+## Live execution checkpoint — 2026-11-27
+
+- Audited `main`: `68ef85361c2d08e2970160a36475592010d908f7`.
+- Existing Draft PRs: #191, #192, #196 and #199; new vertical-parser integration PR #200.
+- Exact-head workflow results for #191 (10/10), #192 (14/14), #196 (13/13) and #199 (11/11) were observed successful. These are CI results only; product/backend/provider acceptance remains open.
+- PR #200 adds a first vertical date-axis parser slice. Its initial exact-head CI exposed a missing orientation import; that was fixed in a later commit. Do not reuse the earlier failed result as the current head's status.
+- No PR is accepted or merged by this checkpoint. Re-fetch the exact latest PR head and all associated workflow runs before changing status.
+- Original X-OPD November 2569, 16 Nov–15 Dec 2569 and US Clinic ภปร.4 workbooks have not been validated from the actual source files in this execution.
+- New evidence ledgers: [Completion Status](COMPLETION_STATUS.md) and [Implementation Evidence](IMPLEMENTATION_EVIDENCE.md).
+
+# Remaining Work Index — 2026-11-27
 
 This is the concise execution checklist. The detailed design and test criteria are in the linked documents.
 
