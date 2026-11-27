@@ -42,7 +42,9 @@ class ShiftPayCalculationService
             } elseif ($personal !== null && $organization !== null) {
                 $selectionRequired = true;
             } else {
-                $selectedSource = $personal !== null ? 'personal' : 'organization';
+                $selectedSource = $personal !== null
+                    ? 'personal'
+                    : ($organization !== null ? 'organization' : null);
                 $selected = $personal ?? $organization;
                 $selectedConflicts = $selectedSource === 'personal'
                     ? $personalMatch['conflicting_rule_ids']
