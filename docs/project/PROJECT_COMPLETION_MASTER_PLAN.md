@@ -37,7 +37,7 @@ Safety rules:
 
 The main SHA above is the latest commit returned by the repository commit listing and was also confirmed as the base SHA of main-targeting PRs during this audit. Refresh it before each subsequent delivery decision.
 
-**Documentation inventory:** the audited PR tree contains 182 tracked Markdown files (30 at repository root, 127 under `docs/`, and 25 in other directories). Status-bearing snapshots with stale main/PR baselines have been marked historical and linked to this live project status. The remaining link/command validation is still partial; the count is an inventory, not a claim that every paragraph has been independently re-reviewed.
+**Documentation inventory:** the audited PR tree contains 182 tracked Markdown files (30 at repository root, 127 under `docs/`, and 25 in other directories). Status-bearing snapshots with stale main/PR baselines have been marked historical and linked to this live project status. An automated inline-relative-link scan across all 182 Markdown files found no missing local file/directory targets. Command references, reference-style links, anchors and paragraph-level accuracy remain partial; the count is an inventory, not a claim that every paragraph has been independently re-reviewed.
 
 ## 3. Live pull-request inventory
 
