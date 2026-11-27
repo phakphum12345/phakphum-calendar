@@ -283,6 +283,108 @@ void main() {
     );
   });
 
+  test('does not mark an expired run with an empty ledger as recovered', () async {
+    final history = _MemoryHistoryRepository()
+      ..entries['local-history-empty'] = SyncHistoryEntry(
+        id: 'local-history-empty',
+        startedAt: DateTime(2026, 11, 26, 8),
+        status: SyncHistoryStatus.failure,
+        inserted: 0,
+        updated: 0,
+        deleted: 0,
+        failed: 1,
+        scheduleId: 'schedule-empty',
+        serverRunId: 'remote-run-empty',
+      );
+    final gateway = _FakeCalendarGateway();
+    final coordination = _FakeCoordinationGateway()
+      ..runRecord = CalendarSyncRunRecord(
+        runId: 'remote-run-empty',
+        calendarId: 'primary',
+        scheduleId: 'schedule-empty',
+        status: 'expired',
+        startedAt: DateTime(2026, 11, 26, 8),
+        heartbeatAt: DateTime(2026, 11, 26, 8, 1),
+      );
+
+    await expectLater(
+      ResumeSyncService(
+        gateway: gateway,
+        historyRepository: history,
+        failedRepository: _MemoryFailedSyncRepository(),
+        coordinationGateway: coordination,
+      ).recoverHistory('local-history-empty'),
+      throwsA(isA<StateError>().having(
+        (error) => error.message,
+        'message',
+        contains('no operation records'),
+      )),
+    );
+
+    expect(history.entries['local-history-empty']?.status, SyncHistoryStatus.failure);
+    expect(gateway.insertCount, 0);
+    expect(coordination.calls.where((call) => call.startsWith('acquire:')), isEmpty);
+  });
+
+  test('does not claim success when a nonterminal run has no unfinished ledger operations', () async {
+    final history = _MemoryHistoryRepository()
+      ..entries['local-history-complete-ledger'] = SyncHistoryEntry(
+        id: 'local-history-complete-ledger',
+        startedAt: DateTime(2026, 11, 26, 8),
+        status: SyncHistoryStatus.failure,
+        inserted: 0,
+        updated: 0,
+        deleted: 0,
+        failed: 1,
+        scheduleId: 'schedule-complete-ledger',
+        serverRunId: 'remote-run-complete-ledger',
+      );
+    final gateway = _FakeCalendarGateway();
+    final coordination = _FakeCoordinationGateway()
+      ..runRecord = CalendarSyncRunRecord(
+        runId: 'remote-run-complete-ledger',
+        calendarId: 'primary',
+        scheduleId: 'schedule-complete-ledger',
+        status: 'expired',
+        startedAt: DateTime(2026, 11, 26, 8),
+        heartbeatAt: DateTime(2026, 11, 26, 8, 1),
+      )
+      ..operationRecords = [
+        CalendarSyncOperationRecord(
+          operationKey: 'insert:already-done',
+          operationType: 'insert',
+          status: 'succeeded',
+          payloadHash: List.filled(64, 'a').join(),
+          operationPayload: {
+            'sync_id': 'already-done',
+            'title': 'OPD',
+            'start': DateTime(2026, 11, 26, 8).toIso8601String(),
+            'end': DateTime(2026, 11, 26, 16).toIso8601String(),
+            'calendar_id': 'primary',
+          },
+          attemptCount: 1,
+        ),
+      ];
+
+    await expectLater(
+      ResumeSyncService(
+        gateway: gateway,
+        historyRepository: history,
+        failedRepository: _MemoryFailedSyncRepository(),
+        coordinationGateway: coordination,
+      ).recoverHistory('local-history-complete-ledger'),
+      throwsA(isA<StateError>().having(
+        (error) => error.message,
+        'message',
+        contains('no unfinished operations'),
+      )),
+    );
+
+    expect(history.entries['local-history-complete-ledger']?.status, SyncHistoryStatus.failure);
+    expect(gateway.insertCount, 0);
+    expect(coordination.calls.where((call) => call.startsWith('acquire:')), isEmpty);
+  });
+
   test('maps owner-scoped server run summaries to visible history entries', () async {
     final coordination = _FakeCoordinationGateway()
       ..runRecords = [
