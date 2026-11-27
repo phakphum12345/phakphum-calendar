@@ -253,6 +253,43 @@ void main() {
     );
   });
 
+  test('conditional delete rejects a revision older than the current Schedule', () async {
+    final repository = SharedPreferencesScheduleRepository(
+      store: InMemoryScheduleKeyValueStore(),
+    );
+    final writer = repository as ConditionalScheduleWriter;
+    final deleter = repository as ConditionalScheduleDeleter;
+    final revisions = repository as ScheduleRevisionSource;
+
+    await repository.findById('schedule-1');
+    final absent = revisions.revisionForAbsentSchedule('schedule-1')!;
+    final created = await writer.saveIfRevision(
+      canonicalScheduleFixture(name: 'Original'),
+      absent,
+    );
+    final original = (created as Success<Schedule>).value;
+    final staleRevision = revisions.revisionForSnapshot(original)!;
+
+    final loaded = await repository.findById('schedule-1');
+    final current = (loaded as Success<Schedule?>).value!;
+    final currentRevision = revisions.revisionForSnapshot(current)!;
+    await writer.saveIfRevision(
+      canonicalScheduleFixture(name: 'Updated'),
+      currentRevision,
+    );
+
+    expect(
+      await deleter.deleteIfRevision('schedule-1', staleRevision),
+      isA<ValidationFailure<void>>(),
+    );
+    expect(
+      ((await repository.findById('schedule-1')) as Success<Schedule?>)
+          .value!
+          .name,
+      'Updated',
+    );
+  });
+
   test('failed pointer switch advances the revision and rejects stale writers', () async {
     final store = InMemoryScheduleKeyValueStore();
     final repository = SharedPreferencesScheduleRepository(store: store);
