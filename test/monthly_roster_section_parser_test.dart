@@ -1259,6 +1259,44 @@ void main() {
     expect(report.assignments.last.date, DateTime(2026, 11, 7));
   });
 
+  test('normalizes explicit horizontal ISO and DateTime Buddhist Era dates', () {
+    final sourceDates = <Object?>[
+      '2569-11-01',
+      '2569-11-02',
+      DateTime(2569, 11, 3),
+      DateTime(2569, 11, 4),
+      DateTime(2569, 11, 5),
+      DateTime(2569, 11, 6),
+      DateTime(2569, 11, 7),
+    ];
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 86,
+      sheetTitle: 'Horizontal Buddhist Era',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['GEN 1 พฤศจิกายน พ.ศ. 2569 - 7 พฤศจิกายน พ.ศ. 2569']),
+        ..._row(1, ['วันที่', ...sourceDates]),
+        ..._row(2, ['เวรเช้า', ...List<String>.filled(7, 'นาย ก')]),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, hasLength(1));
+    expect(report.sections.single.dateAnomalies, isEmpty);
+    expect(
+      report.sections.single.dateColumns.map((column) => column.date),
+      [
+        for (var day = 1; day <= 7; day++) DateTime(2026, 11, day),
+      ],
+    );
+    expect(report.assignments, hasLength(7));
+    expect(report.assignments.first.date, DateTime(2026, 11, 1));
+    expect(report.assignments.last.date, DateTime(2026, 11, 7));
+  });
+
 }
 
 List<NormalizedCell> _row(int rowIndex, List<Object?> values) {
