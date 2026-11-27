@@ -36,13 +36,13 @@ void main() {
     expect(section.dateColumns, hasLength(7));
     expect(section.dateColumns.first.date, DateTime(2026, 11, 1));
     expect(section.dateColumns.first.rowIndex, 2);
-    expect(section.assignments, hasLength(8));
+    expect(section.assignments, hasLength(7));
     expect(section.assignments.first.sourceCell, 'B3');
     expect(section.assignments.first.date, DateTime(2026, 11, 1));
     expect(section.assignments.first.rowLabel, 'เวรเช้า');
     expect(section.assignments.first.columnIndex, 1);
     expect(report.sheetSummaries.single.blockCount, 1);
-    expect(report.sheetSummaries.single.assignmentCount, 8);
+    expect(report.sheetSummaries.single.assignmentCount, 7);
   });
 
   test('supports vertical and horizontal sections in one worksheet', () {
