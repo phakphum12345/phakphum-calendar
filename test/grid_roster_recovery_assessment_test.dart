@@ -7,6 +7,7 @@ import 'package:phakphum_calendar/domain/repositories/schedule_repository.dart';
 import 'package:phakphum_calendar/domain/repositories/schedule_revision_source.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/grid_roster_import_workflow.dart';
 import 'package:phakphum_calendar/features/shift_parser/data/backend_grid_roster_import_journal_gateway.dart';
+import 'package:phakphum_calendar/features/schedule/data/shared_preferences_schedule_repository.dart';
 import 'package:phakphum_calendar/features/shift_parser/data/grid_roster_bundle_journal.dart';
 import 'package:phakphum_calendar/features/shift_parser/domain/grid_roster_import_provenance.dart';
 
@@ -31,7 +32,10 @@ class _MemoryStore implements ScheduleKeyValueStore, ScheduleKeyEnumerator {
 }
 
 class _MemoryRepository
-    implements ScheduleRepository, ScheduleRevisionSource, ConditionalScheduleWriter {
+    implements
+        ScheduleRepository,
+        ScheduleRevisionSource,
+        ConditionalScheduleWriter {
   Schedule? value;
   int generation = 0;
 
