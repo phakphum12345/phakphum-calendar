@@ -157,6 +157,45 @@ void main() {
     expect(statement.totalAmount, 123.46);
   });
 
+  test('uses organization rule precision for organization-owned statements', () {
+    final profile = ShiftPayProfile(
+      id: 'organization-profile',
+      mode: ShiftPayMode.organization,
+      organizationId: 'org-1',
+      decimalPlaces: 2,
+      organizationDecimalPlaces: 0,
+      rules: [
+        ShiftPayRuleEntry(
+          source: ShiftPayRuleSource.organization,
+          organizationId: 'org-1',
+          rule: _rule('organization-night', 123.456),
+        ),
+      ],
+    );
+    final statement = builder.build(
+      statementId: 'organization-rounding',
+      schedule: _schedule([
+        ScheduleDay(
+          date: DateTime(2026, 10, 26),
+          assignments: [_assignment('employee-a')],
+        ),
+      ]),
+      scheduleRevision: 'revision-7',
+      profile: profile,
+      periodStart: DateTime(2026, 10, 1),
+      periodEnd: DateTime(2026, 10, 31),
+      generatedAtUtc: generatedAt,
+      isConfirmed: (_, _) => true,
+      employmentTypeFor: (_) => EmploymentType.salaried,
+    );
+
+    expect(statement.lines.single.decimalPlaces, 0);
+    expect(statement.lines.single.amount, 123);
+    expect(statement.decimalPlaces, 0);
+    expect(statement.totalMinorUnits, 123);
+    expect(statement.totalAmount, 123);
+  });
+
   test('keeps historical statement values when the profile later changes', () {
     final schedule = _schedule([
       ScheduleDay(
