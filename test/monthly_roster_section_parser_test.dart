@@ -996,6 +996,30 @@ void main() {
     expect(report.warnings, isEmpty);
   });
 
+  test('uses an explicit date-axis label for a short vertical roster with a month tab', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 88,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['Date', 'เวรเช้า']),
+        ..._row(1, [1, 'นาย ก']),
+        ..._row(2, [2, 'นาย ข']),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, hasLength(1));
+    expect(report.sections.single.orientation, RosterGridOrientation.datesDownRows);
+    expect(report.sections.single.dateColumns, hasLength(2));
+    expect(report.assignments, hasLength(2));
+    expect(report.assignments.first.date, DateTime(2026, 11, 1));
+    expect(report.assignments.last.date, DateTime(2026, 11, 2));
+  });
+
   test('does not interpret a short numeric ID column as dates from the sheet title alone', () {
     final input = ShiftParserInput(
       spreadsheetId: 'spreadsheet',
