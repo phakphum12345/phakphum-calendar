@@ -102,6 +102,81 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
   bool loadingGoogleSheets = false;
   String? googleSheetsError;
   bool loadingGridRoster = false;
+  bool _loadingRecovery = false;
+  List<String> _recoveryScheduleIds = const [];
+  String? _recoveryError;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.gridRosterWorkflow != null) {
+      _refreshRecoveryScheduleIds();
+    }
+  }
+
+  Future<void> _refreshRecoveryScheduleIds() async {
+    final workflow = widget.gridRosterWorkflow;
+    if (workflow == null || _loadingRecovery) return;
+    setState(() {
+      _loadingRecovery = true;
+      _recoveryError = null;
+    });
+    try {
+      final ids = await workflow.discoverRecoveryScheduleIds();
+      if (!mounted) return;
+      setState(() => _recoveryScheduleIds = ids);
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() => _recoveryError = error.toString());
+    } finally {
+      if (mounted) setState(() => _loadingRecovery = false);
+    }
+  }
+
+  Future<void> _confirmRecovery(String scheduleId) async {
+    final approved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('ตรวจสอบการกู้คืนตารางเวร'),
+        content: Text(
+          'ต้องการตรวจสอบและกู้คืนรายการของ Schedule “$scheduleId” หรือไม่? '
+          'ระบบจะเขียนข้อมูลเฉพาะเมื่อ revision ปัจจุบันตรงกับ revision ฐานที่บันทึกไว้ '
+          'หากพบความขัดแย้ง ระบบจะไม่เขียนทับข้อมูลปัจจุบัน',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('ยกเลิก'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('ตรวจสอบและกู้คืน'),
+          ),
+        ],
+      ),
+    );
+    if (approved != true || !mounted) return;
+    final workflow = widget.gridRosterWorkflow;
+    if (workflow == null) return;
+    try {
+      final result = await workflow.recover(scheduleId);
+      if (!mounted) return;
+      final message = switch (result) {
+        Success<Schedule?>(value: final schedule) => schedule == null
+            ? 'ไม่พบ Schedule สำหรับกู้คืน: $scheduleId'
+            : 'ตรวจสอบรายการกู้คืนของ $scheduleId แล้ว',
+        Failure<Schedule?>() => result.message,
+      };
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+    } on Object catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('กู้คืนไม่สำเร็จ: $error')),
+      );
+    }
+  }
 
   @override
   void dispose() {
@@ -139,6 +214,61 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
                       const SizedBox(height: 24),
+                      if (widget.gridRosterWorkflow != null)
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Expanded(
+                                      child: Text(
+                                        'รายการนำเข้าเวรที่ค้นพบเพื่อกู้คืน',
+                                        style: TextStyle(fontWeight: FontWeight.w700),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      tooltip: 'ค้นหารายการอีกครั้ง',
+                                      onPressed: _loadingRecovery
+                                          ? null
+                                          : _refreshRecoveryScheduleIds,
+                                      icon: _loadingRecovery
+                                          ? const SizedBox.square(
+                                              dimension: 18,
+                                              child: CircularProgressIndicator(strokeWidth: 2),
+                                            )
+                                          : const Icon(Icons.refresh),
+                                    ),
+                                  ],
+                                ),
+                                if (_recoveryError != null)
+                                  Text(
+                                    'ค้นหารายการกู้คืนไม่สำเร็จ: $_recoveryError',
+                                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                                  )
+                                else if (_loadingRecovery && _recoveryScheduleIds.isEmpty)
+                                  const LinearProgressIndicator()
+                                else if (_recoveryScheduleIds.isEmpty)
+                                  const Text('ไม่พบรายการ Journal ใน Local หรือ Backend'),
+                                for (final scheduleId in _recoveryScheduleIds)
+                                  ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    leading: const Icon(Icons.history),
+                                    title: Text(scheduleId),
+                                    subtitle: const Text(
+                                      'ต้องตรวจสอบ revision ก่อนนำข้อมูลกลับมาใช้',
+                                    ),
+                                    trailing: TextButton(
+                                      onPressed: () => _confirmRecovery(scheduleId),
+                                      child: const Text('ตรวจสอบ'),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
                       if (controller.selectedFile == null &&
                           googleSheetsInfo == null)
                         const EmptyImportView()
