@@ -127,6 +127,21 @@ class GridRosterImportWorkflow {
       );
     }
 
+    final recoveryResult = await inspectRecovery(targetScheduleId);
+    if (recoveryResult case Failure<GridRosterRecoveryAssessment>()) {
+      return _copyFailure<GridRosterRecoveryAssessment, GridRosterImportReviewContext>(
+        recoveryResult,
+      );
+    }
+    final recovery =
+        (recoveryResult as Success<GridRosterRecoveryAssessment>).value;
+    if (recovery.disposition == GridRosterRecoveryDisposition.ready ||
+        recovery.disposition == GridRosterRecoveryDisposition.conflict) {
+      return const ValidationFailure(
+        'A previous committed Grid import journal must be reviewed or resolved before starting another import for this Schedule.',
+      );
+    }
+
     final loaded = await scheduleRepository.findById(targetScheduleId);
     if (loaded case Failure<Schedule?>()) {
       return _copyFailure<Schedule?, GridRosterImportReviewContext>(loaded);
