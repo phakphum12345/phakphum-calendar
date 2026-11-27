@@ -71,7 +71,7 @@ Workflow counts above describe the runs returned for the exact SHA at audit time
 
 ## 5. External acceptance blockers
 
-- Original operational workbooks for X-OPD November 2569, 16 Nov–15 Dec 2569 and US Clinic ภปร.4 were not available in the prior PR execution evidence.
+- Original `.xlsx`/`.xls` workbooks for X-OPD November 2569, 16 Nov–15 Dec 2569 and US Clinic ภปร.4 remain unavailable. The Library search found pasted Markdown table extracts for some of these rosters, but those extracts do not retain raw workbook cells, sheet identity, merged ranges, formulas or A1 provenance and cannot satisfy original-workbook acceptance.
 - Real Google test-calendar credentials/account and a controlled calendar are needed for provider insert/update/delete and ambiguous-outcome tests.
 - Backend production endpoint, HTTPS/auth configuration, durable database/locking and APP_KEY backup/restore evidence are not established by CI.
 - Real browser/device push acceptance is outstanding.
