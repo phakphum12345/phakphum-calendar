@@ -1,247 +1,255 @@
 <?php
 
-namespace App\\Services\\ShiftPay;
+namespace App\Services\ShiftPay;
 
-final class ShiftPayCalculationService
+class ShiftPayCalculationService
 {
-    /**
-     * @param array<string, mixed> $profile
-     * @param array<string, mixed> $input
-     * @return array<string, mixed>
-     */
-    public function calculate(array $profile, array $input): array
+    public function calculate(array $input, array $personalRules, array $organizationRules, array $profile): array
     {
-        $personalMatch = $this->match(
-            $profile['personal_rules'] ?? [],
-            $input,
-            $profile['employment_type'] ?? 'salaried',
-            $input['day_category'],
-        );
-        $organizationMatch = $this->match(
-            $profile['organization_rules'] ?? [],
-            $input,
-            $profile['employment_type'] ?? 'salaried',
-            $input['day_category'],
-        );
+        $dayCategory = $this->classifyDay($input);
+        $personalMatch = $this->match($input, $dayCategory, $personalRules);
+        $organizationMatch = $this->match($input, $dayCategory, $organizationRules);
         $personal = $personalMatch['rule'];
         $organization = $organizationMatch['rule'];
         $mode = $profile['mode'] ?? 'personal';
-        $priority = $profile['hybrid_priority'] ?? 'require_selection';
+        $priority = $profile['hybrid_priority'] ?? 'requireSelection';
         $selectedSource = null;
+        $selected = null;
+        $selectionRequired = false;
+        $selectedConflicts = [];
 
         if ($mode === 'personal') {
             $selectedSource = 'personal';
+            $selected = $personal;
+            $selectedConflicts = $personalMatch['conflicting_rule_ids'];
         } elseif ($mode === 'organization') {
             $selectedSource = 'organization';
-        } elseif (($input['selected_source'] ?? null) !== null) {
+            $selected = $organization;
+            $selectedConflicts = $organizationMatch['conflicting_rule_ids'];
+        } elseif (! empty($input['selected_source'])) {
             $selectedSource = $input['selected_source'];
-        } elseif ($priority === 'personal_first') {
-            $selectedSource = $personal !== null ||
-                $personalMatch['conflicting_rule_ids'] !== []
-                ? 'personal'
-                : 'organization';
-        } elseif ($priority === 'organization_first') {
-            $selectedSource = $organization !== null ||
-                $organizationMatch['conflicting_rule_ids'] !== []
-                ? 'organization'
-                : 'personal';
-        } else {
-            $allConflicts = array_merge(
+            $selected = $selectedSource === 'personal' ? $personal : $organization;
+            $selectedConflicts = $selectedSource === 'personal'
+                ? $personalMatch['conflicting_rule_ids']
+                : $organizationMatch['conflicting_rule_ids'];
+        } elseif ($priority === 'requireSelection') {
+            $selectedConflicts = array_values(array_unique(array_merge(
                 $personalMatch['conflicting_rule_ids'],
                 $organizationMatch['conflicting_rule_ids'],
-            );
-            if ($allConflicts !== []) {
-                return $this->invalidRuleResult(
-                    $personal,
-                    $organization,
-                    $personalMatch['conflicting_rule_ids'],
-                    $organizationMatch['conflicting_rule_ids'],
-                    $allConflicts,
-                );
+            )));
+            if ($selectedConflicts !== []) {
+                $selectionRequired = false;
+            } elseif ($personal !== null && $organization !== null) {
+                $selectionRequired = true;
+            } else {
+                $selectedSource = $personal !== null ? 'personal' : 'organization';
+                $selected = $personal ?? $organization;
+                $selectedConflicts = $selectedSource === 'personal'
+                    ? $personalMatch['conflicting_rule_ids']
+                    : $organizationMatch['conflicting_rule_ids'];
             }
-            if ($personal !== null && $organization !== null) {
-                return [
-                    'status' => 'source_selection_required',
-                    'amount' => null,
-                    'source' => null,
-                    'selected_rule' => null,
-                    'candidate_rule_ids' => [
-                        'personal' => $personal['id'],
-                        'organization' => $organization['id'],
-                    ],
-                    'source_conflicts' => [
-                        'personal' => [],
-                        'organization' => [],
-                    ],
-                    'conflicting_rule_ids' => [],
-                ];
+        } elseif ($priority === 'personalFirst') {
+            if ($personal !== null || $personalMatch['conflicting_rule_ids'] !== []) {
+                $selectedSource = 'personal';
+                $selected = $personal;
+                $selectedConflicts = $personalMatch['conflicting_rule_ids'];
+            } else {
+                $selectedSource = $organization !== null ||
+                    $organizationMatch['conflicting_rule_ids'] !== []
+                    ? 'organization' : null;
+                $selected = $organization;
+                $selectedConflicts = $organizationMatch['conflicting_rule_ids'];
             }
-            $selectedSource = $personal !== null ? 'personal' : 'organization';
+        } else {
+            if ($organization !== null || $organizationMatch['conflicting_rule_ids'] !== []) {
+                $selectedSource = 'organization';
+                $selected = $organization;
+                $selectedConflicts = $organizationMatch['conflicting_rule_ids'];
+            } else {
+                $selectedSource = $personal !== null ||
+                    $personalMatch['conflicting_rule_ids'] !== []
+                    ? 'personal' : null;
+                $selected = $personal;
+                $selectedConflicts = $personalMatch['conflicting_rule_ids'];
+            }
         }
 
-        $selectedMatch = $selectedSource === 'personal'
-            ? $personalMatch
-            : $organizationMatch;
-        $selectedRule = $selectedMatch['rule'];
-        $selectedConflicts = $selectedMatch['conflicting_rule_ids'];
+        $decimalPlaces = (int) ($selectedSource === 'organization'
+            ? ($profile['organization_decimal_places'] ?? $profile['decimal_places'] ?? 2)
+            : ($profile['decimal_places'] ?? 2));
+        $currency = $selectedSource === 'organization'
+            ? ($profile['organization_currency_code'] ?? $profile['currency_code'] ?? 'THB')
+            : ($profile['currency_code'] ?? 'THB');
 
         if ($selectedConflicts !== []) {
-            return $this->invalidRuleResult(
-                $personal,
-                $organization,
-                $personalMatch['conflicting_rule_ids'],
-                $organizationMatch['conflicting_rule_ids'],
-                $selectedConflicts,
-                $selectedSource,
-            );
-        }
-
-        if ($selectedRule === null) {
-            return [
-                'status' => 'no_matching_rule',
-                'amount' => null,
+            $result = [
+                'status' => 'invalid_rule',
+                'error_code' => 'ambiguous_rule',
+                'day_category' => $dayCategory,
                 'source' => $selectedSource,
-                'selected_rule' => null,
-                'candidate_rule_ids' => [
-                    'personal' => $personal['id'] ?? null,
-                    'organization' => $organization['id'] ?? null,
-                ],
+                'rule_id' => null,
+                'treatment' => null,
+                'amount' => null,
+                'currency_code' => $currency,
+                'decimal_places' => $decimalPlaces,
+                'is_covered_by_salary' => false,
+                'is_compensatory_time' => false,
+                'compensates_shift_type_id' => null,
+                'conflicting_rule_ids' => $selectedConflicts,
                 'source_conflicts' => [
                     'personal' => $personalMatch['conflicting_rule_ids'],
                     'organization' => $organizationMatch['conflicting_rule_ids'],
                 ],
+            ];
+        } elseif ($selectionRequired || $selected === null) {
+            $result = [
+                'status' => $selectionRequired ? 'source_selection_required' : 'no_matching_rule',
+                'day_category' => $dayCategory,
+                'source' => null,
+                'rule_id' => null,
+                'treatment' => null,
+                'amount' => null,
+                'currency_code' => $currency,
+                'decimal_places' => $decimalPlaces,
+                'is_covered_by_salary' => false,
+                'is_compensatory_time' => false,
+                'compensates_shift_type_id' => null,
                 'conflicting_rule_ids' => [],
+                'source_conflicts' => [
+                    'personal' => $personalMatch['conflicting_rule_ids'],
+                    'organization' => $organizationMatch['conflicting_rule_ids'],
+                ],
+            ];
+        } else {
+            $rule = $selected;
+            $treatment = $rule['treatment'] ?? 'additionalPay';
+            $salaryIncluded = (bool) ($rule['salary_included'] ?? false);
+            $isCompensatory = $treatment === 'compensatoryTime';
+            $covered = $salaryIncluded || $treatment === 'includedInSalary';
+            if ($isCompensatory) {
+                $amount = 0.0;
+            } elseif ($covered) {
+                $amount = 0.0;
+            } else {
+                $base = isset($rule['fixed_amount'])
+                    ? (float) $rule['fixed_amount']
+                    : ((float) $input['hours'] * (float) $rule['hourly_rate']);
+                $amount = round($base * (float) ($rule['multiplier'] ?? 1), $decimalPlaces, PHP_ROUND_HALF_UP);
+            }
+            $result = [
+                'status' => 'calculated',
+                'day_category' => $dayCategory,
+                'source' => $selectedSource,
+                'rule_id' => $rule['id'],
+                'treatment' => $treatment,
+                'amount' => $amount,
+                'currency_code' => $currency,
+                'decimal_places' => $decimalPlaces,
+                'is_covered_by_salary' => $covered,
+                'is_compensatory_time' => $isCompensatory,
+                'compensates_shift_type_id' => $isCompensatory ? ($rule['compensates_shift_type_id'] ?? null) : null,
+                'conflicting_rule_ids' => [],
+                'source_conflicts' => [
+                    'personal' => $personalMatch['conflicting_rule_ids'],
+                    'organization' => $organizationMatch['conflicting_rule_ids'],
+                ],
             ];
         }
 
-        $hours = (float) ($input['hours'] ?? 0);
-        $baseAmount = (float) ($selectedRule['amount'] ?? 0);
-        $amount = ($selectedRule['amount_type'] ?? 'fixed') === 'hourly'
-            ? $baseAmount * $hours
-            : $baseAmount;
-        $precision = $selectedSource === 'organization'
-            ? (int) ($profile['organization_decimal_places'] ?? $profile['decimal_places'] ?? 2)
-            : (int) ($profile['decimal_places'] ?? 2);
-
         return [
-            'status' => 'payable',
-            'amount' => round($amount, $precision),
-            'source' => $selectedSource,
-            'selected_rule' => $selectedRule['id'],
+            'result' => $result,
+            'selected_rule' => $selected,
             'candidate_rule_ids' => [
                 'personal' => $personal['id'] ?? null,
                 'organization' => $organization['id'] ?? null,
             ],
-            'source_conflicts' => [
-                'personal' => $personalMatch['conflicting_rule_ids'],
-                'organization' => $organizationMatch['conflicting_rule_ids'],
+            'source_versions' => [
+                'personal' => (int) ($profile['version'] ?? 0),
+                'organization' => (int) ($profile['organization_version'] ?? 0),
             ],
-            'conflicting_rule_ids' => [],
         ];
     }
 
-    /**
-     * @param array<string, mixed>|null $personal
-     * @param array<string, mixed>|null $organization
-     * @param list<string> $personalConflicts
-     * @param list<string> $organizationConflicts
-     * @param list<string> $conflicts
-     * @return array<string, mixed>
-     */
-    private function invalidRuleResult(
-        ?array $personal,
-        ?array $organization,
-        array $personalConflicts,
-        array $organizationConflicts,
-        array $conflicts,
-        ?string $selectedSource = null,
-    ): array {
-        return [
-            'status' => 'invalid_rule',
-            'error_code' => 'ambiguous_rule',
-            'amount' => null,
-            'source' => $selectedSource,
-            'selected_rule' => null,
-            'candidate_rule_ids' => [
-                'personal' => $personal['id'] ?? null,
-                'organization' => $organization['id'] ?? null,
-            ],
-            'source_conflicts' => [
-                'personal' => $personalConflicts,
-                'organization' => $organizationConflicts,
-            ],
-            'conflicting_rule_ids' => array_values(array_unique($conflicts)),
-        ];
+    private function classifyDay(array $input): string
+    {
+        $date = $input['date'];
+        $overrides = $input['date_overrides'] ?? [];
+        if (isset($overrides[$date])) {
+            return $overrides[$date];
+        }
+        $weekday = (int) date('N', strtotime($date));
+        if (in_array($weekday, $input['weekly_days_off'] ?? [], true)) {
+            return 'weeklyDayOff';
+        }
+
+        return 'regularWeekday';
     }
 
-    /**
-     * @param list<array<string, mixed>> $rules
-     * @param array<string, mixed> $input
-     * @return array{rule: array<string, mixed>|null, conflicting_rule_ids: list<string>}
-     */
-    private function match(
-        array $rules,
-        array $input,
-        string $employmentType,
-        string $dayCategory,
-    ): array {
-        $candidates = array_values(array_filter(
-            $rules,
-            function (array $rule) use ($input, $employmentType, $dayCategory): bool {
-                if (($rule['active'] ?? true) !== true) {
-                    return false;
-                }
-                foreach ([
-                    'employment_type' => $employmentType,
-                    'day_category' => $dayCategory,
-                    'shift_type_id' => $input['shift_type_id'],
-                    'assignment_purpose' => $input['assignment_purpose'] ?? 'regular_coverage',
-                ] as $key => $value) {
-                    if (($rule[$key] ?? null) !== $value) {
-                        return false;
-                    }
-                }
-                foreach (['department', 'location', 'work_point'] as $key) {
-                    if (($rule[$key] ?? null) !== null &&
-                        mb_strtolower(trim((string) $rule[$key])) !== mb_strtolower(trim((string) ($input[$key] ?? '')))) {
-                        return false;
-                    }
-                }
-                return true;
-            },
-        ));
+    private function match(array $input, string $dayCategory, array $rules): ?array
+    {
+        $candidates = [];
+        foreach ($rules as $index => $rule) {
+            if (($rule['active'] ?? true) !== true ||
+                ($rule['employment_type'] ?? null) !== $input['employment_type'] ||
+                ($rule['day_category'] ?? null) !== $dayCategory ||
+                ($rule['shift_type_id'] ?? null) !== $input['shift_type_id'] ||
+                ($rule['assignment_purpose'] ?? 'regularCoverage') !== ($input['assignment_purpose'] ?? 'regularCoverage')) {
+                continue;
+            }
+            if (($rule['treatment'] ?? 'additionalPay') === 'compensatoryTime' &&
+                ! in_array((int) date('N', strtotime($input['date'])), $rule['compensatory_weekdays'] ?? [], true)) {
+                continue;
+            }
+            if (! $this->matchesOptional($rule['department'] ?? null, $input['department'] ?? null) ||
+                ! $this->matchesOptional($rule['location'] ?? null, $input['location'] ?? null) ||
+                ! $this->matchesOptional($rule['work_point'] ?? null, $input['work_point'] ?? null)) {
+                continue;
+            }
+            $specificity = (($rule['department'] ?? null) !== null ? 4 : 0)
+                + (($rule['location'] ?? null) !== null ? 2 : 0)
+                + (($rule['work_point'] ?? null) !== null ? 1 : 0);
+            $candidates[] = ['rule' => $rule, 'specificity' => $specificity, 'index' => $index];
+        }
+        usort($candidates, static function (array $a, array $b): int {
+            $specificity = $b['specificity'] <=> $a['specificity'];
+
+            return $specificity !== 0 ? $specificity : ($a['index'] <=> $b['index']);
+        });
 
         if ($candidates === []) {
             return ['rule' => null, 'conflicting_rule_ids' => []];
         }
-
-        usort(
-            $candidates,
-            fn (array $left, array $right): int => $this->specificity($right) <=> $this->specificity($left),
-        );
-        $highestSpecificity = $this->specificity($candidates[0]);
+        $highestSpecificity = $candidates[0]['specificity'];
         $equallySpecific = array_values(array_filter(
             $candidates,
-            fn (array $candidate): bool => $this->specificity($candidate) === $highestSpecific,
+            static fn (array $candidate): bool => $candidate['specificity'] === $highestSpecificity,
         ));
         if (count($equallySpecific) > 1) {
             return [
                 'rule' => null,
                 'conflicting_rule_ids' => array_values(array_map(
-                    static fn (array $rule): string => (string) $rule['id'],
+                    static fn (array $candidate): string => (string) $candidate['rule']['id'],
                     $equallySpecific,
                 )),
             ];
         }
 
-        return ['rule' => $candidates[0], 'conflicting_rule_ids' => []];
+        return ['rule' => $candidates[0]['rule'], 'conflicting_rule_ids' => []];
     }
 
-    /** @param array<string, mixed> $rule */
-    private function specificity(array $rule): int
+    private function matchesOptional(?string $configured, ?string $actual): bool
     {
-        return (int) (($rule['department'] ?? null) !== null)
-            + (int) (($rule['location'] ?? null) !== null)
-            + (int) (($rule['work_point'] ?? null) !== null);
+        if ($configured === null) {
+            return true;
+        }
+
+        return $this->normalize($configured) === $this->normalize($actual);
+    }
+
+    private function normalize(?string $value): ?string
+    {
+        $normalized = strtolower(trim((string) $value));
+
+        return $normalized === '' ? null : $normalized;
     }
 }
