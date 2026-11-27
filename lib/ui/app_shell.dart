@@ -116,6 +116,7 @@ class _AppShellState extends State<AppShell> {
   bool _gridRecoveryLoading = false;
   List<String> _gridRecoveryScheduleIds = [];
   String? _gridRecoveryError;
+  bool _historyRestoreBusy = false;
 
   NavigationDestination _destination(
     BuildContext context,
@@ -788,6 +789,8 @@ class _AppShellState extends State<AppShell> {
   Future<void> _restoreRosterRevision(
     RosterRevisionDocument revision,
   ) async {
+    if (_historyRestoreBusy) return;
+    _historyRestoreBusy = true;
     final gridWorkflow = _gridRosterRecoveryWorkflow;
     if (gridWorkflow == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -873,6 +876,7 @@ class _AppShellState extends State<AppShell> {
     } finally {
       employeeController.dispose();
       templateController.dispose();
+      _historyRestoreBusy = false;
     }
   }
 
