@@ -535,10 +535,9 @@ class GridRosterImportWorkflow {
     }
   }
 
-  /// Replays a committed journal bundle only after an explicit caller action.
-  ///
-  /// User interfaces should call [inspectRecovery], display the assessment,
-  /// and pass that same object to [recoverAssessment] after confirmation.
+  /// Read-only compatibility entry point. A ready journal is never replayed
+  /// here; callers must show inspectRecovery to the user and then pass that
+  /// exact assessment to recoverAssessment after explicit confirmation.
   Future<Result<Schedule?>> recover(String scheduleId) async {
     final assessmentResult = await inspectRecovery(scheduleId);
     if (assessmentResult case Failure<GridRosterRecoveryAssessment>()) {
@@ -548,7 +547,6 @@ class GridRosterImportWorkflow {
     }
     final assessment =
         (assessmentResult as Success<GridRosterRecoveryAssessment>).value;
-
     switch (assessment.disposition) {
       case GridRosterRecoveryDisposition.noCommittedBundle:
       case GridRosterRecoveryDisposition.alreadyApplied:
@@ -558,7 +556,10 @@ class GridRosterImportWorkflow {
           'Recovery conflict: canonical Schedule changed after the journal base revision.',
         );
       case GridRosterRecoveryDisposition.ready:
-        return recoverAssessment(assessment);
+        return const ValidationFailure(
+          'Recovery is ready but requires explicit review and confirmation. '
+          'Pass the reviewed assessment to recoverAssessment.',
+        );
     }
   }
 
