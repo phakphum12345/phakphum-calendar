@@ -1,6 +1,15 @@
 # Delivery Status
 
 ## Current delivery contract
+### Repository enforcement checkpoint — 2026-11-27
+
+- Main SHA: `68ef85361c2d08e2970160a36475592010d908f7`.
+- GitHub reports `main.protected = false`, protection enforcement `off`, and no required status-check contexts.
+- The workflow names marked “Required” below describe the repository's intended Final Gate policy only; they are not currently enforced by branch protection.
+- The exact main SHA returned no workflow runs and no combined-status entries. Do not infer a PASS.
+- Open feature work remains in Draft PRs #191, #192, #196, #201, #202, #203 and #204. No PR is merged or production-accepted by this checkpoint.
+- macOS remains paused. iOS/macOS signing and real-device release evidence are not claimed.
+
 
 Windows and Web are the required application delivery targets. Android, iOS,
 and Linux have active optional artifact workflows; macOS has no active build
