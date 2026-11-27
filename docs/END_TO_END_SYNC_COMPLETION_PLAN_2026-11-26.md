@@ -985,3 +985,31 @@ No implementation PR merged. No production data writes or deployment. Native bui
 - #191 persists notification intents transactionally but still has no VAPID sender/worker, retry/dead-letter delivery loop, opt-in UI or end-to-end device delivery. No push notification has been sent.
 - No implementation PR has been merged. No production Schedule write, Google Calendar mutation, migration or deployment has been performed.
 - All PRs remain Draft pending independent review and remaining product/operational acceptance. Passing CI and successful unsigned artifacts do not by themselves authorize merge or production release.
+
+
+### 8.52 Source-level reconciliation — 2026-11-27 (Schedule writer and sync reliability)
+
+**New evidence commits**
+- #192 writer inventory: `49e68240d479e10bc1b5a9d0a6b053067aa8ef83`.
+- #196 sync reliability documentation: `b9890c2983208b394232f9bc2c2125ec1212e16f`.
+- Implementation heads remain #192 `bde4107660ceaa6031b495ef7e8904f55f1d97b9` and #196 `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`; the two documentation-only follow-up commits are being validated by fresh exact-head CI.
+
+**Schedule CAS source reconciliation**
+- Rechecked #192 composition root, BackendScheduleRepository, ScheduleController, AppController, Grid workflow and tabular-import facade at the exact implementation head.
+- All inventoried backend-mode writers route through the shared configured ScheduleRepository. W-01 ScheduleController, W-02 AppController legacy mutations, W-03 canonical adoption, W-04/W-05 Grid commit/recovery and F-01 tabular create use caller-owned snapshot or absent-state revisions with `saveIfRevision`; F-01 is create-only for an existing backend Schedule.
+- The prior review findings about shared mutable revision cache substitution and missing writer propagation are addressed by later exact-head source changes and regression tests. The old comment remains historical evidence; it is not the final implementation state.
+- Tests cover exact snapshot identity after another read, A→B→A revision preservation, two Schedule editors sharing one base revision, sequential AppController saves, Grid commit/recovery and fail-closed stale paths.
+- Boundaries remain: SharedPreferences is same-process/isolate only; backend deployment and independent-client contention are not verified; conditional delete is disabled; startup journal discovery is missing; journal and canonical Schedule writes are separate durable requests; generation-to-persistence approval remains open.
+
+**Calendar sync documentation reconciliation**
+- #196 exact-head source wires owner + Calendar ID lease coordination, heartbeat, durable run/operation ledger, encrypted replay payloads, ETag/managed Sync ID checks and explicit ledger-backed recovery.
+- Local History UI remains a local projection; the server ledger is the cross-device recovery source when configured.
+- Lease is scoped to authenticated Google owner + Calendar ID, not organization-wide across distinct Google accounts sharing a Calendar.
+- Production HTTPS backend, DB lock/unique semantics under real concurrent clients, APP_KEY backup/restore, and controlled Google test-calendar acceptance remain unverified.
+
+**Fresh CI for documentation-only implementation follow-ups**
+- #192 commit `49e68240d479e10bc1b5a9d0a6b053067aa8ef83`: all 14 workflows were triggered; at checkpoint, jobs were in progress/queued.
+- #196 commit `b9890c2983208b394232f9bc2c2125ec1212e16f`: all 13 workflows were triggered; at checkpoint, jobs were in progress/queued.
+- Do not inherit earlier implementation-head results as CI for these new documentation commits.
+
+No implementation merge, backend deployment, production Schedule mutation, or Google Calendar mutation was performed.
