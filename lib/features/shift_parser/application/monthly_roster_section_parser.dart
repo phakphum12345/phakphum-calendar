@@ -150,6 +150,13 @@ class MonthlyRosterSectionParser {
       final nextHeader = index + 1 < headerRows.length
           ? headerRows[index + 1]
           : (cellsByRow.keys.fold<int>(headerRow, (a, b) => a > b ? a : b) + 1);
+      final previousHeader = index == 0 ? -1 : headerRows[index - 1];
+      final sectionSourceCells = List.unmodifiable(
+        input.cells.where(
+          (cell) =>
+              cell.rowIndex > previousHeader && cell.rowIndex < nextHeader,
+        ),
+      );
       final title = _sectionTitle(
         input: input,
         cellsByRow: cellsByRow,
@@ -183,7 +190,7 @@ class MonthlyRosterSectionParser {
               sourceSpreadsheetId: input.spreadsheetId,
               sourceSheetId: input.sheetId,
               sourceSheetTitle: input.sheetTitle,
-              sourceCells: List.unmodifiable(input.cells),
+              sourceCells: sectionSourceCells,
               dateAnomalies: const [
                 MonthlyRosterDateAnomaly(
                   code: 'unresolved_period',
