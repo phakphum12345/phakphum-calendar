@@ -195,3 +195,45 @@ Personal, organization and hybrid modes select at most one source. Hybrid preced
 The snapshot stores exact input, selected rule (when any), result, source, calculation engine version and profile configuration versions. Later rule edits do not recalculate or rewrite earlier snapshots. Reusing an idempotency key with the same request and same profile versions returns the original snapshot; reusing it for a different calculation returns HTTP 409.
 
 GET /api/v1/shift-pay/snapshots lists the authenticated user's snapshots using cursor pagination (limit 1–100; default 50). GET /api/v1/shift-pay/snapshots/{snapshotId} retrieves one snapshot only for the authenticated user who created it. Snapshots are audit records, not payroll postings, statutory wage determinations or payment instructions. No existing shift transaction or historical record is modified.
+
+## Pending API additions in open PRs — not available on main until merge
+
+The following routes are present on Draft PR branches only. They must not be treated as live production endpoints until the corresponding PR is merged, migrations are deployed and post-merge health/contract tests pass.
+
+### PR #191 — Web Push subscriptions
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/push-subscriptions` | Register/replace the authenticated account's browser subscription |
+| DELETE | `/push-subscriptions` | Remove the authenticated account's subscription |
+
+The routes are inside the existing `google.account` and API throttle middleware. Endpoint validation, encryption, ownership checks and payload shape are defined by `WebPushSubscriptionController` and its request validation.
+
+### PR #192 — Schedule records and import journals
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/schedules/import-journals` | Discover journals for the authenticated owner |
+| GET | `/schedules/{scheduleId}` | Read the owner's canonical Schedule |
+| PUT | `/schedules/{scheduleId}` | Conditional Schedule write using the caller's revision contract |
+| DELETE | `/schedules/{scheduleId}` | Conditional delete/tombstone path |
+| GET | `/schedules/{scheduleId}/import-journals` | List journal records for one Schedule |
+| POST | `/schedules/{scheduleId}/import-journals` | Persist a journal lifecycle record |
+
+Schedule IDs are bounded opaque identifiers. Owner scoping, expected revision, lifecycle and tombstone behavior are enforced by the controller/repository contract; inspect the exact PR source before client integration.
+
+### PR #196 — Calendar Sync coordination
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/calendar-sync/runs` | List owner-scoped sync runs |
+| GET | `/calendar-sync/runs/{runId}` | Read one run |
+| GET | `/calendar-sync/runs/{runId}/operations` | Read operation ledger entries |
+| POST | `/calendar-sync/leases` | Acquire a Calendar lease and create a run |
+| PUT | `/calendar-sync/leases/{runId}` | Heartbeat an active lease |
+| DELETE | `/calendar-sync/leases/{runId}` | Release a lease |
+| POST | `/calendar-sync/leases/{runId}/operations` | Record an idempotent operation |
+| PATCH | `/calendar-sync/leases/{runId}/operations/{operationKey}` | Update an operation outcome |
+
+The lease is scoped to authenticated owner + Calendar ID, not organization-wide across different Google accounts. Server-side history lookup failure must remain an error, not an empty result.
+
