@@ -283,7 +283,7 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
-      find.text('duplicate_day'),
+      find.text('duplicate_day').first,
       200,
       scrollable: find.byType(Scrollable).first,
     );
