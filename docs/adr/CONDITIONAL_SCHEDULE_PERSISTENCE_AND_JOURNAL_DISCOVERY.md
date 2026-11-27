@@ -158,17 +158,26 @@ The prototype scopes every revision token to its Schedule ID and rejects cross-S
 
 ## Journal discovery requirements
 
-The current journal uses two slots per Schedule ID but has no enumeration API. Startup recovery requires a versioned index of Schedule IDs and lifecycle state, or a storage engine that can enumerate records transactionally.
+The first discovery increment is implemented on the Grid import workflow branch:
 
-The index design must define:
-- journal-slot/index update ordering and repair after interruption;
-- how an index entry is removed or archived without losing recoverability;
-- detection of orphan journal slots and corrupt index records;
-- bounded batch recovery and startup timeout behavior;
-- conflict and corruption reporting that does not block unrelated Schedules;
-- retention and schema migration policy.
+- The local two-slot journal enumerates only its reserved SharedPreferences namespace through `ScheduleKeyEnumerator`; it validates slot names and decodes Schedule IDs before returning them.
+- The authenticated backend exposes an owner-scoped `GET /api/v1/schedules/import-journals` endpoint that returns distinct Schedule IDs only. It does not return another account's records or schedule payloads.
+- The Flutter gateway validates the response and the workflow returns a sorted, de-duplicated union of local and remote Schedule IDs.
+- The Excel import page starts discovery when it is opened, displays discovered IDs, and requires an explicit user confirmation before invoking revision-checked recovery. Discovery itself never writes a Schedule.
 
-Do not scan arbitrary SharedPreferences keys and guess Schedule IDs. Do not replay a committed journal automatically until conflict handling and user-visible reporting are implemented.
+This is a discovery index by enumeration/query, not a separate mutable index table. It avoids arbitrary key scans outside the reserved namespace and avoids client-side enumeration of other users' backend data.
+
+### Remaining discovery and recovery work
+
+- Discovery currently runs when the Grid import page opens, not in the global application bootstrap. Global startup recovery notifications remain open.
+- The list is Schedule-ID based; it does not yet expose per-run PREPARED/COMMITTED status, corruption details, timestamps, or a paginated recovery inbox.
+- The client fetches each Schedule's journal separately after a user selects it. Bounded batching and large-account pagination remain open.
+- Local and remote snapshots still need deterministic conflict reconciliation. Client/server timestamps must not be treated as a safe ordering token when two different committed runs share one base revision.
+- A PREPARED-only journal is discoverable but is intentionally not replayed. The UI must explain that state explicitly in a later recovery-preview increment.
+- Corrupt local slots and remote records must be surfaced per Schedule without blocking unrelated recovery entries.
+- The two-slot SharedPreferences protocol remains recoverable storage, not a durable cross-device transaction. Backend Schedule CAS and journal append remain separate durable operations.
+
+Do not replay a committed journal automatically. Recovery must remain explicit, validate the exact target revision at the conditional write boundary, and surface conflicts without overwriting canonical data.
 
 ## Acceptance tests
 
