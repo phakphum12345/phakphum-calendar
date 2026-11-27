@@ -450,7 +450,6 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
           session: nextSession,
           targetSchedule: _reviewContext.targetSchedule,
           targetExisted: _reviewContext.targetExisted,
-          sourceRevisionId: _reviewContext.sourceRevisionId,
         );
         _included.clear();
         _selectedEmployees.clear();
