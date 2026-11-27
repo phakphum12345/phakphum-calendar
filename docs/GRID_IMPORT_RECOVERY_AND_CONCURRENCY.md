@@ -48,8 +48,8 @@ The current UI uses `grid-<microseconds>` import-run identifiers. The backend th
 | Idempotent recovery when accepted Schedule is already present | Implemented; regression test added |
 | Atomic compare-and-set for Grid backend commit/recovery | Implemented for this path only; other production writers are not yet migrated |
 | Cross-process/device protection for Grid backend writes | Backend server rejects stale caller-bound revisions; no global guarantee for other writers or local fallback |
-| Automatic startup discovery of all journaled Schedule IDs | Not implemented |
-| Recovery of every journal before any schedule is edited | Not implemented |
+| Automatic startup discovery of all journaled Schedule IDs | Implemented in AppShell for local and authenticated remote journal namespaces; remote failures are surfaced while discovered local IDs remain visible |
+| Recovery review before editing | Partially implemented: startup discovery surfaces a review queue and requires per-Schedule confirmation; the entire application is not yet globally edit-locked until every item is resolved |
 
 ## 3. Why the current guard is not atomic CAS
 
@@ -129,3 +129,34 @@ The Grid import workflow is not ready for a concurrency-safety claim or producti
 5. Calendar sync remains opt-in and is separately reviewed.
 
 Until then, keep the current revision checks, report the remaining race honestly, and fail closed whenever a conflict is observed.
+
+
+## 8.1 — 2026-11-27 startup discovery and review-bound recovery
+
+The application now creates the existing Grid import workflow at the AppShell composition boundary and starts journal discovery after the AppController has initialized.
+
+- Local journal IDs are enumerated first. Remote journal discovery runs separately so an authentication/network failure does not hide local recovery candidates.
+- A failed remote discovery is displayed as an operational warning; it is never interpreted as an empty remote journal.
+- The AppShell displays a recovery banner and a Schedule-ID list. It does not automatically replay any journal.
+- Selecting an ID calls `inspectRecovery`, which returns one of: `noCommittedBundle`, `ready`, `alreadyApplied`, or `conflict`.
+- Only a `ready` assessment exposes the explicit **ยืนยันกู้คืน** action.
+- Confirmation passes the exact assessment object to `recoverAssessment`. Before writing, the workflow re-reads the newest local/remote committed journal and verifies the same import run ID, target revision, accepted Schedule fingerprint and candidate payload. It then re-reads the canonical Schedule and performs the caller-bound conditional write.
+- If the journal or canonical Schedule changed after preview, recovery fails closed and leaves canonical data unchanged.
+
+### Source and regression coverage
+
+| Area | Source | Evidence level |
+|---|---|---|
+| Recovery assessment | `lib/features/shift_parser/application/grid_roster_import_workflow.dart` | Implemented — read-only assessment and exact-preview commit guard |
+| Startup discovery and banner | `lib/ui/app_shell.dart`, `lib/app.dart`, `lib/core/di/app_dependencies.dart` | Implemented — integrated into production AppShell |
+| Journal enumeration | `lib/features/shift_parser/data/grid_roster_bundle_journal.dart`, `lib/features/shift_parser/data/backend_grid_roster_import_journal_gateway.dart` | Implemented — local and remote enumeration |
+| Assessment regression source | `test/grid_roster_recovery_assessment_test.dart` | Test source added: empty journal, ready, conflict, already applied, remote failure, and journal replacement after preview |
+| Execution evidence | PR #192 exact-head workflows | Pending at the documentation update; do not claim tests passed until exact-head CI completes |
+
+### Remaining acceptance boundary
+
+- Startup discovery is not yet a global edit lock. The banner surfaces pending IDs, but unrelated editing routes are not blocked until every journal is resolved.
+- A conflicting journal is surfaced and cannot be replayed; a dedicated side-by-side conflict-resolution/merge UI is still required.
+- The local SharedPreferences journal remains process/isolate scoped and is not a cross-device transaction.
+- Backend multi-client recovery must still be accepted against the deployed production database engine.
+- The AppShell recovery banner and confirmation flow still need dedicated widget/integration tests.
