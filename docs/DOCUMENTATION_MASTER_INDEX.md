@@ -3,8 +3,19 @@
 This index defines the documentation architecture, not a fixed implementation sequence. Workstreams progress according to verified dependencies and readiness.
 
 - Repository: phakphum12345/phakphum-calendar
-- Delivery: consolidated current-main documentation PR #188 (replaces stale PRs #178 and #180)
+- Delivery: PR #188 consolidated the earlier documentation work; current documentation reconciliation is tracked separately from feature PRs.
 - Rule: document presence is not implementation evidence; every status needs source/runtime evidence and exact SHA.
+
+## Current status source of truth — 2026-11-27
+
+- [Repository implementation status](../IMPLEMENTATION_STATUS.md) — exact main SHA, open PR heads, CI/review/acceptance evidence.
+- [Requirements traceability](../REQUIREMENTS_TRACEABILITY.md) — A–K work-package evidence and external dependencies.
+- [Remaining work index](REMAINING_WORK_INDEX.md) — current priority order and outstanding work.
+- [End-to-end acceptance matrix](END_TO_END_ACCEPTANCE_MATRIX.md) — required tests and release gates.
+- Main SHA: `68ef85361c2d08e2970160a36475592010d908f7`.
+- Current Draft PRs: #191, #192, #196, #201, #202, #203 and #204. PR #199 was closed without merge after orientation work moved into #192.
+- The main branch has protection disabled and no required status-check contexts. No exact-main workflow evidence was returned for the current SHA.
+
 
 ## 1. Documentation tree
 
@@ -92,11 +103,13 @@ Legacy root-level documents are retained and catalogued below. New canonical wor
   - [Document control and status policy](governance/DOCUMENT_CONTROL_AND_STATUS_POLICY.md)
 
 ## 11. Delivery and audit
-- [END_TO_END_COMPLETION_PLAN_2026-11-25.md](END_TO_END_COMPLETION_PLAN_2026-11-25.md)
-- [PR_DELIVERY_TRACKER_2026-11-25.md](PR_DELIVERY_TRACKER_2026-11-25.md)
-- [REMAINING_WORK_INDEX.md](REMAINING_WORK_INDEX.md)
-- [END_TO_END_ACCEPTANCE_MATRIX.md](END_TO_END_ACCEPTANCE_MATRIX.md)
-- [PR_DELIVERY_TRACKER_2026-11-25.md](PR_DELIVERY_TRACKER_2026-11-25.md) (current)
+- [IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md) (current repository-level status)
+- [REQUIREMENTS_TRACEABILITY.md](../REQUIREMENTS_TRACEABILITY.md) (current A–K traceability)
+- [REMAINING_WORK_INDEX.md](REMAINING_WORK_INDEX.md) (current priority checklist)
+- [END_TO_END_ACCEPTANCE_MATRIX.md](END_TO_END_ACCEPTANCE_MATRIX.md) (acceptance gates)
+- [END_TO_END_COMPLETION_PLAN_2026-11-25.md](END_TO_END_COMPLETION_PLAN_2026-11-25.md) (historical plan snapshot)
+- [END_TO_END_SYNC_COMPLETION_PLAN_2026-11-26.md](END_TO_END_SYNC_COMPLETION_PLAN_2026-11-26.md) (historical sync plan snapshot)
+- [PR_DELIVERY_TRACKER_2026-11-25.md](PR_DELIVERY_TRACKER_2026-11-25.md) (historical delivery snapshot)
 - [PR_DELIVERY_TRACKER_2026-11-24.md](PR_DELIVERY_TRACKER_2026-11-24.md) (historical)
 - Audit history: [REPOSITORY_AUDIT.md](REPOSITORY_AUDIT.md), [PROJECT_AUDIT.md](PROJECT_AUDIT.md), [END_TO_END_REPOSITORY_AUDIT.md](END_TO_END_REPOSITORY_AUDIT.md), [END_TO_END_COMPLETION_AUDIT_2026-11-23.md](END_TO_END_COMPLETION_AUDIT_2026-11-23.md).
 
