@@ -108,6 +108,7 @@ class VerticalMonthlyRosterSectionParser {
         final resolvedDates = <int, DateTime>{};
         final anomalies = <MonthlyRosterDateAnomaly>[];
         var cursor = DateTime(period.start.year, period.start.month, period.start.day);
+        int? previousDisplayedDay;
         for (final cell in dateCells) {
           final day = _day(cell)!;
           final resolved = _resolveNextDate(
@@ -117,20 +118,36 @@ class VerticalMonthlyRosterSectionParser {
             end: period.end,
           );
           if (resolved == null) {
+            final isSingleMonth =
+                period.start.year == period.end.year &&
+                period.start.month == period.end.month;
+            final anomalyCode = previousDisplayedDay == day
+                ? 'duplicate_date'
+                : isSingleMonth &&
+                      previousDisplayedDay != null &&
+                      day < previousDisplayedDay
+                ? 'out_of_order'
+                : 'unresolved_date';
             anomalies.add(
               MonthlyRosterDateAnomaly(
-                code: 'unresolved_date',
+                code: anomalyCode,
                 columnIndex: cell.columnIndex,
                 rowIndex: cell.rowIndex,
                 displayedDay: day,
-                message: 'ไม่สามารถจับคู่วันที่ $day ที่ ${cell.a1} '
-                    'กับช่วงวันที่ที่ระบุได้',
+                message: anomalyCode == 'duplicate_date'
+                    ? 'พบวันที่ $day ซ้ำที่ ${cell.a1}'
+                    : anomalyCode == 'out_of_order'
+                    ? 'วันที่ $day ที่ ${cell.a1} ไม่เรียงตามปฏิทิน'
+                    : 'ไม่สามารถจับคู่วันที่ $day ที่ ${cell.a1} '
+                          'กับช่วงวันที่ที่ระบุได้',
               ),
             );
+            previousDisplayedDay = day;
             continue;
           }
           resolvedDates[cell.rowIndex] = resolved;
           cursor = DateTime(resolved.year, resolved.month, resolved.day + 1);
+          previousDisplayedDay = day;
         }
 
         final expectedDayCount = DateTime.utc(
