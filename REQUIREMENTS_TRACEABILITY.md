@@ -9,7 +9,7 @@ The rows below supersede older PR/status snapshots in this file. Open-PR source 
 | Work package | Current source / PR | Exact-head CI evidence | Evidence state | Remaining acceptance |
 |---|---|---|---|---|
 | A. Universal roster import | #192 — `2f6f9043db8876ea5ed49d85961658fac95942ac` | New exact-head run pending after latest source/test changes | IN PROGRESS | Validate original X-OPD November 2569, 16 Nov–15 Dec 2569 and US Clinic ภปร.4 workbooks; verify ambiguous orientation and identity review |
-| B. Schedule persistence | #192 — same head | New exact-head run pending | IN PROGRESS | Verify all production writers, true backend transaction/CAS across devices, tombstones and crash/restart recovery |
+| B. Schedule persistence | #192 — same head | New exact-head run pending after encrypted payload tests | IN PROGRESS | Verify all production writers, true backend transaction/CAS across devices, tombstones, APP_KEY backup/restore and crash/restart recovery |
 | C. Google Calendar Sync | #196 — `8e186790e447f9278eda8612a1bb1b6f7e7b77c9` | 13/13 workflows passed | IN PROGRESS | Controlled test-calendar insert/update/delete, provider timeout reconciliation and cross-device lease contention |
 | D. Notifications | #191 — `cf7eaa22eaf81e04b0b444acfc3aee2a8ca51e5e` | 13/13 workflows passed | IN PROGRESS | Registered-device delivery, permission denial, expired subscriptions and deployed scheduler acceptance |
 | E. Schedule generation | #202 — `ca6ebd095ef6566fcce00e9bc49e9c820470b80d` | 12/12 workflows passed | IN PROGRESS | Revalidate against current #192 base; verify UI, immutable preview, approval invalidation and post-commit read-back |
