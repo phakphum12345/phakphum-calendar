@@ -227,12 +227,15 @@ class ShiftPayCalculationService
             static fn (array $candidate): bool => $candidate['specificity'] === $highestSpecificity,
         ));
         if (count($equallySpecific) > 1) {
+            $conflictingRuleIds = array_values(array_map(
+                static fn (array $candidate): string => (string) $candidate['rule']['id'],
+                $equallySpecific,
+            ));
+            sort($conflictingRuleIds, SORT_STRING);
+
             return [
                 'rule' => null,
-                'conflicting_rule_ids' => array_values(array_map(
-                    static fn (array $candidate): string => (string) $candidate['rule']['id'],
-                    $equallySpecific,
-                )),
+                'conflicting_rule_ids' => $conflictingRuleIds,
             ];
         }
 
