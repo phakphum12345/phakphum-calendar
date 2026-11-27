@@ -117,6 +117,7 @@ class ExcelReaderService {
       final rowCount = limit == null || sheet.rows.length < limit
           ? sheet.rows.length
           : limit;
+      final mergedAnchors = _mergedCellAnchors(sheet);
       return [
         for (var rowIndex = 0; rowIndex < rowCount; rowIndex++)
           ExcelRow(
@@ -131,6 +132,11 @@ class ExcelReaderService {
                   rowIndex: rowIndex,
                   columnIndex: columnIndex,
                   value: _cellValue(sheet.rows[rowIndex][columnIndex]?.value),
+                  isMerged: mergedAnchors.containsKey((rowIndex, columnIndex)),
+                  mergedAnchorRowIndex:
+                      mergedAnchors[(rowIndex, columnIndex)]?.$1,
+                  mergedAnchorColumnIndex:
+                      mergedAnchors[(rowIndex, columnIndex)]?.$2,
                 ),
             ],
           ),
@@ -143,6 +149,83 @@ class ExcelReaderService {
         ),
       );
     }
+  }
+
+  Map<(int, int), (int, int)> _mergedCellAnchors(excel.Sheet sheet) {
+    final anchors = <(int, int), (int, int)>{};
+    final rangePattern = RegExp(r'^([A-Z]+)(\\d+):([A-Z]+)(\\d+)
+    if (file.extension != supportedExtension) {
+      return const ImportError(
+        code: ImportErrorCode.unsupportedExtension,
+        message: 'รองรับเฉพาะไฟล์ Excel นามสกุล .xlsx',
+      );
+    }
+    if (file.sizeInBytes == 0) {
+      return const ImportError(
+        code: ImportErrorCode.emptyFile,
+        message: 'ไฟล์ Excel ไม่มีข้อมูล',
+      );
+    }
+    if (file.sizeInBytes > maxFileSizeInBytes) {
+      return const ImportError(
+        code: ImportErrorCode.fileTooLarge,
+        message: 'ไฟล์ Excel ต้องมีขนาดไม่เกิน 15 MB',
+      );
+    }
+    return null;
+  }
+
+  Object? _cellValue(excel.CellValue? value) => switch (value) {
+    null => null,
+    excel.TextCellValue() => value.value.text,
+    excel.IntCellValue() => value.value,
+    excel.DoubleCellValue() => value.value,
+    excel.BoolCellValue() => value.value,
+    excel.DateCellValue() => value.asDateTimeLocal(),
+    excel.DateTimeCellValue() => value.asDateTimeLocal(),
+    excel.TimeCellValue() => value.asDuration(),
+    excel.FormulaCellValue() => value.formula,
+  };
+}
+
+class ExcelReaderException implements Exception {
+  const ExcelReaderException(this.error);
+
+  final ImportError error;
+
+  @override
+  String toString() => error.message;
+}
+);
+    for (final range in sheet.spannedItems) {
+      final match = rangePattern.firstMatch(range.toUpperCase());
+      if (match == null) continue;
+      final startColumn = _columnIndex(match.group(1)!);
+      final startRow = int.parse(match.group(2)!) - 1;
+      final endColumn = _columnIndex(match.group(3)!);
+      final endRow = int.parse(match.group(4)!) - 1;
+      if (startRow < 0 || startColumn < 0 ||
+          endRow < startRow || endColumn < startColumn) {
+        continue;
+      }
+      for (var row = startRow; row <= endRow; row++) {
+        for (var column = startColumn; column <= endColumn; column++) {
+          anchors[(row, column)] = (startRow, startColumn);
+        }
+      }
+    }
+    return anchors;
+  }
+
+  int _columnIndex(String letters) {
+    var value = 0;
+    for (final code in letters.codeUnits) {
+      if (code < 65 || code > 90) {
+        throw FormatException('Invalid Excel column label: $letters');
+      }
+      value = value * 26 + code - 64;
+    }
+    return value - 1;
   }
 
   ImportError? _validate(ImportFile file) {
