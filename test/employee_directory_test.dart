@@ -19,6 +19,15 @@ void main() {
     expect(employees.map((employee) => employee.id), ['e2', 'e1']);
   });
 
+  test('directory search matches a user-managed alternate employee name', () {
+    final controller = EmployeeDirectoryController(schedule: _schedule());
+    addTearDown(controller.dispose);
+
+    controller.updateQuery('Former Name');
+
+    expect(controller.employees.map((employee) => employee.id), ['e2']);
+  });
+
   test('directory retains each employee assignment date and shift times', () {
     final schedule = _schedule();
     final assignments = const EmployeeDirectoryService().assignments(
@@ -101,6 +110,7 @@ Schedule _schedule() {
     firstName: 'Anan',
     lastName: 'Sukjai',
     nickname: 'Nan',
+    alternateNames: 'Former Name, Old Record Name',
     department: emergency,
     position: 'Nurse',
   );
