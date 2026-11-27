@@ -84,6 +84,38 @@ void main() {
     expect(report.assignments, hasLength(8));
   });
 
+  test('keeps side-by-side vertical tables in separate sections', () {
+    final report = const MonthlyRosterWorkbookScanner().scan(
+      snapshots: [
+        SheetSnapshot(
+          title: 'สองแผนก',
+          spreadsheetId: 'book-side-by-side',
+          sheetId: 45,
+          rows: [
+            [
+              'แผนก A ประจำเดือน พฤศจิกายน พ.ศ. 2569',
+              null,
+              null,
+              null,
+              'แผนก B ประจำเดือน ธันวาคม พ.ศ. 2569',
+            ],
+            [null, 'เช้า', 'บ่าย', null, null, 'เช้า', 'บ่าย'],
+            for (var day = 1; day <= 7; day++)
+              [day, 'A-$day', 'A2-$day', null, day, 'B-$day', 'B2-$day'],
+          ],
+        ),
+      ],
+      spreadsheetId: 'book-side-by-side',
+      spreadsheetTitle: 'สองแผนก',
+    );
+
+    expect(report.sections, hasLength(2));
+    expect(report.sections.map((section) => section.startDate!.month), [11, 12]);
+    expect(report.sections.first.assignments.first.sourceCell, 'B3');
+    expect(report.sections.last.assignments.first.sourceCell, 'F3');
+    expect(report.assignments, hasLength(28));
+  });
+
   test('reports missing dates in a near-complete vertical date axis', () {
     final days = <int>[...List<int>.generate(16, (index) => index + 1), ...List<int>.generate(13, (index) => index + 18)];
     final report = const MonthlyRosterWorkbookScanner().scan(
