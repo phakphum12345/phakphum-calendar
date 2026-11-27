@@ -949,6 +949,39 @@ void main() {
     expect(populated.warnings, isEmpty);
   });
 
+  test('resolves explicit DateTime, Thai Buddhist Era and Gregorian date cells', () {
+    final dateValues = <Object?>[
+      DateTime(2026, 11, 1),
+      '02/11/2569',
+      '2026-11-03',
+      '4 พฤศจิกายน 2569',
+      '05/11/2026',
+      DateTime(2026, 11, 6),
+      '07/11/2569',
+    ];
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 80,
+      sheetTitle: 'Explicit dates',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, [null, 'เวรเช้า']),
+        ..._row(1, ['วันที่']),
+        for (var index = 0; index < dateValues.length; index++)
+          ..._row(index + 2, [dateValues[index], 'นาย ${index + 1}']),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, hasLength(1));
+    expect(report.sections.single.startDate, DateTime(2026, 11, 1));
+    expect(report.sections.single.endDate, DateTime(2026, 11, 7));
+    expect(report.assignments, hasLength(7));
+    expect(report.sections.single.dateAnomalies, isEmpty);
+  });
+
   test('keeps horizontal and vertical sections separate in one worksheet', () {
     final input = ShiftParserInput(
       spreadsheetId: 'spreadsheet',
