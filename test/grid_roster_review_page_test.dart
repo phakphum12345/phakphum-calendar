@@ -293,7 +293,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     final firstCorrectionAction = find.byKey(
-      const ValueKey('grid-roster-correct-date-1-1-5'),
+      const ValueKey('grid-roster-correct-date-1-1-5-duplicate_day'),
     );
     expect(firstCorrectionAction, findsOneWidget);
     await tester.ensureVisible(firstCorrectionAction);
@@ -311,7 +311,7 @@ void main() {
     // Target its stable source-coordinate key rather than relying on widget
     // order among identical action labels.
     final secondCorrectionAction = find.byKey(
-      const ValueKey('grid-roster-correct-date-1-1-7'),
+      const ValueKey('grid-roster-correct-date-1-1-7-duplicate_day'),
     );
     expect(secondCorrectionAction, findsOneWidget);
     await tester.ensureVisible(secondCorrectionAction);
