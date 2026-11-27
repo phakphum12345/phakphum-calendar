@@ -9,12 +9,12 @@ This is the current repository-level status. The historical 2026-11-25 snapshot 
 | PR | Scope | Exact head SHA | Latest exact-head CI evidence | Review / acceptance |
 |---|---|---|---|---|
 | [#191](https://github.com/phakphum12345/phakphum-calendar/pull/191) | Web Push delivery/outbox | `cf7eaa22eaf81e04b0b444acfc3aee2a8ca51e5e` | 13/13 workflows passed | Draft; no review; real-device delivery not accepted |
-| [#192](https://github.com/phakphum12345/phakphum-calendar/pull/192) | Universal roster import, source provenance, CAS/recovery | `2f6f` (full SHA in PR) | New exact-head runs not yet available | Draft; no review; original workbook acceptance pending |
+| [#192](https://github.com/phakphum12345/phakphum-calendar/pull/192) | Universal roster import, source provenance, CAS/recovery | `2f6f9043db8876ea5ed49d85961658fac95942ac` | New exact-head runs not yet available | Draft; no review; original workbook acceptance pending |
 | [#196](https://github.com/phakphum12345/phakphum-calendar/pull/196) | Calendar Sync ETag/lease/ledger reliability | `8e186790e447f9278eda8612a1bb1b6f7e7b77c9` | 13/13 workflows passed | Draft; no review; controlled Google test calendar pending |
 | [#201](https://github.com/phakphum12345/phakphum-calendar/pull/201) | Shift Pay rule conflict/precedence | `d3f228dcdaea4f1a3771c271421226ab71ab00b5` | 12/12 workflows passed | Draft; no review; business-rule acceptance pending |
 | [#202](https://github.com/phakphum12345/phakphum-calendar/pull/202) | Schedule generation preview/approval/commit | `ca6ebd095ef6566fcce00e9bc49e9c820470b80d` | 12/12 workflows passed | Draft; no review; dependent on #192 |
 | [#203](https://github.com/phakphum12345/phakphum-calendar/pull/203) | Monthly Shift Pay statement calculation core | `9ddcca51de57b71c721f60665f3c9f8cf0e7bbcb` | 11/11 workflows passed; 716 tests passed | Draft; no review; statement persistence/UI not integrated |
-| [#204](https://github.com/phakphum12345/phakphum-calendar/pull/204) | Historical Drive revision restore | `ba73` (full SHA in PR) | New exact-head runs not yet available | Draft; no review; real Drive revision acceptance pending |
+| [#204](https://github.com/phakphum12345/phakphum-calendar/pull/204) | Historical Drive revision restore | `ba73d30f4e332105c05c95d00f61517da1cd9689` | New exact-head runs not yet available | Draft; no review; real Drive revision acceptance pending |
 
 PR #199 was closed without merge after its orientation foundation was superseded by the parser integration work in #192. All seven currently open PRs remain Draft and have no submitted reviews or review threads.
 
