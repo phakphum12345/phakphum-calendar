@@ -5022,10 +5022,14 @@ class _WebPushSettingsCardState extends State<_WebPushSettingsCard> {
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: !configured || _busy || _loading ||
-                        permission == 'denied'
-                    ? null
-                    : _toggleSubscription,
+                onPressed: _busy ||
+                      _loading ||
+                      !supported ||
+                      (_subscribed
+                          ? !widget.client.isApiConfigured
+                          : !configured || permission == 'denied')
+                  ? null
+                  : _toggleSubscription,
                 icon: _busy || _loading
                     ? const SizedBox(
                         width: 16,
