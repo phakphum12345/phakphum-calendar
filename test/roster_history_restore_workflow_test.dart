@@ -7,6 +7,7 @@ import 'package:phakphum_calendar/domain/entities/schedule_day.dart';
 import 'package:phakphum_calendar/domain/entities/schedule_month.dart';
 import 'package:phakphum_calendar/domain/repositories/conditional_schedule_writer.dart';
 import 'package:phakphum_calendar/domain/repositories/schedule_repository.dart';
+import 'package:phakphum_calendar/features/schedule/data/shared_preferences_schedule_repository.dart' show ScheduleKeyValueStore, ScheduleKeyEnumerator;
 import 'package:phakphum_calendar/domain/repositories/schedule_revision_source.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/grid_roster_canonical_converter.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/grid_roster_import_workflow.dart';
