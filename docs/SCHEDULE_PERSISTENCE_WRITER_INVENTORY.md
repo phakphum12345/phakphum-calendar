@@ -188,7 +188,7 @@ This section supersedes the W-01 through F-01 backend-mode dispositions in secti
 
 - Backend mode now fails closed for unbound or stale legacy snapshots. This prevents an unsafe write, but a caller that does not first load the canonical base may show a persistence error until its load/review path is migrated.
 - The SharedPreferences fallback still has no cross-process/device CAS and must be described as local-only. It is not a production multi-device guarantee.
-- Conditional Schedule delete is deliberately disabled until a tombstone/expected-revision contract and recovery semantics are designed. No Schedule data was deleted by this work.
+- Conditional Schedule delete now uses caller-owned revisions and durable tombstones in backend and local fallback. The local fallback remains same-process/isolate only; no cross-process guarantee is claimed.
 - Generation-to-persistence approval flow and startup journal discovery/indexing remain separate open work packages.
 - These changes are committed but are not certified until Flutter analyze/tests and the exact-head platform matrix pass. No merge or production migration is authorized.
 
@@ -217,7 +217,7 @@ The earlier PR conversation findings about shared revision-cache substitution an
 | W-03 canonical adoption | `adoptCanonicalSchedule` uses the previous persisted snapshot as the base and routes through the same conditional writer. | No production multi-device claim without configured backend. |
 | W-04/W-05 Grid commit/recovery | Review context obtains the repository's authoritative snapshot/absent revision; provenance carries it through commit and recovery; final writes use `saveIfRevision`. | Journal and canonical Schedule are separate durable requests; startup discovery/index remains open. |
 | F-01 tabular import | Backend mode is create-only: reads absence and uses the exact absent-state token. Existing records require reviewed Grid replacement. | A generic unreviewed overwrite is intentionally rejected. |
-| S-01 delete | Backend repository currently refuses unconditional delete. | Conditional delete/tombstone remains intentionally disabled. |
+| S-01 delete | `ConditionalScheduleDeleter.deleteIfRevision` is implemented for backend and local repositories; unconditional `delete` fails closed. | Conditional tombstone behavior is implemented; exact-head Flutter tests and cross-process/local durability acceptance remain pending. |
 
 Composition-root inspection confirms that normal production AppController, ScheduleController, imported Schedule controller and Grid workflow use the same configured `scheduleRepository` instance. When `ORGANIZATION_API_BASE_URL` is empty, the production graph selects SharedPreferences; that fallback does not provide cross-device CAS. The PR workflow's production-backend gate was skipped, so this run does not prove a deployed backend is configured or reachable.
 
@@ -228,3 +228,40 @@ Relevant exact-head regression sources include:
 - `test/grid_roster_import_workflow_test.dart`: review/commit/recovery and stale-target conflict behavior.
 
 **Disposition:** the previous three review findings are addressed in the current source for the inventoried backend-mode paths; do not describe this as globally production-accepted until the backend is deployed and tested with independent authenticated clients against the actual production database. Local SharedPreferences remains single-process/isolate only. Conditional delete, generation-to-persistence approval, startup journal discovery, and atomicity across journal + Schedule stores remain open. No production Schedule data was changed.
+
+## 10.3 — 2026-11-27 conditional deletion and local snapshot-bound write follow-up
+
+**Implementation source head before this documentation update:** `bc013553f5c0e9e118d5d6846126a81be350d24b` on the PR #192 branch. The backend Laravel CI job succeeded for this head; the full Flutter/platform matrix was still running when this section was written.
+
+### Conditional delete contract
+
+- Added `ConditionalScheduleDeleter.deleteIfRevision(scheduleId, expectedRevision)`. The expected revision must be the exact revision captured by the caller; an empty or stale token fails.
+- Backend deletion writes a tombstone and stores `deleted_from_revision`. A retry using either the original source revision or the tombstone revision is idempotent.
+- Deleting an absent identity creates a tombstone against the observed `absent:` token. A stale client using that absent token cannot later create/resurrect the Schedule.
+- Local SharedPreferences deletion writes a versioned tombstone into the inactive slot, verifies it, advances the generation and switches the active pointer. It retains the original source revision for idempotent retries. A stale writer cannot recreate a deleted identity.
+- Unconditional `ScheduleRepository.delete(id)` remains fail-closed in both production repositories; it never silently deletes data.
+- Backend and local repository `save()` now require a revision attached to the exact loaded Schedule object. Unobserved or copied snapshots fail closed; production writers use explicit `saveIfRevision`.
+
+### Source and test evidence
+
+| Area | Source / test | Evidence |
+|---|---|---|
+| Domain capability | `lib/domain/repositories/conditional_schedule_deleter.dart` | Interface added |
+| Backend repository | `lib/features/schedule/data/backend_schedule_repository.dart` | Sends caller-owned expected revision; records returned tombstone revision |
+| Local repository | `lib/features/schedule/data/shared_preferences_schedule_repository.dart` | Snapshot-bound save; staged tombstone/read-back; idempotent retry |
+| Backend API | `backend/app/Http/Controllers/Api/V1/ScheduleController.php` | Conditional live/absent delete, source-revision tombstone, retry handling |
+| Backend schema | `backend/database/migrations/2026_11_25_000004_create_schedule_records_and_import_journals.php` | `deleted_from_revision` retained |
+| Backend tests | `backend/tests/Feature/ScheduleApiTest.php` | Live delete, stale resurrection rejection, source-token retry, tombstone-token retry, absent delete and stale create rejection |
+| Local tests | `test/schedule_repository_test.dart` | Snapshot-bound save, fail-closed unbound save, live/absent tombstone, idempotent retry and stale create rejection |
+| Client tests | `test/backend_schedule_repository_test.dart` | Exact caller revision is sent on DELETE and tombstone revision is retained |
+
+### Remaining persistence acceptance
+
+- Exact-head Flutter tests and platform workflows must finish successfully before this implementation is accepted.
+- The SharedPreferences fallback uses a per-repository-instance lock and two-slot recovery. It is not cross-process, cross-isolate or cross-device CAS. The configured backend is the authoritative cross-device CAS boundary.
+- Backend multi-client concurrency still needs a controlled test against the actual production database engine; SQLite feature tests do not prove MySQL/PostgreSQL row-lock behavior.
+- Journal discovery/indexing and PREPARED/COMMITTED recovery across the separate journal and Schedule stores remain open. The two writes are not one atomic transaction.
+- Generation-to-persistence approval remains open.
+
+**Disposition:** conditional delete/tombstone source implementation is present and backend tests passed on the implementation head. Do not mark Package B ACCEPTED until exact-head Flutter tests, independent backend-client concurrency, startup journal recovery and production database acceptance are complete.
+
