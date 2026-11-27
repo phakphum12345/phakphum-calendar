@@ -608,7 +608,7 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
       if (!mounted || document == null) return;
       final report = workflow.scanDelimitedDocument(
         document: document,
-        fileName: document.sourceFileName ?? 'local.' + document.extension,
+        fileName: document.sourceFileName ?? 'local.${document.extension}',
       );
 
       final recovery = await workflow.recover('imported');
