@@ -10,6 +10,24 @@ use Illuminate\Support\Facades\DB;
 
 class ScheduleImportJournalController extends Controller
 {
+    /**
+     * Lists Schedule IDs with import journals owned by the authenticated user.
+     * This index intentionally returns identifiers only; callers fetch and
+     * validate each journal through the Schedule-scoped endpoint before review.
+     */
+    public function discover(Request $request): JsonResponse
+    {
+        $scheduleIds = DB::table('schedule_import_journals')
+            ->where('owner_user_id', $request->user()->id)
+            ->select('schedule_id')
+            ->distinct()
+            ->orderBy('schedule_id')
+            ->pluck('schedule_id')
+            ->values();
+
+        return response()->json(['data' => $scheduleIds]);
+    }
+
     public function index(Request $request, string $scheduleId): JsonResponse
     {
         $records = DB::table('schedule_import_journals')
