@@ -13,6 +13,15 @@ use Tests\TestCase;
 
 class NotificationOutboxWorkerTest extends TestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        config([
+            'app.key' => 'base64:'.base64_encode(str_repeat('a', 32)),
+        ]);
+    }
+
     use RefreshDatabase;
 
     public function test_worker_delivers_pending_intent_and_records_per_device_success(): void
