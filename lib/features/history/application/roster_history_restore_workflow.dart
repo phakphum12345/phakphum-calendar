@@ -58,6 +58,7 @@ class RosterHistoryRestoreWorkflow {
       targetScheduleName: targetScheduleName,
       employees: employees,
       shiftTemplates: shiftTemplates,
+      sourceRevisionId: revision.revisionId,
     );
   }
 
