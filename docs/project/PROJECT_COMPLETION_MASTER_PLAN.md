@@ -41,6 +41,8 @@ The main SHA above is the latest commit returned by the repository commit listin
 
 ## 3. Live pull-request inventory
 
+The GitHub API currently returns **12 open PRs**: the 11 product/engineering PRs listed below plus this documentation-only audit PR #209. All 12 are Draft; none is approved for merge by this audit.
+
 See [PR Dependency Map](PR_DEPENDENCY_MAP.md) and [Work Package Status](WORK_PACKAGE_STATUS.md) for details.
 
 | PR | Head SHA at audit | Base | Exact-head CI observation | Disposition |
