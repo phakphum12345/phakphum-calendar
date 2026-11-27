@@ -1,12 +1,12 @@
 <?php
 
-namespace Tests\\Feature;
+namespace Tests\Feature;
 
-use App\\Contracts\\GoogleIdentityTokenVerifier;
-use Illuminate\\Foundation\\Testing\\RefreshDatabase;
-use Illuminate\\Support\\Facades\\DB;
-use Tests\\Fakes\\FakeGoogleIdentityTokenVerifier;
-use Tests\\TestCase;
+use App\Contracts\GoogleIdentityTokenVerifier;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Tests\Fakes\FakeGoogleIdentityTokenVerifier;
+use Tests\TestCase;
 
 class ScheduleImportJournalDiscoveryTest extends TestCase
 {
