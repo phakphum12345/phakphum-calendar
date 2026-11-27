@@ -5,7 +5,7 @@
 The implementation state below supersedes earlier PR/CI snapshots in this plan.
 
 - Main SHA: `68ef85361c2d08e2970160a36475592010d908f7`.
-- #192 now carries the roster orientation/import and persistence work; latest head `2f6f9043db8876ea5ed49d85961658fac95942ac`, exact-head CI pending.
+- #192 now carries the roster orientation/import and persistence work; latest head `b3dd82757c9652a774b35f7a975170a0bc6f26af`, exact-head CI pending.
 - #196 Calendar Sync reliability head `8e186790e447f9278eda8612a1bb1b6f7e7b77c9`, 13/13 CI pass; real test-calendar acceptance pending.
 - #191 Web Push/outbox head `cf7eaa22eaf81e04b0b444acfc3aee2a8ca51e5e`, 13/13 CI pass; real-device delivery pending.
 - #202 generation preview/approval head `ca6ebd095ef6566fcce00e9bc49e9c820470b80d`, 12/12 CI pass; dependent on #192.
