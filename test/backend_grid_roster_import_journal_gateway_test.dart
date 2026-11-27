@@ -26,6 +26,40 @@ void main() {
     acceptedScheduleFingerprint: acceptedFingerprint,
   );
 
+  test('discovers unique Schedule IDs from the authenticated owner index', () async {
+    late http.Request captured;
+    final client = MockClient((request) async {
+      captured = request;
+      return http.Response(jsonEncode({'data': ['schedule-2', 'schedule-1', 'schedule-2']}), 200);
+    });
+    final gateway = BackendGridRosterImportJournalGateway(
+      baseUrl: 'https://api.example.test/',
+      idTokenProvider: () async => 'google-id-token',
+      httpClient: client,
+    );
+
+    final ids = await gateway.discoverScheduleIds();
+
+    expect(captured.method, 'GET');
+    expect(captured.url.path, '/api/v1/schedules/import-journals');
+    expect(captured.headers['authorization'], 'Bearer google-id-token');
+    expect(ids, ['schedule-1', 'schedule-2']);
+  });
+
+  test('rejects malformed owner journal discovery payloads', () async {
+    final client = MockClient((_) async => http.Response(
+      jsonEncode({'data': ['schedule-1', '', '../other']}),
+      200,
+    ));
+    final gateway = BackendGridRosterImportJournalGateway(
+      baseUrl: 'https://api.example.test/',
+      idTokenProvider: () async => 'google-id-token',
+      httpClient: client,
+    );
+
+    await expectLater(gateway.discoverScheduleIds(), throwsFormatException);
+  });
+
   test('posts PREPARED and COMMITTED stages using backend fingerprint format', () async {
     final requests = <http.Request>[];
     final client = MockClient((request) async {
