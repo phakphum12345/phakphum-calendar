@@ -4,15 +4,14 @@ import 'package:phakphum_calendar/core/result/result.dart';
 import 'package:phakphum_calendar/domain/entities/department.dart';
 import 'package:phakphum_calendar/domain/entities/employee.dart';
 import 'package:phakphum_calendar/domain/entities/schedule.dart';
-import 'package:phakphum_calendar/domain/entities/schedule_month.dart';
 import 'package:phakphum_calendar/domain/entities/shift_assignment.dart';
 import 'package:phakphum_calendar/domain/entities/shift_template.dart';
 import 'package:phakphum_calendar/domain/repositories/employee_repository.dart';
-import 'package:phakphum_calendar/domain/repositories/schedule_repository.dart';
 import 'package:phakphum_calendar/domain/repositories/shift_template_repository.dart';
 import 'package:phakphum_calendar/features/schedule/data/legacy_schedule_adapter.dart';
 
 import 'support/canonical_schedule_fixture.dart';
+import 'support/in_memory_conditional_schedule_repository.dart';
 
 void main() {
   test('canonical schedule adapts to legacy view without becoming source', () {
@@ -142,24 +141,4 @@ class _ShiftTemplateRepository implements ShiftTemplateRepository {
       Success(template);
 }
 
-class _ScheduleRepository implements ScheduleRepository {
-  final saved = <Schedule>[];
-
-  @override
-  Future<Result<void>> delete(String id) async => const Success(null);
-
-  @override
-  Future<Result<Schedule?>> findById(String id) async => const Success(null);
-
-  @override
-  Future<Result<ScheduleMonth?>> loadMonth(
-    String scheduleId,
-    DateTime month,
-  ) async => const Success(null);
-
-  @override
-  Future<Result<Schedule>> save(Schedule schedule) async {
-    saved.add(schedule);
-    return Success(schedule);
-  }
-}
+class _ScheduleRepository extends InMemoryConditionalScheduleRepository {}
