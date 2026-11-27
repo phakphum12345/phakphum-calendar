@@ -152,3 +152,20 @@ Do not mix forecast assignments with actual totals. Do not claim statutory payro
 - Persistence survives restart and migration without historical data loss.
 - Reprocessing the same assignment does not duplicate pay.
 - Monthly report totals reconcile exactly to immutable detail rows.
+
+## 11. Monthly statement calculation core — PR #203
+
+- Adds an immutable monthly-period statement builder over canonical Schedule assignments.
+- Requires an explicit assignment-confirmation predicate; unconfirmed assignments are listed as non-payable and never enter totals.
+- Requires an explicit employment-type resolver; missing employment type is reported and never inferred from employee name or position.
+- Records the exact Schedule revision and a deterministic fingerprint of the complete Shift Pay profile/rule set.
+- Rejects ambiguous equal-specificity rules, missing rules, missing employment type, unresolved hybrid source selection and duplicate assignment identities from payable totals.
+- Uses integer minor units for statement totals after per-line configured rounding.
+- Historical statement objects retain their calculated line amounts and profile fingerprint when later profile versions change.
+
+Acceptance still open:
+
+- The builder is not yet connected to a persisted statement repository, backend API or monthly statement UI.
+- The repository does not yet contain a confirmed-assignment lifecycle contract that this builder can consume; callers must supply the confirmation predicate.
+- Employee currently exposes no persisted employment/payment mode. The existing calculator enum has salaried and dailyPaid; the previously discussed third contractor mode has no retrievable exact definition and must not be guessed.
+- Backend authorization, organization ownership, statement retention/export and read-back verification remain unimplemented.
