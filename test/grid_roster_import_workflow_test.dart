@@ -22,8 +22,11 @@ import 'package:phakphum_calendar/features/excel_import/domain/import_file.dart'
 import 'package:phakphum_calendar/features/excel_import/domain/workbook_info.dart';
 import 'package:phakphum_calendar/features/excel_import/domain/worksheet_info.dart';
 
-class _MemoryStore implements ScheduleKeyValueStore {
+class _MemoryStore implements ScheduleKeyValueStore, ScheduleKeyEnumerator {
   final values = <String, String>{};
+
+  @override
+  Future<Set<String>> getKeys() async => values.keys.toSet();
 
   @override
   Future<String?> getString(String key) async => values[key];
@@ -102,6 +105,10 @@ class _MemoryRemoteJournalGateway implements GridRosterImportJournalGateway {
   final calls = <String>[];
   bool failCommitted = false;
   GridRosterBundleJournalSnapshot? recoverySnapshot;
+  List<String> discoveredIds = const [];
+
+  @override
+  Future<List<String>> discoverScheduleIds() async => discoveredIds;
 
   @override
   Future<void> appendPrepared({
@@ -179,6 +186,53 @@ void main() {
     expect(result, isA<Success<GridRosterCanonicalConversionResult>>());
     return (result as Success<GridRosterCanonicalConversionResult>).value;
   }
+
+  test('discovers a sorted union of local and account-owned remote journal IDs', () async {
+    final localSchedule = Schedule(id: 'local-schedule', name: 'Local roster');
+    final prepared = GridRosterImportProvenance(
+      importRunId: 'local-run',
+      sourceFingerprint: 'sha256:source-local',
+      parserVersion: 'grid-parser/1',
+      createdAtUtc: createdAt,
+      targetScheduleId: localSchedule.id,
+      targetScheduleRevision: 'absent:local-schedule',
+      lifecycle: GridRosterImportLifecycle.prepared,
+      sections: const [],
+      assignments: const [],
+      diagnostics: const [],
+    );
+    final committed = GridRosterImportProvenance(
+      importRunId: prepared.importRunId,
+      sourceFingerprint: prepared.sourceFingerprint,
+      parserVersion: prepared.parserVersion,
+      createdAtUtc: prepared.createdAtUtc,
+      targetScheduleId: prepared.targetScheduleId,
+      targetScheduleRevision: prepared.targetScheduleRevision,
+      lifecycle: GridRosterImportLifecycle.committed,
+      acceptedScheduleFingerprint: 'sha256:accepted-local',
+      sections: const [],
+      assignments: const [],
+      diagnostics: const [],
+    );
+    await GridRosterBundleJournal(store: store).commit(
+      schedule: localSchedule,
+      preparedProvenance: prepared,
+      committedProvenance: committed,
+      currentTargetRevision: 'absent:local-schedule',
+    );
+    final remote = _MemoryRemoteJournalGateway()
+      ..discoveredIds = const ['remote-schedule', 'local-schedule'];
+    final discoveryWorkflow = GridRosterImportWorkflow(
+      scheduleRepository: repository,
+      journal: GridRosterBundleJournal(store: store),
+      remoteJournalGateway: remote,
+    );
+
+    expect(
+      await discoveryWorkflow.discoverRecoveryScheduleIds(),
+      ['local-schedule', 'remote-schedule'],
+    );
+  });
 
   test('scans a local workbook through review and canonical commit end-to-end', () async {
     final workbook = WorkbookInfo(
