@@ -94,7 +94,10 @@ void main() {
     expect(find.text('นำรายการนี้เข้า Schedule'), findsOneWidget);
     expect(find.text('Broken worksheet could not be read.'), findsOneWidget);
 
-    await tester.tap(find.byType(CheckboxListTile).first);
+    final includeAssignment = find.byType(CheckboxListTile).first;
+    await tester.ensureVisible(includeAssignment);
+    await tester.pumpAndSettle();
+    await tester.tap(includeAssignment);
     await tester.pumpAndSettle();
     expect(
       find.textContaining('คำแนะนำกะจากชื่อแถว: UG'),
