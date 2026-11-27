@@ -502,7 +502,7 @@ class VerticalMonthlyRosterSectionParser {
     final candidates = <({String text, int distance})>[];
     for (final cell in cells) {
       final text = cell.text?.trim() ?? '';
-      if (text.isEmpty) continue;
+      if (text.isEmpty || _isDateCell(cell)) continue;
       final rowDistance = (cell.rowIndex - firstDateRow).abs();
       if (rowDistance > 12) continue;
       final distance =
