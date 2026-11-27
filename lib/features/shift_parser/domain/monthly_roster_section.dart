@@ -1,4 +1,5 @@
 import '../../../models/shift.dart';
+import 'normalized_cell.dart';
 
 /// A resolved calendar date attached to its original spreadsheet column.
 class MonthlyRosterDateColumn {
@@ -50,6 +51,7 @@ class MonthlyRosterSection {
     this.sourceSpreadsheetId,
     this.sourceSheetId,
     this.sourceSheetTitle,
+    this.sourceCells = const [],
   });
 
   final String title;
@@ -64,6 +66,8 @@ class MonthlyRosterSection {
   final String? sourceSpreadsheetId;
   final int? sourceSheetId;
   final String? sourceSheetTitle;
+  /// Original normalized worksheet cells retained for explicit, source-bound correction.
+  final List<NormalizedCell> sourceCells;
 
   bool get hasBlockingDateAnomalies => dateAnomalies.isNotEmpty;
 }
@@ -313,6 +317,7 @@ class MonthlyRosterParseReport {
           sourceSpreadsheetId: section.sourceSpreadsheetId,
           sourceSheetId: section.sourceSheetId,
           sourceSheetTitle: section.sourceSheetTitle,
+          sourceCells: section.sourceCells,
         ),
       );
     }
