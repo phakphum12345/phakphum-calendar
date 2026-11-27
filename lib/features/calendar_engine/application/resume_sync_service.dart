@@ -102,6 +102,18 @@ class ResumeSyncService {
     if (run == null) {
       throw StateError('No durable server run exists for this history entry; no Calendar operation was replayed.');
     }
+    const recoverableRunStatuses = {
+      'running',
+      'partial_success',
+      'failed',
+      'cancelled',
+      'expired',
+    };
+    if (!recoverableRunStatuses.contains(run.status)) {
+      throw StateError(
+        'Server run status "${run.status}" is not eligible for recovery; no Calendar operation was replayed.',
+      );
+    }
     final ledger = await coordination.listOperations(runId);
     final succeeded = ledger.where((item) => item.status == 'succeeded');
     final pending = ledger.where((item) => item.status != 'succeeded').toList();
