@@ -1019,6 +1019,60 @@ void main() {
     expect(report.warnings, isEmpty);
   });
 
+  test('reports missing, duplicate and out-of-order dates in vertical grids', () {
+    final nearCompleteDays = <int>[
+      ...List<int>.generate(16, (index) => index + 1),
+      ...List<int>.generate(13, (index) => index + 18),
+    ];
+    final nearComplete = const MonthlyRosterSectionParser().parse(
+      ShiftParserInput(
+        spreadsheetId: 'spreadsheet',
+        spreadsheetTitle: 'Roster',
+        sheetId: 81,
+        sheetTitle: 'พฤศจิกายน 2569',
+        timeZone: 'Asia/Bangkok',
+        cells: [
+          ..._row(0, [null, 'เวรเช้า']),
+          ..._row(1, ['ประจำเดือน พฤศจิกายน พ.ศ. 2569']),
+          for (var index = 0; index < nearCompleteDays.length; index++)
+            ..._row(index + 2, [nearCompleteDays[index], 'นาย ก']),
+        ],
+      ),
+    );
+    expect(
+      nearComplete.sections.single.dateAnomalies
+          .where((anomaly) => anomaly.code == 'missing_dates')
+          .any((anomaly) => anomaly.message.contains('2026-11-17')),
+      isTrue,
+    );
+
+    for (final scenario in [
+      (days: [1, 2, 2, 3, 4, 5, 6], code: 'duplicate_date'),
+      (days: [1, 2, 4, 3, 5, 6, 7], code: 'out_of_order'),
+    ]) {
+      final report = const MonthlyRosterSectionParser().parse(
+        ShiftParserInput(
+          spreadsheetId: 'spreadsheet',
+          spreadsheetTitle: 'Roster',
+          sheetId: 82,
+          sheetTitle: 'พฤศจิกายน 2569',
+          timeZone: 'Asia/Bangkok',
+          cells: [
+            ..._row(0, [null, 'เวรเช้า']),
+            ..._row(1, ['ประจำเดือน พฤศจิกายน พ.ศ. 2569']),
+            for (var index = 0; index < scenario.days.length; index++)
+              ..._row(index + 2, [scenario.days[index], 'นาย ก']),
+          ],
+        ),
+      );
+      expect(
+        report.sections.single.dateAnomalies.map((anomaly) => anomaly.code),
+        contains(scenario.code),
+      );
+      expect(report.sections.single.hasBlockingDateAnomalies, isTrue);
+    }
+  });
+
   test('corrects a vertical date row against the retained source grid', () {
     final input = ShiftParserInput(
       spreadsheetId: 'spreadsheet',
