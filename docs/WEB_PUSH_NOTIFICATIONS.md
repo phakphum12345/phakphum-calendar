@@ -15,7 +15,7 @@ The outbox is now connected to a self-hosted Web Push delivery worker.
 - `php artisan notifications:vapid-keys` prints a new P-256 VAPID pair. Store the private key only in the backend secret environment.
 
 Environment:
-- `WEB_PUSH_VAPID_PUBLIC_KEY`: base64url uncompressed P-256 public point.
+- `WEB_PUSH_VAPID_PUBLIC_KEY`: base64url uncompressed P-256 public point; the web build reads the repository variable of the same name and passes it through `--dart-define`.
 - `WEB_PUSH_VAPID_PRIVATE_KEY`: base64url 32-byte P-256 private scalar.
 - `WEB_PUSH_VAPID_SUBJECT`: a valid `mailto:` or HTTPS contact URI.
 - `WEB_PUSH_MAX_ATTEMPTS`: bounded delivery attempts (default 8).
@@ -27,7 +27,7 @@ Automated tests cover payload encryption/decryption, VAPID ES256 signature verif
 - Exact-head backend tests, formatter and security audit must pass after the worker/migration changes.
 - Deploy a backend with a configured VAPID key pair and scheduler enabled.
 - Register a real browser/device subscription and verify actual delivery, click navigation, permission denied, endpoint expiry and app restart.
-- Flutter settings UI and user-visible delivery/failure state are not yet integrated.
+- A device subscription toggle is integrated into the in-app notification center. Per-notification delivery/failure history is not yet shown in the Flutter UI.
 - Background delivery on mobile platforms other than supported Web Push browsers remains unverified.
 - Provider throttling and multi-worker contention need a live controlled environment test; unit tests do not prove provider acceptance.
 
