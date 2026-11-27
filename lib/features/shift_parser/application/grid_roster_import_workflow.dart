@@ -70,14 +70,15 @@ class GridRosterImportReviewContext {
 /// Calendar synchronization is deliberately not part of this service.
 class GridRosterImportWorkflow {
   GridRosterImportWorkflow({
-    required this._scheduleRepository,
-    required this._journal,
+    required ScheduleRepository scheduleRepository,
+    required GridRosterBundleJournal journal,
     this.remoteJournalGateway,
     this.workbookScanner = const GridRosterWorkbookScanner(),
     this.reviewSessionBuilder = const GridRosterReviewSessionBuilder(),
     this.canonicalConverter = const GridRosterCanonicalConverter(),
     this.scheduleCodec = const ScheduleJsonCodec(),
-  });
+  }) : _scheduleRepository = scheduleRepository,
+       _journal = journal;
 
   final ScheduleRepository _scheduleRepository;
   final GridRosterBundleJournal _journal;
