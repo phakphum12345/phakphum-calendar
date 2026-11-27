@@ -25,7 +25,8 @@
 ## Repository-wide engineering status
 
 - [Central documentation index](../../DOCUMENTATION_INDEX.md)
-- [Implementation status](../../IMPLEMENTATION_STATUS.md)
+- [Historical implementation status snapshot (2026-11-25)](../../IMPLEMENTATION_STATUS.md)
+- [Live project completion status](../project/PROJECT_COMPLETION_MASTER_PLAN.md)
 - [Requirements traceability](../../REQUIREMENTS_TRACEABILITY.md)
 - [Backend API documentation](../../backend/API_DOCUMENTATION.md)
 - [Backend database schema](../../backend/DATABASE_SCHEMA.md)
