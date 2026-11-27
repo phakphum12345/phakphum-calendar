@@ -804,8 +804,9 @@ class _AppShellState extends State<AppShell> {
     EmployeeDirectoryController? createdEmployeeController;
     ShiftTemplateController? createdTemplateController;
     try {
+      final targetSchedule = widget.controller.effectiveSchedule;
       final employeeController = widget.employeeDirectoryControllerFactory(
-        widget.controller.effectiveSchedule,
+        targetSchedule,
       );
       createdEmployeeController = employeeController;
       final templateController = widget.shiftTemplateControllerFactory();
@@ -836,8 +837,8 @@ class _AppShellState extends State<AppShell> {
       );
       final prepared = await restoreWorkflow.prepareReview(
         revision: revision,
-        targetScheduleId: 'imported',
-        targetScheduleName: 'Imported Roster',
+        targetScheduleId: targetSchedule.id,
+        targetScheduleName: targetSchedule.name,
         employees: employees,
         shiftTemplates: templates,
       );
@@ -866,7 +867,7 @@ class _AppShellState extends State<AppShell> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'กู้คืนจาก Drive revision ${revision.revisionId} ลง Imported Roster แล้ว',
+              'กู้คืนจาก Drive revision ${revision.revisionId} ลง ${targetSchedule.name} แล้ว',
             ),
           ),
         );
