@@ -344,6 +344,7 @@ class MonthlyRosterSectionParser {
         (cell.rowIndex, cell.columnIndex): cell,
     };
     final populatedSections = <MonthlyRosterSection>[];
+    final warnings = [...structure.warnings];
 
     for (final section in structure.sections) {
       final assignments = <MonthlyRosterAssignment>[];
@@ -359,6 +360,9 @@ class MonthlyRosterSectionParser {
           !hasMatchingNameColumnHint) {
         // A stale profile must not suppress every assignment in a new layout.
         // Keep automatic date-column mapping and surface the mismatch.
+        warnings.add(
+          'Layout Profile ไม่ตรงกับคอลัมน์วันที่ของส่วน "${section.title}"; ใช้การจับคู่อัตโนมัติแทน',
+        );
       }
       for (final row in section.rosterRows) {
         for (final dateColumn in section.dateColumns) {
@@ -410,7 +414,7 @@ class MonthlyRosterSectionParser {
 
     return MonthlyRosterParseReport(
       sections: List.unmodifiable(populatedSections),
-      warnings: structure.warnings,
+      warnings: List.unmodifiable(warnings),
     );
   }
 
