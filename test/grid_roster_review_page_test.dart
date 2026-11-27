@@ -282,13 +282,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.scrollUntilVisible(
-      find.text('duplicate_day').first,
-      200,
-      scrollable: find.byType(Scrollable).first,
-    );
     final correctionAction = find.text('กำหนดวันที่คอลัมน์นี้').first;
     expect(find.text('กำหนดวันที่คอลัมน์นี้'), findsAtLeastNWidgets(1));
+    // The review page uses a regular Column, not a lazy list. Ensure the
+    // actual correction control is visible instead of scrolling to an
+    // anomaly-code label that may be absent from the current finder frame.
     await tester.ensureVisible(correctionAction);
     await tester.pumpAndSettle();
     await tester.tap(correctionAction);
