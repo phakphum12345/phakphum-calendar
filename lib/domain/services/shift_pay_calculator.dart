@@ -190,6 +190,7 @@ class ShiftPayCalculation {
     required this.isCoveredBySalary,
     this.isCompensatoryTime = false,
     this.compensatesShiftTypeId,
+    this.conflictingRuleIds = const [],
   });
 
   final WorkDayCategory dayCategory;
@@ -201,8 +202,10 @@ class ShiftPayCalculation {
   final bool isCoveredBySalary;
   final bool isCompensatoryTime;
   final String? compensatesShiftTypeId;
+  final List<String> conflictingRuleIds;
 
   bool get hasRule => rule != null;
+  bool get hasRuleConflict => conflictingRuleIds.isNotEmpty;
 }
 
 class ShiftPayCalculator {
@@ -255,6 +258,24 @@ class ShiftPayCalculator {
         rule: null,
         amount: null,
         isCoveredBySalary: false,
+      );
+    }
+
+    final highestSpecificity = _specificity(candidates.first);
+    final equallySpecific = candidates
+        .where((candidate) => _specificity(candidate) == highestSpecificity)
+        .toList(growable: false);
+    if (equallySpecific.length > 1) {
+      final conflictingRuleIds = equallySpecific
+          .map((candidate) => candidate.id)
+          .toList()
+        ..sort();
+      return ShiftPayCalculation(
+        dayCategory: dayCategory,
+        rule: null,
+        amount: null,
+        isCoveredBySalary: false,
+        conflictingRuleIds: List.unmodifiable(conflictingRuleIds),
       );
     }
 
