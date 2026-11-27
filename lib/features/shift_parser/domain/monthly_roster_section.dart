@@ -66,7 +66,7 @@ class MonthlyRosterSection {
   final String? sourceSpreadsheetId;
   final int? sourceSheetId;
   final String? sourceSheetTitle;
-  /// Original normalized worksheet cells retained for explicit, source-bound correction.
+  /// Original normalized worksheet cells retained for source-bound correction.
   final List<NormalizedCell> sourceCells;
 
   bool get hasBlockingDateAnomalies => dateAnomalies.isNotEmpty;
