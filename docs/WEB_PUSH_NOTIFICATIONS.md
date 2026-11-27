@@ -1,5 +1,37 @@
 # Web Push Notifications
 
+
+## Delivery implementation — PR #191
+
+The outbox is now connected to a self-hosted Web Push delivery worker.
+
+- `WebPushPayloadEncryptor` implements the RFC 8291 `aes128gcm` payload record using P-256 ECDH, HKDF-SHA256 and AES-128-GCM.
+- `VapidTokenGenerator` creates ES256 VAPID JWTs from a deployment-owned P-256 key pair.
+- `WebPushSender` sends to validated HTTPS browser push endpoints, disables redirects, classifies 2xx/404/410/429/5xx responses and stores only safe error codes.
+- `NotificationOutboxWorker` claims due rows with a database lease and per-row claim token, reclaims stale work, applies exponential backoff, enforces a maximum attempt count and dead-letters permanent/exhausted work.
+- `notification_deliveries` records one delivery per outbox item and browser subscription. Successful devices are not resent when another device needs retry.
+- Expired subscriptions are marked inactive and retained for delivery audit; explicit unsubscribe removes the subscription.
+- `php artisan notifications:deliver` runs a bounded batch. Laravel scheduler invokes it every minute; production must run `php artisan schedule:work` or the platform's scheduler cron.
+- `php artisan notifications:vapid-keys` prints a new P-256 VAPID pair. Store the private key only in the backend secret environment.
+
+Environment:
+- `WEB_PUSH_VAPID_PUBLIC_KEY`: base64url uncompressed P-256 public point.
+- `WEB_PUSH_VAPID_PRIVATE_KEY`: base64url 32-byte P-256 private scalar.
+- `WEB_PUSH_VAPID_SUBJECT`: a valid `mailto:` or HTTPS contact URI.
+- `WEB_PUSH_MAX_ATTEMPTS`: bounded delivery attempts (default 8).
+
+Automated tests cover payload encryption/decryption, VAPID ES256 signature verification, provider response classification, outbox delivery, per-device retry idempotency, expired subscriptions, no-device outcomes, stale-claim recovery and dead-letter behavior.
+
+## Remaining acceptance gates
+
+- Exact-head backend tests, formatter and security audit must pass after the worker/migration changes.
+- Deploy a backend with a configured VAPID key pair and scheduler enabled.
+- Register a real browser/device subscription and verify actual delivery, click navigation, permission denied, endpoint expiry and app restart.
+- Flutter settings UI and user-visible delivery/failure state are not yet integrated.
+- Background delivery on mobile platforms other than supported Web Push browsers remains unverified.
+- Provider throttling and multi-worker contention need a live controlled environment test; unit tests do not prove provider acceptance.
+
+
 ## Status
 
 The browser subscription bridge, service worker, authenticated subscription API, and transactional shift-notification outbox are implemented. This does **not** yet send notifications while the browser is closed. Production delivery still requires the VAPID sender, RFC 8291 encryption, durable claim/retry worker, and a user-facing opt-in control.
