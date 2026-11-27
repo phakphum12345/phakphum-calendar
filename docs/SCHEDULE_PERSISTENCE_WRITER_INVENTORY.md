@@ -265,3 +265,32 @@ Relevant exact-head regression sources include:
 
 **Disposition:** conditional delete/tombstone source implementation is present and backend tests passed on the implementation head. Do not mark Package B ACCEPTED until exact-head Flutter tests, independent backend-client concurrency, startup journal recovery and production database acceptance are complete.
 
+
+
+## 8. Dated implementation follow-up — 2026-11-27
+
+This section supersedes only the status statements above where the newer source evidence below applies. The original inventory remains a historical record of the 2026-11-25 inspection.
+
+### Current evidence
+
+- PR #192 exact head at the start of this follow-up: 8d262dc7365a63c279e06affcdedbdbcf1b6fadc (base main 68ef85361c2d08e2970160a36475592010d908f7).
+- Grid import commit/recovery uses caller-bound conditional persistence; recovery now has read-only assessment states and a commit path bound to the exact reviewed journal run ID, base revision, accepted fingerprint and candidate payload.
+- AppShell startup discovers local and remote Grid journal IDs separately. A remote discovery failure is surfaced and does not hide local findings. No journal is replayed automatically.
+- The canonical AppShell roster editor and Grid re-import workflow block the affected Schedule when a committed recovery is ready or conflicting. This is a per-Schedule guard, not a global guard over every legacy editor or direct writer.
+- Backend Schedule storage implements owner-scoped revision tokens, conditional create/update, and tombstone deletion. The PR includes tests for absent/live deletion, idempotent retries, stale deletion and stale recreation.
+- Local SharedPreferences persistence still uses two-slot payload storage and does not provide cross-process/device atomic CAS. The local fallback guarantee must remain explicitly weaker than the backend transaction boundary.
+- PR #202 adds generation preview/approval and CAS commit/read-back using the revision-aware Schedule interfaces. It does not yet add a durable generation operation journal or startup recovery.
+
+### Exact-head execution evidence
+
+On PR #192 head 8d262dc7365a63c279e06affcdedbdbcf1b6fadc, Dart format, static analysis, unit tests, Linux integration tests, Laravel Backend CI, Linux release build, Web build, Android build, macOS build and Windows PowerShell quality completed successfully. The Windows build workflow itself ended in startup_failure, which caused the exact-head Pull Request Gate to fail. Linux POSIX was still running and some cross-shell smoke jobs were cancelled. Do not treat this exact head as a full CI pass.
+
+### Remaining writer inventory gates
+
+1. Re-run all Windows/Linux/macOS/iOS jobs on a new exact head; startup_failure is not a pass.
+2. Reconcile every production Schedule writer, including W-01/W-02/W-03 and import facades, to caller-owned snapshot revisions. A shared in-process revision cache is not a substitute.
+3. Verify all delete paths require expected revisions and cannot recreate tombstoned identities from stale clients.
+4. Add process-restart recovery tests for each journal stage, corrupt journal and remote journal outage.
+5. Test two independent backend clients against the deployed database engine and verify exactly one CAS winner.
+6. Keep local-only storage limitations visible; do not claim cross-device safety for SharedPreferences.
+7. Add durable generation preview/approval/operation provenance and recovery before claiming generation crash safety.
