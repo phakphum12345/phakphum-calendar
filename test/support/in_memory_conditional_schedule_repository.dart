@@ -1,9 +1,9 @@
-import '../../core/result/result.dart';
-import '../../domain/entities/schedule.dart';
-import '../../domain/entities/schedule_month.dart';
-import '../../domain/repositories/schedule_repository.dart';
-import '../../domain/repositories/conditional_schedule_writer.dart';
-import '../../domain/repositories/schedule_revision_source.dart';
+import 'package:phakphum_calendar/core/result/result.dart';
+import 'package:phakphum_calendar/domain/entities/schedule.dart';
+import 'package:phakphum_calendar/domain/entities/schedule_month.dart';
+import 'package:phakphum_calendar/domain/repositories/schedule_repository.dart';
+import 'package:phakphum_calendar/domain/repositories/conditional_schedule_writer.dart';
+import 'package:phakphum_calendar/domain/repositories/schedule_revision_source.dart';
 
 /// Deterministic in-memory CAS repository for tests.
 ///
