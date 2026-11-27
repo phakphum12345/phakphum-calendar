@@ -142,3 +142,21 @@ Do not mix forecast assignments with actual totals. Do not claim statutory payro
 - Persistence survives restart and migration without historical data loss.
 - Reprocessing the same assignment does not duplicate pay.
 - Monthly report totals reconcile exactly to immutable detail rows.
+
+## 10. Current implementation checkpoint — 2026-11-27
+
+The merged foundations above remain in `main`. The following extensions are still open Draft PRs and are not released:
+
+- **PR #201** adds deterministic equal-specificity conflict detection and rule-source/precedence behavior. Its recorded exact-head CI completed 12/12 workflows.
+- **PR #203** adds a monthly statement calculation builder with immutable line snapshots, schedule revision, profile fingerprint, duplicate-assignment protection, distinct line states, source-specific decimal precision and integer minor-unit totals. Its recorded exact-head CI completed 11/11 workflows; 716 tests passed.
+- Both PRs remain Draft and have no independent review.
+
+**Not yet integrated or accepted:**
+- Statement persistence/API and read-back verification.
+- A user-facing monthly statement screen/export.
+- A canonical confirmed-assignment lifecycle source; the builder currently requires callers to supply confirmation and employment-type resolvers.
+- Full integration of assignment source/rule versions with the historical calculation snapshot repository.
+- The exact contractor employment/payment-condition modes requested by the product owner. Personal / Organization / Hybrid are rule-source modes, not proof of contractor employment classifications. Do not invent or collapse employment categories.
+
+The statement builder is calculation evidence, not a complete payroll product. No statutory payroll/tax compliance is claimed.
+
