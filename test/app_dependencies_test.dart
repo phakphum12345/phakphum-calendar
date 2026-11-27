@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phakphum_calendar/app.dart';
 import 'package:phakphum_calendar/core/di/app_dependencies.dart';
+import 'package:phakphum_calendar/domain/entities/schedule.dart';
 import 'package:phakphum_calendar/features/excel_import/application/import_engine.dart';
 import 'support/in_memory_conditional_schedule_repository.dart';
 import 'package:phakphum_calendar/features/excel_import/data/excel_reader_service.dart';
