@@ -1,7 +1,35 @@
 # Requirements Traceability
 
-**Review date:** 2026-11-25  
-**Repository snapshot:** `aed2f1177bdfc85f6ff53bb200116812a51bd9e3`  
+## Current evidence checkpoint — 2026-11-27
+
+**Main SHA:** `68ef85361c2d08e2970160a36475592010d908f7`
+
+The rows below supersede older PR/status snapshots in this file. Open-PR source is not part of `main` until merged and post-merge verified.
+
+| Work package | Current source / PR | Exact-head CI evidence | Evidence state | Remaining acceptance |
+|---|---|---|---|---|
+| A. Universal roster import | #192 — `2f6f9043db8876ea5ed49d85961658fac95942ac` | New exact-head run pending after latest source/test changes | IN PROGRESS | Validate original X-OPD November 2569, 16 Nov–15 Dec 2569 and US Clinic ภปร.4 workbooks; verify ambiguous orientation and identity review |
+| B. Schedule persistence | #192 — same head | New exact-head run pending | IN PROGRESS | Verify all production writers, true backend transaction/CAS across devices, tombstones and crash/restart recovery |
+| C. Google Calendar Sync | #196 — `8e186790e447f9278eda8612a1bb1b6f7e7b77c9` | 13/13 workflows passed | IN PROGRESS | Controlled test-calendar insert/update/delete, provider timeout reconciliation and cross-device lease contention |
+| D. Notifications | #191 — `cf7eaa22eaf81e04b0b444acfc3aee2a8ca51e5e` | 13/13 workflows passed | IN PROGRESS | Registered-device delivery, permission denial, expired subscriptions and deployed scheduler acceptance |
+| E. Schedule generation | #202 — `ca6ebd095ef6566fcce00e9bc49e9c820470b80d` | 12/12 workflows passed | IN PROGRESS | Revalidate against current #192 base; verify UI, immutable preview, approval invalidation and post-commit read-back |
+| F. Shift Pay | #201 — `d3f228dcdaea4f1a3771c271421226ab71ab00b5`; #203 — `9ddcca51de57b71c721f60665f3c9f8cf0e7bbcb` | #201 12/12; #203 11/11; 716 tests passed on #203 | IN PROGRESS | Durable statement persistence, statement UI, confirmed-assignment integration and verified contractor employment/payment rules |
+| G. History restore | #204 — `ba73d30f4e332105c05c95d00f61517da1cd9689` | New exact-head run pending | IN PROGRESS | Per-assignment before/after diff, original Drive revision fixture and external-account acceptance |
+| H. Organization/security | Existing membership/role/API foundations | Existing tests only; no new full tenant-isolation acceptance in this checkpoint | PARTIAL | Cross-organization negative tests, backend authorization, rate limiting and privacy-safe log review |
+| I. Quality/performance/accessibility | Existing Flutter/backend CI and device layouts | No repository-wide benchmark or full accessibility acceptance evidence | PARTIAL / UNKNOWN | Large-workbook, event-volume, history, memory, keyboard, screen-reader and responsive-device tests |
+| J. Documentation | This documentation reconciliation PR | Docs validation pending | IN PROGRESS | Keep API/schema and feature specifications synchronized with the final merged source |
+| K. Release/deployment | No verified production deployment for this checkpoint | No exact-main workflow run/status entries returned for main SHA | BLOCKED — EXTERNAL DEPENDENCY | Production API health, deployed source SHA, migration/backup drill, rollback, release credentials and real integration acceptance |
+
+Additional repository gates:
+- PR #199 is closed without merge; its orientation foundation was superseded by parser integration in #192.
+- All seven currently open PRs remain Draft and have no submitted reviews or review threads.
+- GitHub reports `main.protected = false`, protection enforcement `off`, and no required status-check contexts.
+- The exact main SHA above returned no workflow runs and no combined-status entries. Do not count that as a pass.
+- CI green on a PR head is not product acceptance, deployment evidence or post-merge verification.
+
+
+**Historical review date:** 2026-11-25  
+**Historical repository snapshot:** `aed2f1177bdfc85f6ff53bb200116812a51bd9e3`  
 **Status:** Evidence-based partial inventory. PARTIAL, MISSING, UNKNOWN and NEEDS REVIEW remain open work.
 
 | Requirement | Primary implementation | Evidence / test surface | Status and remaining gap |
