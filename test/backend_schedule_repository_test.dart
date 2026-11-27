@@ -220,7 +220,7 @@ void main() {
         }), 200);
       }),
     );
-    const expectedRevision = 'v2:${'2' * 64}';
+    final expectedRevision = 'v2:${List.filled(64, '2').join()}';
 
     final result = await repository.deleteIfRevision(
       'roster-8',
