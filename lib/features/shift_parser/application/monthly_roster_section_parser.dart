@@ -341,6 +341,14 @@ class MonthlyRosterSectionParser {
       final start = period.start;
       final end = period.end;
 
+      final expectedDayCount = DateTime.utc(
+        end.year,
+        end.month,
+        end.day,
+      ).difference(DateTime.utc(start.year, start.month, start.day)).inDays + 1;
+      final useExpectedSequence =
+          explicitDatesByColumn.isEmpty &&
+          daysByColumn.length == expectedDayCount;
       final datesByColumn = _resolveDatesByColumn(
         daysByColumn: daysByColumn,
         explicitDatesByColumn: explicitDatesByColumn,
@@ -348,6 +356,7 @@ class MonthlyRosterSectionParser {
         end: end,
         sectionTitle: title,
         warnings: warnings,
+        useExpectedSequence: useExpectedSequence,
       );
 
       final dateAnomalies = _validateDateColumns(
@@ -735,15 +744,15 @@ class MonthlyRosterSectionParser {
     final result = <int, int>{};
     for (final cell in cells) {
       final value = cell.rawValue ?? cell.text;
-      // Date-formatted Excel cells arrive as DateTime values; numeric cells
-      // may also be represented as integral doubles. Never truncate fractions.
-      final day = value is DateTime
-          ? value.day
-          : value is num
-          ? (value.isFinite && value == value.roundToDouble()
-                ? value.toInt()
-                : null)
-          : int.tryParse(value?.toString().trim() ?? '');
+      final explicitDate = _explicitDateValue(value);
+      // Explicit dates take precedence over numeric day labels. This supports
+      // Excel DateTime cells and textual Gregorian/Buddhist Era date cells.
+      final day = explicitDate?.day ??
+          (value is num
+              ? (value.isFinite && value == value.roundToDouble()
+                    ? value.toInt()
+                    : null)
+              : int.tryParse(value?.toString().trim() ?? ''));
       if (day != null && day >= 1 && day <= 31) {
         result[cell.columnIndex as int] = day;
       }
@@ -754,16 +763,73 @@ class MonthlyRosterSectionParser {
   Map<int, DateTime> _explicitDatesByColumn(List<dynamic> cells) {
     final result = <int, DateTime>{};
     for (final cell in cells) {
-      final value = cell.rawValue ?? cell.text;
-      if (value is DateTime) {
-        result[cell.columnIndex as int] = DateTime(
-          value.year,
-          value.month,
-          value.day,
-        );
-      }
+      final date = _explicitDateValue(cell.rawValue ?? cell.text);
+      if (date != null) result[cell.columnIndex as int] = date;
     }
     return result;
+  }
+
+  DateTime? _explicitDateValue(Object? value) {
+    if (value is DateTime) {
+      return DateTime(_normalizeRosterYear(value.year), value.month, value.day);
+    }
+    final text = value?.toString().trim() ?? '';
+    if (text.isEmpty) return null;
+
+    final iso = DateTime.tryParse(text);
+    if (iso != null &&
+        RegExp(r'^\d{4}-\d{1,2}-\d{1,2}(?:$|[T\s])').hasMatch(text)) {
+      return DateTime(_normalizeRosterYear(iso.year), iso.month, iso.day);
+    }
+
+    final ymd = RegExp(
+      r'^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$',
+    ).firstMatch(text);
+    if (ymd != null) {
+      return _checkedRosterDate(
+        year: _normalizeRosterYear(int.parse(ymd.group(1)!)),
+        month: int.parse(ymd.group(2)!),
+        day: int.parse(ymd.group(3)!),
+      );
+    }
+
+    final dmy = RegExp(
+      r'^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$',
+    ).firstMatch(text);
+    if (dmy != null) {
+      return _checkedRosterDate(
+        year: _normalizeRosterYear(int.parse(dmy.group(3)!)),
+        month: int.parse(dmy.group(2)!),
+        day: int.parse(dmy.group(1)!),
+      );
+    }
+
+    if (RegExp(r'^\d{1,2}\s*[ก-๙.]+\s*\d{2,4}$').hasMatch(text)) {
+      try {
+        return periodParser.parse('$text - $text').start;
+      } on FormatException {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  int _normalizeRosterYear(int year) {
+    if (year < 100) year += 2500;
+    if (year >= 2400) year -= 543;
+    return year;
+  }
+
+  DateTime? _checkedRosterDate({
+    required int year,
+    required int month,
+    required int day,
+  }) {
+    final date = DateTime(year, month, day);
+    if (date.year != year || date.month != month || date.day != day) {
+      return null;
+    }
+    return date;
   }
 
   List<MonthlyRosterDateAnomaly> _validateDateColumns({
@@ -898,28 +964,54 @@ class MonthlyRosterSectionParser {
     }
 
     if (completeRangeHeader) {
-      final resolvedKeys = datesByColumn.values
-          .map((date) => '${date.year}-${date.month}-${date.day}')
-          .toSet();
-      final missing = <String>[];
+      final expectedDatesByDay = <int, List<DateTime>>{};
       for (var offset = 0; offset < expectedDayCount; offset++) {
         final expected = DateTime(start.year, start.month, start.day + offset);
-        final expectedKey = '${expected.year}-${expected.month}-${expected.day}';
-        if (!resolvedKeys.contains(expectedKey)) {
-          missing.add(_formatDate(expected));
+        expectedDatesByDay.putIfAbsent(expected.day, () => []).add(expected);
+      }
+
+      final missing = <String>[];
+      for (final entry in expectedDatesByDay.entries) {
+        final actualCount = columnsByDay[entry.key]?.length ?? 0;
+        final missingCount = entry.value.length - actualCount;
+        if (missingCount <= 0) continue;
+        if (entry.value.length == 1) {
+          missing.add(_formatDate(entry.value.single));
+        } else {
+          missing.add('วันที่ ${entry.key} ขาด $missingCount ครั้งในช่วงที่ระบุ');
         }
+      }
+
+      for (var offset = 0; offset < expectedDayCount; offset++) {
+        final expected = DateTime(start.year, start.month, start.day + offset);
         final actualDay = daysByColumn[columns[offset]]!;
-        if (actualDay != expected.day) {
+        if (actualDay == expected.day) continue;
+
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'day_sequence_mismatch',
+            columnIndex: columns[offset],
+            displayedDay: actualDay,
+            message: 'คอลัมน์ ${columns[offset] + 1} แสดงวันที่ $actualDay แต่ตามช่วงที่ระบุควรเป็น ${expected.day}',
+          ),
+        );
+
+        final expectedOccurrences = expectedDatesByDay[actualDay];
+        if (expectedOccurrences != null &&
+            !expectedOccurrences.any(
+              (date) => date.difference(start).inDays == offset,
+            )) {
           anomalies.add(
             MonthlyRosterDateAnomaly(
-              code: 'day_sequence_mismatch',
+              code: 'out_of_order',
               columnIndex: columns[offset],
               displayedDay: actualDay,
-              message: 'คอลัมน์ ${columns[offset] + 1} แสดงวันที่ $actualDay แต่ตามช่วงที่ระบุควรเป็น ${expected.day}',
+              message: 'วันที่ในคอลัมน์ ${columns[offset] + 1} ไม่เรียงตามช่วงที่ระบุ',
             ),
           );
         }
       }
+
       if (missing.isNotEmpty) {
         anomalies.add(
           MonthlyRosterDateAnomaly(
@@ -929,7 +1021,6 @@ class MonthlyRosterSectionParser {
         );
       }
     }
-
     // A duplicate day in a declared period can leave a trailing portion of
     // the period unresolved even when the header is far shorter than 90% of
     // the expected range. Report the actual missing dates as well as the
@@ -973,9 +1064,25 @@ class MonthlyRosterSectionParser {
     required DateTime end,
     required String sectionTitle,
     required List<String> warnings,
+    required bool useExpectedSequence,
   }) {
     final result = <int, DateTime>{};
     final columns = daysByColumn.keys.toList()..sort();
+
+    // A complete, explicitly bounded numeric header has a positional date
+    // sequence. Resolve every column from that sequence before validating its
+    // displayed day; one duplicated/out-of-order label must not shift or erase
+    // every later valid column.
+    if (useExpectedSequence) {
+      for (var offset = 0; offset < columns.length; offset++) {
+        result[columns[offset]] = DateTime(
+          start.year,
+          start.month,
+          start.day + offset,
+        );
+      }
+      return result;
+    }
 
     var cursor = DateTime(start.year, start.month, start.day);
 

@@ -505,8 +505,11 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
               style: Theme.of(context).textTheme.bodySmall,
             ),
           Text(
-            rule.isResolved
-                ? 'กะที่ตรวจพบ: ${rule.code} '
+            rule.status == MonthlyRosterShiftRuleStatus.builtInRule
+                ? 'คำแนะนำกะจากชื่อแถว: ${rule.code} '
+                    '(${_time(rule.startTime)}–${_time(rule.endTime)}) — โปรดตรวจสอบ'
+                : rule.isResolved
+                ? 'กะจาก Template ที่ตั้งค่าไว้: ${rule.code} '
                     '(${_time(rule.startTime)}–${_time(rule.endTime)})'
                 : 'ยังไม่พบกฎกะที่ยืนยันได้',
           ),
@@ -545,12 +548,20 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
             DropdownButtonFormField<String>(
               initialValue: _selectedTemplates[sourceId],
               decoration: InputDecoration(
-                labelText: rule.isResolved
-                    ? 'เลือก Template อื่น (ไม่บังคับ)'
-                    : 'เลือก Template เพื่อระบุกะ',
-                helperText: rule.isResolved
-                    ? 'เว้นว่างเพื่อใช้กฎที่ตรวจพบ'
-                    : 'จำเป็นสำหรับการนำเข้ารายการนี้',
+                labelText: switch (rule.status) {
+                  MonthlyRosterShiftRuleStatus.builtInRule =>
+                    'เลือก Template เพื่อแทนคำแนะนำกะ (ไม่บังคับ)',
+                  MonthlyRosterShiftRuleStatus.configuredTemplate =>
+                    'เลือก Template อื่น (ไม่บังคับ)',
+                  _ => 'เลือก Template เพื่อระบุกะ',
+                },
+                helperText: switch (rule.status) {
+                  MonthlyRosterShiftRuleStatus.builtInRule =>
+                    'เว้นว่างเพื่อใช้คำแนะนำกะนี้หลังจากยืนยันนำรายการเข้า Schedule',
+                  MonthlyRosterShiftRuleStatus.configuredTemplate =>
+                    'เว้นว่างเพื่อใช้ Template ที่ตั้งค่าไว้',
+                  _ => 'จำเป็นสำหรับการนำเข้ารายการนี้',
+                },
                 border: const OutlineInputBorder(),
               ),
               items: [
