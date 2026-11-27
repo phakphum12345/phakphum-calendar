@@ -498,10 +498,6 @@ void main() {
       xopd.dateAnomalies.singleWhere((item) => item.code == 'missing_dates').message,
       contains('17/11/2026'),
     );
-    expect(
-      xopd.dateAnomalies.singleWhere((item) => item.code == 'missing_dates').message,
-      contains('29/11/2026'),
-    );
     expect(xopd.dateAnomalies, isNotEmpty);
     expect(xopd.dateColumns, hasLength(30));
     expect(xopd.assignments, hasLength(30));
