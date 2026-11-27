@@ -9,8 +9,11 @@ import 'package:phakphum_calendar/domain/repositories/schedule_repository.dart';
 import 'package:phakphum_calendar/features/schedule/data/shared_preferences_schedule_repository.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/grid_roster_import_workflow.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/grid_roster_review_session.dart';
+import 'package:phakphum_calendar/features/shift_parser/application/monthly_roster_section_parser.dart';
 import 'package:phakphum_calendar/features/shift_parser/data/grid_roster_bundle_journal.dart';
 import 'package:phakphum_calendar/features/shift_parser/domain/monthly_roster_section.dart';
+import 'package:phakphum_calendar/features/shift_parser/domain/normalized_cell.dart';
+import 'package:phakphum_calendar/features/shift_parser/domain/shift_parser_input.dart';
 import 'package:phakphum_calendar/features/shift_parser/presentation/pages/grid_roster_review_page.dart';
 
 class _MemoryStore implements ScheduleKeyValueStore {
@@ -176,6 +179,87 @@ void main() {
       find.textContaining('กลับไปแก้ไฟล์ต้นฉบับและนำเข้าใหม่ — ยังบันทึก'),
       findsOneWidget,
     );
+  });
+
+  testWidgets('reviewer can correct a source-backed date column and revalidate', (
+    tester,
+  ) async {
+    List<NormalizedCell> row(int rowIndex, List<Object?> values) => [
+      for (var columnIndex = 0; columnIndex < values.length; columnIndex++)
+        if (values[columnIndex] != null)
+          NormalizedCell(
+            sheetId: 1,
+            sheetTitle: 'X-OPD',
+            a1: '',
+            rowIndex: rowIndex,
+            columnIndex: columnIndex,
+            text: values[columnIndex] is String
+                ? values[columnIndex] as String
+                : null,
+            rawValue: values[columnIndex],
+          ),
+    ];
+    final parsed = const MonthlyRosterSectionParser().parse(
+      ShiftParserInput(
+        spreadsheetId: 'spreadsheet-1',
+        spreadsheetTitle: 'Roster',
+        sheetId: 1,
+        sheetTitle: 'X-OPD',
+        timeZone: 'Asia/Bangkok',
+        cells: [
+          ...row(0, ['GEN 1 พฤศจิกายน 2569 - 7 พฤศจิกายน 2569']),
+          ...row(1, ['วันที่', 1, 2, 3, 4, 5, 5, 7]),
+          ...row(2, ['GEN', 'ก', null, null, null, null, 'ข', 'ค']),
+        ],
+      ),
+    );
+    final report = MonthlyRosterParseReport(
+      sections: parsed.sections,
+      warnings: parsed.warnings,
+      sourceSheetCount: 1,
+      sourceFingerprint: 'sha256:source-correction-ui',
+    );
+    final session = const GridRosterReviewSessionBuilder().build(
+      report: report,
+      employees: const [],
+      shiftTemplates: const [],
+      sourceFingerprint: 'sha256:source-correction-ui',
+      targetScheduleId: 'schedule-1',
+      targetScheduleRevision: 'absent:schedule-1',
+    );
+    final workflow = GridRosterImportWorkflow(
+      scheduleRepository: _UnusedScheduleRepository(),
+      journal: GridRosterBundleJournal(store: _MemoryStore()),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GridRosterReviewPage(
+          workflow: workflow,
+          contextSnapshot: GridRosterImportReviewContext(
+            session: session,
+            targetSchedule: Schedule(id: 'schedule-1', name: 'November roster'),
+            targetExisted: false,
+          ),
+          employees: const [],
+          shiftTemplates: const [],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('กำหนดวันที่คอลัมน์นี้'), findsOneWidget);
+    await tester.tap(find.text('กำหนดวันที่คอลัมน์นี้'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('6').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ใช้วันที่นี้และตรวจตารางใหม่'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('พบจุดผิดในหัวตารางวันที่'), findsNothing);
+    expect(find.textContaining('2026-11-06'), findsOneWidget);
+    expect(find.text('กำหนดวันที่คอลัมน์นี้'), findsNothing);
   });
 }
 
