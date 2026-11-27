@@ -28,7 +28,7 @@ class Employee {
 
   List<String> get aliases => List.unmodifiable(
     alternateNames
-        .split(RegExp(r'[,;\\r\\n]+'))
+        .split(RegExp(r'[,;\r\n]+'))
         .map((value) => value.trim())
         .where((value) => value.isNotEmpty),
   );
