@@ -9,7 +9,9 @@ import '../../../domain/repositories/conditional_schedule_writer.dart';
 import '../../../domain/repositories/schedule_repository.dart';
 import '../../../domain/repositories/schedule_revision_source.dart';
 import '../../schedule/data/schedule_json_codec.dart';
+import '../domain/coverage_requirement.dart';
 import '../domain/generation_request.dart';
+import '../domain/schedule_conflict.dart';
 import '../domain/generation_result.dart';
 import 'schedule_generator.dart';
 
