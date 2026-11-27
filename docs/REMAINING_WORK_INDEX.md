@@ -1,8 +1,38 @@
-# Remaining Work Index — 2026-11-24
+# Remaining Work Index — 2026-11-27
+
+## Current checkpoint — 2026-11-27
+
+The checklist below is a historical backlog baseline. Use this checkpoint for current execution order and status.
+
+| Priority | Work | Current implementation | Still missing |
+|---|---|---|---|
+| P0 | Universal roster import | #192: orientation-aware section parsing, CSV/TSV/TXT path, XLSX merged/color provenance, source fingerprint and review workflow | Exact-head CI, original workbook acceptance, reviewer-selected ambiguity path and identity collision acceptance |
+| P0 | Schedule persistence | #192: snapshot-bound CAS and journal recovery consolidation | Cross-device/backend transaction proof, all-writer audit, conditional tombstone delete and recovery drill |
+| P0 | Calendar Sync | #196: ETag, durable operation coordination and retry/recovery foundation | Controlled real test calendar, provider ambiguous-timeout acceptance and cross-device contention |
+| P0 | Notifications | #191: VAPID sender, subscription ownership, outbox worker, retry/dead-letter and scheduler command | Registered device delivery and deployed scheduler acceptance |
+| P0 | Shift Pay | #181/#183/#186 merged foundations; #201 conflict/precedence and #203 statement calculation core | Durable statement persistence/UI, confirmed-assignment source, exact contractor employment/payment rules and historical acceptance |
+| P0 | Generation | #202 immutable preview/approval/conditional commit foundation | Revalidate against latest #192 base, UI integration and end-to-end read-back/recovery |
+| P1 | History restore | #204 Drive revision picker, read-only source fingerprint, Grid review and CAS commit | Per-assignment diff and original revision/external-account acceptance |
+| P1 | Organization/security | Existing membership/role foundations | Tenant-isolation negative tests, backend authorization audit, rate-limit and privacy-log review |
+| P1 | Quality/accessibility/performance | Existing CI and responsive components | Reproducible large-workbook/event/history benchmarks, memory, keyboard and screen-reader tests |
+| P1 | Public Google access | Existing auth foundation | Non-owner account verification, OAuth client/consent publication and platform lifecycle acceptance |
+| P1 | Production release | Existing build workflows and self-hosted runner | Exact deployed SHA, API health, signing, backup/restore, rollback and release evidence |
+| P2 | AI Assistant / Research | Documentation and provider foundations | Complete request path, provider readiness, safe tools, citations, quotas, privacy and deployed-runtime acceptance |
+
+### Current PR and merge policy
+
+- Open Draft PRs: #191, #192, #196, #201, #202, #203 and #204.
+- #199 was closed without merge after orientation work was superseded by #192.
+- No open PR has a submitted review or review thread.
+- #191 CI: 13/13; #196: 13/13; #201: 12/12; #202: 12/12; #203: 11/11 (716 tests). #192 and #204 have new commits whose exact-head CI is pending.
+- #202 and #204 are stacked on #192; #203 is stacked on #201. Reconcile their base/head relationships after the dependency PR is accepted.
+- `main` is `68ef85361c2d08e2970160a36475592010d908f7`; branch protection is disabled and required checks are not enforced. No exact-main workflow/status evidence was returned for this SHA.
+- No merge or production-ready claim is allowed until exact-head checks, complete diff review, independent review and applicable external acceptance are complete.
+
 
 This is the concise execution checklist. The detailed design and test criteria are in the linked documents.
 
-## P0 — Required for the requested feature
+## Historical backlog baseline — shift-pay scope (2026-11-24)
 
 - [ ] Validate and complete PR #181: typed Personal / Organization / Hybrid rule-source resolution.
 - [ ] Add versioned persistence for profiles and rules.
