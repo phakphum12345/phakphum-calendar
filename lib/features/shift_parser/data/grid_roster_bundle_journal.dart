@@ -176,6 +176,7 @@ class GridRosterBundleJournal {
       lifecycle: GridRosterImportLifecycle.committed,
       acceptedScheduleFingerprint:
           committedProvenance.acceptedScheduleFingerprint,
+      sourceRevisionId: preparedProvenance.sourceRevisionId,
       sections: preparedProvenance.sections,
       assignments: preparedProvenance.assignments,
       diagnostics: preparedProvenance.diagnostics,
