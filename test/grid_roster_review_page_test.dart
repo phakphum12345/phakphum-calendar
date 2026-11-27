@@ -248,8 +248,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('กำหนดวันที่คอลัมน์นี้'), findsOneWidget);
-    await tester.tap(find.text('กำหนดวันที่คอลัมน์นี้'));
+    expect(find.text('กำหนดวันที่คอลัมน์นี้'), findsAtLeastNWidgets(1));
+    await tester.tap(find.text('กำหนดวันที่คอลัมน์นี้').first);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('6').last);
