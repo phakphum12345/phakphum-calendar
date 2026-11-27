@@ -39,11 +39,11 @@ This graph reflects declared PR stacking and observed base branches, not permiss
 | PR | Base branch | Base SHA reported | Head SHA | Reconciliation |
 |---|---|---|---|---|
 | #192 | main | `68ef85361c2d08e2970160a36475592010d908f7` | `6663135cff20fab189cdef8996649874ee19a6da` | Reviewer-facing shift suggestions clarified, row-33 fixture anonymized, off-screen checkbox test tap corrected; exact-head CI pending |
-| #205 | #192 feature branch | `4d6808d4943236c93a327a079474b0a9915b220a` | `1cfceeeabd3af3f36421f9b06bd286966863b70b` | Base predates current #192 head; GitHub currently reports mergeable=false; reconcile after #192 integration |
-| #207 | #192 feature branch | `4d6808d4943236c93a327a079474b0a9915b220a` | `7f6df4380ed60edf436402ca01264eb93dbd416b` | Base predates current #192 head; GitHub currently reports mergeable=false; reconcile after #192 integration |
+| #205 | #192 feature branch | `6663135cff20fab189cdef8996649874ee19a6da` | `8ca446afa41008328df1a39c16f45e955e125c22` | Non-force-pushed merge commit includes current base; compare behind_by=0; exact-head CI pending |
+| #207 | #192 feature branch | `6663135cff20fab189cdef8996649874ee19a6da` | `4df59c1523f8d9236ec941fc80fc1918574ca279` | Non-force-pushed merge commit includes current base; compare behind_by=0; exact-head CI pending |
 | #206 | #192 feature branch | `4d6808d4943236c93a327a079474b0a9915b220a` | `997c249394bd02c4fd868f4532829e20df9f58fe` | Base predates current #192 head; GitHub currently reports mergeable=false; reconcile after #192 integration |
-| #208 | #192 feature branch | `dbcc4fed3bbbf81592b931c3da0f1d9eee68f7aa` | `b98a4e7f7911abe7b97d661bf62c121b1e66d716` | GitHub currently reports mergeable=true; core CI passed, iOS/macOS/advisory remain incomplete |
-| #204 | #192 feature branch | `4d6808d4943236c93a327a079474b0a9915b220a` | `3fa4b22b74aabaa7d57b391f487d15657f85e2ae` | Base predates current #192 head; GitHub currently reports mergeable=false; reconcile after #192 integration |
+| #208 | #192 feature branch | `6663135cff20fab189cdef8996649874ee19a6da` | `17524ec63d93149c4a5dafb22186e765f4aa979e` | Non-force-pushed merge commit includes current base; compare behind_by=0; exact-head CI pending |
+| #204 | #192 feature branch | `6663135cff20fab189cdef8996649874ee19a6da` | `3be797eedf46a4ec88ba8cb74c22b2004ba3c344` | Non-force-pushed merge commit includes current base; compare behind_by=0; GitHub mergeability clean; exact-head CI pending |
 | #202 | #192 feature branch | `8d262dc7365a63c279e06affcdedbdbcf1b6fadc` | `ca6ebd095ef6566fcce00e9bc49e9c820470b80d` | GitHub currently reports mergeable=false; reconcile against current #192 head |
 | #196 | main | `68ef85361c2d08e2970160a36475592010d908f7` | `fa4dee908848f1bc6919c37dc244ff9eb5b1049f` | Independent mainline slice; recovery rejects terminal success and false-success empty/nonterminal ledgers; exact-head CI partially passed and remains in progress |
 | #191 | main | `68ef85361c2d08e2970160a36475592010d908f7` | `cf7eaa22eaf81e04b0b444acfc3aee2a8ca51e5e` | Independent mainline slice |
