@@ -3146,15 +3146,10 @@ class AppController extends ChangeNotifier implements ControllerState {
     final repository = _scheduleRepository;
     if (repository is! ConditionalScheduleWriter ||
         repository is! ScheduleRevisionSource) {
-      final saved = await repository.save(next);
-      if (saved case Success<Schedule>(value: final value)) {
-        _lastPersistedSchedule = value;
-        if (const ScheduleJsonCodec().encode(_legacySchedule.schedule) ==
-            const ScheduleJsonCodec().encode(next)) {
-          _legacySchedule = _legacySchedule.withSchedule(value);
-        }
-      }
-      return saved;
+      return const PersistenceFailure(
+        'The configured Schedule repository does not support atomic conditional writes. '
+        'Reload with a revision-aware repository before saving.',
+      );
     }
 
     if (base.id != next.id) {

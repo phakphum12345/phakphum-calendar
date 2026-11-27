@@ -155,6 +155,12 @@ class GridRosterImportWorkflow {
     final target = existing ??
         Schedule(id: targetScheduleId, name: targetScheduleName);
     final revision = revisionFor(existing, targetScheduleId);
+    if (revision == null || revision.trim().isEmpty) {
+      return const PersistenceFailure(
+        'The Schedule repository did not provide an authoritative revision. '
+        'Import review cannot continue without atomic conditional persistence.',
+      );
+    }
     try {
       final session = reviewSessionBuilder.build(
         report: report,
@@ -246,6 +252,12 @@ class GridRosterImportWorkflow {
     }
     final live = (liveResult as Success<Schedule?>).value;
     final liveRevision = revisionFor(live, context.session.targetScheduleId);
+    if (liveRevision == null || liveRevision.trim().isEmpty) {
+      return const PersistenceFailure(
+        'The Schedule repository no longer provides an authoritative revision. '
+        'No import data was committed.',
+      );
+    }
     if (liveRevision != context.targetScheduleRevision) {
       return const ValidationFailure(
         'Target Schedule changed after review. Reload and review again.',
@@ -285,8 +297,11 @@ class GridRosterImportWorkflow {
       }
       final beforeSave =
           (beforeSaveResult as Success<Schedule?>).value;
-      if (revisionFor(beforeSave, context.session.targetScheduleId) !=
-          liveRevision) {
+      final beforeSaveRevision = revisionFor(
+        beforeSave,
+        context.session.targetScheduleId,
+      );
+      if (beforeSaveRevision == null || beforeSaveRevision != liveRevision) {
         return const ValidationFailure(
           'Target Schedule changed while the bundle was being committed. '
           'The journal is retained for conflict-aware recovery.',
@@ -376,6 +391,12 @@ class GridRosterImportWorkflow {
       }
 
       final liveRevision = revisionFor(live, scheduleId);
+      if (liveRevision == null || liveRevision.trim().isEmpty) {
+        return const PersistenceFailure(
+          'The Schedule repository cannot verify the journal base revision. '
+          'Recovery is blocked without atomic conditional persistence.',
+        );
+      }
       if (liveRevision != snapshot.provenance.targetScheduleRevision) {
         return Success(
           GridRosterRecoveryAssessment(
@@ -465,7 +486,8 @@ class GridRosterImportWorkflow {
           scheduleFingerprint(latest) == acceptedFingerprint) {
         return Success(latest);
       }
-      if (revisionFor(latest, assessment.scheduleId) != expectedRevision) {
+      final latestRevision = revisionFor(latest, assessment.scheduleId);
+      if (latestRevision == null || latestRevision != expectedRevision) {
         return const ValidationFailure(
           'Recovery target changed after preview. No Schedule was overwritten.',
         );
@@ -517,28 +539,25 @@ class GridRosterImportWorkflow {
     String expectedRevision,
   ) {
     final repository = scheduleRepository;
-    if (repository is ConditionalScheduleWriter) {
-      return (repository as ConditionalScheduleWriter)
-          .saveIfRevision(schedule, expectedRevision);
+    if (repository is! ConditionalScheduleWriter) {
+      return const PersistenceFailure(
+        'The Schedule repository does not support atomic conditional writes. '
+        'No Schedule was saved.',
+      );
     }
-    return repository.save(schedule);
+    return repository.saveIfRevision(schedule, expectedRevision);
   }
 
   String scheduleFingerprint(Schedule schedule) =>
       'sha256:${sha256.convert(utf8.encode(scheduleCodec.encode(schedule)))}';
 
-  String revisionFor(Schedule? schedule, String scheduleId) {
+  String? revisionFor(Schedule? schedule, String scheduleId) {
     final source = scheduleRepository;
-    final revisionSource = source is ScheduleRevisionSource
-        ? source as ScheduleRevisionSource
-        : null;
-    final authoritative = revisionSource == null
-        ? null
-        : schedule == null
+    if (source is! ScheduleRevisionSource) return null;
+    final revisionSource = source as ScheduleRevisionSource;
+    return schedule == null
         ? revisionSource.revisionForAbsentSchedule(scheduleId)
         : revisionSource.revisionForSnapshot(schedule);
-    if (authoritative != null) return authoritative;
-    return schedule == null ? 'absent:$scheduleId' : scheduleFingerprint(schedule);
   }
 
 }

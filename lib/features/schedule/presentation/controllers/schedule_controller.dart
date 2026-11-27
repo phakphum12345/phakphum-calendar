@@ -257,7 +257,10 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
         _expectedRevision = revisionSource.revisionForSnapshot(saved);
       }
     } else {
-      result = await scheduleRepository.save(canonicalSchedule);
+      result = const PersistenceFailure(
+        'The configured Schedule repository does not support atomic conditional writes. '
+        'Configure a revision-aware repository before saving.',
+      );
     }
     switch (result) {
       case Success<Schedule>():

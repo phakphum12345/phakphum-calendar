@@ -101,6 +101,31 @@ class _MemoryScheduleRepository implements ScheduleRepository, ScheduleRevisionS
   }
 }
 
+class _UnversionedScheduleRepository implements ScheduleRepository {
+  Schedule? value;
+  int saveCount = 0;
+
+  @override
+  Future<Result<Schedule?>> findById(String id) async => Success(value);
+
+  @override
+  Future<Result<ScheduleMonth?>> loadMonth(String scheduleId, DateTime month) async =>
+      Success(value?.month(month));
+
+  @override
+  Future<Result<Schedule>> save(Schedule schedule) async {
+    saveCount++;
+    value = schedule;
+    return Success(schedule);
+  }
+
+  @override
+  Future<Result<void>> delete(String id) async {
+    value = null;
+    return const Success(null);
+  }
+}
+
 class _MemoryRemoteJournalGateway implements GridRosterImportJournalGateway {
   final calls = <String>[];
   bool failCommitted = false;
@@ -447,6 +472,25 @@ void main() {
     expect(recovered, isA<Success<Schedule?>>());
     expect(repository.value?.id, 'schedule-1');
     expect(repository.value, conversion.schedule);
+  });
+
+  test('review fails closed when repository cannot provide an authoritative revision', () async {
+    final unversioned = _UnversionedScheduleRepository();
+    final unversionedWorkflow = GridRosterImportWorkflow(
+      scheduleRepository: unversioned,
+      journal: GridRosterBundleJournal(store: _MemoryStore()),
+    );
+
+    final result = await unversionedWorkflow.prepareReview(
+      report: _report(),
+      targetScheduleId: 'schedule-1',
+      targetScheduleName: 'November roster',
+      employees: [_employee],
+      shiftTemplates: const [],
+    );
+
+    expect(result, isA<PersistenceFailure<GridRosterImportReviewContext>>());
+    expect(unversioned.saveCount, 0);
   });
 
   test('Grid commit fails closed when another writer wins after the final read', () async {
