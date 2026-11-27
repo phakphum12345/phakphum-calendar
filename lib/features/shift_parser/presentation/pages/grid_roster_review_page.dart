@@ -7,6 +7,7 @@ import '../../../../domain/entities/shift_template.dart';
 import '../../application/grid_roster_canonical_converter.dart';
 import '../../application/grid_roster_import_workflow.dart';
 import '../../application/grid_roster_review_session.dart';
+import '../../domain/monthly_roster_section.dart';
 
 /// Human review screen for a parsed multi-sheet Grid workbook.
 ///
