@@ -74,7 +74,11 @@ class MonthlyRosterWorkbookScanner {
         ...verticalReport.sections,
       ];
       final sheetWarnings = <String>[
-        ...horizontalReport.warnings,
+        ...horizontalReport.warnings.where(
+          (warning) =>
+              verticalReport.sections.isEmpty ||
+              !warning.contains('ไม่พบบล็อกตารางรายเดือน'),
+        ),
         ...verticalReport.warnings,
       ];
 
