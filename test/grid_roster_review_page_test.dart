@@ -282,11 +282,18 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    // Sections are children of a lazy ListView. Scroll to the unique
+    // section-level heading first so its anomaly card and correction action
+    // are built before locating the action.
+    final anomalyHeading = find.text('พบจุดผิดในหัวตารางวันที่');
+    await tester.scrollUntilVisible(
+      anomalyHeading,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.pumpAndSettle();
     final correctionAction = find.text('กำหนดวันที่คอลัมน์นี้').first;
     expect(find.text('กำหนดวันที่คอลัมน์นี้'), findsAtLeastNWidgets(1));
-    // The review page uses a regular Column, not a lazy list. Ensure the
-    // actual correction control is visible instead of scrolling to an
-    // anomaly-code label that may be absent from the current finder frame.
     await tester.ensureVisible(correctionAction);
     await tester.pumpAndSettle();
     await tester.tap(correctionAction);
