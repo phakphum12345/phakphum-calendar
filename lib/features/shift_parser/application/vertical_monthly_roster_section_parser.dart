@@ -31,13 +31,13 @@ class VerticalMonthlyRosterSectionParser {
     final warnings = <String>[];
     final occupiedDateAxes = <String>{};
     final dateAxisColumns = byColumn.entries
-        .where((entry) => entry.value.where((cell) => _day(cell) != null).length >= 7)
+        .where((entry) => entry.value.where(_isDateCell).length >= 7)
         .map((entry) => entry.key)
         .toSet();
 
     for (final entry in byColumn.entries) {
       final numericDates = entry.value
-          .where((cell) => _day(cell) != null)
+          .where(_isDateCell)
           .toList(growable: false);
       if (numericDates.length < 7) continue;
 
@@ -77,7 +77,7 @@ class VerticalMonthlyRosterSectionParser {
                   cell.rowIndex == headerRow &&
                   cell.columnIndex != entry.key &&
                   (cell.text?.trim().isNotEmpty ?? false) &&
-                  _day(cell) == null &&
+                  !_isDateCell(cell) &&
                   !_isPeriodEvidence(cell.text ?? ''),
             )
             .any(
@@ -95,7 +95,14 @@ class VerticalMonthlyRosterSectionParser {
           firstDateRow: firstRow,
           dateColumn: entry.key,
         );
-        final period = periodEvidence?.period;
+        final explicitDates = dateCells
+            .map(_explicitDate)
+            .whereType<DateTime>()
+            .toList(growable: false);
+        final inferredPeriod = explicitDates.length == dateCells.length
+            ? _periodFromExplicitDates(explicitDates)
+            : null;
+        final period = periodEvidence?.period ?? inferredPeriod;
         if (period == null) {
           warnings.add(
             'พบแกนวันที่แนวตั้งที่คอลัมน์ ${entry.key + 1} '
@@ -104,19 +111,30 @@ class VerticalMonthlyRosterSectionParser {
           );
           continue;
         }
+        final sectionTitle = periodEvidence?.title ??
+            '${_formatDate(period.start)} - ${_formatDate(period.end)}';
 
         final resolvedDates = <int, DateTime>{};
         final anomalies = <MonthlyRosterDateAnomaly>[];
         var cursor = DateTime(period.start.year, period.start.month, period.start.day);
         int? previousDisplayedDay;
+        DateTime? previousResolvedDate;
         for (final cell in dateCells) {
-          final day = _day(cell)!;
-          final resolved = _resolveNextDate(
-            day: day,
-            cursor: cursor,
-            start: period.start,
-            end: period.end,
-          );
+          final explicitDate = _explicitDate(cell);
+          final day = _day(cell) ?? explicitDate?.day;
+          if (day == null) continue;
+          final candidate = explicitDate ??
+              _resolveNextDate(
+                day: day,
+                cursor: cursor,
+                start: period.start,
+                end: period.end,
+              );
+          final resolved = candidate != null &&
+                  !candidate.isBefore(period.start) &&
+                  !candidate.isAfter(period.end)
+              ? candidate
+              : null;
           if (resolved == null) {
             final isSingleMonth =
                 period.start.year == period.end.year &&
@@ -145,9 +163,35 @@ class VerticalMonthlyRosterSectionParser {
             previousDisplayedDay = day;
             continue;
           }
+          if (previousResolvedDate != null &&
+              resolved.isAtSameMomentAs(previousResolvedDate)) {
+            anomalies.add(
+              MonthlyRosterDateAnomaly(
+                code: 'duplicate_date',
+                columnIndex: cell.columnIndex,
+                rowIndex: cell.rowIndex,
+                displayedDay: day,
+                message: 'พบวันที่ ${_formatDate(resolved)} ซ้ำที่ ${cell.a1}',
+              ),
+            );
+          } else if (previousResolvedDate != null &&
+              resolved.isBefore(previousResolvedDate)) {
+            anomalies.add(
+              MonthlyRosterDateAnomaly(
+                code: 'out_of_order',
+                columnIndex: cell.columnIndex,
+                rowIndex: cell.rowIndex,
+                displayedDay: day,
+                message: 'วันที่ ${_formatDate(resolved)} ที่ ${cell.a1} ไม่เรียงตามปฏิทิน',
+              ),
+            );
+          }
           resolvedDates[cell.rowIndex] = resolved;
-          cursor = DateTime(resolved.year, resolved.month, resolved.day + 1);
+          if (!resolved.isBefore(cursor)) {
+            cursor = DateTime(resolved.year, resolved.month, resolved.day + 1);
+          }
           previousDisplayedDay = day;
+          previousResolvedDate = resolved;
         }
 
         final expectedDayCount = DateTime.utc(
@@ -207,7 +251,7 @@ class VerticalMonthlyRosterSectionParser {
           }
           final label = cell.text?.trim() ?? '';
           if (label.isNotEmpty &&
-              _day(cell) == null &&
+              !_isDateCell(cell) &&
               !_isPeriodEvidence(label)) {
             final hasData = dateCells.any((dateCell) {
               final value = byCoordinate[(dateCell.rowIndex, cell.columnIndex)]?.text;
@@ -224,7 +268,7 @@ class VerticalMonthlyRosterSectionParser {
             if (cell.columnIndex >= entry.key) continue;
             final label = cell.text?.trim() ?? '';
             if (label.isEmpty ||
-                _day(cell) != null ||
+                _isDateCell(cell) ||
                 _isPeriodEvidence(label)) {
               continue;
             }
@@ -257,7 +301,7 @@ class VerticalMonthlyRosterSectionParser {
             if (worker.isEmpty) continue;
             assignments.add(
               MonthlyRosterAssignment(
-                sectionTitle: periodEvidence!.title,
+                sectionTitle: sectionTitle,
                 rowLabel: labelEntry.value,
                 rowIndex: dateCell.rowIndex,
                 columnIndex: labelEntry.key,
@@ -285,13 +329,13 @@ class VerticalMonthlyRosterSectionParser {
 
         if (dateColumns.isEmpty) {
           warnings.add(
-            'พบตารางแนวตั้ง "${periodEvidence!.title}" แต่ไม่มีวันที่ที่จับคู่ได้',
+            'พบตารางแนวตั้ง "$sectionTitle" แต่ไม่มีวันที่ที่จับคู่ได้',
           );
           continue;
         }
         sections.add(
           MonthlyRosterSection(
-            title: periodEvidence!.title,
+            title: sectionTitle,
             headerRowIndex: firstRow,
             orientation: RosterGridOrientation.datesDownRows,
             assignments: List.unmodifiable(assignments),
@@ -311,6 +355,451 @@ class VerticalMonthlyRosterSectionParser {
       warnings: List.unmodifiable(warnings),
     );
   }
+
+  bool _isDateCell(NormalizedCell cell) =>
+      _day(cell) != null || _explicitDate(cell) != null;
+
+  DateTime? _explicitDate(NormalizedCell cell) {
+    final raw = cell.rawValue;
+    if (raw is DateTime) {
+      return DateTime(raw.year, raw.month, raw.day);
+    }
+    final text = cell.text?.trim() ?? raw?.toString().trim() ?? '';
+    if (text.isEmpty) return null;
+    final iso = DateTime.tryParse(text);
+    if (iso != null && RegExp(r'^\\d{4}-\\d{1,2}-\\d{1,2}').hasMatch(text)) {
+      return DateTime(iso.year, iso.month, iso.day);
+    }
+    final ymd = RegExp(r'^(\\d{4})[-/.](\\d{1,2})[-/.](\\d{1,2})
+    final value = cell.rawValue ?? cell.text;
+    final parsed = value is num
+        ? (value.isFinite && value == value.roundToDouble() ? value.toInt() : null)
+        : int.tryParse(value?.toString().trim() ?? '');
+    return parsed != null && parsed >= 1 && parsed <= 31 ? parsed : null;
+  }
+
+  int _findHeaderRow({
+    required List<NormalizedCell> cells,
+    required int firstDateRow,
+    required int dateColumn,
+  }) {
+    for (var row = firstDateRow - 1; row >= 0 && row >= firstDateRow - 8; row--) {
+      final hasOtherHeader = cells.any(
+        (cell) =>
+            cell.rowIndex == row &&
+            cell.columnIndex != dateColumn &&
+            (cell.text?.trim().isNotEmpty ?? false) &&
+            _day(cell) == null &&
+            !_isPeriodEvidence(cell.text ?? ''),
+      );
+      if (hasOtherHeader) return row;
+    }
+    return firstDateRow - 1;
+  }
+
+  _PeriodEvidence? _periodEvidence({
+    required ShiftParserInput input,
+    required List<NormalizedCell> cells,
+    required int firstDateRow,
+    required int dateColumn,
+  }) {
+    final candidates = <({String text, int distance})>[];
+    for (final cell in cells) {
+      final text = cell.text?.trim() ?? '';
+      if (text.isEmpty) continue;
+      final rowDistance = (cell.rowIndex - firstDateRow).abs();
+      if (rowDistance > 12) continue;
+      final distance = rowDistance * 100 + (cell.columnIndex - dateColumn).abs();
+      candidates.add((text: text, distance: distance));
+    }
+    candidates.add((text: input.sheetTitle, distance: 100000));
+    candidates.sort((a, b) => a.distance.compareTo(b.distance));
+
+    for (final candidate in candidates) {
+      try {
+        final period = periodParser.parse(candidate.text);
+        return _PeriodEvidence(candidate.text, period);
+      } on FormatException {
+        final monthPeriod = _parseMonthOnly(candidate.text);
+        if (monthPeriod != null) {
+          return _PeriodEvidence(candidate.text, monthPeriod);
+        }
+      }
+    }
+    return null;
+  }
+
+  bool _isPeriodEvidence(String text) {
+    if (text.trim().isEmpty) return false;
+    try {
+      periodParser.parse(text);
+      return true;
+    } on FormatException {
+      return _parseMonthOnly(text) != null;
+    }
+  }
+
+  ThaiRosterPeriod? _parseMonthOnly(String text) {
+    const months = <String, int>{
+      'มกราคม': 1, 'ม.ค.': 1, 'มค': 1,
+      'กุมภาพันธ์': 2, 'ก.พ.': 2, 'กพ': 2,
+      'มีนาคม': 3, 'มี.ค.': 3, 'มีค': 3,
+      'เมษายน': 4, 'เม.ย.': 4, 'เมย': 4,
+      'พฤษภาคม': 5, 'พ.ค.': 5, 'พค': 5,
+      'มิถุนายน': 6, 'มิ.ย.': 6, 'มิย': 6,
+      'กรกฎาคม': 7, 'ก.ค.': 7, 'กค': 7,
+      'สิงหาคม': 8, 'ส.ค.': 8, 'สค': 8,
+      'กันยายน': 9, 'ก.ย.': 9, 'กย': 9,
+      'ตุลาคม': 10, 'ต.ค.': 10, 'ตค': 10,
+      'พฤศจิกายน': 11, 'พ.ย.': 11, 'พย': 11,
+      'ธันวาคม': 12, 'ธ.ค.': 12, 'ธค': 12,
+    };
+    final monthPattern = months.keys.map(RegExp.escape).join('|');
+    final match = RegExp('($monthPattern)\\s*(?:พ\\.?\\s*ศ\\.?\\s*)?(\\d{2,4})')
+        .firstMatch(text.replaceAll(' ', ''));
+    if (match == null) return null;
+    final month = months[match.group(1)]!;
+    var year = int.parse(match.group(2)!);
+    if (year < 100) year += 2500;
+    if (year >= 2400) year -= 543;
+    return ThaiRosterPeriod(
+      start: DateTime(year, month, 1),
+      end: DateTime(year, month + 1, 0),
+    );
+  }
+
+  DateTime? _resolveNextDate({
+    required int day,
+    required DateTime cursor,
+    required DateTime start,
+    required DateTime end,
+  }) {
+    var month = DateTime(cursor.year, cursor.month);
+    final lastMonth = DateTime(end.year, end.month);
+    while (!month.isAfter(lastMonth)) {
+      final candidate = DateTime(month.year, month.month, day);
+      if (candidate.day == day &&
+          !candidate.isBefore(cursor) &&
+          !candidate.isBefore(start) &&
+          !candidate.isAfter(end)) {
+        return candidate;
+      }
+      month = DateTime(month.year, month.month + 1);
+    }
+    return null;
+  }
+}
+
+class _PeriodEvidence {
+  const _PeriodEvidence(this.title, this.period);
+  final String title;
+  final ThaiRosterPeriod period;
+}
+)
+        .firstMatch(text);
+    if (ymd != null) {
+      return _checkedDate(
+        year: _normalizeYear(int.parse(ymd.group(1)!)),
+        month: int.parse(ymd.group(2)!),
+        day: int.parse(ymd.group(3)!),
+      );
+    }
+    final dmy = RegExp(r'^(\\d{1,2})[-/.](\\d{1,2})[-/.](\\d{2,4})
+    final value = cell.rawValue ?? cell.text;
+    final parsed = value is num
+        ? (value.isFinite && value == value.roundToDouble() ? value.toInt() : null)
+        : int.tryParse(value?.toString().trim() ?? '');
+    return parsed != null && parsed >= 1 && parsed <= 31 ? parsed : null;
+  }
+
+  int _findHeaderRow({
+    required List<NormalizedCell> cells,
+    required int firstDateRow,
+    required int dateColumn,
+  }) {
+    for (var row = firstDateRow - 1; row >= 0 && row >= firstDateRow - 8; row--) {
+      final hasOtherHeader = cells.any(
+        (cell) =>
+            cell.rowIndex == row &&
+            cell.columnIndex != dateColumn &&
+            (cell.text?.trim().isNotEmpty ?? false) &&
+            _day(cell) == null &&
+            !_isPeriodEvidence(cell.text ?? ''),
+      );
+      if (hasOtherHeader) return row;
+    }
+    return firstDateRow - 1;
+  }
+
+  _PeriodEvidence? _periodEvidence({
+    required ShiftParserInput input,
+    required List<NormalizedCell> cells,
+    required int firstDateRow,
+    required int dateColumn,
+  }) {
+    final candidates = <({String text, int distance})>[];
+    for (final cell in cells) {
+      final text = cell.text?.trim() ?? '';
+      if (text.isEmpty) continue;
+      final rowDistance = (cell.rowIndex - firstDateRow).abs();
+      if (rowDistance > 12) continue;
+      final distance = rowDistance * 100 + (cell.columnIndex - dateColumn).abs();
+      candidates.add((text: text, distance: distance));
+    }
+    candidates.add((text: input.sheetTitle, distance: 100000));
+    candidates.sort((a, b) => a.distance.compareTo(b.distance));
+
+    for (final candidate in candidates) {
+      try {
+        final period = periodParser.parse(candidate.text);
+        return _PeriodEvidence(candidate.text, period);
+      } on FormatException {
+        final monthPeriod = _parseMonthOnly(candidate.text);
+        if (monthPeriod != null) {
+          return _PeriodEvidence(candidate.text, monthPeriod);
+        }
+      }
+    }
+    return null;
+  }
+
+  bool _isPeriodEvidence(String text) {
+    if (text.trim().isEmpty) return false;
+    try {
+      periodParser.parse(text);
+      return true;
+    } on FormatException {
+      return _parseMonthOnly(text) != null;
+    }
+  }
+
+  ThaiRosterPeriod? _parseMonthOnly(String text) {
+    const months = <String, int>{
+      'มกราคม': 1, 'ม.ค.': 1, 'มค': 1,
+      'กุมภาพันธ์': 2, 'ก.พ.': 2, 'กพ': 2,
+      'มีนาคม': 3, 'มี.ค.': 3, 'มีค': 3,
+      'เมษายน': 4, 'เม.ย.': 4, 'เมย': 4,
+      'พฤษภาคม': 5, 'พ.ค.': 5, 'พค': 5,
+      'มิถุนายน': 6, 'มิ.ย.': 6, 'มิย': 6,
+      'กรกฎาคม': 7, 'ก.ค.': 7, 'กค': 7,
+      'สิงหาคม': 8, 'ส.ค.': 8, 'สค': 8,
+      'กันยายน': 9, 'ก.ย.': 9, 'กย': 9,
+      'ตุลาคม': 10, 'ต.ค.': 10, 'ตค': 10,
+      'พฤศจิกายน': 11, 'พ.ย.': 11, 'พย': 11,
+      'ธันวาคม': 12, 'ธ.ค.': 12, 'ธค': 12,
+    };
+    final monthPattern = months.keys.map(RegExp.escape).join('|');
+    final match = RegExp('($monthPattern)\\s*(?:พ\\.?\\s*ศ\\.?\\s*)?(\\d{2,4})')
+        .firstMatch(text.replaceAll(' ', ''));
+    if (match == null) return null;
+    final month = months[match.group(1)]!;
+    var year = int.parse(match.group(2)!);
+    if (year < 100) year += 2500;
+    if (year >= 2400) year -= 543;
+    return ThaiRosterPeriod(
+      start: DateTime(year, month, 1),
+      end: DateTime(year, month + 1, 0),
+    );
+  }
+
+  DateTime? _resolveNextDate({
+    required int day,
+    required DateTime cursor,
+    required DateTime start,
+    required DateTime end,
+  }) {
+    var month = DateTime(cursor.year, cursor.month);
+    final lastMonth = DateTime(end.year, end.month);
+    while (!month.isAfter(lastMonth)) {
+      final candidate = DateTime(month.year, month.month, day);
+      if (candidate.day == day &&
+          !candidate.isBefore(cursor) &&
+          !candidate.isBefore(start) &&
+          !candidate.isAfter(end)) {
+        return candidate;
+      }
+      month = DateTime(month.year, month.month + 1);
+    }
+    return null;
+  }
+}
+
+class _PeriodEvidence {
+  const _PeriodEvidence(this.title, this.period);
+  final String title;
+  final ThaiRosterPeriod period;
+}
+)
+        .firstMatch(text);
+    if (dmy != null) {
+      return _checkedDate(
+        year: _normalizeYear(int.parse(dmy.group(3)!)),
+        month: int.parse(dmy.group(2)!),
+        day: int.parse(dmy.group(1)!),
+      );
+    }
+    if (RegExp(r'^\\d{1,2}\\s*[ก-๙.]+\\s*\\d{2,4}
+    final value = cell.rawValue ?? cell.text;
+    final parsed = value is num
+        ? (value.isFinite && value == value.roundToDouble() ? value.toInt() : null)
+        : int.tryParse(value?.toString().trim() ?? '');
+    return parsed != null && parsed >= 1 && parsed <= 31 ? parsed : null;
+  }
+
+  int _findHeaderRow({
+    required List<NormalizedCell> cells,
+    required int firstDateRow,
+    required int dateColumn,
+  }) {
+    for (var row = firstDateRow - 1; row >= 0 && row >= firstDateRow - 8; row--) {
+      final hasOtherHeader = cells.any(
+        (cell) =>
+            cell.rowIndex == row &&
+            cell.columnIndex != dateColumn &&
+            (cell.text?.trim().isNotEmpty ?? false) &&
+            _day(cell) == null &&
+            !_isPeriodEvidence(cell.text ?? ''),
+      );
+      if (hasOtherHeader) return row;
+    }
+    return firstDateRow - 1;
+  }
+
+  _PeriodEvidence? _periodEvidence({
+    required ShiftParserInput input,
+    required List<NormalizedCell> cells,
+    required int firstDateRow,
+    required int dateColumn,
+  }) {
+    final candidates = <({String text, int distance})>[];
+    for (final cell in cells) {
+      final text = cell.text?.trim() ?? '';
+      if (text.isEmpty) continue;
+      final rowDistance = (cell.rowIndex - firstDateRow).abs();
+      if (rowDistance > 12) continue;
+      final distance = rowDistance * 100 + (cell.columnIndex - dateColumn).abs();
+      candidates.add((text: text, distance: distance));
+    }
+    candidates.add((text: input.sheetTitle, distance: 100000));
+    candidates.sort((a, b) => a.distance.compareTo(b.distance));
+
+    for (final candidate in candidates) {
+      try {
+        final period = periodParser.parse(candidate.text);
+        return _PeriodEvidence(candidate.text, period);
+      } on FormatException {
+        final monthPeriod = _parseMonthOnly(candidate.text);
+        if (monthPeriod != null) {
+          return _PeriodEvidence(candidate.text, monthPeriod);
+        }
+      }
+    }
+    return null;
+  }
+
+  bool _isPeriodEvidence(String text) {
+    if (text.trim().isEmpty) return false;
+    try {
+      periodParser.parse(text);
+      return true;
+    } on FormatException {
+      return _parseMonthOnly(text) != null;
+    }
+  }
+
+  ThaiRosterPeriod? _parseMonthOnly(String text) {
+    const months = <String, int>{
+      'มกราคม': 1, 'ม.ค.': 1, 'มค': 1,
+      'กุมภาพันธ์': 2, 'ก.พ.': 2, 'กพ': 2,
+      'มีนาคม': 3, 'มี.ค.': 3, 'มีค': 3,
+      'เมษายน': 4, 'เม.ย.': 4, 'เมย': 4,
+      'พฤษภาคม': 5, 'พ.ค.': 5, 'พค': 5,
+      'มิถุนายน': 6, 'มิ.ย.': 6, 'มิย': 6,
+      'กรกฎาคม': 7, 'ก.ค.': 7, 'กค': 7,
+      'สิงหาคม': 8, 'ส.ค.': 8, 'สค': 8,
+      'กันยายน': 9, 'ก.ย.': 9, 'กย': 9,
+      'ตุลาคม': 10, 'ต.ค.': 10, 'ตค': 10,
+      'พฤศจิกายน': 11, 'พ.ย.': 11, 'พย': 11,
+      'ธันวาคม': 12, 'ธ.ค.': 12, 'ธค': 12,
+    };
+    final monthPattern = months.keys.map(RegExp.escape).join('|');
+    final match = RegExp('($monthPattern)\\s*(?:พ\\.?\\s*ศ\\.?\\s*)?(\\d{2,4})')
+        .firstMatch(text.replaceAll(' ', ''));
+    if (match == null) return null;
+    final month = months[match.group(1)]!;
+    var year = int.parse(match.group(2)!);
+    if (year < 100) year += 2500;
+    if (year >= 2400) year -= 543;
+    return ThaiRosterPeriod(
+      start: DateTime(year, month, 1),
+      end: DateTime(year, month + 1, 0),
+    );
+  }
+
+  DateTime? _resolveNextDate({
+    required int day,
+    required DateTime cursor,
+    required DateTime start,
+    required DateTime end,
+  }) {
+    var month = DateTime(cursor.year, cursor.month);
+    final lastMonth = DateTime(end.year, end.month);
+    while (!month.isAfter(lastMonth)) {
+      final candidate = DateTime(month.year, month.month, day);
+      if (candidate.day == day &&
+          !candidate.isBefore(cursor) &&
+          !candidate.isBefore(start) &&
+          !candidate.isAfter(end)) {
+        return candidate;
+      }
+      month = DateTime(month.year, month.month + 1);
+    }
+    return null;
+  }
+}
+
+class _PeriodEvidence {
+  const _PeriodEvidence(this.title, this.period);
+  final String title;
+  final ThaiRosterPeriod period;
+}
+).hasMatch(text)) {
+      try {
+        final period = periodParser.parse('$text - $text');
+        return period.start;
+      } on FormatException {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  int _normalizeYear(int year) {
+    if (year < 100) year += 2500;
+    if (year >= 2400) year -= 543;
+    return year;
+  }
+
+  DateTime? _checkedDate({
+    required int year,
+    required int month,
+    required int day,
+  }) {
+    final value = DateTime(year, month, day);
+    if (value.year != year || value.month != month || value.day != day) {
+      return null;
+    }
+    return value;
+  }
+
+  ThaiRosterPeriod _periodFromExplicitDates(List<DateTime> dates) {
+    final ordered = dates.toList()..sort();
+    return ThaiRosterPeriod(start: ordered.first, end: ordered.last);
+  }
+
+  String _formatDate(DateTime date) =>
+      '${date.day.toString().padLeft(2, '0')}/'
+      '${date.month.toString().padLeft(2, '0')}/${date.year}';
 
   int? _day(NormalizedCell cell) {
     final value = cell.rawValue ?? cell.text;
