@@ -4,7 +4,7 @@ Repository: `phakphum12345/phakphum-calendar`
 Base branch: `main`  
 Audited main SHA: `68ef85361c2d08e2970160a36475592010d908f7`  
 Execution branch: `feat/universal-roster-grid-reconciled-2026-11-25`  
-Execution head at this snapshot: `2d9d82d03ad42fe614159a41653ac395be01b7e8`  
+Execution head at this snapshot: `9cb300927679bf10eb892046f2cb6b678142e0e0`  
 Status: IN PROGRESS — not a release-readiness declaration.
 
 ## Current work package state
@@ -28,10 +28,10 @@ Status: IN PROGRESS — not a release-readiness declaration.
 | PR | Base SHA | Head SHA | State | CI evidence | Review |
 |---|---|---|---|---|---|
 | [#191](https://github.com/phakphum12345/phakphum-calendar/pull/191) | `d18454680879a10c6efe9e44ffb37cd0695f25a6` | `6787fe710ceb351581eb42c9b7045c49a93c9cfb` | OPEN / Draft | 10/10 observed workflows success | None recorded |
-| [#192](https://github.com/phakphum12345/phakphum-calendar/pull/192) | `d18454680879a10c6efe9e44ffb37cd0695f25a6` | `2d9d82d03ad42fe614159a41653ac395be01b7e8` | OPEN / Draft | Current head workflows pending/in progress at snapshot | None recorded |
+| [#192](https://github.com/phakphum12345/phakphum-calendar/pull/192) | `d18454680879a10c6efe9e44ffb37cd0695f25a6` | `9cb300927679bf10eb892046f2cb6b678142e0e0` | OPEN / Draft | 14 workflows queued/pending/in progress at snapshot; no full pass claim | None recorded |
 | [#196](https://github.com/phakphum12345/phakphum-calendar/pull/196) | `d18454680879a10c6efe9e44ffb37cd0695f25a6` | `b9890c2983208b394232f9bc2c2125ec1212e16f` | OPEN / Draft | 13/13 observed workflows success | None recorded |
-| [#199](https://github.com/phakphum12345/phakphum-calendar/pull/199) | `68ef85361c2d08e2970160a36475592010d908f7` | `5d6906e1b6f938604ba665e2a0963a8d4320bf36` | OPEN / Draft | 11/11 observed workflows success | None recorded; orientation foundation superseded by #192 integration |
-| [#200](https://github.com/phakphum12345/phakphum-calendar/pull/200) | `68ef85361c2d08e2970160a36475592010d908f7` | `f88e94d9978820d568da8f73f417ed78ab9f2bfa` | OPEN / Draft | Separate implementation branch; superseded by the integrated work in #192 | None recorded; do not merge |
+| [#199](https://github.com/phakphum12345/phakphum-calendar/pull/199) | `68ef85361c2d08e2970160a36475592010d908f7` | `5d6906e1b6f938604ba665e2a0963a8d4320bf36` | CLOSED / superseded | 11/11 observed workflows success on its historical head | No review; foundation ported to #192 |
+| [#200](https://github.com/phakphum12345/phakphum-calendar/pull/200) | `68ef85361c2d08e2970160a36475592010d908f7` | `f88e94d9978820d568da8f73f417ed78ab9f2bfa` | CLOSED / superseded | Earlier branch CI included an initial missing-import failure, later fixed; not the integrated PR | No review; implementation ported to #192 |
 
 Workflow success is only CI evidence on the exact listed SHA. It does not prove product, security, provider or production acceptance. PRs #191, #192 and #196 were opened from an older base snapshot; exact base/head ancestry and changed-file conflicts must be reconciled before merge.
 
