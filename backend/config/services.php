@@ -28,6 +28,13 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'web_push' => [
+        'vapid_public_key' => env('WEB_PUSH_VAPID_PUBLIC_KEY'),
+        'vapid_private_key' => env('WEB_PUSH_VAPID_PRIVATE_KEY'),
+        'vapid_subject' => env('WEB_PUSH_VAPID_SUBJECT'),
+        'max_attempts' => (int) env('WEB_PUSH_MAX_ATTEMPTS', 8),
+    ],
+
     'google' => [
         'allowed_client_ids' => array_values(array_filter(array_map(
             'trim',
