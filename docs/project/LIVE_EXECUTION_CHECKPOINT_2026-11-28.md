@@ -11,19 +11,19 @@ This checkpoint is authoritative for the live repository state at the timestamp 
 
 | PR | Base | Exact head | CI snapshot | Mergeability / disposition |
 |---|---|---|---|---|
-| #192 Grid import + persistence | `main` | `b00a98dfcde0d37c4d4f92554090184794798031` | 16 success, 3 in progress, 3 queued, 1 skipped (Pages deployment) | Mergeable; Draft; original workbook acceptance outstanding |
-| #205 Reviewer-selected orientation | Grid branch at #192 | `c9f85011f6fcc09c4c9d05db03596d24493ca440` | 4 success, 5 in progress, 6 queued, 1 skipped (Pages deployment) | Mergeable; Draft |
-| #207 Merged vertical headers | Grid branch at #192 | `227927c2b24d5f3b81d05e45216d8dc66147fdcc` | 1 success, 2 in progress, 13 queued | Mergeable; Draft |
-| #206 Schedule read-back verification | Grid branch at #192 | `022a10b3671d0e1c166d4f2a06705002114fe8cc` | 2 success, 2 in progress, 11 queued | Mergeable; Draft |
-| #208 Employee aliases | Grid branch at #192 | `3f482b28aa676d3af6b0f81cde90205e6727a597` | 1 success, 2 in progress, 14 queued | Mergeable; Draft |
-| #204 Drive history restore | Grid branch at #192 | `153b7bffb8afc602ffcd3f6eeadbb4eabdb6eb07` | 1 success, 3 in progress, 11 queued | Mergeable; Draft |
-| #202 Generation preview/approval | Grid branch at #192 | `a976a21da4acabe32eb5ab5787f4914fcf9eaa86` | 2 success, 1 in progress, 12 queued, 1 skipped (Pages deployment) | Mergeable; Draft |
-| #203 Monthly Shift Pay statement calculation | `main` | `490dc0fdddb43eca234718a76142819e71f6208a` | 1 in progress, 13 queued | Mergeable; Draft; calculation-only scope |
-| #196 Calendar ETag/lease/recovery | `main` | `6128c97984bbd8bb15e2a0758498f5fc28c792bf` | 16 queued | Mergeable; Draft; live Google acceptance outstanding |
-| #191 Notification outbox/Web Push | `main` | `ac4c7e9e4d52673e05743e35b39118e563e4b541` | 16 queued | Mergeable; Draft; real browser/device delivery outstanding |
-| #209 Project documentation audit | `main` | `c087c3d0de179637f6b5a6cd0ed2ae9d6d48e592` | 5 queued | Mergeable; Draft; documentation refresh in progress |
+| #192 Grid import + persistence | `main` | `b00a98dfcde0d37c4d4f92554090184794798031` | 17 success, 3 in progress, 2 queued, 1 skipped (Pages deployment); core evidence gate passed | Mergeable; Draft; original workbook acceptance outstanding |
+| #205 Reviewer-selected orientation | Grid branch at #192 | `c9f85011f6fcc09c4c9d05db03596d24493ca440` | 6 success, 4 in progress, 7 queued, 1 skipped (Pages deployment) | Mergeable; Draft |
+| #207 Merged vertical headers | Grid branch at #192 | `227927c2b24d5f3b81d05e45216d8dc66147fdcc` | 2 success, 3 in progress, 10 queued, 1 skipped (Pages deployment) | Mergeable; Draft |
+| #206 Schedule read-back verification | Grid branch at #192 | `022a10b3671d0e1c166d4f2a06705002114fe8cc` | 2 success, 3 in progress, 10 queued | Mergeable; Draft |
+| #208 Employee aliases | Grid branch at #192 | `3f482b28aa676d3af6b0f81cde90205e6727a597` | 2 success, 2 in progress, 13 queued | Mergeable; Draft |
+| #204 Drive history restore | Grid branch at #192 | `153b7bffb8afc602ffcd3f6eeadbb4eabdb6eb07` | 4 success, 1 in progress, 10 queued | Mergeable; Draft |
+| #202 Generation preview/approval | Grid branch at #192 | `a976a21da4acabe32eb5ab5787f4914fcf9eaa86` | 3 success, 0 in progress, 12 queued, 1 skipped (Pages deployment) | Mergeable; Draft |
+| #203 Monthly Shift Pay statement calculation | `main` | `490dc0fdddb43eca234718a76142819e71f6208a` | 1 success, 1 in progress, 14 queued | Mergeable; Draft; calculation-only scope |
+| #196 Calendar ETag/lease/recovery | `main` | `6128c97984bbd8bb15e2a0758498f5fc28c792bf` | 1 in progress, 15 queued | Mergeable; Draft; live Google acceptance outstanding |
+| #191 Notification outbox/Web Push | `main` | `ac4c7e9e4d52673e05743e35b39118e563e4b541` | 1 in progress, 15 queued | Mergeable; Draft; real browser/device delivery outstanding |
+| #209 Project documentation audit | `main` | `dc9147d40a75c8f136f8499ab6b3f8983b949d18` | 5 queued | Mergeable; Draft; documentation refresh in progress |
 
-No exact-head failure was observed in this snapshot for these updated PR heads. This does not mean their CI is complete: queued and in-progress checks remain unverified. The skipped GitHub Pages deployment jobs on PRs #192, #205 and #202 are not counted as successful checks.
+No exact-head failure was observed in this snapshot for these updated PR heads. PR #192's core evidence gate is complete and green; its macOS/iOS advisory evidence and macOS CAS spike remain queued/in progress. This does not mean their CI is complete: queued and in-progress checks remain unverified. The skipped GitHub Pages deployment jobs on PRs #192, #205 and #202 are not counted as successful checks.
 
 ## 2. Dependency and branch reconciliation completed
 
