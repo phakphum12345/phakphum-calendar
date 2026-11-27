@@ -93,6 +93,21 @@ void main() {
     expect(find.text('รหัสหรือชื่อผู้ตรวจสอบ'), findsOneWidget);
     expect(find.text('นำรายการนี้เข้า Schedule'), findsOneWidget);
     expect(find.text('Broken worksheet could not be read.'), findsOneWidget);
+
+    await tester.tap(find.byType(CheckboxListTile).first);
+    await tester.pumpAndSettle();
+    expect(
+      find.textContaining('คำแนะนำกะจากชื่อแถว: UG'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('โปรดตรวจสอบ'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('เว้นว่างเพื่อใช้คำแนะนำกะนี้หลังจากยืนยัน'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('date anomaly choices are isolated by source worksheet', (
