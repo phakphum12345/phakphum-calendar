@@ -1,5 +1,7 @@
 # End-to-End Completion Audit — 2026-11-23
 
+> **Historical audit snapshot.** This document records main SHA `78a1ef7c1436ccfd0495778987b97a9ebd9ac2d1` and the PR/deployment evidence available on 2026-11-23. It is not current completion status. Use [the live project completion master plan](project/PROJECT_COMPLETION_MASTER_PLAN.md) and [acceptance matrix](project/ACCEPTANCE_MATRIX.md).
+
 Repository: `phakphum12345/phakphum-calendar`  
 Base branch: `main`  
 Audited main SHA: `78a1ef7c1436ccfd0495778987b97a9ebd9ac2d1`  
