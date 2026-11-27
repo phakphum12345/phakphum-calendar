@@ -6,6 +6,18 @@
 > **Web app:** [เปิด Phakphum Calendar](https://phakphum12345.github.io/phakphum-calendar/)  
 > **ภาษา:** ไทย / English
 
+## สถานะการพัฒนา ณ 27 พฤศจิกายน 2569
+
+- Main baseline: `68ef85361c2d08e2970160a36475592010d908f7`.
+- งานนำเข้าตารางแนวตั้ง/แนวนอน, CAS, Calendar Sync, Web Push, generation, Shift Pay และ history restore ยังอยู่ใน Draft PRs ไม่ถือว่าเป็นฟีเจอร์ที่ Merge หรือ production-ready แล้ว
+- PR ที่กำลังดำเนินการ: [#191](https://github.com/phakphum12345/phakphum-calendar/pull/191), [#192](https://github.com/phakphum12345/phakphum-calendar/pull/192), [#196](https://github.com/phakphum12345/phakphum-calendar/pull/196), [#201](https://github.com/phakphum12345/phakphum-calendar/pull/201), [#202](https://github.com/phakphum12345/phakphum-calendar/pull/202), [#203](https://github.com/phakphum12345/phakphum-calendar/pull/203), [#204](https://github.com/phakphum12345/phakphum-calendar/pull/204).
+- PR #199 ถูกปิดโดยไม่ Merge เพราะงาน orientation ถูกย้ายเข้า #192 แล้ว
+- Branch protection ของ `main` ปิดอยู่และ required status checks ยังไม่ถูกบังคับ จึงต้องตรวจ exact-head CI และ review ด้วยตนเองทุกครั้ง
+- ยังไม่มีหลักฐาน deployment/production acceptance สำหรับชุดงานที่กำลังพัฒนา
+
+ดูสถานะและข้อจำกัดล่าสุดได้ที่ [Implementation Status](IMPLEMENTATION_STATUS.md), [Requirements Traceability](REQUIREMENTS_TRACEABILITY.md), [Remaining Work Index](docs/REMAINING_WORK_INDEX.md) และ [Acceptance Matrix](docs/END_TO_END_ACCEPTANCE_MATRIX.md).
+
+
 ## สารบัญ
 
 - [เริ่มใช้งานอย่างรวดเร็ว](#เริ่มใช้งานอย่างรวดเร็ว)
