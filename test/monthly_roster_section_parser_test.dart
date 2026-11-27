@@ -1118,6 +1118,30 @@ void main() {
     }
   });
 
+  test('does not guess when vertical assignment headers are equally near on both sides', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Ambiguous',
+      sheetId: 84,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['เวรเช้า', null, 'เวรบ่าย']),
+        ..._row(1, ['ประจำเดือน พฤศจิกายน พ.ศ. 2569']),
+        for (var day = 1; day <= 7; day++)
+          ..._row(day + 1, ['นาย A$day', day, 'นาย B$day']),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, isEmpty);
+    expect(
+      report.warnings.any((warning) => warning.contains('ไม่สามารถระบุด้าน')),
+      isTrue,
+    );
+  });
+
   test('corrects a vertical date row against the retained source grid', () {
     final input = ShiftParserInput(
       spreadsheetId: 'spreadsheet',
