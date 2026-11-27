@@ -5406,6 +5406,7 @@ class _AuditPage extends StatelessWidget {
     required this.activateSavedSheet,
     required this.openSavedSheet,
     required this.deleteSavedSheet,
+    required this.restoreRevision,
   });
 
   final AppController controller;
@@ -5413,6 +5414,7 @@ class _AuditPage extends StatelessWidget {
   final Future<void> Function(SavedSheet sheet) activateSavedSheet;
   final Future<void> Function(SavedSheet sheet) openSavedSheet;
   final Future<void> Function(SavedSheet sheet) deleteSavedSheet;
+  final Future<void> Function(RosterRevisionDocument revision) restoreRevision;
 
   @override
   Widget build(BuildContext context) {
@@ -5504,6 +5506,43 @@ class _AuditPage extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(height: 20),
+        Text(
+          'ประวัติ Revision ของตารางเวร',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 8),
+        if (controller.revisionDocuments.isEmpty)
+          const Card(
+            child: ListTile(
+              leading: Icon(Icons.history_toggle_off_outlined),
+              title: Text('ยังไม่มี Revision ที่อ่านเก็บไว้'),
+              subtitle: Text(
+                'เลือกชีต Google Sheets แล้วกด “ซิงค์ Timeline ย้อนหลัง” '
+                'เพื่ออ่านประวัติแบบ read-only ก่อนกู้คืน',
+              ),
+            ),
+          )
+        else
+          for (final revision in controller.revisionDocuments.reversed)
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.history_outlined),
+                title: Text('Revision ${revision.revisionId}'),
+                subtitle: Text(
+                  '${_thaiDate(revision.modifiedAt)} '
+                  '${_clock(revision.modifiedAt)} • '
+                  '${revision.snapshots.length} worksheets',
+                ),
+                trailing: OutlinedButton.icon(
+                  onPressed: controller.busy
+                      ? null
+                      : () => unawaited(restoreRevision(revision)),
+                  icon: const Icon(Icons.restore),
+                  label: const Text('ตรวจสอบและกู้คืน'),
+                ),
+              ),
+            ),
         const SizedBox(height: 20),
         Text('ประวัติการทำงาน', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
