@@ -949,6 +949,50 @@ void main() {
     expect(populated.warnings, isEmpty);
   });
 
+  test('keeps side-by-side vertical sections bound to their nearest header side', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 83,
+      sheetTitle: 'Side by side',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, [null, 'เวรเช้า', null, null, null, 'เวรบ่าย']),
+        ..._row(1, [
+          'ประจำเดือน พฤศจิกายน พ.ศ. 2569',
+          null,
+          null,
+          null,
+          'ประจำเดือน ธันวาคม พ.ศ. 2569',
+        ]),
+        for (var day = 1; day <= 7; day++)
+          ..._row(day + 1, [
+            null,
+            'บุคลากร A$day',
+            day,
+            null,
+            null,
+            'บุคลากร B$day',
+            day,
+          ]),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, hasLength(2));
+    expect(report.assignments, hasLength(14));
+    expect(report.warnings, isEmpty);
+    expect(
+      report.sections.map((section) => section.orientation).toSet(),
+      {RosterGridOrientation.datesDownRows},
+    );
+    expect(report.sections[0].rowLabels, ['เวรเช้า']);
+    expect(report.sections[1].rowLabels, ['เวรบ่าย']);
+    expect(report.sections[0].assignments.first.sourceCell, 'B3');
+    expect(report.sections[1].assignments.first.sourceCell, 'F3');
+  });
+
   test('resolves explicit DateTime, Thai Buddhist Era and Gregorian date cells', () {
     final dateValues = <Object?>[
       DateTime(2026, 11, 1),
