@@ -263,6 +263,39 @@ void main() {
       expect(result.amount, 123.46);
     });
 
+    test('equal-specificity matches are rejected instead of selecting by order', () {
+      final result = calculator.calculate(
+        input: ShiftPayInput(
+          date: DateTime(2026, 10, 26),
+          employmentType: EmploymentType.salaried,
+          shiftTypeId: 'night',
+          hours: 8,
+        ),
+        rules: const [
+          ShiftPayRule(
+            id: 'night-rule-a',
+            employmentType: EmploymentType.salaried,
+            dayCategory: WorkDayCategory.regularWeekday,
+            shiftTypeId: 'night',
+            fixedAmount: 700,
+          ),
+          ShiftPayRule(
+            id: 'night-rule-b',
+            employmentType: EmploymentType.salaried,
+            dayCategory: WorkDayCategory.regularWeekday,
+            shiftTypeId: 'night',
+            fixedAmount: 900,
+          ),
+        ],
+      );
+
+      expect(result.hasRule, isFalse);
+      expect(result.hasRuleConflict, isTrue);
+      expect(result.rule, isNull);
+      expect(result.amount, isNull);
+      expect(result.conflictingRuleIds, ['night-rule-a', 'night-rule-b']);
+    });
+
     test('missing rule is reported as unconfigured, not unpaid', () {
       final result = calculator.calculate(
         input: ShiftPayInput(
