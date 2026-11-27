@@ -5,7 +5,6 @@ import '../domain/monthly_roster_section.dart';
 import '../domain/normalized_cell.dart';
 import '../domain/shift_parser_input.dart';
 import 'monthly_roster_section_parser.dart';
-import 'vertical_monthly_roster_section_parser.dart';
 
 /// Scans every supplied worksheet independently, preserving its identity and
 /// reporting sheets that contain no recognizable monthly roster blocks.
@@ -65,38 +64,19 @@ class MonthlyRosterWorkbookScanner {
         timeZone: timeZone,
         cells: cells,
       );
-      final horizontalReport = sectionParser.parse(parserInput);
-      final verticalReport = const VerticalMonthlyRosterSectionParser().parse(
-        parserInput,
-      );
-      final sheetSections = <MonthlyRosterSection>[
-        ...horizontalReport.sections,
-        ...verticalReport.sections,
-      ];
-      final sheetWarnings = <String>[
-        ...horizontalReport.warnings.where(
-          (warning) =>
-              verticalReport.sections.isEmpty ||
-              !warning.contains('ไม่พบบล็อกตารางรายเดือน'),
-        ),
-        ...verticalReport.warnings,
-      ];
-
-      sections.addAll(sheetSections);
+      final report = sectionParser.parse(parserInput);
+      sections.addAll(report.sections);
       warnings.addAll(
-        sheetWarnings.map((warning) => '${snapshot.title}: $warning'),
+        report.warnings.map((warning) => '${snapshot.title}: $warning'),
       );
       summaries.add(
         MonthlyRosterSheetScanSummary(
           sheetId: sheetId,
           title: snapshot.title,
           hidden: snapshot.hidden,
-          blockCount: sheetSections.length,
-          assignmentCount: sheetSections.fold<int>(
-            0,
-            (total, section) => total + section.assignments.length,
-          ),
-          warningCount: sheetWarnings.length,
+          blockCount: report.sections.length,
+          assignmentCount: report.assignments.length,
+          warningCount: report.warnings.length,
         ),
       );
     }
