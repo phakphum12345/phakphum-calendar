@@ -391,7 +391,7 @@ class _AppShellState extends State<AppShell> {
       );
       return;
     }
-    final failure = recovered;
+    final failure = recovered as Failure<Schedule?>;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('กู้คืนไม่สำเร็จ: ${failure.message}')),
     );
