@@ -615,7 +615,7 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
     final converted =
         (conversion as Success<GridRosterCanonicalConversionResult>).value;
     final saved = await widget.workflow.commit(
-      context: widget.contextSnapshot,
+      context: _reviewContext,
       conversion: converted,
     );
     if (!mounted) return;
