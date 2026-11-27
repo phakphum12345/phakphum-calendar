@@ -2,6 +2,7 @@
 
 namespace App\Services\Notifications;
 
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Http;
 use Throwable;
@@ -58,7 +59,7 @@ final class WebPushSender implements WebPushTransport
             }
 
             return ['status' => 'permanent', 'error_code' => 'push_provider_rejected_request'];
-        } catch (\Illuminate\Http\Client\ConnectionException) {
+        } catch (ConnectionException) {
             return ['status' => 'retryable', 'error_code' => 'push_provider_unreachable'];
         } catch (WebPushConfigurationException) {
             return ['status' => 'retryable', 'error_code' => 'push_configuration_unavailable'];
