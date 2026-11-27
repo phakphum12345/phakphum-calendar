@@ -155,8 +155,44 @@ class ScheduleApiTest extends TestCase
             'schedule' => $this->schedulePayload('delete-me', 'stale resurrection'),
         ], $this->auth('alice-token'))->assertConflict();
 
+        $this->deleteJson('/api/v1/schedules/delete-me', [
+            'expected_revision' => $created['revision'],
+        ], $this->auth('alice-token'))->assertOk()
+            ->assertJsonPath('revision', $deleted['revision']);
+        $this->deleteJson('/api/v1/schedules/delete-me', [
+            'expected_revision' => $deleted['revision'],
+        ], $this->auth('alice-token'))->assertOk()
+            ->assertJsonPath('revision', $deleted['revision']);
+
         $this->getJson('/api/v1/schedules/delete-me', $this->auth('alice-token'))
             ->assertOk()->assertJsonPath('state', 'deleted')->assertJsonPath('data', null);
+    }
+
+    public function test_deleting_an_absent_schedule_creates_an_idempotent_tombstone(): void
+    {
+        $this->signIn('alice-token');
+        $absent = $this->getJson('/api/v1/schedules/never-created', $this->auth('alice-token'))
+            ->assertOk()->assertJsonPath('state', 'absent')->json('revision');
+
+        $deleted = $this->deleteJson('/api/v1/schedules/never-created', [
+            'expected_revision' => $absent,
+        ], $this->auth('alice-token'))->assertCreated()->json();
+
+        $this->assertSame('deleted', $deleted['state']);
+        $this->assertStringStartsWith('v1:', $deleted['revision']);
+        $this->deleteJson('/api/v1/schedules/never-created', [
+            'expected_revision' => $absent,
+        ], $this->auth('alice-token'))->assertOk()
+            ->assertJsonPath('revision', $deleted['revision']);
+
+        $this->putJson('/api/v1/schedules/never-created', [
+            'expected_revision' => $absent,
+            'schedule' => $this->schedulePayload('never-created', 'stale create'),
+        ], $this->auth('alice-token'))->assertConflict();
+
+        $this->getJson('/api/v1/schedules/never-created', $this->auth('alice-token'))
+            ->assertOk()->assertJsonPath('state', 'deleted')
+            ->assertJsonPath('revision', $deleted['revision']);
     }
 
     public function test_import_journal_is_idempotent_and_account_scoped(): void
