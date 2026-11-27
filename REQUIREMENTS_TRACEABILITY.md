@@ -8,7 +8,7 @@ The rows below supersede older PR/status snapshots in this file. Open-PR source 
 
 | Work package | Current source / PR | Exact-head CI evidence | Evidence state | Remaining acceptance |
 |---|---|---|---|---|
-| A. Universal roster import | #192 — `2f6f9043db8876ea5ed49d85961658fac95942ac` | New exact-head run pending after latest source/test changes | IN PROGRESS | Validate original X-OPD November 2569, 16 Nov–15 Dec 2569 and US Clinic ภปร.4 workbooks; verify ambiguous orientation and identity review |
+| A. Universal roster import | #192 — `b3dd82757c9652a774b35f7a975170a0bc6f26af` | New exact-head run pending after latest source/test changes | IN PROGRESS | Validate original X-OPD November 2569, 16 Nov–15 Dec 2569 and US Clinic ภปร.4 workbooks; verify ambiguous orientation and identity review |
 | B. Schedule persistence | #192 — same head | New exact-head run pending after encrypted payload tests | IN PROGRESS | Verify all production writers, true backend transaction/CAS across devices, tombstones, APP_KEY backup/restore and crash/restart recovery |
 | C. Google Calendar Sync | #196 — `8e186790e447f9278eda8612a1bb1b6f7e7b77c9` | 13/13 workflows passed | IN PROGRESS | Controlled test-calendar insert/update/delete, provider timeout reconciliation and cross-device lease contention |
 | D. Notifications | #191 — `cf7eaa22eaf81e04b0b444acfc3aee2a8ca51e5e` | 13/13 workflows passed | IN PROGRESS | Registered-device delivery, permission denial, expired subscriptions and deployed scheduler acceptance |
