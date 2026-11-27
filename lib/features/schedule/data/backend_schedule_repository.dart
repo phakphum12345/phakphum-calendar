@@ -7,6 +7,7 @@ import '../../../domain/entities/schedule.dart';
 import '../../../domain/entities/schedule_month.dart';
 import '../../../domain/repositories/schedule_repository.dart';
 import '../../../domain/repositories/conditional_schedule_writer.dart';
+import '../../../domain/repositories/conditional_schedule_deleter.dart';
 import '../../../domain/repositories/schedule_revision_source.dart';
 import 'schedule_json_codec.dart';
 
@@ -16,7 +17,7 @@ import 'schedule_json_codec.dart';
 /// A later read of the same Schedule cannot silently replace an older editor's
 /// token. Unknown snapshots fail closed, and deletes require an explicit
 /// caller-owned revision before they can be enabled.
-class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionSource, ConditionalScheduleWriter {
+class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionSource, ConditionalScheduleWriter, ConditionalScheduleDeleter {
   BackendScheduleRepository({
     required String baseUrl,
     required this.idTokenProvider,
@@ -173,6 +174,55 @@ class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionS
     return PersistenceFailure(
       'Schedule deletion is disabled until an explicit caller-owned revision is supplied. No data was deleted.',
     );
+  }
+
+  @override
+  Future<Result<void>> deleteIfRevision(
+    String id,
+    String expectedRevision,
+  ) async {
+    if (expectedRevision.trim().isEmpty) {
+      return const PersistenceFailure(
+        'An expected Schedule revision is required for deletion.',
+      );
+    }
+    try {
+      final response = await _request(
+        'DELETE',
+        _schedulePath(id),
+        body: {'expected_revision': expectedRevision},
+      );
+      final revision = response['revision'];
+      final state = response['state'];
+      if (revision is! String || !['deleted', 'absent'].contains(state)) {
+        throw const FormatException(
+          'The backend returned an invalid Schedule tombstone response.',
+        );
+      }
+      _revisions[id] = revision;
+      _absentRevisions.remove(id);
+      _snapshotRevisions.removeWhere((schedule, _) => schedule.id == id);
+      return const Success(null);
+    } on BackendScheduleApiException catch (error, stackTrace) {
+      return NetworkFailure(
+        error.message,
+        statusCode: error.statusCode,
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    } on FormatException catch (error, stackTrace) {
+      return ValidationFailure(
+        error.message,
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    } on Object catch (error, stackTrace) {
+      return NetworkFailure(
+        'Could not conditionally delete Schedule "$id" from the backend.',
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    }
   }
 
   Result<Schedule> _decodeSavedSchedule(Map<String, dynamic> response, String id) {
