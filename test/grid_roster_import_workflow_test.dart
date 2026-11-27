@@ -10,6 +10,7 @@ import 'package:phakphum_calendar/domain/repositories/schedule_repository.dart';
 import 'package:phakphum_calendar/domain/repositories/schedule_revision_source.dart';
 import 'package:phakphum_calendar/domain/repositories/conditional_schedule_writer.dart';
 import 'package:phakphum_calendar/features/schedule/data/shared_preferences_schedule_repository.dart';
+import 'package:phakphum_calendar/features/schedule/data/schedule_json_codec.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/grid_roster_canonical_converter.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/grid_roster_import_workflow.dart';
 import 'package:phakphum_calendar/features/shift_parser/data/backend_grid_roster_import_journal_gateway.dart';
@@ -366,7 +367,10 @@ void main() {
     );
 
     expect(result, isA<PersistenceFailure<Schedule>>());
-    expect(repository.value, conversion.schedule);
+    expect(
+      const ScheduleJsonCodec().encode(repository.value!),
+      const ScheduleJsonCodec().encode(conversion.schedule),
+    );
     expect(
       await GridRosterBundleJournal(store: store).recover('schedule-1'),
       isNotNull,
@@ -424,7 +428,10 @@ void main() {
     final recovered = await workflow.recoverAssessment(assessment);
 
     expect(recovered, isA<PersistenceFailure<Schedule?>>());
-    expect(repository.value, conversion.schedule);
+    expect(
+      const ScheduleJsonCodec().encode(repository.value!),
+      const ScheduleJsonCodec().encode(conversion.schedule),
+    );
   });
 
   test('recovery refuses to overwrite a newer canonical Schedule', () async {
@@ -558,7 +565,10 @@ void main() {
     final recovered = await remoteWorkflow.recoverAssessment(assessment);
     expect(recovered, isA<Success<Schedule?>>());
     expect(repository.value?.id, 'schedule-1');
-    expect(repository.value, conversion.schedule);
+    expect(
+      const ScheduleJsonCodec().encode(repository.value!),
+      const ScheduleJsonCodec().encode(conversion.schedule),
+    );
   });
 
   test('review fails closed when repository cannot provide an authoritative revision', () async {
