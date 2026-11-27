@@ -91,6 +91,92 @@ void main() {
     expect(find.text('นำรายการนี้เข้า Schedule'), findsOneWidget);
     expect(find.text('Broken worksheet could not be read.'), findsOneWidget);
   });
+
+  testWidgets('date anomaly choices are isolated by source worksheet', (
+    tester,
+  ) async {
+    MonthlyRosterSection section({
+      required String title,
+      required int sheetId,
+    }) => MonthlyRosterSection(
+      title: title,
+      headerRowIndex: 1,
+      startDate: DateTime(2026, 11, 1),
+      endDate: DateTime(2026, 11, 30),
+      sourceSpreadsheetId: 'spreadsheet-1',
+      sourceSheetId: sheetId,
+      sourceSheetTitle: title,
+      dateAnomalies: const [
+        MonthlyRosterDateAnomaly(
+          code: 'duplicate_day',
+          columnIndex: 18,
+          displayedDay: 30,
+          message: 'พบเลขวันที่ 30 ซ้ำในช่วงวันที่ของส่วนนี้',
+        ),
+      ],
+      assignments: const [],
+    );
+
+    final report = MonthlyRosterParseReport(
+      sections: [
+        section(title: 'X-OPD A', sheetId: 1),
+        section(title: 'X-OPD B', sheetId: 2),
+      ],
+      warnings: const [],
+      sourceSheetCount: 2,
+      sourceFingerprint: 'sha256:source-ui',
+    );
+    final session = const GridRosterReviewSessionBuilder().build(
+      report: report,
+      employees: const [],
+      shiftTemplates: const [],
+      sourceFingerprint: 'sha256:source-ui',
+      targetScheduleId: 'schedule-1',
+      targetScheduleRevision: 'absent:schedule-1',
+    );
+    final workflow = GridRosterImportWorkflow(
+      scheduleRepository: _UnusedScheduleRepository(),
+      journal: GridRosterBundleJournal(store: _MemoryStore()),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GridRosterReviewPage(
+          workflow: workflow,
+          contextSnapshot: GridRosterImportReviewContext(
+            session: session,
+            targetSchedule: Schedule(id: 'schedule-1', name: 'November roster'),
+            targetExisted: false,
+          ),
+          employees: const [],
+          shiftTemplates: const [],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final choices = find.text('เลือกวิธีจัดการ');
+    expect(choices, findsNWidgets(2));
+
+    await tester.tap(choices.first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ข้าม Section นี้ทั้งส่วน'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('เลือกวิธีจัดการ').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('กลับไปแก้ไฟล์ต้นฉบับและนำเข้าใหม่'));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.textContaining('ข้าม Section นี้ทั้งส่วน จะไม่นำรายการเวร'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('กลับไปแก้ไฟล์ต้นฉบับและนำเข้าใหม่ — ยังบันทึก'),
+      findsOneWidget,
+    );
+  });
 }
 
 class _UnusedScheduleRepository implements ScheduleRepository {
