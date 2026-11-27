@@ -45,7 +45,7 @@ This graph reflects declared PR stacking and observed base branches, not permiss
 | #208 | #192 feature branch | `dbcc4fed3bbbf81592b931c3da0f1d9eee68f7aa` | `b98a4e7f7911abe7b97d661bf62c121b1e66d716` | GitHub currently reports mergeable=true; core CI passed, iOS/macOS/advisory remain incomplete |
 | #204 | #192 feature branch | `4d6808d4943236c93a327a079474b0a9915b220a` | `3fa4b22b74aabaa7d57b391f487d15657f85e2ae` | Base predates current #192 head; GitHub currently reports mergeable=false; reconcile after #192 integration |
 | #202 | #192 feature branch | `8d262dc7365a63c279e06affcdedbdbcf1b6fadc` | `ca6ebd095ef6566fcce00e9bc49e9c820470b80d` | GitHub currently reports mergeable=false; reconcile against current #192 head |
-| #196 | main | `68ef85361c2d08e2970160a36475592010d908f7` | `ca0bf5a661c6f6e63d8356a5b198d955635e26c4` | Independent mainline slice |
+| #196 | main | `68ef85361c2d08e2970160a36475592010d908f7` | `dc1abb04d621154d04b21e8d7e9a5855593d87cc` | Independent mainline slice; recovery now rejects terminal successful runs; exact-head CI pending |
 | #191 | main | `68ef85361c2d08e2970160a36475592010d908f7` | `cf7eaa22eaf81e04b0b444acfc3aee2a8ca51e5e` | Independent mainline slice |
 | #201 | main | `68ef85361c2d08e2970160a36475592010d908f7` | `d3f228dcdaea4f1a3771c271421226ab71ab00b5` | Independent mainline slice |
 | #203 | #201 feature branch | `d3f228dcdaea4f1a3771c271421226ab71ab00b5` | `9ddcca51de57b71c721f60665f3c9f8cf0e7bbcb` | Merge/reconcile only after #201 acceptance |
