@@ -33,6 +33,50 @@ void main() {
     expect(result.canCommit, isFalse);
   });
 
+  test('uses user-managed alternate names as exact identity evidence', () {
+    final result = resolver.resolve(
+      sourceName: 'ชื่อเดิม',
+      employees: [
+        _employee(
+          'e1',
+          firstName: 'สมชาย',
+          lastName: 'ใจดี',
+          nickname: 'ชาย',
+          alternateNames: 'ชื่อเดิม, Old Name',
+        ),
+      ],
+    );
+
+    expect(
+      result.status,
+      EmployeeIdentityResolutionStatus.exactUniqueCandidate,
+    );
+    expect(result.candidates.single.employee.id, 'e1');
+    expect(result.candidates.single.matchKind, EmployeeIdentityMatchKind.alias);
+    expect(result.requiresHumanConfirmation, isTrue);
+    expect(result.selectedEmployeeId, isNull);
+    expect(result.canCommit, isFalse);
+  });
+
+  test('keeps a shared alternate name ambiguous across employees', () {
+    final result = resolver.resolve(
+      sourceName: 'ชื่อเดิม',
+      employees: [
+        _employee('e1', alternateNames: 'ชื่อเดิม'),
+        _employee('e2', alternateNames: 'ชื่อเดิม'),
+      ],
+    );
+
+    expect(
+      result.status,
+      EmployeeIdentityResolutionStatus.ambiguousExactCandidates,
+    );
+    expect(result.candidates.map((candidate) => candidate.employee.id), [
+      'e1',
+      'e2',
+    ]);
+  });
+
   test('keeps duplicate exact names ambiguous', () {
     final result = resolver.resolve(
       sourceName: 'สมชาย ใจดี',
@@ -168,6 +212,7 @@ Employee _employee(
   String lastName = 'One',
   String nickname = 'One',
   String code = '001',
+  String alternateNames = '',
   bool active = true,
 }) {
   return Employee(
@@ -178,6 +223,7 @@ Employee _employee(
     nickname: nickname,
     department: _department,
     position: 'Staff',
+    alternateNames: alternateNames,
     active: active,
   );
 }
