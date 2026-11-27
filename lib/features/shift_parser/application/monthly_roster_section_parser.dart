@@ -769,12 +769,12 @@ class MonthlyRosterSectionParser {
 
     final iso = DateTime.tryParse(text);
     if (iso != null &&
-        RegExp(r'^\\d{4}-\\d{1,2}-\\d{1,2}(?:$|[T\\s])').hasMatch(text)) {
+        RegExp(r'^\d{4}-\d{1,2}-\d{1,2}(?:$|[T\s])').hasMatch(text)) {
       return DateTime(_normalizeRosterYear(iso.year), iso.month, iso.day);
     }
 
     final ymd = RegExp(
-      r'^(\\d{4})[-/.](\\d{1,2})[-/.](\\d{1,2})
+      r'^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})
 
   List<MonthlyRosterDateAnomaly> _validateDateColumns({
     required Map<int, int> daysByColumn,
