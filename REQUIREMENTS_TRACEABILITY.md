@@ -1,7 +1,7 @@
 # Requirements Traceability
 
-**Review date:** 2026-11-25  
-**Repository snapshot:** `aed2f1177bdfc85f6ff53bb200116812a51bd9e3`  
+**Review date:** 2026-11-27  
+**Repository snapshot:** `68ef85361c2d08e2970160a36475592010d908f7`  
 **Status:** Evidence-based partial inventory. PARTIAL, MISSING, UNKNOWN and NEEDS REVIEW remain open work.
 
 | Requirement | Primary implementation | Evidence / test surface | Status and remaining gap |
@@ -54,3 +54,17 @@
 - A build does not prove live integration, security or data integrity.
 - Destructive data operations, OAuth write-scope expansion, repository-setting changes and deployment require their own explicit authorization.
 - Re-run this matrix after every material merge and update the current snapshot SHA.
+
+
+## Live evidence overlay — 2026-11-27
+
+The inventory below is a historical partial snapshot and is superseded where it conflicts with this live overlay.
+
+- Main SHA: `68ef85361c2d08e2970160a36475592010d908f7`.
+- Universal roster import: IN PROGRESS — PR #200 adds a first vertical/mixed parser integration; no real workbook acceptance yet.
+- Schedule persistence: IN PROGRESS — PR #192 has exact-head CI success but production cross-device CAS, conditional deletion and all-writer acceptance remain open.
+- Calendar Sync: IN PROGRESS — PR #196 has exact-head CI success but controlled Google test-calendar/backend acceptance remains open.
+- Notifications: IN PROGRESS — PR #191 has exact-head CI success but is an outbox foundation, not actual device delivery.
+- Generation, Shift Pay, history restore, organization/security, performance/accessibility and release remain separate acceptance work packages; see `docs/COMPLETION_STATUS.md`.
+- CI success is not product acceptance; pending/skipped/unknown checks are not pass.
+
