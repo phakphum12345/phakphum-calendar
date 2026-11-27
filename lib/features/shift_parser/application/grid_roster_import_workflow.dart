@@ -291,10 +291,15 @@ class GridRosterImportWorkflow {
   ///
   /// Discovery never replays a journal. Each returned ID must be presented for
   /// explicit review and passed to [recover] only after the user selects it.
+  Future<List<String>> discoverLocalRecoveryScheduleIds() =>
+      _journal.discoverScheduleIds();
+
+  Future<List<String>> discoverRemoteRecoveryScheduleIds() async =>
+      await remoteJournalGateway?.discoverScheduleIds() ?? const <String>[];
+
   Future<List<String>> discoverRecoveryScheduleIds() async {
-    final localIds = await _journal.discoverScheduleIds();
-    final remoteIds = await remoteJournalGateway?.discoverScheduleIds() ??
-        const <String>[];
+    final localIds = await discoverLocalRecoveryScheduleIds();
+    final remoteIds = await discoverRemoteRecoveryScheduleIds();
     return {...localIds, ...remoteIds}.toList()..sort();
   }
 
