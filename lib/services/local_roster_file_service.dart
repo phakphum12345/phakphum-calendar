@@ -129,7 +129,7 @@ class LocalRosterFileService
   }
 
   SheetSnapshot _readDelimited(Uint8List bytes, {required String extension}) {
-    final text = utf8.decode(bytes, allowMalformed: true);
+    final text = utf8.decode(bytes, allowMalformed: true).replaceFirst('\uFEFF', '');
     final delimiter = extension == 'tsv'
         ? '\t'
         : extension == 'csv'
