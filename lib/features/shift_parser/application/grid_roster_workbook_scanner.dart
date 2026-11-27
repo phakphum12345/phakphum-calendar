@@ -85,9 +85,11 @@ class GridRosterExcelInputAdapter {
 /// Scans every worksheet in a selected local workbook independently.
 ///
 /// A worksheet read failure is reported against that sheet and does not
-/// prevent successfully read worksheets from being parsed. Hidden-sheet
-/// metadata and Excel cell formatting are not currently exposed by the
-/// existing ExcelReaderService, so this scanner does not infer either.
+/// prevent successfully read worksheets from being parsed. Local XLSX input
+/// retains background colors and merged-cell anchor coordinates. Hidden-row,
+/// hidden-column and hidden-sheet metadata, formula cached values, and
+/// semantic propagation across multi-level merged headers remain separate
+/// reader/parser capabilities and are not inferred by this scanner.
 class GridRosterWorkbookScanner {
   const GridRosterWorkbookScanner({
     this.inputAdapter = const GridRosterExcelInputAdapter(),
