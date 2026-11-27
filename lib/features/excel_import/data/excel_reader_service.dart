@@ -82,15 +82,34 @@ class ExcelReaderService {
 
     return [
       for (final entry in workbook.tables.entries)
-        WorksheetInfo(
-          name: entry.key,
-          rowCount: entry.value.rows.length,
-          columnCount: entry.value.rows.fold<int>(
-            0,
-            (maximum, row) => row.length > maximum ? row.length : maximum,
-          ),
-        ),
+        _worksheetInfo(entry.key, entry.value),
     ];
+  }
+
+  WorksheetInfo _worksheetInfo(String name, excel.Sheet sheet) {
+    final mergedCells = _mergedCellAnchors(sheet).keys;
+    final mergedRowCount = mergedCells.fold<int>(
+      0,
+      (maximum, coordinate) =>
+          coordinate.$1 + 1 > maximum ? coordinate.$1 + 1 : maximum,
+    );
+    final mergedColumnCount = mergedCells.fold<int>(
+      0,
+      (maximum, coordinate) =>
+          coordinate.$2 + 1 > maximum ? coordinate.$2 + 1 : maximum,
+    );
+    final rowCount = sheet.rows.length > mergedRowCount
+        ? sheet.rows.length
+        : mergedRowCount;
+    final columnCount = sheet.rows.fold<int>(
+      mergedColumnCount,
+      (maximum, row) => row.length > maximum ? row.length : maximum,
+    );
+    return WorksheetInfo(
+      name: name,
+      rowCount: rowCount,
+      columnCount: columnCount,
+    );
   }
 
   List<ExcelRow> readWorksheet(WorksheetInfo worksheet) {
@@ -114,24 +133,41 @@ class ExcelReaderService {
     }
 
     try {
-      final rowCount = limit == null || sheet.rows.length < limit
-          ? sheet.rows.length
-          : limit;
       final mergedAnchors = _mergedCellAnchors(sheet);
+      final mergedColumnsByRow = <int, int>{};
+      for (final coordinate in mergedAnchors.keys) {
+        final requiredColumnCount = coordinate.$2 + 1;
+        final current = mergedColumnsByRow[coordinate.$1] ?? 0;
+        if (requiredColumnCount > current) {
+          mergedColumnsByRow[coordinate.$1] = requiredColumnCount;
+        }
+      }
+      final availableRowCount = worksheet.rowCount;
+      final rowCount = limit == null || availableRowCount < limit
+          ? availableRowCount
+          : limit;
       return [
         for (var rowIndex = 0; rowIndex < rowCount; rowIndex++)
           ExcelRow(
             index: rowIndex,
             cells: [
               for (
-                var columnIndex = 0;
-                columnIndex < sheet.rows[rowIndex].length;
+                var columnIndex = 0,
+                rowCells = rowIndex < sheet.rows.length
+                    ? sheet.rows[rowIndex]
+                    : <dynamic>[];
+                columnIndex <
+                    (rowCells.length > (mergedColumnsByRow[rowIndex] ?? 0)
+                        ? rowCells.length
+                        : (mergedColumnsByRow[rowIndex] ?? 0));
                 columnIndex++
               )
                 ExcelCell(
                   rowIndex: rowIndex,
                   columnIndex: columnIndex,
-                  value: _cellValue(sheet.rows[rowIndex][columnIndex]?.value),
+                  value: columnIndex < rowCells.length
+                      ? _cellValue(rowCells[columnIndex]?.value)
+                      : null,
                   isMerged: mergedAnchors.containsKey((rowIndex, columnIndex)),
                   mergedAnchorRowIndex:
                       mergedAnchors[(rowIndex, columnIndex)]?.$1,
