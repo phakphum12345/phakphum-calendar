@@ -168,6 +168,9 @@ class ExcelReaderService {
                   value: columnIndex < rowCells.length
                       ? _cellValue(rowCells[columnIndex]?.value)
                       : null,
+                  backgroundColorValue: columnIndex < rowCells.length
+                      ? _backgroundColor(rowCells[columnIndex])
+                      : null,
                   isMerged: mergedAnchors.containsKey((rowIndex, columnIndex)),
                   mergedAnchorRowIndex:
                       mergedAnchors[(rowIndex, columnIndex)]?.$1,
@@ -245,6 +248,12 @@ class ExcelReaderService {
       );
     }
     return null;
+  }
+
+  int? _backgroundColor(dynamic cell) {
+    final color = cell?.cellStyle?.backgroundColor;
+    if (color == null || color.colorHex == 'none') return null;
+    return 0xFF000000 | (color.colorInt & 0xFFFFFF);
   }
 
   Object? _cellValue(excel.CellValue? value) => switch (value) {
