@@ -542,6 +542,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('ประวัติการทำงาน'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('ยังไม่มี Audit log'),
+      240,
+      scrollable: find.byType(Scrollable).last,
+    );
     expect(find.text('ยังไม่มี Audit log'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
