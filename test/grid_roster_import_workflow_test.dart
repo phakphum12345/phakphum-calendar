@@ -357,7 +357,14 @@ void main() {
     expect(commit, isA<PersistenceFailure<Schedule>>());
     expect(repository.value, isNull);
 
-    final recovered = await workflow.recover('schedule-1');
+    final inspection = await workflow.inspectRecovery('schedule-1');
+    expect(inspection, isA<Success<GridRosterRecoveryAssessment>>());
+    final assessment =
+        (inspection as Success<GridRosterRecoveryAssessment>).value;
+    expect(assessment.disposition, GridRosterRecoveryDisposition.ready);
+    expect(repository.value, isNull);
+
+    final recovered = await workflow.recoverAssessment(assessment);
     expect(recovered, isA<Success<Schedule?>>());
     expect(repository.value?.id, 'schedule-1');
     expect(
@@ -384,10 +391,33 @@ void main() {
     );
     repository.value = newerSchedule;
 
-    final recovered = await workflow.recover('schedule-1');
+    final inspection = await workflow.inspectRecovery('schedule-1');
+    expect(inspection, isA<Success<GridRosterRecoveryAssessment>>());
+    final assessment =
+        (inspection as Success<GridRosterRecoveryAssessment>).value;
+    expect(assessment.disposition, GridRosterRecoveryDisposition.conflict);
 
+    final recovered = await workflow.recoverAssessment(assessment);
     expect(recovered, isA<ValidationFailure<Schedule?>>());
     expect(repository.value, same(newerSchedule));
+  });
+
+  test('recover never replays a ready journal without an explicit reviewed assessment', () async {
+    final context = await prepareContext();
+    final conversion = convertContext(context);
+    repository.failNextSave = true;
+
+    final commit = await workflow.commit(
+      context: context,
+      conversion: conversion,
+    );
+    expect(commit, isA<PersistenceFailure<Schedule>>());
+    expect(repository.value, isNull);
+
+    final result = await workflow.recover('schedule-1');
+
+    expect(result, isA<ValidationFailure<Schedule?>>());
+    expect(repository.value, isNull);
   });
 
   test('recovery is idempotent when canonical Schedule already matches journal', () async {
@@ -467,8 +497,13 @@ void main() {
       remoteJournalGateway: remote,
     );
 
-    final recovered = await remoteWorkflow.recover('schedule-1');
+    final inspection = await remoteWorkflow.inspectRecovery('schedule-1');
+    expect(inspection, isA<Success<GridRosterRecoveryAssessment>>());
+    final assessment =
+        (inspection as Success<GridRosterRecoveryAssessment>).value;
+    expect(assessment.disposition, GridRosterRecoveryDisposition.ready);
 
+    final recovered = await remoteWorkflow.recoverAssessment(assessment);
     expect(recovered, isA<Success<Schedule?>>());
     expect(repository.value?.id, 'schedule-1');
     expect(repository.value, conversion.schedule);
