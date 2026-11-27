@@ -194,6 +194,7 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
           break;
       }
 
+      if (!context.mounted) return;
       final approved = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
