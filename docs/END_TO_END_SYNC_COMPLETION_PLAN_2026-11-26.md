@@ -1,7 +1,7 @@
 # End-to-End Completion Plan — Roster, Calendar Sync and Data Integrity
 
 **Prepared:** 2026-11-26  
-**Baseline:** `main@c6ad63a5f9e7925dc1848deccb37bbba53768069`  
+**Baseline:** `main@d18454680879a10c6efe9e44ffb37cd0695f25a6`
 **Status:** Execution plan; not a completion claim  
 **Owner workflow:** inspect → specify → implement → test exact SHA → review → merge with authorization → verify main
 
@@ -17,9 +17,9 @@ A release is complete only when the exact production path is reachable in the UI
 
 - PR #194 (multi-source roster ingestion roadmap) is merged.
 - Its post-merge commit `c6ad63a5f9e7925dc1848deccb37bbba53768069` has 7/7 post-merge checks completed successfully.
-- PR #193 (Xcode runner queue coalescing) remains Draft. Its inspected head had 15 successful checks and one skipped Pages deployment; it has no submitted review. PR #192 also edits the same iOS/macOS workflow files, so #193 must be resolved before rebasing/revalidating #192.
-- PR #192 (Grid import, Schedule API and recovery foundations) remains Draft. Its inspected head had successful workflow checks, including Flutter, backend, cross-platform and native SQLite spike jobs; Pages deployment was skipped. It is a large change and requires code-level review, migration-order review, exact-head tests, and production-writer inventory reconciliation.
-- PR #191 (notification outbox foundation) remains Draft and requires independent migration, idempotency, retry and delivery-path review.
+- PR #193 (Xcode runner queue coalescing) was merged into main as d18454680879a10c6efe9e44ffb37cd0695f25a6 on 2026-11-26. The exact main commit has 15/15 checks completed successfully. PR #192 still overlaps the iOS/macOS workflow files and must be reviewed against this merged baseline.
+- PR #192 (Grid import, Schedule API and recovery foundations) remains Draft at head `2c3b8bfc04fd2dcb5487fb922d42a4d6f8bb5457`, based on current main `d18454680879a10c6efe9e44ffb37cd0695f25a6`. It now includes backend revision-aware CAS for the inventoried W-01–W-05/F-01 writers, exact snapshot identity and absent-state revision tokens, plus an A→B→A regression. The previous exact-head static-analysis failure exposed interface-promotion and stale snapshot-cache references; explicit capability casts and identity-map references have been corrected. The Android workflow's hard-coded SDK Manager path was also corrected. The latest exact-head matrix is running: Web and Dart Format have passed; Windows, Android, Linux and Backend jobs are in progress or queued; iOS/macOS remain pending. No exact-head overall gate is certified yet.
+- PR #191 (notification outbox foundation) remains Draft at head `69cf20b8eba1d073f87ddaad0587237a9c414e7a` and is now based on current main `d18454680879a10c6efe9e44ffb37cd0695f25a6` (0 commits behind); no further rebase is needed. Its 8 current checks are successful. It remains enqueue-only: worker, retry/backoff, dead-letter and external delivery are future scope. It is not a Calendar sync fix.
 - No Draft state is to be silently converted to Ready. No PR is merged solely because CI is green.
 
 ### 2.2 Existing foundations
@@ -39,11 +39,11 @@ Relevant source-of-truth documents:
 
 ### 2.3 Confirmed gaps and risk statements
 
-1. The production sync-history repository is currently local SharedPreferences. This is not cross-device sync or a shared server-side operation ledger.
-2. The sync reliability specification explicitly states that simultaneous update/delete coordination across independent clients is not yet guaranteed. The current Calendar gateway model does not carry provider ETags into update/delete operations; the executor retries update and delete calls without a provider read-back reconciliation step (insert has a dedicated reconciler). A stale preview can therefore target an event that changed after comparison, and an ambiguous update/delete timeout is not handled with the same safety as inserts.
+1. The user-facing sync history and failed-operation queue remain local SharedPreferences. PR #196 adds a server-side lease and encrypted durable per-operation ledger plus explicit history-linked recovery when the backend is configured; it does not automatically replay on startup. Local-only mode without the backend origin still has no cross-device serialization or recovery.
+2. Main still lacks provider-conditional update/delete protection and global sync coordination. Draft PR #196 at `148c97fc2263f7cf07705f83b3052a54f736a8be` adds ETag/If-Match mutation guards, owner/Calendar-scoped server leases, transactional ledger fencing, encrypted operation payloads and explicit recovery through the workflow controller. It is not merged or deployed. Exact-head CI is still running; local history remains a UI cache and local-only mode is not cross-device safe.
 3. The Calendar preview document still lists integration work: build concrete plans with existing provider event IDs, timezone-aware event creation, connect preview to import/comparison, and persist/communicate retry and partial-failure outcomes. These statements must be reconciled with source and tests before marking any item complete.
 4. The Grid recovery design says local two-slot journal and remote journal/Schedule writes are not one cross-table database transaction. The remote committed journal is a recoverable commit intent, not proof that the canonical Schedule write completed.
-5. The #192 backend Schedule repository is not yet the repository for all Schedule writers: the inspected dependency graph still passes the legacy local repository to the main AppController and the general Schedule/Roster editor factories. Therefore backend CAS is not global even if the Grid import route uses it. The Schedule CAS ADR remains a prototype/evidence gate. Do not promote the isolated spike or claim global writer safety until every production Schedule writer is inventoried and migrated or safely coordinated. The #192 Grid workflow currently derives its review revision from a Schedule content fingerprint, while the backend repository maintains a generation-bearing server revision internally; the workflow does not consume that generation token. This leaves an ABA/stale-review gap (A → B → A) that must be closed by exposing and carrying the authoritative revision through review, journal and commit.
+5. PR #192 now routes the inventoried backend-mode Schedule writers through the shared BackendScheduleRepository and caller-owned generation revisions. Snapshot tokens are identity-bound, absent-state tokens are separate, and an A → B → A regression is included. This is conditional on `ORGANIZATION_API_BASE_URL` being configured; the SharedPreferences fallback remains local-only and is not cross-device CAS. Conditional Schedule deletion/tombstones remain disabled, and the isolated SQLite spike is still not the production repository.
 6. The universal multi-source roadmap is broader than the current Grid import PR. Camera/photo OCR, arbitrary URL ingestion, generic provider adapters, Google Drive acquisition and their platform capabilities must be verified independently; do not label them implemented based on the roadmap.
 7. Google Calendar authorization, real-provider integration, token refresh/revocation, quota behavior and production configuration require separate verification. Mock gateway tests do not prove live Google behavior.
 8. The backend API's ownership isolation, revision semantics, journal lifecycle and recovery endpoints need security and concurrency tests on the exact merged implementation. A successful backend CI run is necessary but not sufficient.
@@ -206,3 +206,834 @@ The project may be called complete only when:
 - documentation matches the shipped implementation.
 
 Until then, report the remaining items as open.
+---
+
+## 8. Live execution checkpoint — 2026-11-26 18:01 Asia/Bangkok
+
+This checkpoint supersedes the older PR snapshot above where they conflict. It is an evidence update, not a completion claim.
+
+### 8.1 Exact repository baseline
+
+- Current main: d18454680879a10c6efe9e44ffb37cd0695f25a6.
+- PR #193 merged at 2026-11-26T09:39:24Z; merge commit is the current main SHA.
+- Post-merge checks on that exact main SHA: 15 completed / 15 success.
+- PR #194 remains merged; its earlier merge commit checks were 7/7 success.
+
+### 8.2 Current open delivery units
+
+| PR | Current state | Exact head | Base relationship | Evidence / disposition |
+|---|---|---|---|---|
+| #196 Calendar ETag safety | Draft | 28552f0f06556d7bbf11e0ce5e38765d18d2203a | Based on pre-#193 main c6ad63a...; update/rebase required | 15 checks successful, iOS Xcode queued, Pages skipped; no review. Not merge-ready. |
+| #192 Grid import and persistence recovery | Draft | 12e9245ba3c7df89428de48f6e73b2106a525973 | Base is current main d184546... | Multiple exact-head failures (static analysis, Composer audit, macOS/Linux/Windows/Web/Android builds and quality gates); iOS queued; Pages skipped. Repair before review/merge. |
+| #191 Notification outbox | Draft | 62f0a2007ff9c105354044f52467bfd14e28a348 | Older base 7ae6b302... | No current-base certification. Separate from Calendar sync; review migration and delivery boundaries. |
+| #193 Xcode queue | Merged | 20973ff9f48ae4476a74b060769cbab93821f5ea | Merged to current main | Post-merge main checks 15/15 success. |
+
+### 8.3 Calendar sync defect boundary
+
+- Current main's production ResilientCalendarSyncExecutor still retries update/delete through the unconditional gateway methods. Current main's Google gateway still uses ordinary update/delete calls. The Draft #196 change is therefore not yet active in production.
+- #196 improves per-event stale-write safety through provider ETags and managed identity, but its own PR description confirms that whole sync runs are not globally serialized and history/failed-operation storage remain local SharedPreferences.
+- The complete sync fix therefore needs both provider-level conditional writes and operation-level coordination/recovery. A local in-memory mutex alone is not sufficient across browser tabs, devices or app processes.
+- Required server-side operation ledger/lease work must use the existing authenticated backend and existing persistence where viable; do not introduce a paid provider or new hosted dependency without approval.
+- Do not test by writing to the user's real Calendar. Use fakes and a dedicated test calendar only after separate explicit authorization.
+
+### 8.4 Immediate execution order
+
+1. Rebase/update #196 onto current main, inspect the full diff, finish iOS CI and add tests for 412, 404/410, ambiguous timeout, legacy adoption, unrelated-field preservation and resume. Keep Draft until ready.
+2. Design and implement the shared sync-operation ledger/lease: stable idempotency key, per-calendar/operation scope, owner authorization, lease expiry/reclaim, state transitions, per-item provider IDs/ETags, attempt/backoff, and read-back reconciliation. Prove two independent clients cannot execute conflicting plans concurrently.
+3. Reconcile #192 against current main and repair every failing exact-head check. Complete backend ownership isolation, all Schedule-writer revision/CAS inventory, generation-bearing revision propagation, journal recovery and UI integration before merge.
+4. Rebase and independently review #191. Decide whether notification delivery is in the requested release scope; do not imply an outbox foundation sends notifications.
+5. Complete source-provider and parser acceptance: local workbook/text formats, Google Sheets/Drive, camera/photo OCR only with a verified on-device/approved engine, URL safety, Thai BE/CE and cross-period dates, provenance and ambiguity review.
+6. Complete production UI path: acquire → analyze → correct → preview → confirm → persist → Calendar preview → explicit Calendar confirmation → sync → provider read-back → durable history → retry/recovery.
+7. Run exact-SHA Flutter, backend, migration, integration and supported-platform checks; then controlled test-calendar verification and post-merge main checks.
+
+### 8.5 Updated acceptance status
+
+| ID | Current status | Evidence required to change to PASS |
+|---|---|---|
+| PR-193 | PASS | Merged current main; 15/15 post-merge checks |
+| PR-196 | IN PROGRESS | Rebased exact-head full CI + review + provider conditional-write tests |
+| CAL-01 conditional mutation | PARTIAL | #196 merged and exact-head provider integration tests |
+| CAL-02 cross-device serialization | NOT PROVEN | Shared lease/ledger + two-client race/reclaim tests |
+| CAL-03 retry/resume | PARTIAL | Ambiguous update/delete, no-repeat-success, stale lease and process restart tests |
+| CAL-04 durable history | NOT PROVEN | Server-backed per-item ledger and restart/cross-device read-back |
+| DATA-01 Schedule writer concurrency | NOT PROVEN | All production writers use the same authoritative generation/CAS |
+| DATA-02 import journal recovery | NOT PROVEN | Restart/interruption/orphan/conflict/rollback tests |
+| SRC-01 multi-source ingestion | PARTIAL | Each declared provider works through the real review/preview path |
+| UI-01 review and confirmation | NOT PROVEN | Production UI integration tests prove no writes before explicit confirmation |
+| CAL-05 real Google provider | NOT PROVEN | Dedicated test-calendar create/update/read-back/recovery evidence |
+
+No row becomes PASS from a roadmap, a Draft PR, a skipped check, or a mock-only test. Do not mark the overall project complete until every mandatory row has exact evidence and the shipped implementation matches these documents.
+### 8.6 Production synchronization call graph
+
+- The current application dependency container wires the main schedule workflow through `CalendarSyncGateway` → `CalendarSyncCoordinator` → `ResilientCalendarSyncExecutor`, with `ResumeSyncService` for failed operations. The default Google gateway is `GoogleCalendarSyncGateway`.
+- The production history and failed-operation repositories created by this dependency container are `SharedPreferencesSyncHistoryRepository` and `SharedPreferencesFailedSyncRepository`; they are device-local.
+- A separate `features/calendar_sync` module also exists with its own `CalendarSyncService`, `CalendarSyncExecutor` and `GoogleCalendarEventRepository`. Do not assume it is the active path or delete it based on directory names. Trace all imports/routes/widgets/callers before consolidation; avoid implementing the same fix twice.
+- The transaction-specific flow in `AppController` uses the schedule workflow, then calls the backend shift-transaction start/complete/fail endpoints. Its existing `shift_transaction_sync_attempts` and `shift_transaction_calendar_events` tables are transaction-scoped; they do not replace a general per-user Calendar sync run/operation ledger.
+- The next code change must preserve the existing explicit preview/confirmation boundary and route every production schedule sync through the same safety/coordination contract.
+### 8.7 Follow-up execution checkpoint — after PR #196 branch refresh
+
+- PR #196 was brought forward onto current main with merge commit `bf3cc412d6989dc3d8aca2eaee278ee448bbc9ca`; the PR now has zero commits behind main and no file conflicts. Subsequent review found that the conditional update path also needed to preserve the provider-owned `--- Timeline ---` audit section. That preservation, normalized diff comparison and an ambiguous-update reconciliation regression test were added.
+- Latest PR #196 head: `d2dca7879168f1be01f89eaca1620c73dfbd615c`. At this checkpoint, 1 check is successful and 7 are pending; no failures or skipped checks have been reported yet. The PR remains Draft.
+- PR #197 documentation checks: 5 successful and 2 pending at its then-current head; not yet certified complete.
+- PR #192 exact head `12e9245ba3c7df89428de48f6e73b2106a525973`: 9 successful, 10 failed, 1 queued, and 1 skipped. The failures remain blockers; the skipped Pages job is not a pass.
+- The timeline-preservation patch is a data-integrity correction within PR #196. It does not close the separate cross-device lease/operation-ledger gap. Do not merge #196 until all exact-head required checks complete and the code review is satisfied.
+### 8.8 Live execution checkpoint — 2026-11-26 12:26 UTC
+
+This update supersedes earlier PR-head and CI snapshots in sections 8.2 and 8.7 where they differ. Main remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`. No PR has been merged by this execution.
+
+| PR | Current head | Current evidence | Remaining blockers |
+|---|---|---|---|
+| #192 Grid import / persistence | `c9bc708f5047bd232b7b4ca7cac15342f9af5ea2` | Backend security refresh workflow passed; committed `backend/composer.lock` now pins `symfony/http-kernel`, `symfony/mailer`, and `symfony/routing` to `v8.1.12`. Laravel Backend CI on the latest head is PASS. Web/Linux and formatting had passed on the immediately preceding head; exact-head platform matrix is still running. | Windows/Android/iOS/macOS/runtime and full root quality gates still require exact-head results. Production Schedule writer inventory is not fully migrated; local SharedPreferences remains the default repository. |
+| #196 Calendar ETag + coordination foundation | `1f3d5364bd69a813aa4427c977b77c1d58560fb6` | ETag/If-Match code retained. Added authenticated Laravel calendar sync leases, heartbeat/release, durable run records, per-run idempotent operation ledger, status/attempt guards, owner-scoped history reads and feature tests. Corrected route declarations after Laravel CI exposed literal newline escapes. | Latest exact-head Laravel CI and platform checks are queued. Flutter executor is NOT YET wired to acquire/heartbeat/release leases or persist operations. Therefore cross-device serialization and durable recovery are NOT proven. |
+| #191 Notification Outbox | `69cf20b8eba1d073f87ddaad0587237a9c414e7a` | Updated branch to current `main` via merge commit `7c42241a24b4f22d51d750f5c6c721a6475ebbae` (8 ahead, 0 behind); applied patched Symfony lockfile from #192. Backend CI has been queued on the updated head. | Still Draft; outbox is enqueue-only and has no worker/provider delivery. Exact-head CI and review remain required. |
+| #197 execution documentation | `9d8e66504160c7faf804c1de2e90ab74e25ce38d` | Documentation-only checkpoint; no code or production data changed. | Review and exact-head checks remain required. |
+
+#### Security dependency evidence
+
+- The first lock-refresh workflow attempt failed because Composer does not support `composer install --locked`; the workflow was corrected to use `composer install` (which consumes `composer.lock`).
+- The corrected refresh workflow completed successfully. Its log shows `composer audit --locked` reporting no security vulnerability advisories, then Pint, Laravel bootstrap syntax and Laravel tests completed successfully before committing the lockfile.
+- The resulting lockfile commit `08a0ea0fad29819ffe0accb1b44750245bd87638` changes only `backend/composer.lock`; the three affected Symfony packages are `v8.1.12`.
+- The standard Laravel Backend CI was then re-triggered on the newer PR #192 head and passed. The same patched lockfile was copied to PR #191 so its backend gate no longer inherits the vulnerable baseline.
+
+#### Production CAS boundary — still open
+
+- PR #192's backend revision-aware repository provides server-enforced generation/fingerprint compare-and-swap for its Grid backend path. It is only selected for Grid when `ORGANIZATION_API_BASE_URL` is configured.
+- `AppDependencies` still defaults general Schedule editing and the legacy AppController to `SharedPreferencesScheduleRepository`; the SharedPreferences two-slot write is crash-resilient but not cross-instance atomic CAS.
+- The new server lease/operation tables in #196 are currently API foundations. Until `ResilientCalendarSyncExecutor` is integrated with the lease/ledger and every production Schedule writer carries caller-owned revision tokens, do not claim production-wide CAS or cross-device sync safety.
+
+#### Current conservative acceptance status
+
+| Requirement | Status | Evidence still required |
+|---|---|---|
+| Symfony dependency audit | PASS on #192 refresh workflow and latest #192 Laravel CI | Confirm standard exact-head checks remain green after subsequent commits. |
+| PR #192 root/platform matrix | IN PROGRESS | Exact-head Flutter analyze/tests and Windows/Android/iOS/macOS/runtime checks. |
+| PR #191 base freshness | PASS (0 behind main) | Exact-head CI and independent outbox review. |
+| PR #191 notification delivery | NOT PROVEN | Worker, retry/backoff, dead-letter and provider delivery integration. |
+| PR #196 server lease/ledger API foundation | IMPLEMENTED, TESTING | Exact-head Laravel feature tests and schema review. |
+| PR #196 Flutter lease/ledger integration | NOT IMPLEMENTED | Executor acquire/heartbeat/operation record/release wiring and two-client race/restart tests. |
+| Production-wide Schedule CAS | NOT PROVEN | Migrate or safely coordinate every writer; eliminate unguarded SharedPreferences production writes where multi-device guarantees are required. |
+| Controlled Google Calendar verification | NOT AUTHORIZED | Separate explicit authorization for a dedicated test calendar only. |
+
+All Draft PRs remain Draft. No merge, deployment, production migration or real-calendar write is authorized by this checkpoint.
+
+### 8.9 Live execution checkpoint — 2026-11-26 12:44 UTC
+
+This checkpoint supersedes the earlier implementation notes in section 8.8 where they differ. Main baseline remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`. All four PRs remain Draft; no merge, deployment, production migration or real-calendar write has occurred.
+
+| PR | Current head | Latest observed checks | Current assessment |
+|---|---|---|---|
+| #192 Grid import / persistence | `c9bc708f5047bd232b7b4ca7cac15342f9af5ea2` | 17 successful; 0 failed; macOS and iOS unsigned builds queued; iOS evidence in progress; Pages deploy skipped. | Backend security audit and Laravel CI pass; Web, Linux, Windows, Android and CAS contract checks pass. iOS/macOS exact-head build evidence is still outstanding. Production-wide Schedule CAS is still not proven: general Schedule writers continue to default to local SharedPreferences. |
+| #196 Calendar sync coordination | `1f564a81a1bd707ca789c260239a284151d36b3f` | Exact-head CI has 13 queued and 1 in progress at this snapshot; no failures reported yet. | Added Laravel lease/run/operation APIs, Flutter executor integration, per-operation heartbeat/ledger updates, release, and coordinated ResumeSyncService. Schedule ID is persisted in local history. Backend feature suite passed 79 tests / 620 assertions in the dedicated verification run. Flutter exact-head quality/platform matrix is still pending. |
+| #191 Notification Outbox | `69cf20b8eba1d073f87ddaad0587237a9c414e7a` | 8 successful; 0 failed; no pending checks. | Branch includes main (0 behind) and patched Symfony lockfile. Outbox remains enqueue-only; no worker or external delivery is enabled. |
+| #197 execution documentation | `b431511ba504a0ee18fdfcd926448a20c0c20783` | 7 successful; 0 failed; no pending checks. | Documentation checkpoint passes. |
+
+#### #196 coordination and recovery boundary
+
+- When `ORGANIZATION_API_BASE_URL` is configured, the production `ResilientCalendarSyncExecutor` acquires the server lease before Calendar mutations, heartbeats between operations, records payload-hashed operation intents, stores provider outcomes and releases the lease.
+- `ResumeSyncService` now uses the same lease and ledger. New sync history persists the original Schedule ID; old history without that ID fails closed in server-coordinated mode.
+- Local-only mode remains usable but does not serialize across devices. The user-facing history and failed-operation queue remain local SharedPreferences; startup recovery does not yet load server operation history to reconcile an interrupted run. This is still an acceptance gap.
+- Dedicated backend verification passed `composer audit --locked`, Pint, and 79 Laravel tests / 620 assertions. The initial CI failures exposed and fixed: Composer `--locked` misuse, route newline escapes, missing Carbon import, Dart nullable map lint, unused test import, and an incorrect await on the synchronous Google authentication getter.
+- The Flutter formatter/analyzer/test workflow and exact-head cross-platform matrix are still running; do not mark them PASS until their own exact-head conclusions are success.
+
+#### Updated acceptance matrix
+
+| Requirement | Status | Remaining evidence |
+|---|---|---|
+| Symfony dependency security | PASS on #192/#191/#196 lockfiles | Standard exact-head Laravel CI on the latest commit. |
+| Grid parser, web/Linux/Windows/Android and native CAS contract | PASS on #192 | iOS/macOS unsigned app builds and final core PR gate. |
+| PR #191 base freshness and current CI | PASS | Independent review; delivery worker remains future scope. |
+| Backend Calendar lease and durable operation API | PASS in dedicated verification | Standard exact-head backend CI and security review of server locking on supported production DB. |
+| Flutter executor and resume lease integration | IMPLEMENTED, TESTING | Exact-head Flutter analyze/tests, E2E two-client race, timeout, ambiguous response, process-restart recovery. |
+| Server history-driven restart recovery | NOT IMPLEMENTED | Read old server operations, reconcile provider state, resume safely after app restart. |
+| Production-wide Schedule CAS | NOT PROVEN | Migrate every Schedule writer to caller-owned server revision tokens or fail closed in backend mode. |
+| Real Google Calendar test writes | NOT AUTHORIZED | Separate explicit authorization for a dedicated test calendar only. |
+
+Never count queued, in-progress, skipped or missing platform evidence as PASS. Keep all PRs Draft until the complete acceptance matrix and human review are satisfied.
+
+### 8.10 Live execution checkpoint — 2026-11-26 13:02 UTC
+
+Current exact PR heads after the latest CAS and coordination changes. Main baseline remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`. All PRs remain Draft; no merge, deployment, production migration or production Google Calendar write has occurred.
+
+| PR | Head SHA | Exact-head CI at this checkpoint | Assessment |
+|---|---|---|---|
+| #192 Grid import / Schedule persistence | `8a825ae41c3eb090c15664bb0eca7f1c5d2d0f91` | 15 checks queued; no failures yet. | Added snapshot-bound BackendScheduleRepository revisions, fail-closed unknown snapshots, W-01 editor CAS token, W-02/W-03 base-snapshot compare-and-save, F-01 create-only backend facade, local-only sign-out/source resets, and stale-editor concurrency test. Full exact-head platform evidence is pending. |
+| #196 Calendar ETag / cross-device coordination | `271128769a5ba0e705eb510a90c56f464cddb604` | 13 checks queued; no failures yet. | Added Laravel lease/run/operation ledger APIs; Flutter executor and ResumeSyncService use the same lease/ledger when backend is configured; Schedule ID is persisted in history. Dedicated backend verification on the earlier same-source revision passed 79 tests / 620 assertions. Exact-head Flutter/platform checks are pending. |
+| #191 Notification Outbox | `69cf20b8eba1d073f87ddaad0587237a9c414e7a` | 8 successful, 0 failed, 0 pending. | Branch includes latest main (0 behind) and patched Symfony lockfile. Outbox remains enqueue-only; no provider worker/delivery is enabled. |
+| #197 execution documentation | `d825291d8ef706141100a48634d2558965e92ae2` | 7 successful, 0 failed, 0 pending. | Documentation checkpoint passes. |
+
+#### Production CAS boundary
+
+- With `ORGANIZATION_API_BASE_URL` configured, `AppDependencies` uses one shared `BackendScheduleRepository` for production Schedule consumers. Grid import shares that instance.
+- `BackendScheduleRepository.save()` binds its revision to the exact loaded Schedule snapshot fingerprint. A later read cannot silently replace an older editor's token. Unobserved snapshots fail closed. `delete()` is disabled until caller-owned conditional-delete/tombstone semantics exist.
+- W-01 captures the editor's base revision and calls `saveIfRevision`. W-02/W-03 compare the live server Schedule with the exact previous canonical snapshot before calling `saveIfRevision`; a remote change is surfaced instead of overwritten. F-01 creates only against an absent revision; replacing an existing Schedule requires the reviewed Grid path.
+- Sign-out, account change, source switch and local-source clearing are local-only resets; they do not persist an empty Schedule.
+- This is backend-mode safe-by-fail-closed for identified writers, not a claim that every legacy workflow can save without first loading its base snapshot. The SharedPreferences fallback remains local-only and is not cross-device CAS.
+
+#### Calendar recovery boundary
+
+- When the backend origin and Google ID token are configured, both normal sync and resume acquire the same owner/Calendar lease, heartbeat, persist operation keys and payload hashes, record provider outcomes and release the lease.
+- Server run/operation history is durable and owner-scoped. However, app startup does not yet load server history to recover a process-killed run; user-facing history and failed queue remain local SharedPreferences. Startup reconciliation remains open.
+- Backend API feature tests and dependency audit passed in a dedicated verification workflow; exact-head CI on #196 remains queued and must be treated as UNKNOWN until completed.
+
+#### Remaining acceptance gates
+
+1. Wait for all 15 #192 checks and all 13 #196 checks on their exact current heads. No queued or skipped item is PASS.
+2. Verify two-editor Schedule CAS conflict and backend-mode fail-closed behavior on exact-head Flutter tests.
+3. Verify two-device Calendar lease race, expiry/reclaim, timeout/ambiguous response, duplicate operation replay, resume and release-on-error.
+4. Implement server-history-driven recovery after process restart; local queue alone is not durable shared recovery.
+5. Keep production Google Calendar writes disabled until a separate explicit authorization for a dedicated test calendar.
+
+Do not mark the repository complete or merge any PR until these gates and human review pass.
+
+### 8.11 Live execution checkpoint — 2026-11-26 13:12 UTC
+
+Current exact heads after the final writer-safety changes in this work session. Main remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`. No PR was merged, no backend was deployed, and no production Calendar event was changed.
+
+| PR | Current head | Current exact-head checks | State |
+|---|---|---|---|
+| #192 | `8643a86fb21fe33639e25577159a310ef15b98ef` | 15 queued; 0 failures; no completed checks on this head yet. | Snapshot-bound CAS writer changes are committed; validation UNKNOWN until queue runs. |
+| #196 | `e93d5cdd25ac0c076e544b1b87a5a06188073a16` | 12 queued; 0 failures; no completed checks on this head yet. | Executor and resume lease/ledger integration committed; validation UNKNOWN until queue runs. |
+| #191 | `69cf20b8eba1d073f87ddaad0587237a9c414e7a` | 8 successful; 0 failures; 0 pending. | Current CI PASS; Draft retained pending human review. |
+| #197 | `9a4e2acaff90016a14a2776dbd83efa7cb589787` | 2 successful, 1 in progress, 4 queued; 0 failures. | Documentation CI is still running on the current docs head. |
+
+#### Deployment and runtime prerequisite
+
+The Laravel coordination API exists in the repository and its dedicated backend feature verification passed on an earlier source revision. It has **not** been deployed or verified at a live `ORGANIZATION_API_BASE_URL` in this execution. Server-side CAS and cross-device Calendar leases activate only when the app is built/configured with that backend origin and a valid Google ID token. Without it, SharedPreferences/local-only behavior remains and is not cross-device safe. Do not interpret code or CI success as proof of live backend availability.
+
+#### Remaining blockers
+
+- Wait for all exact-head #192 and #196 CI jobs; their current queued checks are UNKNOWN, not PASS.
+- Confirm the configured backend URL, authentication middleware and production database provide the intended atomic transaction/locking semantics before any rollout.
+- Run controlled two-device Calendar sync tests against a dedicated test calendar only after separate explicit authorization.
+- Implement server-history-driven startup recovery after process termination; current UI history and failed-operation queue remain local even though resume operations are ledgered when explicitly resumed.
+- Keep all four PRs Draft and do not merge until exact-head CI, reviews, recovery acceptance and human approval are complete.
+
+### 8.12 Live execution checkpoint — 2026-11-26 13:17 UTC
+
+Latest branch tips after the final changes. Main base remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`.
+
+| PR | Head | Latest Actions state |
+|---|---|---|
+| #192 | `8643a86fb21fe33639e25577159a310ef15b98ef` | 13 workflow runs created at 13:15 UTC; most are queued and iOS/macOS/Windows/Android jobs are pending. 0 failures observed. No exact-head check is complete yet. |
+| #196 | `1558ba00395be4fcc9bfc7a9fd1e2cb6adde9122` | 12 workflow runs created at 13:16 UTC; most queued, platform/backend jobs pending. 0 failures observed. No exact-head check is complete yet. |
+| #191 | `69cf20b8eba1d073f87ddaad0587237a9c414e7a` | 8 successful checks, 0 failures. |
+| #197 | `e1c3b59a787df5d73d4634132f36765cfd708bc4` | Docs update triggered Auto Detect CI (pending) and Cross-platform Runtime (queued). |
+
+Do not read queued or pending as a runner pass. In particular, native macOS/iOS and all root-quality jobs have not yet completed on the latest #192/#196 heads. The backend coordination service remains undeployed and unverified at a live URL. All PRs remain Draft and no merge/deployment/production Calendar mutation is authorized.
+
+
+### 8.13 Live execution checkpoint — 2026-11-26 13:40 UTC
+
+This checkpoint supersedes the older PR snapshots above where they differ. Main remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`. All four PRs remain Draft. No PR has been merged, no backend deployed, no production migration run, and no real Google Calendar event changed.
+
+| PR | Current head | Latest exact-head evidence | Current assessment |
+|---|---|---|---|
+| #192 Grid import / Schedule persistence | `2c3b8bfc04fd2dcb5487fb922d42a4d6f8bb5457` | Web build and Dart Format Audit PASS. Windows, Android, Linux and Laravel Backend jobs are in progress/queued; iOS/macOS and core gate are pending. | Static-analysis errors from the preceding head were corrected by explicit interface casts and identity-cache lookup. Android SDK Manager discovery was made version-independent after the previous build failed on a hard-coded path. Exact-head full matrix is not yet certified. |
+| #196 Calendar ETag / global coordination / recovery | `148c97fc2263f7cf07705f83b3052a54f736a8be` | Latest exact-head run is active: Windows/Web and format work in progress; Android/Linux/Backend queued; iOS/macOS pending. Earlier head exposed one Pint style issue, one duplicate named argument and the same Android SDK Manager path issue; these were corrected on the current head. | Adds ETag guards, owner/Calendar lease, transaction-fenced ledger writes, encrypted operation payload, owner-scoped run/operation reads, and explicit history-linked recovery. Exact-head CI still required. |
+| #191 Notification Outbox | `69cf20b8eba1d073f87ddaad0587237a9c414e7a` | Base equals current main; 8/8 checks PASS. | No rebase needed. Outbox remains enqueue-only; no worker or delivery enabled. Draft retained pending review. |
+| #197 execution documentation | `35463433e92d6bedca8de49e905a20d937959ab5` | Documentation-only branch; previous 7/7 checks PASS before this checkpoint refresh. | This plan is being reconciled to current PR heads and blockers. |
+
+#### Verified implementation boundaries
+
+- **Schedule CAS:** Backend mode uses the shared revision-aware repository for the inventoried W-01–W-05/F-01 writers. Revision tokens are bound to exact loaded snapshot identity; absent-state tokens are captured separately; the A → B → A test prevents stale token substitution. This does not make SharedPreferences local-only fallback cross-device atomic. Production safety depends on configuring `ORGANIZATION_API_BASE_URL` in every production build.
+- **Calendar coordination:** Server leases are keyed by authenticated owner and Calendar ID. Operation create/update validates and locks the active lease in the same database transaction. The durable ledger stores canonical payload hashes and encrypted replay payloads; owner-scoped APIs return the run and operations. Explicit `recoverHistory(historyId)` reconstructs unfinished operations and resumes under a new lease. Startup replay remains disabled.
+- **Recovery safety:** Inserts reconcile by stable Sync ID; updates compare desired provider state before enforcing the original ETag; deletes treat already-missing events as complete and reject changed events. No production Google Calendar write has been authorized.
+- **Security:** The backend lock pins affected Symfony components to 8.1.12. Earlier audit on the lock-refresh run reported no advisories; current exact-head Laravel CI remains the required final proof. Encrypted ledger payloads depend on protecting and backing up Laravel `APP_KEY`; payload retention policy must be defined before production rollout.
+- **Outbox:** PR #191 has current base and green CI, but only persists notification intents. Worker scheduling, retry/backoff, dead-letter behavior and real provider delivery remain unimplemented.
+
+#### Remaining acceptance gates
+
+1. Complete exact-head #192 Flutter analyze/tests, Composer audit/Pint/Laravel tests, Windows/Linux/Web/Android/iOS/macOS builds, CAS spike and core PR gate. Do not count queued, pending, skipped or cancelled jobs as PASS.
+2. Complete exact-head #196 backend feature tests, Composer audit/Pint, Flutter format/analyze/tests and all platform builds. Re-run any cancelled jobs after the final head stabilizes.
+3. Prove two independent Schedule clients racing the same generation yield exactly one commit; verify all writer paths and fail-closed local/backend mode boundaries.
+4. Prove two Calendar clients contend on the same owner/Calendar lease, stale leases cannot write the ledger, and timeout/ambiguous insert/update/delete recovery never duplicates or overwrites unrelated events.
+5. Verify local history can invoke explicit recovery using its stored serverRunId and clearly report missing server history without replay.
+6. Confirm production backend URL, auth middleware, database locking semantics, APP_KEY backup/retention and rollback before any deployment.
+7. Keep #191 Draft until independent review; no delivery worker or notification provider is authorized by the outbox foundation.
+8. Keep all PRs Draft until exact-head checks and human review are complete. No merge, deployment, production migration or real-calendar write is authorized by this plan.
+
+
+
+### 8.14 Live execution checkpoint — 2026-11-26 22:56 Asia/Bangkok
+
+This checkpoint supersedes earlier PR-head and CI snapshots above where they differ. Main remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`. All implementation PRs remain Draft. No PR was merged, no backend deployed, no production migration run, and no real Google Calendar event changed.
+
+| PR | Current head | Exact-head evidence at this checkpoint | Assessment |
+|---|---|---|---|
+| #192 Grid import / Schedule persistence | `0507995bbd6533a369f0850d9e21a3fee9a94d94` | Current full matrix has been created; jobs are queued/pending. Earlier root test failure (three widget tests) was traced to demo-controller tests using the async device-backed Schedule repository. The widget test helper now injects an in-memory Schedule repository. Current exact-head tests are not yet complete. | Snapshot-bound CAS and all inventoried backend-mode writers are implemented; SharedPreferences fallback remains local-only. Production artifact workflows now require the shared HTTPS backend origin outside PR builds. |
+| #196 Calendar ETag / global coordination / durable recovery | `4d3f1b92c7393b7fe683d190abb163a6ad6fc82d` | Laravel Backend CI, Web and Dart Format Baseline Audit PASS. Windows/Linux and iOS advisory are running; Android, iOS, macOS, Cross-platform Runtime, Auto Detect CI and Dependency Security are pending/queued. | Timeout tests exposed that the timeout wrapped response streaming but not the initial `http.Client.send`; the timeout now covers both send and response. Recovery now persists the newly acquired server run ID before replay and increments attempt count for valid failed→running ledger transitions. Exact-head Flutter/platform matrix remains incomplete. |
+| #191 Notification Outbox | `12dc4a5a1902f62998e65cc85f880614f9919110` | Laravel Backend CI and Web PASS; Windows/Android are running; Linux, iOS advisory, Cross-platform Runtime, Auto Detect CI, PR Gate and Dependency Security are queued/pending. Base is `main` at `d184546...`, 0 commits behind; no rebase is required. | Outbox service tests now also cover user-scoped keys, canonical associative payload order and same-type/different-payload conflicts. Outbox remains enqueue-only; no worker, retry/backoff, dead-letter or provider delivery is enabled. |
+| #197 execution documentation | `a18a9e5d00104bfcf23fd65da91162b9f4190ee4` | Earlier documentation checks passed; this checkpoint update will trigger new documentation CI. | Draft retained. |
+
+#### Dependency security
+
+- Laravel CI's `composer audit --locked` passed on the current #196 head and on #191's current head; #192's exact-head Laravel audit is queued.
+- The first OSV scan passed and reported no issues in 132 Dart packages, but its log showed it had scanned only the root `pubspec.lock`, not the nested PHP lockfile. The workflow was corrected to scan recursively (`-r ./`) so both `pubspec.lock` and `backend/composer.lock` are included. The corrected exact-head scans for #192, #196 and #191 are queued and must not be marked PASS until their logs confirm both lockfiles were scanned and no blocking advisories were reported.
+- An OSV scan, Composer audit or lockfile upgrade is evidence for known advisories at that exact lockfile revision; it is not proof that unknown vulnerabilities are absent.
+
+#### Production deployment boundary
+
+- The app uses backend Schedule CAS and Calendar coordination only when `ORGANIZATION_API_BASE_URL` is supplied at build time and the authenticated owner can reach the Laravel API.
+- Non-PR Android, iOS, macOS, Windows and Linux release builds, plus GitHub Pages deployment, now fail closed unless the configured origin is HTTPS. PR builds remain available for compile/test evidence without production configuration.
+- The repository contains the Laravel API and CI tests; this checkpoint does not prove that a live API is deployed or that the repository variable points to a healthy production database. Confirm the live origin, readiness, authentication, database locking semantics and `APP_KEY` backup/retention before rollout.
+- Local-only SharedPreferences mode remains usable for development but does not provide cross-device Schedule CAS, Calendar run serialization or durable server recovery.
+
+#### Current acceptance gates
+
+1. Complete exact-head #192 Flutter analyze/tests, Composer audit/Pint/Laravel tests, Windows/Linux/Web/Android/iOS/macOS builds, native CAS contract and core PR gate.
+2. Complete exact-head #196 Flutter format/analyze/full tests, Laravel audit/tests, all platform builds, cross-platform runtime and the corrected recursive Dependency Security scan.
+3. Complete exact-head #191 Laravel tests, all required platform/core checks and recursive Dependency Security scan; keep notification delivery explicitly out of scope until a separately reviewed worker/claim/retry design exists.
+4. Prove two independent Schedule clients using one revision yield exactly one commit; verify stale editors, A→B→A, absent-state creates and every inventoried writer.
+5. Prove two Calendar clients contend on the same owner/Calendar lease; verify expiry/reclaim, expired release rejection, stale-token ledger fencing, duplicate operation idempotency, timeout/ambiguous update/delete reconciliation, and recovery after process termination.
+6. Verify explicit history-linked recovery in the UI and show a safe error for missing server history without replay.
+7. Confirm live HTTPS backend origin, authenticated access, production database transaction/locking behavior, Laravel `APP_KEY` protection/backup and rollback before any deployment.
+8. Obtain human code review and explicit merge authorization. Keep all PRs Draft until exact-head checks and review are complete.
+
+Queued, pending, skipped, cancelled, or older-head checks are not PASS. No merge, deployment, production migration, notification delivery or real-calendar write is authorized by this checkpoint.
+
+
+### 8.15 Live execution checkpoint — 2026-11-26 23:10 Asia/Bangkok
+
+This checkpoint supersedes 8.14 for current heads and statuses. Main remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`. All implementation PRs remain Draft; no merge, deployment, production migration, notification delivery or real Calendar write has occurred.
+
+| PR | Current head | Exact-head evidence now | Remaining exact-head checks |
+|---|---|---|---|
+| #192 Grid / Schedule CAS | `0507995bbd6533a369f0850d9e21a3fee9a94d94` | Laravel Backend CI, Web, Android, Linux, Windows and Auto Detect CI PASS. The targeted Dart/Flutter quality job reports one targeted test passed. | PR Gate, iOS build/advisory, macOS/Xcode, Cross-platform Runtime, Schedule CAS Storage Spike, Dart Format Baseline Audit and recursive Dependency Security are queued/pending. |
+| #196 Calendar sync / durable recovery | `07f27fd7b31021049ea4ae4753decdb36c7672ba` | Prior head `4d3f1b9...` passed Laravel Backend CI, Web and Dart Format, but those results are stale after timeout, recovery, history UI and failure-state changes. | Current-head Dart Format is in progress; all other current-head jobs, including Laravel, platform builds, Cross-platform Runtime, PR Gate and recursive Dependency Security, are queued/pending. |
+| #191 Notification Outbox | `12dc4a5a1902f62998e65cc85f880614f9919110` | Laravel Backend CI, Web, Windows, Android and Linux PASS. | iOS advisory and PR Gate are in progress; Cross-platform Runtime, Auto Detect CI and recursive Dependency Security are queued/pending. Base remains current main with 0 commits behind; no rebase is needed. |
+| #197 execution documentation | `d0da7d297a27d9be69fcd472faf500d8ed9f554a` | Earlier Auto Detect CI and Cross-platform Runtime passed on the prior docs head. | Both checks for the current documentation head are queued. |
+
+#### Recovery UI and lease-contention hardening
+
+- The existing History utility now includes sync history and a confirmation-gated `กู้คืน` action. It calls the authenticated recovery service; it does not automatically replay at startup.
+- Tests cover confirmation, successful history refresh and a missing-run/recovery error path.
+- A Calendar lease conflict now leaves a failed history record with no failed-operation count and no provider write, so the UI does not offer an invalid recovery action for a run that never acquired a lease.
+- A resume lease conflict preserves a failed history state rather than leaving a stale `running` entry. A newly acquired server Run ID is persisted before replay so a process crash can resume from the correct ledger.
+
+#### Dependency security
+
+- `composer audit --locked` passed on exact current heads #191 and #192; #196's current-head Laravel run is pending.
+- The recursive OSV-Scanner workflow is present on all three implementation branches and is queued on each current head. Its first non-recursive run scanned 132 Dart packages and found no issue, but did not scan nested PHP dependencies; that earlier result remains insufficient.
+- Do not mark Dependency Security PASS until the recursive run logs confirm both root `pubspec.lock` and `backend/composer.lock` were scanned and the scan completed without blocking advisories.
+
+#### Remaining deployment boundary
+
+- Production release workflows now require an HTTPS `ORGANIZATION_API_BASE_URL`; PR builds may still compile without production configuration.
+- This is a configuration gate, not proof of a live API deployment. Verify that the configured endpoint is reachable, authenticated, backed by a persistent production database with supported transaction/locking behavior, and protected by a backed-up Laravel `APP_KEY` before release.
+- Schedule CAS is per Schedule revision. Calendar coordination is per authenticated Google owner plus Calendar ID, so it serializes devices using the same Google account; it is not a tenant-wide lock for different Google accounts sharing one Calendar.
+
+No current exact-head gate is fully green for #192 or #196. Queued, pending, skipped, cancelled and older-head results are not PASS. Keep all PRs Draft and do not merge until the full acceptance matrix, review and production backend readiness are verified.
+
+
+### 8.16 Live execution checkpoint — 2026-11-26 23:20 Asia/Bangkok
+
+Main remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`. No implementation PR has been merged. The latest exact-head facts below supersede earlier checkpoint statuses.
+
+| PR | Head | PASS evidence | Still pending |
+|---|---|---|---|
+| #192 | `0507995bbd6533a369f0850d9e21a3fee9a94d94` | Laravel Backend CI, Web, Android, Linux, Windows, Auto Detect CI, Pull Request Gate and Dart Format Baseline Audit. | iOS build/advisory, macOS/Xcode, Cross-platform Runtime, macOS CAS Storage Spike and branch-specific OSV workflow are queued/in progress. |
+| #191 | `12dc4a5a1902f62998e65cc85f880614f9919110` | Laravel Backend CI, Web, Windows, Android, Linux and recursive Dependency Security. OSV log confirms `pubspec.lock` (132 packages) and `backend/composer.lock` (110 packages) were scanned; no issues found. | iOS advisory and Pull Request Gate are in progress; Cross-platform Runtime and Auto Detect CI are pending. Base remains current main, 0 commits behind. |
+| #196 | `032790e4c18feda7f7d1dbf09580c6bc1d092479` | Previous head `4d3f1b9...` passed Laravel Backend CI, Web and Dart Format, but these are stale after subsequent recovery and History UI changes. | Current-head full CI has not completed; Laravel, Web, Format, platform builds, Cross-platform Runtime, Auto Detect, PR Gate and branch-specific OSV confirmation remain queued/in progress. |
+| #197 | `32f575ecd3e4480c0ca10f334cb0c4fa6e830ff0` | Previous documentation checks passed. | Current documentation-head checks pending. |
+
+#### Dependency security evidence shared by all implementation PRs
+
+- Git blob SHA for `pubspec.lock` is identical on #191, #192 and #196: `5786b7243fbfbc765b2d6d72d6da5c78fecb90fc`.
+- Git blob SHA for `backend/composer.lock` is identical on #191, #192 and #196: `ea34e82baa0567e4bebea5e990b302685c468d2d`.
+- #191's exact-head recursive OSV scan covered both lockfiles (132 Dart and 110 PHP packages) and reported no issues. Composer audit also passed on #191 and #192; #196's previous head ran the same locked graph and passed Composer audit.
+- #192/#196 branch-specific OSV jobs are still queued; they remain workflow confirmations, not evidence of different dependency content.
+
+#### Apple runner allocation
+
+- The iOS and macOS workflows accept repository variables `IOS_RUNNER_LABEL` and `MACOS_RUNNER_LABEL`; if unset they default to GitHub-hosted `macos-15`.
+- To route to a self-hosted Mac, register an online macOS runner with a custom label (for example `calendar-macos`) and set both variables to that label. A Windows self-hosted runner cannot execute Xcode or produce native iOS/macOS builds.
+- Current iOS/macOS jobs are still queued. The presence of the Windows runner does not satisfy the Apple build gate, and no self-hosted macOS runner availability has been verified.
+
+#### Recovery UI and scope
+
+- #196 now includes a confirmation-gated History utility recovery action, but its new exact-head UI/controller tests have not yet completed.
+- Recovery is offered only when local history contains a server Run ID. Local-only entries without a server Run ID are explicitly not recoverable from the History utility, avoiding cross-account replay of an unscoped local queue.
+- Calendar lease scope remains authenticated Google owner + Calendar ID; different Google accounts sharing a Calendar require a separate tenant-level lock design.
+
+Keep all implementation PRs Draft. No queued, pending, skipped, cancelled or older-head result is PASS. Do not merge until #192/#196 exact-head gates, #191 remaining checks, Apple runner allocation and live backend readiness are verified.
+
+
+### 8.17 Live execution checkpoint — 2026-11-26 23:30 Asia/Bangkok
+
+| PR | Current head | Latest status |
+|---|---|---|
+| #191 | `12dc4a5a1902f62998e65cc85f880614f9919110` | Laravel, Web, Windows, Android, Linux, Cross-platform Runtime, Auto Detect CI, Pull Request Gate and recursive Dependency Security PASS. iOS Advisory Evidence remains in progress. The OSV log explicitly scanned the identical Dart/PHP lockfiles and reported no issues. |
+| #192 | `10875734d0a956c76933cd8cc94cfa1108585cd3` | Laravel Backend CI PASS; other exact-head jobs are running/queued after the CAS workflow runner-routing change. Previous head `0507995...` had Web, Android, Linux, Windows, Auto Detect CI, Pull Request Gate and Dart Format PASS. |
+| #196 | `937708ee9f0e596556a019b2d999e7bbc68485cd` | Latest code includes History recovery UI and local-only fail-closed behavior. Current-head Auto Detect CI is pending; most platform/core jobs are still queued. The prior head's Windows analyzer failure was one `prefer_initializing_formals` lint, fixed by using an initializing formal; the next exact-head Windows run has not completed yet. |
+| #197 | `67bb93a8ef297e74d1b4d5ac59d024c6cbaab424` | Documentation checkpoint updated; current documentation CI is pending. |
+
+#### Apple runner allocation detail
+
+The Schedule CAS spike run reports its macOS matrix job as `Native SQLite CAS contract (macos-latest)`, which confirms it is currently using the hosted fallback rather than a configured custom runner label. The iOS and macOS workflows already accept `IOS_RUNNER_LABEL` and `MACOS_RUNNER_LABEL`; the CAS spike now also consumes `MACOS_RUNNER_LABEL`.
+
+To route all Apple jobs to a self-hosted Mac, the repository must have an online macOS runner registered with a custom label (for example `calendar-macos`) and the repository variables `IOS_RUNNER_LABEL` and `MACOS_RUNNER_LABEL` must both be set to that label. This configuration cannot be completed or verified from the repository code alone. Until the Mac runner is online and the variables are set, the Apple jobs remain pending on hosted macOS capacity.
+
+No implementation PR has been merged. PR #191's green checks do not make #192 or #196 green; each PR must pass its own exact-head gates. The production HTTPS backend origin and live database are also not verified. Keep all PRs Draft.
+
+
+### 8.18 Live execution checkpoint — 2026-11-26 23:36 Asia/Bangkok
+
+- #191 remains at `12dc4a5a1902f62998e65cc85f880614f9919110`: Laravel, Web, Windows, Android, Linux, Cross-platform Runtime, Auto Detect CI, Pull Request Gate and recursive Dependency Security PASS. iOS Advisory Evidence is still in progress; the iOS build itself was not triggered by this backend-only Outbox PR.
+- #192 remains at `10875734d0a956c76933cd8cc94cfa1108585cd3`: Laravel Backend CI, Web, Dart Format Baseline Audit and Android PASS. Auto Detect CI and Pull Request Gate are in progress; Windows is in progress; Linux, Cross-platform Runtime, Dependency Security and CAS spike are queued; iOS/macOS builds are pending.
+- #196 remains at `937708ee9f0e596556a019b2d999e7bbc68485cd`: Laravel Backend CI PASS. Web, Windows and Linux are in progress; Auto Detect CI, iOS/macOS, Cross-platform Runtime, Pull Request Gate, Dart Format and Dependency Security are pending/queued.
+- #197 remains at `2d6313cb4c7a352506a8dc258308ab6acd9d145e`; its documentation checks are queued.
+
+The latest #192 CAS spike has passed Ubuntu; Windows is still running and macOS remains queued on the hosted `macos-latest` fallback. The exact same dependency lockfiles are already covered by #191's successful recursive OSV scan, but #192/#196 branch-specific scanner checks remain pending. No implementation PR is fully complete and none has been merged.
+
+
+### 8.19 Live execution checkpoint — 2026-11-26 23:42 Asia/Bangkok
+
+- #191 remains at `12dc4a5a1902f62998e65cc85f880614f9919110`: Laravel, Web, Windows, Android, Linux, Cross-platform Runtime, Auto Detect CI, Pull Request Gate and recursive Dependency Security PASS. Only the non-blocking iOS Advisory Evidence reporter remains in progress; the backend-only Outbox PR did not trigger a native iOS build.
+- #192 remains at `10875734d0a956c76933cd8cc94cfa1108585cd3`: Laravel, Web, Android, Linux and Dart Format PASS. Cross-platform Runtime and Auto Detect CI tests are in progress; Windows release build and Pull Request Gate are in progress; recursive Dependency Security and CAS spike are queued; iOS/macOS builds are pending.
+- #196 remains at `937708ee9f0e596556a019b2d999e7bbc68485cd`: Laravel, Web, Linux and Dart Format PASS. Windows Flutter tests, Android build and Auto Detect CI tests are in progress; iOS/macOS, Cross-platform Runtime, Pull Request Gate and Dependency Security are queued/pending.
+- #197 documentation checks remain pending on the latest documentation head.
+
+The #192 CAS spike's Ubuntu and Windows contracts have passed; its macOS contract remains queued on `macos-latest`. No current-head full gate is complete for #192 or #196. All implementation PRs remain Draft and unmerged.
+
+
+### 8.20 Live execution checkpoint — 2026-11-26 23:50 Asia/Bangkok
+
+- #191 (`12dc4a5...`): Laravel, Web, Windows, Android, Linux, Cross-platform Runtime, Auto Detect CI, Pull Request Gate and recursive Dependency Security PASS. Its remaining iOS Advisory Evidence job is a non-blocking observer; this backend-only PR did not trigger a native iOS build.
+- #192 (`10875734...`): Laravel, Web, Android, Linux, Windows, Auto Detect CI, Pull Request Gate, Dart Format and recursive Dependency Security PASS. The exact OSV log scanned both lockfiles (110 PHP + 132 Dart packages) and reported no issues. Cross-platform Runtime is in progress; iOS is queued, macOS/Xcode is pending, and the CAS spike remains queued on its macOS leg. Ubuntu/Windows CAS contract legs passed.
+- #196 (`8280b06...`): Laravel Backend CI PASS. Windows, Linux, Web and Android jobs are in progress; Auto Detect CI and Dependency Security are queued; iOS/macOS builds are pending. The prior exact-head run failed two widget tests because the History utility now reads SharedPreferencesAsync and the widget test setup mocked only the legacy SharedPreferences platform. The test setup now installs `InMemorySharedPreferencesAsync`; current-head test evidence is pending.
+- #197 (`abf2041...`): current documentation-head Auto Detect CI and Cross-platform Runtime are in progress.
+
+No current implementation PR has been merged. #192's core PR Gate is PASS but Apple and Cross-platform Runtime evidence is still pending. #196's new History UI and test-platform fix have not yet completed their exact-head matrix. Keep all implementation PRs Draft.
+
+
+### 8.21 Live execution checkpoint — 2026-11-26 23:55 Asia/Bangkok
+
+- #191 (`12dc4a5...`): Laravel, Web, Windows, Android, Linux, Cross-platform Runtime, Auto Detect CI, Pull Request Gate and recursive Dependency Security PASS. iOS Advisory Evidence remains an observer in progress; no native iOS build was triggered by the backend-only change.
+- #192 (`10875734...`): Laravel, Web, Android, Linux, Windows, Auto Detect CI, Pull Request Gate, Dart Format and recursive Dependency Security PASS. Cross-platform Runtime remains in progress; iOS is queued, macOS/Xcode is pending, and the CAS spike's macOS leg is queued (Ubuntu/Windows legs passed).
+- #196 current head is now `3dc978f707a7ab9797e76fcab0b88f22b73dbd53`. The History widget-test fix now initializes the async SharedPreferences platform and declares `shared_preferences_platform_interface` as a direct dev dependency, resolving the analyzer's `depend_on_referenced_packages` issue. Current-head CI and OSV scan have restarted; no result is yet PASS.
+- Important lockfile correction: #196's `pubspec.lock` blob now differs from #191/#192 only because `shared_preferences_platform_interface` changed from transitive to direct-dev classification; package versions remain the same. Do not cite the older identical-blob SHA for current #196 until its new recursive OSV scan passes.
+- #197 current documentation checks remain in progress/queued.
+
+No PR has been merged. Keep #192/#196 Draft until the full exact-head platform matrix, Cross-platform Runtime, Apple builds and current-head security scan complete.
+
+
+### 8.22 Live execution checkpoint — 2026-11-27 00:05 Asia/Bangkok
+
+- #191 (`12dc4a5...`): Laravel, Web, Windows, Android, Linux, Cross-platform Runtime, Auto Detect CI, Pull Request Gate and recursive Dependency Security all PASS. iOS Advisory Evidence completed successfully as a non-blocking observer; this backend-only PR did not trigger a native iOS build.
+- #192 (`10875734...`): Laravel, Web, Android, Linux, Windows, Auto Detect CI, Pull Request Gate, Dart Format, recursive Dependency Security and Cross-platform Runtime all PASS. iOS build remains queued; macOS/Xcode is pending; CAS spike remains queued on its macOS leg (Ubuntu/Windows legs passed).
+- #196 (`3dc978f...`): Laravel Backend CI, Dart Format Baseline Audit and recursive Dependency Security PASS. The recursive OSV scan checked both lockfiles (110 PHP and 132 Dart packages) with no issues. Windows, Linux, Web, Android, Auto Detect CI, Cross-platform Runtime and Pull Request Gate are still running/in progress; Apple builds remain pending.
+- #197 latest documentation checks remain in progress/queued.
+
+#192 has a green core PR Gate but is not fully platform-complete because Apple build and macOS CAS evidence are pending. #196's exact-head test matrix is still running after the SharedPreferencesAsync test-platform fix. No implementation PR has been merged.
+
+
+
+### 8.23 Live execution checkpoint — 2026-11-27 (current GitHub evidence)
+
+This section supersedes prior PR/CI snapshots above where they conflict. Main is still `d18454680879a10c6efe9e44ffb37cd0695f25a6`. This checkpoint records GitHub API evidence collected for the exact PR head SHAs; it does not certify the overall product as complete.
+
+| PR | Exact head | Completed checks observed | Outstanding checks / disposition |
+|---|---|---|---|
+| #191 Notification Outbox | `12dc4a5a1902f62998e65cc85f880614f9919110` | Laravel Backend CI, Web, Windows, Android, Linux, Pull Request Gate, Auto Detect CI, Cross-platform Runtime, Dependency Security and iOS Advisory Evidence all completed successfully. | Backend enqueue foundation only; no delivery worker/provider is implemented. Keep Draft pending review and decision on delivery scope. |
+| #192 Grid import / Schedule CAS | `10875734d0a956c76933cd8cc94cfa1108585cd3` | Android, Linux, Windows, Web, Laravel Backend CI, Pull Request Gate, Auto Detect CI, Dart Format Baseline Audit, Dependency Security, Cross-platform Runtime and iOS build completed successfully. | macOS/Xcode is pending. Schedule CAS Storage Spike is still in progress: Ubuntu and Windows passed; macOS leg is still running. Do not mark Apple/CAS matrix complete. |
+| #196 Calendar ETag / lease / durable operation ledger | `3dc978f707a7ab9797e76fcab0b88f22b73dbd53` | Laravel Backend CI, Web, Windows, Android, Linux, Pull Request Gate, Auto Detect CI, Cross-platform Runtime, Dart Format Baseline Audit and Dependency Security completed successfully. | iOS and macOS Xcode builds are queued; iOS Advisory Evidence is in progress. Do not treat queued jobs as passed. |
+| #197 execution documentation | `da9e81353851df38a7ccbaecc4dfabe1e8ea780c` | Auto Detect CI and Cross-platform Runtime completed successfully on this documentation head. | Documentation PR remains Draft; this checkpoint itself must run through the updated documentation PR checks after commit. |
+
+#### Apple runner routing — verified workflow configuration
+
+- `.github/workflows/ios.yml` uses `vars.IOS_RUNNER_LABEL || 'macos-15'`.
+- `.github/workflows/macos.yml` uses `vars.MACOS_RUNNER_LABEL || 'macos-15'`.
+- `.github/workflows/schedule-cas-spike.yml` uses `vars.MACOS_RUNNER_LABEL || 'macos-latest'` for its macOS matrix leg.
+- The current #192 macOS build job and #196 iOS/macOS build jobs are queued; no completed Apple job evidence is available for those heads. The CAS macOS leg is in progress, not yet completed.
+- Repository variable values and online self-hosted Mac runner availability have not been verified by the available evidence. Do not claim that the custom Mac runner is configured or available. A Windows runner cannot execute Xcode.
+
+#### Code-level acceptance still open
+
+- #192 and #196 remain Draft and unmerged. A green core PR Gate does not substitute for outstanding Apple/CAS jobs or code review.
+- #196's documented lease scope is authenticated Google owner + Calendar ID; it is not a tenant-wide lock across different Google accounts sharing one Calendar.
+- Local-only mode without the configured HTTPS shared backend remains without cross-device Schedule CAS, Calendar run serialization or server-side recovery.
+- The active workflow's compatibility preview/sync paths must be checked to ensure a stable real Schedule ID reaches the durable Calendar ledger. A default `unknown` Schedule ID must never be treated as a valid production scope; fail closed until the real identity is propagated.
+- Production backend reachability, persistent database locking/transaction behavior, authentication, Laravel `APP_KEY` backup/restore, and controlled Google test-calendar behavior remain unverified.
+- No real Calendar writes, production migration, deployment, notification delivery or merge were performed by this checkpoint.
+
+No queued, pending, in-progress, skipped, cancelled or older-head result is PASS. Keep all implementation PRs Draft until required exact-head checks, code review and production-readiness evidence are complete.
+
+
+### 8.24 Live execution checkpoint — 2026-11-27 (refreshed exact-head evidence)
+
+- #191 remains at `12dc4a5a1902f62998e65cc85f880614f9919110`; all 10 PR-triggered workflows observed are completed successfully. This remains an enqueue-only notification foundation, not delivery.
+- #192 remains at `10875734d0a956c76933cd8cc94cfa1108585cd3`. Android, Linux, Windows, Web, Laravel Backend CI, Pull Request Gate, Auto Detect CI, Dart Format Baseline Audit, Dependency Security, Cross-platform Runtime and iOS completed successfully. The Schedule CAS Storage Spike completed successfully on Ubuntu, Windows and macOS. The separate macOS/Xcode build job is **cancelled**, not passed. Keep #192 Draft until the cancelled Apple build is rerun successfully and review/acceptance is complete.
+- #196 remains at `3dc978f707a7ab9797e76fcab0b88f22b73dbd53`. Backend, Web, Windows, Android, Linux, Pull Request Gate, Auto Detect CI, Cross-platform Runtime, Dart Format and Dependency Security completed successfully. Both macOS/Xcode and iOS/Xcode jobs remain queued. These are not PASS.
+- #197 documentation head `8a5db3b5f02e3cd753f29bc4fb4eac7be6a6808f`: Auto Detect CI and Cross-platform Runtime completed successfully; all jobs in both workflows completed successfully.
+- #196 code review found that the compatibility sync path omits a real Schedule ID, so the plan builder's default `unknown` value can reach the shared-backend lease request. The backend currently validates only that `schedule_id` is a non-empty string; it does not reject the literal `unknown`. This is an identity/ledger correctness defect, not evidence of an observed provider write.
+- A fail-closed guard and regression test have now been committed to the #196 branch: `06c34f29e83da7d8cc52414d83010605bec0c25e` adds the shared-mode guard; `990ba523367ca15794561ec27209723c87dcd525` adds a test proving an unknown Schedule ID is rejected before lease acquisition or Google Calendar mutation. Local test execution is not claimed; exact-head CI must validate these commits.
+- The guard is intentionally limited to configured shared-backend mode. Local-only compatibility behavior remains unchanged. The durable correction for the compatibility workflow is still to propagate a real Schedule ID from the canonical Schedule, or to make that legacy path unavailable in shared mode.
+
+No implementation PR has been merged. No Google Calendar provider write, production migration or deployment was performed. Cancelled, queued, pending, in-progress, skipped and older-head checks are not PASS.
+
+
+### 8.25 Live execution checkpoint — 2026-11-27 (after targeted rerun)
+
+- #192's previously cancelled macOS/Xcode job was explicitly re-queued with a single-job rerun. Its workflow run now reports the macOS job as queued; this is not PASS. The three-platform Schedule CAS Storage Spike remains completed successfully on Ubuntu, Windows and macOS.
+- #196 latest head remains `990ba523367ca15794561ec27209723c87dcd525`. Backend CI, Dart Format Baseline Audit and Dependency Security have now completed successfully on this head. Windows and Android are in progress; Web, iOS advisory and PR Gate are in progress; Linux, Cross-platform Runtime and Auto Detect are queued; iOS/macOS Xcode are pending. No queued or in-progress result is PASS.
+- #197 latest documentation head `5be4da36d9cb8068d5d67d7822c7b0ae977f8e3f` now has Cross-platform Runtime and Auto Detect CI queued. The previous docs head `8a5db3b5f02e3cd753f29bc4fb4eac7be6a6808f` passed both workflows, but that older-head evidence does not certify the new docs commit.
+- No PR was merged. The #196 shared-mode Schedule identity guard and regression test remain subject to the full current-head matrix.
+
+
+### 8.26 Live execution checkpoint — 2026-11-27 (roster date-gap repair)
+
+- PR #192 head is now `f685d7b3bd047668828bebeea269d02215ca8c52`, based on main `d18454680879a10c6efe9e44ffb37cd0695f25a6`.
+- Parser commit `15afa477a16e4a676b0a002b96dfbccd1ce6ad1c` adds an explicit missing-date report when a duplicate day in a declared range leaves dates unresolved, even when the date header is too short for the near-complete-header heuristic.
+- Regression commits `6aa72e6259bd80682648e45a23d9382692134746` and `f685d7b3bd047668828bebeea269d02215ca8c52` assert that the November 2026 X-OPD header containing 1–16, 30, 30 reports both duplicate day 30 and missing 17–29 November. The last commit corrects the assertion to the parser's Gregorian date-message format.
+- Exact-head CI for #192 is running. At the snapshot: Linux, Windows, Web, Laravel Backend CI, Dependency Security and Pull Request Gate are in progress; Auto Detect, Dart Format, Cross-platform Runtime, Android, iOS, macOS/Xcode and iOS Advisory are pending/in progress. No current-head result is yet confirmed PASS.
+- Previous-head macOS/Xcode job for #192 was cancelled and has no runner name or step logs; it is not a test failure diagnosis and not a PASS. The prior CAS spike's three OS legs passed on its then-current head, but the latest parser commits require revalidation.
+- On #196 head `990ba523367ca15794561ec27209723c87dcd525`, backend, format, dependency security, web, Linux, Android, Windows, Auto Detect, Cross-platform Runtime, and PR Gate passed. iOS and macOS Xcode jobs were cancelled without a runner name or step logs. Do not rerun blindly; verify the configured `IOS_RUNNER_LABEL` / `MACOS_RUNNER_LABEL` and actual available runner labels in repository settings first. No runner configuration has been changed in this work.
+- The iOS and macOS workflow files use repository variables with `macos-15` fallback. The CAS spike uses `MACOS_RUNNER_LABEL` with `macos-latest` fallback. Repository Actions variable and runner inventory endpoints were not readable through the available connector; the actual configured variable values and self-hosted runner availability remain unverified.
+- No implementation PR merged; no production data writes or deployment. Cancelled/queued/pending/in-progress/older-head checks are not PASS.
+
+
+### 8.27 Live execution checkpoint — 2026-11-27 (production local Schedule CAS)
+
+- PR #192 current head: `076f56831a5f4f553dac3aaa55cc718a5bfc9bf1`, base `d18454680879a10c6efe9e44ffb37cd0695f25a6`.
+- Production `SharedPreferencesScheduleRepository` now implements `ScheduleRevisionSource` and `ConditionalScheduleWriter`. It uses a per-Schedule asynchronous lock shared by repository instances in the same Dart isolate, persisted monotonic generation plus payload fingerprint, exact snapshot revisions, and versioned absent-state revisions.
+- Conditional local writes compare the caller-owned revision while holding the lock. Delete advances the generation and preserves a tombstone generation key; recreating the same content cannot reuse the old revision (ABA protection).
+- Dual-slot persistence remains intact. Generation advances before switching the active pointer, so a failed pointer write leaves the old active payload readable but invalidates stale editor revisions.
+- `ScheduleController` captures a current absent revision before creating a new Schedule, or verifies that its current in-memory content exactly matches the persisted snapshot before capturing that revision. Grid import, controller save, imported-schedule creation and the legacy AppController canonical writer now use conditional writes when the repository supports them.
+- AppController no longer replaces an in-memory roster with an empty Schedule merely because the local repository has no saved record.
+- Tests added for concurrent writes from two repository instances sharing one store, stale writer rejection, delete/recreate ABA protection, failed active-pointer fencing, and ScheduleController's first-save revision capture / mismatched snapshot rejection.
+- Local SharedPreferences CAS is process-scoped and is not a cross-process or cross-device lock. The authenticated Laravel repository remains required for shared multi-device CAS.
+- Exact-head CI for #192: Dart Format, Dependency Security and Laravel Backend CI passed. Windows, Linux, Android, Web, Cross-platform Runtime and PR Gate were in progress; the CAS Spike had Ubuntu/Windows in progress and macOS queued; iOS/macOS Xcode were pending. No incomplete result is PASS.
+- Previous #192 and #196 Apple Xcode jobs were cancelled with no runner name or step logs. Their workflow files use `IOS_RUNNER_LABEL` / `MACOS_RUNNER_LABEL` repository variables with hosted-label fallbacks. The actual variable values and runner inventory remain unverified through the available connector; no runner settings were changed.
+
+No implementation PR merged. No production data writes or deployment. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
+
+
+### 8.28 Live execution checkpoint — 2026-11-27 (local CAS analyzer repair)
+
+- PR #192 current head is `825e54d4a46fdc0b1a60043e6c74e172b509a0dd`.
+- Previous head `076f56831a5f4f553dac3aaa55cc718a5bfc9bf1` exposed two CI failures: static analysis and Linux release compilation both rejected reading `.message` from `Result<Schedule>`; static analysis also found a stale repository variable in the two-instance contention test and a redundant cast.
+- Fixed by typing the revision-capture helper as `Failure<Schedule>?`, correcting the test to read from the first shared-store repository, and removing redundant casts. Commits: `e1cc31499eedb0217192514039052cc7a5985dc2`, `900b794c4b67e725caf8cc93eb6d2c188b829120`, `838a2c104174d8fae6022abc8e2abadbae8ad05a`.
+- Additional controller regression: the constructor captures the original Schedule before the month-view initializer can add an empty viewed month. When the controller has no cached revision, it compares the persisted Schedule with that original snapshot, not the UI-mutated current value. Commits: `67d95ef2c36cdb00aa31c3f15234cd64449656e5`, test `825e54d4a46fdc0b1a60043e6c74e172b509a0dd`.
+- Exact-head CI on `825e54d4a46fdc0b1a60043e6c74e172b509a0dd`: Dart Format Baseline Audit, Dependency Security and Laravel Backend CI passed. Linux, Windows, Web and Android were in progress; PR Gate and iOS Advisory were in progress; Cross-platform Runtime and CAS Spike were queued; iOS/macOS Xcode were pending. No other current-head result is PASS.
+- The latest tests cover local absent-revision creation, exact persisted snapshot matching, mismatched stale snapshot rejection, same-revision contention across two repository instances, stale-write rejection, delete/recreate ABA fencing and active-pointer failure fencing.
+- Local CAS remains limited to one Dart isolate/process. It is not advertised as cross-device synchronization. The backend Schedule CAS remains the multi-device source of truth when configured.
+
+No implementation PR merged. No production data writes or deployment. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
+
+
+### 8.29 Live execution checkpoint — 2026-11-27 (sequential AppController CAS)
+
+- PR #192 exact head: `483cab074abb8d0daf73a71f7a424c7072dcdc3c`.
+- A further writer audit found that AppController retained the pre-save in-memory Schedule object after a successful conditional write. A later edit could therefore carry an old/unmapped snapshot revision. The controller now tracks the last successfully persisted Schedule and uses it as the base for queued writes, updating it only after a successful CAS.
+- `LegacyScheduleConversion.withSchedule` rebinds the saved canonical snapshot while preserving source sheet, source cell, category, exclusion, generated, linked-shift, source-color, custom-title, Calendar color and relationship-comment metadata.
+- `adoptCanonicalSchedule` waits for queued writes before adopting a new canonical snapshot. Regression tests cover three sequential local AppController writes and metadata preservation after rebinding.
+- Current exact-head CI for #192: Laravel Backend CI passed. Linux, Windows, Android, iOS advisory, Dart Format, Auto Detect, Cross-platform Runtime, PR Gate and CAS Spike are queued/in progress; Web and Apple Xcode builds are pending. The latest head has no other certified PASS yet.
+- Earlier compile/analyzer issues on head `076f56831a5f4f553dac3aaa55cc718a5bfc9bf1` were corrected on later commits. Head `825e54d4a46fdc0b1a60043e6c74e172b509a0dd` had several jobs cancelled as a newer commit superseded it; those cancellations are not PASS. Only exact-head checks count for merge.
+
+No implementation PR merged. No production data writes or deployment. Local CAS is process-scoped; multi-device CAS remains server-enforced. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
+
+
+### 8.30 Live execution checkpoint — 2026-11-27 (compatibility Calendar sync identity)
+
+- PR #196 current head: `3a0c7de7b2f0e520ceb3bd1b481a16c322d97ed4`, based on `d18454680879a10c6efe9e44ffb37cd0695f25a6`.
+- The previous fail-closed guard prevented the literal `unknown` from entering shared lease scope, but left the compatibility path unable to sync when it had no schedule identity. The compatibility workflow now requires a stable Schedule ID for both candidate and user-change previews. AppController supplies `canonicalSchedule.id`; the workflow passes that ID through CalendarSyncCoordinator to CalendarSyncPlanBuilder.
+- Switching between canonical Schedule preview and compatibility preview clears stale preview/preparation/validation/result state, preventing an old canonical plan from being executed after a candidate preview.
+- Regression tests prove a compatibility candidate preview records the canonical Schedule ID in sync history and that blank/unknown IDs are rejected before provider reads. Exact-head CI for #196: Laravel Backend CI, Dart Format and Dependency Security passed; Linux, Windows, Android, Web, Cross-platform Runtime, PR Gate, iOS Advisory and Auto Detect were in progress/queued; Apple Xcode builds pending. No exact-head platform matrix is complete.
+- PR #192 head `483cab074abb8d0daf73a71f7a424c7072dcdc3c`: Dart Format, Dependency Security, Laravel Backend CI, Linux, Android, Web, Cross-platform Runtime and Auto Detect passed. Windows, PR Gate and iOS Advisory remained in progress. Schedule CAS Spike passed on Ubuntu and Windows; macOS queued. iOS/macOS Xcode pending.
+- PR #197 docs head `23cf9e11aa780f37d323decc6cce766bac0cf7cc`: Auto Detect CI passed; Cross-platform Runtime in progress.
+
+No implementation PR merged. No production Calendar writes, production Schedule writes, migration or deployment. Apple build and CAS macOS queue are not PASS. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
+
+
+### 8.31 Live execution checkpoint — 2026-11-27 (compile-time Schedule identity enforcement)
+
+- PR #196 current head: `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`.
+- Exact-head Auto Detect CI on the prior head `3a0c7de7b2f0e520ceb3bd1b481a16c322d97ed4` found two facade callsites that omitted the newly required Schedule ID. The CalendarWorkflowFacade now requires the Schedule ID for compare/synchronize, stores it with the comparison, rejects a comparison reused for another Schedule, and validates the ID before Calendar reads.
+- `CalendarSyncPlanBuilder.build` and `CalendarSyncCoordinator.synchronize` now require `scheduleId` at compile time rather than defaulting to `unknown`. The plan-builder test asserts the identity is retained.
+- Current exact-head CI for #196 has restarted on `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`; all checks are queued, pending or in progress at this snapshot. No exact-head result is yet PASS.
+- Previous head #192 `483cab074abb8d0daf73a71f7a424c7072dcdc3c`: Dart Format, Dependency Security, Laravel Backend CI, Linux, Android, Web, Cross-platform Runtime and Auto Detect passed; Windows passed; PR Gate and iOS Advisory were still in progress. CAS Spike passed on Ubuntu and Windows; macOS queued. Apple Xcode builds remained pending.
+- Docs PR #197 head `3b388994e55423a0ae8b6e45a1271462ff9cfca5`: Auto Detect CI was queued and Cross-platform Runtime was in progress at the latest observed snapshot.
+
+No implementation PR merged. No production Calendar writes or deployment. Required Schedule identity is now enforced through the compatibility workflow, facade, coordinator and plan builder; exact-head CI remains mandatory. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
+
+
+### 8.32 Live execution checkpoint — 2026-11-27 (real row 33 regression)
+
+- PR #192 current head: `53dd9c6be94fe151bbd909ffec3a1c3fa22217fd`.
+- Retrieved the previously supplied roster reference containing the actual `เวรเช้า14 ชั้น` row in the 16 November–15 December 2569 block. Added a parser regression test at row index 32 (spreadsheet row 33), with the real 30-day header sequence (16–30 then 1–15) and the row's worker cells.
+- The regression asserts 20 non-empty assignments across the date range, source-cell mapping from B33 through AE33, U14 shift conversion, and the selected worker's 07:00–08:00 shift times. This directly covers the row-33 issue rather than relying only on generic label tests.
+- PR #192 exact-head CI on `53dd9c6be94fe151bbd909ffec3a1c3fa22217fd` has restarted. Windows, Web, Dart Format, Pull Request Gate and iOS Advisory are in progress; other platform, backend, dependency, CAS and Auto Detect workflows are queued/pending. No current-head result is certified PASS yet.
+- Previous #192 head `483cab074abb8d0daf73a71f7a424c7072dcdc3c` passed Dart Format, Dependency Security, Backend, Linux, Android, Web, Cross-platform Runtime, Auto Detect, Windows and PR Gate. CAS passed on Ubuntu/Windows; macOS was queued. The row-33 test requires a new exact-head pass.
+- #196 current head remains `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`; Backend, Linux, Web, Dart Format and Dependency Security passed, while Windows, Android, Cross-platform Runtime, Auto Detect, PR Gate and iOS Advisory were still running. Apple builds remained pending.
+
+No implementation PR merged. No production data writes or deployment. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
+
+
+### 8.33 Live execution checkpoint — 2026-11-27 (row 33 fixture aligned to source layout)
+
+- PR #192 current head: `8af2471200cc5f3cbe8b8778b37ab528c3f90403`.
+- Refined the row-33 `เวรเช้า14 ชั้น` regression fixture to reproduce the source layout more faithfully: weekday header row, numeric date row, period heading immediately below the date row, and the assignment at spreadsheet row 33.
+- The fixture retains the 30-day sequence (16–30 November, then 1–15 December 2569), 20 non-empty assignments, B33–AE33 source-cell coordinates, U14 mapping and 07:00–08:00 shift times for the selected worker.
+- Exact-head CI for `8af2471200cc5f3cbe8b8778b37ab528c3f90403` has just started. Pull Request Gate is in progress; all other workflows are queued or pending. No current-head check is PASS yet.
+- Previous head `483cab074abb8d0daf73a71f7a424c7072dcdc3c` passed the non-Apple core matrix including Linux, Windows, Android, Web, Cross-platform Runtime, Auto Detect, Format, Dependency Security, Backend and PR Gate. CAS passed on Ubuntu/Windows; macOS CAS and Apple Xcode builds were not completed.
+
+No implementation PR merged. No production data writes or deployment. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
+
+
+### 8.34 Live execution checkpoint — 2026-11-27 (transactional notification enqueue)
+
+- PR #191 current head: `43bdc2ebd94ac8e223d1dc43b532f4a9691d0eb9`.
+- The notification outbox is now wired into the shift transaction lifecycle inside the same database transaction as each state change:
+  - Creation enqueues `shift_transaction.created` for the resolved recipient.
+  - Confirm/reject, organization approve/reject, cancel, sync completion/failure and fulfillment enqueue to the other participant(s).
+  - Internal `sync_start` is intentionally not user-notified.
+- Idempotency keys include transaction ID, version, action and recipient ID. Payloads are minimal and contain the transaction reference/state, not provider event IDs or ETags. A repeated create/confirm request cannot enqueue a duplicate.
+- Regression test covers recipient notification on create, requester notification on confirm, recipient notification on cancellation, and duplicate request suppression.
+- Exact-head CI for #191: Dependency Security passed; Android, Windows, Cross-platform Runtime and iOS Advisory were in progress; Laravel Backend CI, Web, Linux, PR Gate and Auto Detect were queued. No exact-head backend/test result is PASS yet.
+- This remains an outbox, not delivery. No push transport, queue worker, inbox/read API or client display has been implemented; no production notification was sent.
+
+No implementation PR merged. No production data writes or deployment. Delivery and device-level acceptance remain release blockers.
+
+
+### 8.35 Live execution checkpoint — 2026-11-27 (row 33 test executed successfully)
+
+- PR #192 exact head `8af2471200cc5f3cbe8b8778b37ab528c3f90403`: the row-33 `เวรเช้า14 ชั้น` regression fixture has executed under the passing Cross-platform Runtime suite. The test verifies the 30 date columns, 20 non-empty assignments, B33–AE33 source coordinates, U14 conversion and 07:00–08:00 times.
+- On this exact head, Dart Format, Dependency Security, Laravel Backend CI, Linux, Android, Web, Cross-platform Runtime and Auto Detect CI passed. Windows, Pull Request Gate and iOS Advisory were in progress; CAS Storage Spike was queued; iOS/macOS Xcode were pending.
+- This validates the row-33 parser regression on the cross-platform quality suite but does not certify the remaining Windows PR gate, CAS macOS leg or Apple builds.
+- PR #191 head `43bdc2ebd94ac8e223d1dc43b532f4a9691d0eb9`: Backend CI, Linux POSIX full quality suite and Dependency Security passed; Windows, Android, Cross-platform Runtime, PR Gate and Auto Detect were in progress. Notification enqueue integration remains not delivery.
+- PR #196 head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: Backend, Web, Linux, Android, Cross-platform Runtime, Auto Detect, Format and Dependency Security passed; Windows, PR Gate and iOS Advisory were in progress; Apple Xcode pending.
+
+No implementation PR merged. No production data writes, Calendar writes or deployment. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
+
+
+### 8.36 Live execution checkpoint — 2026-11-27 (notification payload readiness)
+
+- PR #191 latest head: `6787fe710ceb351581eb42c9b7045c49a93c9cfb`.
+- Shift transaction lifecycle outbox intents now include safe browser presentation fields (`title`, `body`, stable versioned `tag`, and same-origin `url`) alongside transaction ID/type/status/version. They do not include push endpoints, authentication secrets, Google provider event IDs or ETags.
+- `web/push-scope/service-worker.js` already displays those presentation fields and uses the tag for duplicate display suppression. The server-side VAPID sender and encryption are still missing.
+- Documentation now accurately states that lifecycle enqueue is implemented but push delivery, atomic claim/lease, retries/backoff, expired-subscription cleanup, user opt-in UI and device-level verification are not implemented.
+- Previous code head `43bdc2ebd94ac8e223d1dc43b532f4a9691d0eb9`: Laravel Backend CI, Linux POSIX full quality suite and Dependency Security passed; Windows, Android, Cross-platform Runtime, PR Gate and Auto Detect were in progress. Latest docs/payload head requires fresh exact-head CI.
+- No push notification has been sent and no worker is enabled.
+
+No implementation PR merged. No production data writes or deployment. Notification delivery remains a release blocker until the sender, worker, settings UI and end-to-end tests are complete.
+
+
+### 8.37 Live execution checkpoint — 2026-11-27 (six-month, multi-department import coverage)
+
+- PR #192 current head: `bde4107660ceaa6031b495ef7e8904f55f1d97b9`.
+- Added a six-month 181-day date-grid regression spanning 1 November 2569 through 30 April 2570, with two independent department sections and separate date headers. The test asserts both sections retain the complete date range and that assignments map to the correct department/date.
+- This supplements the real row-33 `เวรเช้า14 ชั้น` regression and the X-OPD duplicate-day/missing-date regression. It validates parser support for multiple sections/departments and long schedule blocks without introducing a fixed monthly layout assumption.
+- Exact-head CI for `bde4107660ceaa6031b495ef7e8904f55f1d97b9` has not yet appeared in the workflow listing. Previous head `8af2471200cc5f3cbe8b8778b37ab528c3f90403` passed Dart Format, Dependency Security, Backend, Linux, Android, Web, Cross-platform Runtime and Auto Detect; Windows, PR Gate and iOS Advisory were still in progress, with CAS macOS and Apple builds incomplete.
+
+No implementation PR merged. No production data writes or deployment. The six-month regression requires exact-head CI before it can be accepted.
+
+
+### 8.38 Live execution checkpoint — 2026-11-27 (notification lifecycle CI)
+
+- PR #191 exact current head `6787fe710ceb351581eb42c9b7045c49a93c9cfb`: Laravel Backend CI, Linux, Web and Dependency Security passed. Windows, Android, Cross-platform Runtime, Pull Request Gate, Auto Detect and iOS Advisory were in progress; Apple Xcode builds pending.
+- The current backend pass includes the new transaction lifecycle enqueue code and feature test, but no push sender/worker is part of this head.
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: Backend, Web, Linux, Android, Windows, Cross-platform Runtime, Auto Detect, Format, Dependency Security and PR Gate passed. iOS Advisory remained in progress; iOS/macOS Xcode pending.
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: fresh workflow runs queued; the prior row-33 test head passed its core cross-platform suite. The new six-month multi-department test remains unverified until exact-head CI finishes.
+
+No implementation PR merged. No production notification sent, no Calendar write, no Schedule write or deployment. Queued, pending, in-progress, skipped, cancelled and older-head checks are not PASS.
+
+
+### 8.39 Live execution checkpoint — 2026-11-27 (PR #196 core matrix green)
+
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: Backend, Dart Format, Dependency Security, Web, Linux, Android, Windows, Auto Detect CI, Cross-platform Runtime and Pull Request Gate all completed successfully.
+- iOS Advisory Evidence remains in progress. Native iOS and macOS Xcode jobs remain pending. The implementation has no Apple-build certification yet.
+- The compatibility Calendar workflow now requires stable Schedule identity through the AppController, workflow controller, facade, coordinator and plan builder. Exact-head non-Apple CI and PR Gate validate these code paths.
+- PR #191 head `6787fe710ceb351581eb42c9b7045c49a93c9cfb`: Backend, Linux, Web and Dependency Security passed; Windows, Android, Cross-platform Runtime, PR Gate and Auto Detect remained in progress.
+- PR #192 latest head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: all workflows were still queued/pending at the latest poll because a new six-month multi-department regression commit had restarted CI.
+
+No implementation PR merged. No production Calendar writes or deployment. Apple builds and remaining current-head CI are still required.
+
+
+### 8.40 Live execution checkpoint — 2026-11-27 (notification lifecycle core matrix)
+
+- PR #191 exact head `6787fe710ceb351581eb42c9b7045c49a93c9cfb`: Backend, Linux, Web, Android, Cross-platform Runtime, Auto Detect and Dependency Security passed. Windows, Pull Request Gate and iOS Advisory remain in progress; native Apple builds pending.
+- The lifecycle test for transactional enqueue and duplicate suppression is included in the passing Laravel Backend CI on this exact head.
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: all non-Apple core checks including PR Gate passed; iOS Advisory still in progress; native iOS/macOS Xcode pending.
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: Dart Format, Backend, Dependency Security, Linux and Web passed; Windows, Android, iOS Advisory and PR Gate in progress; CAS Windows passed and Ubuntu in progress; Cross-platform Runtime queued; Apple builds pending.
+
+No implementation PR merged. No production notification, Schedule or Calendar data writes, or deployment. Queued, pending and in-progress checks are not PASS.
+
+
+### 8.41 Live execution checkpoint — 2026-11-27 (CAS platform progress)
+
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: Dart Format, Backend, Dependency Security, Linux and Web passed. Windows, Android, iOS Advisory and PR Gate were in progress. Cross-platform Runtime had Linux full quality in progress and Windows PowerShell full quality queued. Schedule CAS Storage Spike passed on Windows and Ubuntu; macOS CAS queued. Native iOS/macOS Xcode pending.
+- The six-month, two-department regression is part of this exact-head Flutter quality suite and remains unverified until Cross-platform Runtime / Auto Detect completes.
+- PR #191 exact head `6787fe710ceb351581eb42c9b7045c49a93c9cfb`: Backend, Linux, Web, Android, Cross-platform Runtime, Auto Detect and Dependency Security passed; Windows, PR Gate and iOS Advisory in progress.
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: all non-Apple CI including PR Gate passed; iOS Advisory in progress; iOS/macOS Xcode pending.
+
+No implementation PR merged. No production data writes, notifications, Calendar writes or deployment. Queued, pending and in-progress checks are not PASS.
+
+
+### 8.43 Live execution checkpoint — 2026-11-27 (notification and sync platform gates)
+
+- PR #191 exact head `6787fe710ceb351581eb42c9b7045c49a93c9cfb`: Backend, Linux, Web, Android, Windows, Cross-platform Runtime, Auto Detect, Dependency Security and Pull Request Gate all passed. iOS Advisory Evidence remains in progress; native iOS/macOS builds are pending. The transactional notification enqueue test is green; actual push delivery remains absent.
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: all non-Apple checks including PR Gate passed; iOS Advisory Evidence also passed. Native iOS is queued and macOS Xcode pending.
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: Backend, Linux, Web, Android, Dart Format and Dependency Security passed. Windows, Cross-platform Runtime, Auto Detect, PR Gate and iOS Advisory were still in progress; CAS Windows/Ubuntu passed while macOS queued. The six-month multi-department test is still running in the quality suite.
+
+No implementation PR merged. Apple native build evidence and the remaining exact-head PR #192 tests are still outstanding. No production notifications, Calendar writes, Schedule writes or deployment.
+
+
+### 8.44 Live execution checkpoint — 2026-11-27 (six-month import tests executed)
+
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: Windows static analysis and the full Flutter test suite completed successfully. This includes the new six-month, two-department 181-day parser regression and the row-33 `เวรเช้า14 ชั้น` regression.
+- Windows release build remains in progress. Linux x64 release build, Backend CI, Web build, Android build, Dart Format and Dependency Security passed. Cross-platform Runtime Linux full quality passed; Windows PowerShell full quality is in progress. Auto Detect static analysis passed; unit tests in progress. PR Gate and iOS Advisory in progress.
+- Schedule CAS Storage Spike passed on Windows and Ubuntu; macOS CAS queued. Native iOS/macOS Xcode pending.
+- These test results validate the parser and local CAS/controller tests on the Windows Flutter test suite, but they do not certify the remaining release artifact, Auto Detect, CAS macOS or Apple builds.
+
+No implementation PR merged. No production data writes or deployment. Queued, pending and in-progress checks are not PASS.
+
+
+### 8.45 Live execution checkpoint — 2026-11-27 (core PRs nearing completion)
+
+- PR #191 exact head `6787fe710ceb351581eb42c9b7045c49a93c9cfb`: Backend, Linux, Web, Android, Windows, Cross-platform Runtime, Auto Detect, Dependency Security and Pull Request Gate all passed. iOS Advisory remains in progress; native iOS/macOS Xcode pending. The PR still does not deliver push notifications.
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: all non-Apple checks including PR Gate and iOS Advisory passed. Native iOS queued; macOS Xcode pending.
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: Windows static analysis and Flutter tests passed (including row 33 and six-month/two-department regressions); Linux release, Backend, Web, Android, Dart Format and Dependency Security passed. Cross-platform Linux full quality passed; Windows PowerShell full quality and Auto Detect unit tests in progress; Windows release build and PR Gate in progress. CAS passed on Windows/Ubuntu; macOS queued. iOS Advisory in progress; native Apple builds pending.
+
+No implementation PR merged. The remaining blockers are exact-head PR #192/191 jobs, Apple native builds, CAS macOS, and notification delivery implementation. No production data writes or deployment.
+
+
+### 8.46 Live execution checkpoint — 2026-11-27 (Auto Detect and full-quality suites)
+
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: Auto Detect CI completed successfully, including static analysis and Flutter unit tests. The row-33 `เวรเช้า14 ชั้น` and six-month/two-department regressions therefore passed in this unit-test suite.
+- Cross-platform Runtime Linux/POSIX full quality suite passed. Windows CMD and Linux PowerShell launcher smoke tests passed. Windows PowerShell full quality remains in progress.
+- Windows Flutter static analysis and tests passed; the Windows release job reached application packaging. Linux release, Android, Web, Backend, Format and Dependency Security passed.
+- CAS Storage Spike passed on Windows and Ubuntu; macOS queued. Pull Request Gate and iOS Advisory remain in progress; native iOS/macOS builds pending.
+- PR #191 exact head `6787fe710ceb351581eb42c9b7045c49a93c9cfb`: all non-Apple checks including Windows and PR Gate passed; iOS Advisory remains in progress.
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: all non-Apple checks and iOS Advisory passed; native iOS queued and macOS pending.
+
+No implementation PR merged. No production data writes or deployment. CAS macOS and native Apple builds remain outstanding.
+
+
+### 8.47 Live execution checkpoint — 2026-11-27 (PR #192 core gate green)
+
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: Windows release build and Pull Request Gate completed successfully. Auto Detect CI (including Flutter unit tests), Linux release, Android, Web, Backend, Dart Format and Dependency Security also passed.
+- The row-33 and six-month/two-department parser regressions are included in the passing Windows Flutter tests and Auto Detect Flutter unit-test suite.
+- Cross-platform Runtime Linux/POSIX full quality passed; Windows PowerShell full quality remains in progress.
+- Schedule CAS Storage Spike passed on Windows and Ubuntu; macOS remains queued. iOS Advisory remains in progress; native iOS/macOS Xcode pending.
+- PR #191 exact head `6787fe710ceb351581eb42c9b7045c49a93c9cfb`: all non-Apple checks including PR Gate passed; iOS Advisory still in progress.
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: all non-Apple checks and iOS Advisory passed; native iOS queued and macOS pending.
+
+No implementation PR merged. PR #192 has a green core gate but is not merge-ready while cross-platform Windows, CAS macOS and Apple native checks remain incomplete.
+
+
+### 8.48 Live execution checkpoint — 2026-11-27 (cross-platform runtime fully green)
+
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: Cross-platform Runtime passed on all four legs — Linux POSIX full quality, Linux PowerShell launcher smoke, Windows CMD launcher smoke and Windows PowerShell full quality.
+- The Windows x64 Analyze/Test/Build job passed, including full Flutter tests and release artifact packaging. Linux x64 release, Android, Web, Backend, Auto Detect, Dart Format, Dependency Security and Pull Request Gate passed.
+- The row-33 `เวรเช้า14 ชั้น` and six-month/two-department regressions are included in passing unit-test suites on Windows and Auto Detect.
+- Schedule CAS Storage Spike passed on Windows and Ubuntu; macOS remains queued. iOS Advisory is still waiting for the native iOS build; native iOS/macOS Xcode remain pending.
+- PR #196 has all non-Apple checks and iOS Advisory passed; native iOS queued and macOS pending.
+- PR #191 has all non-Apple checks and PR Gate passed; iOS Advisory still waits on native iOS.
+
+No implementation PR merged. PR #192's core and cross-platform test gates are green, but the macOS CAS leg and Apple native builds are still outstanding.
+
+
+### 8.49 Live execution checkpoint — 2026-11-27 (Apple jobs allocated)
+
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: all non-Apple build/test gates passed. macOS Xcode build is now in progress; iOS build remains pending; iOS Advisory in progress; Schedule CAS Storage Spike remains queued.
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: all non-Apple checks and iOS Advisory passed. Both native macOS Xcode and iOS builds are now in progress.
+- PR #191 exact head `6787fe710ceb351581eb42c9b7045c49a93c9cfb`: all non-Apple checks and PR Gate passed; iOS Advisory still in progress. This PR has no native Apple build job.
+- Apple jobs have moved from pending/queued into in-progress. This is allocation/progress only, not a successful build result. Do not merge until the exact-head Apple jobs and remaining CAS/Advisory checks complete successfully.
+
+No implementation PR merged. No production data writes or deployment.
+
+
+### 8.50 Live execution checkpoint — 2026-11-27 (native Xcode builds started)
+
+- PR #196 exact head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`: macOS and iOS Xcode toolchain verification, Flutter setup and dependency resolution passed. Generated Xcode project verification passed; both native macOS and unsigned iOS application builds are now in progress. The optional Google iOS OAuth configuration step also completed successfully.
+- PR #192 exact head `bde4107660ceaa6031b495ef7e8904f55f1d97b9`: macOS Xcode toolchain/project verification passed and the macOS application build is in progress. The unsigned iOS build has also started and is in progress.
+- The PR #192 macOS production-backend requirement step is skipped on pull_request by workflow condition; this is expected for PR validation and is not evidence of a configured production backend. Production release still requires HTTPS `ORGANIZATION_API_BASE_URL`.
+- Schedule CAS Storage Spike on PR #192 remains queued for macOS after Windows/Ubuntu success.
+- All these Xcode jobs remain in progress; bundle verification, packaging and artifact upload have not completed.
+
+No implementation PR merged. No production data writes or deployment. Native build success requires completed Xcode build, bundle verification, package and artifact upload steps.
+
+
+### 8.51 Live execution checkpoint — 2026-11-27 (exact-head CI and Apple artifacts completed)
+
+**Repository baseline**
+- `main` remains `d18454680879a10c6efe9e44ffb37cd0695f25a6`.
+- Implementation branches #191, #192 and #196 are still based on that SHA. All four PRs remain open, Draft and unmerged. No review submissions were recorded.
+- Exact current heads: #191 `6787fe710ceb351581eb42c9b7045c49a93c9cfb`; #192 `bde4107660ceaa6031b495ef7e8904f55f1d97b9`; #196 `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`; #197 `b5ca4ba2d2f2d99f048a8d4782981f1a6ce0ddb1`.
+
+**Exact-head workflow results**
+- #191: 10/10 observed workflows completed successfully: Laravel Backend CI, Android, Web, Linux, Windows, Cross-platform Runtime, Auto Detect CI, Dependency Security, iOS Advisory Evidence and Pull Request Gate. The iOS Advisory job is an evidence observer, not a native iOS build.
+- #192: 14/14 observed workflows completed successfully: Dart Format Baseline Audit, Laravel Backend CI, Dependency Security, Schedule CAS Storage Spike, macOS Xcode, iOS Xcode, iOS Advisory Evidence, Linux, Web, Android, Auto Detect CI, Cross-platform Runtime, Pull Request Gate and Windows.
+- #196: 13/13 observed workflows completed successfully: Dependency Security, Dart Format Baseline Audit, Web, Auto Detect CI, Linux, Laravel Backend CI, Android, Cross-platform Runtime, Windows, Pull Request Gate, macOS Xcode, iOS Xcode and iOS Advisory Evidence.
+- #197: both observed workflows completed successfully: Auto Detect CI and Cross-platform Runtime (four platform/shell legs).
+
+**Apple build artifacts**
+- #192 macOS artifact `phakphum-calendar-macos-adhoc`, artifact ID `15147658798`, SHA-256 `99e4d6aef2df765cc6721ece8193be5bbe7378152a10447704736decd16e648e`.
+- #192 unsigned iOS artifact `phakphum-calendar-ios-unsigned`, artifact ID `15147928763`, SHA-256 `12a8e468e481dfb7a5b5b4954a458d0af4bdd795e40ba8a8c9c51cd66d764ac7`.
+- #196 macOS artifact `phakphum-calendar-macos-adhoc`, artifact ID `15147773660`, SHA-256 `730846c8dca84d1d75bb662f67299dd0dacc1dad337de6e640d2b63d4dc843b0`.
+- #196 unsigned iOS artifact `phakphum-calendar-ios-unsigned`, artifact ID `15147798731`, SHA-256 `d73064953854cb963ce24939e90685f04e1d34ec7d4f4dd0f6d14436f29e6aa8`.
+- Both platform jobs completed bundle verification, packaging and artifact upload. These are unsigned/ad-hoc CI artifacts, not signed App Store releases or proof of production backend configuration.
+- #192's `Require shared backend for production artifact` step was skipped by the pull_request workflow condition. This is not a pass for production backend configuration; production still requires HTTPS `ORGANIZATION_API_BASE_URL`.
+
+**CAS and source review reconciliation**
+- #192 Schedule CAS Storage Spike passed on Ubuntu, Windows and macOS. This spike is separate from the production repository implementation.
+- Source review at #192 exact head confirms the backend repository binds revision tokens to exact Schedule snapshot identity; ScheduleController, AppController legacy writers, Grid commit/recovery and the tabular-import facade use snapshot-bound/absent-state conditional writes in backend mode. The earlier review comments about missing writer propagation are superseded by the later source changes and the writer inventory's sections 10–10.1.
+- The SharedPreferences fallback remains process/isolate-scoped only; it is not cross-device CAS. Backend configuration/reachability, production DB locking, auth and APP_KEY backup/restore are not verified. Conditional delete remains fail-closed in the Flutter backend repository. Grid journal and canonical Schedule writes remain separate durable requests/stores; startup journal discovery is still open.
+- #196 implements owner + Calendar ID scoped server leases, a durable operation ledger and provider ETag guards. Its documented scope is not a tenant-wide lock across different Google accounts sharing a Calendar. Production backend and controlled Google test-calendar acceptance remain outstanding.
+
+**Release boundaries**
+- #191 persists notification intents transactionally but still has no VAPID sender/worker, retry/dead-letter delivery loop, opt-in UI or end-to-end device delivery. No push notification has been sent.
+- No implementation PR has been merged. No production Schedule write, Google Calendar mutation, migration or deployment has been performed.
+- All PRs remain Draft pending independent review and remaining product/operational acceptance. Passing CI and successful unsigned artifacts do not by themselves authorize merge or production release.
+
+
+### 8.52 Source-level reconciliation — 2026-11-27 (Schedule writer and sync reliability)
+
+**New evidence commits**
+- #192 writer inventory: `49e68240d479e10bc1b5a9d0a6b053067aa8ef83`.
+- #196 sync reliability documentation: `b9890c2983208b394232f9bc2c2125ec1212e16f`.
+- Implementation heads remain #192 `bde4107660ceaa6031b495ef7e8904f55f1d97b9` and #196 `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1`; the two documentation-only follow-up commits are being validated by fresh exact-head CI.
+
+**Schedule CAS source reconciliation**
+- Rechecked #192 composition root, BackendScheduleRepository, ScheduleController, AppController, Grid workflow and tabular-import facade at the exact implementation head.
+- All inventoried backend-mode writers route through the shared configured ScheduleRepository. W-01 ScheduleController, W-02 AppController legacy mutations, W-03 canonical adoption, W-04/W-05 Grid commit/recovery and F-01 tabular create use caller-owned snapshot or absent-state revisions with `saveIfRevision`; F-01 is create-only for an existing backend Schedule.
+- The prior review findings about shared mutable revision cache substitution and missing writer propagation are addressed by later exact-head source changes and regression tests. The old comment remains historical evidence; it is not the final implementation state.
+- Tests cover exact snapshot identity after another read, A→B→A revision preservation, two Schedule editors sharing one base revision, sequential AppController saves, Grid commit/recovery and fail-closed stale paths.
+- Boundaries remain: SharedPreferences is same-process/isolate only; backend deployment and independent-client contention are not verified; conditional delete is disabled; startup journal discovery is missing; journal and canonical Schedule writes are separate durable requests; generation-to-persistence approval remains open.
+
+**Calendar sync documentation reconciliation**
+- #196 exact-head source wires owner + Calendar ID lease coordination, heartbeat, durable run/operation ledger, encrypted replay payloads, ETag/managed Sync ID checks and explicit ledger-backed recovery.
+- Local History UI remains a local projection; the server ledger is the cross-device recovery source when configured.
+- Lease is scoped to authenticated Google owner + Calendar ID, not organization-wide across distinct Google accounts sharing a Calendar.
+- Production HTTPS backend, DB lock/unique semantics under real concurrent clients, APP_KEY backup/restore, and controlled Google test-calendar acceptance remain unverified.
+
+**Fresh CI for documentation-only implementation follow-ups**
+- #192 commit `49e68240d479e10bc1b5a9d0a6b053067aa8ef83`: all 14 workflows were triggered; at checkpoint, jobs were in progress/queued.
+- #196 commit `b9890c2983208b394232f9bc2c2125ec1212e16f`: all 13 workflows were triggered; at checkpoint, jobs were in progress/queued.
+- Do not inherit earlier implementation-head results as CI for these new documentation commits.
+
+No implementation merge, backend deployment, production Schedule mutation, or Google Calendar mutation was performed.
+
+
+### 8.53 Live execution checkpoint — 2026-11-27 (fresh exact-head reconciliation)
+
+This checkpoint supersedes earlier PR-head and workflow snapshots above. It records the live GitHub state checked for this execution; it is not a merge authorization.
+
+| PR | Current head | Exact-head workflows | PR/review state |
+|---|---|---:|---|
+| #191 notification outbox | `6787fe710ceb351581eb42c9b7045c49a93c9cfb` | 10/10 success | Draft, open, no submitted reviews |
+| #192 roster import / Schedule persistence | `066b82471f060885218bab804e8d7093cb38fe01` | 14/14 success | Draft, open, no submitted reviews |
+| #196 Calendar sync coordination | `b9890c2983208b394232f9bc2c2125ec1212e16f` | 13/13 success | Draft, open, no submitted reviews |
+| #197 execution checkpoint docs | `993ac36be1a93e0362489e65c4c6f11d2a71742b` | 2/2 success | Draft, open, no submitted reviews |
+
+All four PRs still target `main@d18454680879a10c6efe9e44ffb37cd0695f25a6`; GitHub reports them mergeable, but mergeability is not acceptance. No PR was merged.
+
+**#192 current product gap:** the review page identifies each date anomaly and offers whole-section exclusion or source-file re-import. It still does not implement the requested in-app date/column correction overlay. The current UI has no focused widget tests for the new anomaly-choice interaction. The actual failing workbook has not been supplied or validated. Backend production reachability/authentication, durable database locking, cross-device contention and journal/Schedule reconciliation remain unverified. The CAS Storage Spike is not the production repository.
+
+**#196 current product gap:** server-side leases, durable operation ledger, ETag guards and explicit recovery are implemented in the PR branch, but production backend deployment/configuration and controlled Google test-calendar acceptance remain unverified. The lease scope is authenticated Google owner + Calendar ID, not a global lock across different Google accounts sharing one Calendar.
+
+**#191 current product gap:** transactional notification intents are implemented; actual push sender/worker, retry/backoff, dead-letter processing, opt-in UI and device delivery acceptance are not.
+
+**#197 current product gap:** this plan needs a follow-up after each implementation change and after every authorized merge; it must not mark a requirement complete from CI alone.
+
+**Next merge order remains conditional:** #192 data correctness and Schedule persistence → #196 Calendar concurrency/recovery → #191 notification delivery → #197 final documentation. Each stage requires implementation acceptance, independent review, exact-head checks and post-merge verification before the next stage. Until then, keep all PRs Draft. No production Schedule writes, Calendar mutations, notification delivery, migration or deployment occurred during this checkpoint.
