@@ -155,6 +155,29 @@ class ShiftPayProfile {
           organization,
           precision: organizationDecimalPlaces ?? decimalPlaces,
         );
+        ShiftPayResolvedCalculation conflictResult() =>
+            ShiftPayResolvedCalculation(
+              calculation: ShiftPayCalculation(
+                dayCategory: personalResult.dayCategory,
+                rule: null,
+                amount: null,
+                isCoveredBySalary: false,
+                conflictingRuleIds: [
+                  ...personalResult.conflictingRuleIds.map(
+                    (id) => 'personal:$id',
+                  ),
+                  ...organizationResult.conflictingRuleIds.map(
+                    (id) => 'organization:$id',
+                  ),
+                ],
+              ),
+              source: null,
+            );
+        if (hybridPriority == HybridShiftPayPriority.requireSelection &&
+            (personalResult.hasRuleConflict ||
+                organizationResult.hasRuleConflict)) {
+          return conflictResult();
+        }
         if (personalResult.hasRule && organizationResult.hasRule &&
             hybridPriority == HybridShiftPayPriority.requireSelection) {
           // Do not expose either candidate amount while the source is
@@ -172,6 +195,7 @@ class ShiftPayProfile {
           );
         }
         if (hybridPriority == HybridShiftPayPriority.personalFirst) {
+          if (personalResult.hasRuleConflict) return conflictResult();
           if (personalResult.hasRule) {
             return ShiftPayResolvedCalculation(
               calculation: personalResult,
@@ -185,6 +209,7 @@ class ShiftPayProfile {
                 : null,
           );
         }
+        if (organizationResult.hasRuleConflict) return conflictResult();
         if (organizationResult.hasRule) {
           return ShiftPayResolvedCalculation(
             calculation: organizationResult,
