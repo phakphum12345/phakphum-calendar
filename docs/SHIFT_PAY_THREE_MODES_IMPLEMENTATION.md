@@ -2,7 +2,7 @@
 
 - Status: requirements contract with merged implementation foundations
 - Related PRs: #181 (Flutter source resolution), #183 (backend persistence), #186 (backend calculation and immutable snapshots)
-- Current status: modes, persistence and calculation APIs are merged; Flutter calculation now supports profile-specific decimal rounding, including a separate organization precision. Confirmed-roster integration and monthly statements remain open.
+- Current status: modes, persistence and calculation APIs are merged; profile-specific decimal rounding is supported. PR #201 adds deterministic equal-specificity conflict detection in Dart and backend calculation snapshots; exact-head CI is pending. Confirmed-roster integration and monthly statements remain open.
 - Existing foundation: `ShiftPayCalculator`, `ShiftPayRule`, `ShiftTypeDefinition`, shift templates
 
 ## 1. Product modes
@@ -130,6 +130,16 @@ Every statement must provide:
 - a reconciliation showing that the statement total equals the sum of eligible assignment rows.
 
 Do not mix forecast assignments with actual totals. Do not claim statutory payroll, tax, or legal overtime compliance.
+
+## 10. Equal-specificity conflict handling — PR #201
+
+- If multiple active rules match the same assignment at the same highest specificity, return a non-payable configuration conflict.
+- Do not choose the first rule by list order or database iteration order.
+- Return `invalid_rule` / `ambiguous_rule`, sorted conflicting rule IDs and per-source conflict detail.
+- Personal and Organization modes block when their selected source conflicts.
+- Hybrid `personalFirst` / `organizationFirst` block when the priority source conflicts rather than silently falling through to a lower-priority source.
+- Hybrid `requireSelection` reports a rule conflict before source selection; selecting a source must not hide a conflict inside that source.
+- No amount is emitted and no rule snapshot is selected for an ambiguous result.
 
 ## 9. Acceptance gates
 
