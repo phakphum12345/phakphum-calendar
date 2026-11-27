@@ -46,6 +46,14 @@ class GridRosterExcelInputAdapter {
             text: cell.displayValue,
             rawValue: cell.value,
             backgroundColor: null,
+            isMerged: cell.isMerged,
+            mergedAnchorA1: cell.mergedAnchorRowIndex == null ||
+                    cell.mergedAnchorColumnIndex == null
+                ? null
+                : A1Notation.fromZeroBased(
+                    rowIndex: cell.mergedAnchorRowIndex!,
+                    columnIndex: cell.mergedAnchorColumnIndex!,
+                  ),
           ),
         );
       }
