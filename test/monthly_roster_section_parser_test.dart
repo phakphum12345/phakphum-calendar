@@ -48,36 +48,36 @@ void main() {
 
   test('preserves row 33 เวรเช้า14 ชั้น across a 16th-to-15th schedule block', () {
     const workers = <Object?>[
-      'ธราวุธ',
-      'บุบผา',
-      'บุบผา',
-      'ประภาพร',
-      'บุบผา',
+      'Employee A',
+      'Employee B',
+      'Employee B',
+      'Employee C',
+      'Employee B',
       null,
       null,
-      'ธราวุธ',
-      'อดิศักดิ์',
-      'ธราวุธ',
-      'ธนพร',
-      'วรรณิกานต์',
+      'Employee A',
+      'Employee D',
+      'Employee A',
+      'Employee E',
+      'Employee F',
       null,
       null,
-      'อัมพร',
-      'ธราวุธ',
-      'จักรกฤษณ์',
-      'สุวดี',
-      'ธราวุธ',
+      'Employee G',
+      'Employee A',
+      'Employee H',
+      'Employee I',
+      'Employee A',
       null,
       null,
       null,
-      'กรรทร',
-      'ธราวุธ',
+      'Employee J',
+      'Employee A',
       null,
-      'ธราวุธ',
+      'Employee A',
       null,
       null,
-      'วรวุฒิ',
-      'ธราวุธ',
+      'Employee K',
+      'Employee A',
     ];
     expect(workers, hasLength(30));
     final days = [
@@ -115,7 +115,7 @@ void main() {
         .toList();
     final shifts = const MonthlyRosterShiftAdapter().parseForWorkers(
       report,
-      targetNames: const ['ธราวุธ'],
+      targetNames: const ['Employee A'],
     );
 
     expect(report.warnings, isEmpty);
