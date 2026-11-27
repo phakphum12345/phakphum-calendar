@@ -7,7 +7,7 @@ The checklist below is a historical backlog baseline. Use this checkpoint for cu
 | Priority | Work | Current implementation | Still missing |
 |---|---|---|---|
 | P0 | Universal roster import | #192: orientation-aware section parsing, CSV/TSV/TXT path, XLSX merged/color provenance, source fingerprint and review workflow | Exact-head CI, original workbook acceptance, reviewer-selected ambiguity path and identity collision acceptance |
-| P0 | Schedule persistence | #192: snapshot-bound CAS and journal recovery consolidation | Cross-device/backend transaction proof, all-writer audit, conditional tombstone delete and recovery drill |
+| P0 | Schedule persistence | #192: snapshot-bound CAS and journal recovery consolidation | Cross-device/backend transaction proof, all-writer audit, conditional tombstone delete, APP_KEY backup/restore and recovery drill |
 | P0 | Calendar Sync | #196: ETag, durable operation coordination and retry/recovery foundation | Controlled real test calendar, provider ambiguous-timeout acceptance and cross-device contention |
 | P0 | Notifications | #191: VAPID sender, subscription ownership, outbox worker, retry/dead-letter and scheduler command | Registered device delivery and deployed scheduler acceptance |
 | P0 | Shift Pay | #181/#183/#186 merged foundations; #201 conflict/precedence and #203 statement calculation core | Durable statement persistence/UI, confirmed-assignment source, exact contractor employment/payment rules and historical acceptance |
