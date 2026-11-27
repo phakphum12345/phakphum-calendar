@@ -297,6 +297,9 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
                   section.startDate != null &&
                   section.endDate != null)
                 TextButton.icon(
+                  key: ValueKey(
+                    'grid-roster-correct-date-${section.sourceSheetId ?? 'local'}-${section.headerRowIndex}-$column',
+                  ),
                   onPressed: () => _correctDateColumn(section, column),
                   icon: const Icon(Icons.edit_calendar),
                   label: const Text('กำหนดวันที่คอลัมน์นี้'),
