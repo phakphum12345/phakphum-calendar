@@ -158,3 +158,32 @@ Both tables are new and additive. Existing users, organizations, policies, shift
 - Has no update timestamp or update endpoint; application flow inserts snapshots and only reads them afterward.
 - User/calculation-time and organization/calculation-time indexes support scoped history retrieval.
 - Snapshots preserve historical inputs and selected rule data; changing a profile does not rewrite prior results.
+
+## Pending schema additions in open PRs — not deployed on main
+
+The following migrations exist on Draft PR branches only. They are not part of the current main database until the PRs are merged and migrations are explicitly deployed.
+
+### PR #191 — Web Push and notification delivery
+
+- `2026_11_23_000002_create_web_push_subscriptions_table.php`
+  - `web_push_subscriptions`: account ownership, unique endpoint hash, public P-256 key, encrypted endpoint/auth material, content encoding, user agent and expiry metadata.
+- `2026_11_25_000004_create_notification_outbox_table.php`
+  - `notification_outbox`: owner, notification type, idempotency key, JSON payload, status, attempts, availability/claim timestamps, claim token, sent/dead-letter timestamps and last error. Unique owner/idempotency key.
+- `2026_11_27_000001_create_notification_deliveries_table.php`
+  - `notification_deliveries`: one delivery per outbox/subscription pair, status, attempts, claim token/timestamps, sent/expired timestamps and last error. Unique outbox/subscription pair.
+
+### PR #192 — Canonical Schedule and import journal
+
+- `2026_11_25_000004_create_schedule_records_and_import_journals.php`
+  - `schedule_records`: owner, opaque Schedule ID, monotonically increasing generation, live/tombstone state, serialized Schedule payload, fingerprint and deleted-from revision. Unique owner/Schedule ID.
+  - `schedule_import_journals`: owner, Schedule ID, import Run ID, lifecycle, base revision, source/accepted fingerprints, JSON provenance and serialized Schedule payload. Unique owner/Run ID/lifecycle with owner/Schedule/time lookup indexes.
+
+### PR #196 — Calendar Sync coordination
+
+- `2026_11_26_000001_create_calendar_sync_coordination.php`
+  - `calendar_sync_runs`: owner, Calendar ID, Schedule ID, client instance, status and run timestamps.
+  - `calendar_sync_leases`: owner + Calendar ID uniqueness, Run ID, client instance, lease token and expiry/heartbeat timestamps.
+  - `calendar_sync_operations`: Run ID, owner, operation key/type/status, payload hash, encrypted payload ciphertext, attempt count, provider event ID and safe error/timing metadata.
+
+**Deployment gate:** no migration in these open PRs has been applied to production by this documentation change. Before deployment, inspect the exact PR migration diffs, run upgrade/rollback tests against a copy of existing data, verify foreign-key and lock semantics on the selected database engine, back up Laravel `APP_KEY`, and rehearse restore. Never reset or replace production data to make a migration pass.
+
