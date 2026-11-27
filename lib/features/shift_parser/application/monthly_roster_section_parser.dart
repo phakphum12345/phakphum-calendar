@@ -287,11 +287,15 @@ class MonthlyRosterSectionParser {
       final firstDataRow = hasValidConfiguredStart
           ? configuredStart
           : headerRow + 1;
+      final isLastSection = index + 1 == headerRows.length;
       final hasValidConfiguredEnd = configuredEnd != null &&
           configuredEnd >= firstDataRow &&
-          configuredEnd < nextHeader;
+          (configuredEnd < nextHeader ||
+              (isLastSection && configuredEnd == nextHeader));
       final sectionEnd = hasValidConfiguredEnd
-          ? configuredEnd + 1
+          ? (configuredEnd + 1 < nextHeader
+              ? configuredEnd + 1
+              : nextHeader)
           : nextHeader;
       if ((profileStartRow != null && !hasValidConfiguredStart) ||
           (profileEndRow != null && !hasValidConfiguredEnd)) {
