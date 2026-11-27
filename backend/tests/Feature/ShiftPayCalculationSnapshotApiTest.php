@@ -262,6 +262,89 @@ class ShiftPayCalculationSnapshotApiTest extends TestCase
             ->assertJsonPath('data.result.amount', 1200);
     }
 
+    public function test_equal_specificity_rules_are_reported_as_configuration_conflicts(): void
+    {
+        $this->putJson('/api/v1/shift-pay/profile', [
+            'mode' => 'personal',
+            'personal_rules' => [
+                $this->rule('night-a', 700),
+                $this->rule('night-b', 900),
+            ],
+        ], $this->auth('owner-token'))->assertOk();
+
+        $this->postJson('/api/v1/shift-pay/calculations', $this->input(), $this->auth('owner-token') + [
+            'Idempotency-Key' => 'ambiguous-rule-001',
+        ])->assertCreated()
+            ->assertJsonPath('data.result.status', 'invalid_rule')
+            ->assertJsonPath('data.result.error_code', 'ambiguous_rule')
+            ->assertJsonPath('data.result.amount', null)
+            ->assertJsonPath('data.result.conflicting_rule_ids.0', 'night-a')
+            ->assertJsonPath('data.result.conflicting_rule_ids.1', 'night-b');
+    }
+
+    public function test_hybrid_priority_blocks_equal_specificity_conflict_in_the_selected_source(): void
+    {
+        $organization = $this->postJson('/api/v1/organizations', [
+            'name' => 'Emergency', 'employee_id' => 'EMP-OWNER',
+        ], $this->auth('owner-token'))->assertCreated()->json('data');
+
+        $this->putJson('/api/v1/shift-pay/profile', [
+            'mode' => 'hybrid',
+            'organization_id' => $organization['id'],
+            'hybrid_priority' => 'organizationFirst',
+            'personal_rules' => [$this->rule('personal-night', 650)],
+        ], $this->auth('owner-token'))->assertOk();
+        $this->putJson("/api/v1/organizations/{$organization['id']}/shift-pay-rules", [
+            'rules' => [
+                $this->rule('organization-night-a', 850),
+                $this->rule('organization-night-b', 950),
+            ],
+        ], $this->auth('owner-token'))->assertOk();
+
+        $this->postJson('/api/v1/shift-pay/calculations', $this->input(), $this->auth('owner-token') + [
+            'Idempotency-Key' => 'hybrid-org-conflict-001',
+        ])->assertCreated()
+            ->assertJsonPath('data.result.status', 'invalid_rule')
+            ->assertJsonPath('data.result.error_code', 'ambiguous_rule')
+            ->assertJsonPath('data.result.source', 'organization')
+            ->assertJsonPath('data.result.amount', null)
+            ->assertJsonPath('data.rule', null)
+            ->assertJsonPath('data.result.conflicting_rule_ids.0', 'organization-night-a')
+            ->assertJsonPath('data.result.conflicting_rule_ids.1', 'organization-night-b');
+    }
+
+    public function test_hybrid_explicit_source_selection_only_blocks_conflicts_in_that_source(): void
+    {
+        $organization = $this->postJson('/api/v1/organizations', [
+            'name' => 'Radiology', 'employee_id' => 'EMP-OWNER',
+        ], $this->auth('owner-token'))->assertCreated()->json('data');
+
+        $this->putJson('/api/v1/shift-pay/profile', [
+            'mode' => 'hybrid',
+            'organization_id' => $organization['id'],
+            'hybrid_priority' => 'requireSelection',
+            'personal_rules' => [
+                $this->rule('personal-night-a', 650),
+                $this->rule('personal-night-b', 750),
+            ],
+        ], $this->auth('owner-token'))->assertOk();
+        $this->putJson("/api/v1/organizations/{$organization['id']}/shift-pay-rules", [
+            'rules' => [$this->rule('organization-night', 900)],
+        ], $this->auth('owner-token'))->assertOk();
+
+        $input = $this->input();
+        $input['selected_source'] = 'organization';
+        $this->postJson('/api/v1/shift-pay/calculations', $input, $this->auth('owner-token') + [
+            'Idempotency-Key' => 'hybrid-selected-org-001',
+        ])->assertCreated()
+            ->assertJsonPath('data.result.status', 'calculated')
+            ->assertJsonPath('data.result.source', 'organization')
+            ->assertJsonPath('data.result.amount', 900)
+            ->assertJsonPath('data.rule.id', 'organization-night')
+            ->assertJsonPath('data.result.source_conflicts.personal.0', 'personal-night-a')
+            ->assertJsonPath('data.result.source_conflicts.personal.1', 'personal-night-b');
+    }
+
     private function input(): array
     {
         return [

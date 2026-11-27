@@ -7,31 +7,80 @@ class ShiftPayCalculationService
     public function calculate(array $input, array $personalRules, array $organizationRules, array $profile): array
     {
         $dayCategory = $this->classifyDay($input);
-        $personal = $this->match($input, $dayCategory, $personalRules);
-        $organization = $this->match($input, $dayCategory, $organizationRules);
+        $personalMatch = $this->match($input, $dayCategory, $personalRules);
+        $organizationMatch = $this->match($input, $dayCategory, $organizationRules);
+        $personal = $personalMatch['rule'];
+        $organization = $organizationMatch['rule'];
         $mode = $profile['mode'] ?? 'personal';
         $priority = $profile['hybrid_priority'] ?? 'requireSelection';
         $selectedSource = null;
         $selected = null;
         $selectionRequired = false;
+        $selectedConflicts = [];
 
         if ($mode === 'personal') {
-            $selectedSource = $personal === null ? null : 'personal';
+            $selectedSource = 'personal';
             $selected = $personal;
+            $selectedConflicts = $personalMatch['conflicting_rule_ids'];
         } elseif ($mode === 'organization') {
-            $selectedSource = $organization === null ? null : 'organization';
+            $selectedSource = 'organization';
             $selected = $organization;
+            $selectedConflicts = $organizationMatch['conflicting_rule_ids'];
         } elseif (! empty($input['selected_source'])) {
             $selectedSource = $input['selected_source'];
             $selected = $selectedSource === 'personal' ? $personal : $organization;
-        } elseif ($personal !== null && $organization !== null && $priority === 'requireSelection') {
-            $selectionRequired = true;
+            $selectedConflicts = $selectedSource === 'personal'
+                ? $personalMatch['conflicting_rule_ids']
+                : $organizationMatch['conflicting_rule_ids'];
+        } elseif ($priority === 'requireSelection') {
+            $selectedConflicts = array_merge(
+                array_map(
+                    static fn (string $id): string => 'personal:'.$id,
+                    $personalMatch['conflicting_rule_ids'],
+                ),
+                array_map(
+                    static fn (string $id): string => 'organization:'.$id,
+                    $organizationMatch['conflicting_rule_ids'],
+                ),
+            );
+            sort($selectedConflicts, SORT_STRING);
+            if ($selectedConflicts !== []) {
+                $selectionRequired = false;
+            } elseif ($personal !== null && $organization !== null) {
+                $selectionRequired = true;
+            } else {
+                $selectedSource = $personal !== null
+                    ? 'personal'
+                    : ($organization !== null ? 'organization' : null);
+                $selected = $personal ?? $organization;
+                $selectedConflicts = $selectedSource === 'personal'
+                    ? $personalMatch['conflicting_rule_ids']
+                    : $organizationMatch['conflicting_rule_ids'];
+            }
         } elseif ($priority === 'personalFirst') {
-            $selectedSource = $personal !== null ? 'personal' : ($organization !== null ? 'organization' : null);
-            $selected = $personal ?? $organization;
+            if ($personal !== null || $personalMatch['conflicting_rule_ids'] !== []) {
+                $selectedSource = 'personal';
+                $selected = $personal;
+                $selectedConflicts = $personalMatch['conflicting_rule_ids'];
+            } else {
+                $selectedSource = $organization !== null ||
+                    $organizationMatch['conflicting_rule_ids'] !== []
+                    ? 'organization' : null;
+                $selected = $organization;
+                $selectedConflicts = $organizationMatch['conflicting_rule_ids'];
+            }
         } else {
-            $selectedSource = $organization !== null ? 'organization' : ($personal !== null ? 'personal' : null);
-            $selected = $organization ?? $personal;
+            if ($organization !== null || $organizationMatch['conflicting_rule_ids'] !== []) {
+                $selectedSource = 'organization';
+                $selected = $organization;
+                $selectedConflicts = $organizationMatch['conflicting_rule_ids'];
+            } else {
+                $selectedSource = $personal !== null ||
+                    $personalMatch['conflicting_rule_ids'] !== []
+                    ? 'personal' : null;
+                $selected = $personal;
+                $selectedConflicts = $personalMatch['conflicting_rule_ids'];
+            }
         }
 
         $decimalPlaces = (int) ($selectedSource === 'organization'
@@ -41,7 +90,27 @@ class ShiftPayCalculationService
             ? ($profile['organization_currency_code'] ?? $profile['currency_code'] ?? 'THB')
             : ($profile['currency_code'] ?? 'THB');
 
-        if ($selectionRequired || $selected === null) {
+        if ($selectedConflicts !== []) {
+            $result = [
+                'status' => 'invalid_rule',
+                'error_code' => 'ambiguous_rule',
+                'day_category' => $dayCategory,
+                'source' => $selectedSource,
+                'rule_id' => null,
+                'treatment' => null,
+                'amount' => null,
+                'currency_code' => $currency,
+                'decimal_places' => $decimalPlaces,
+                'is_covered_by_salary' => false,
+                'is_compensatory_time' => false,
+                'compensates_shift_type_id' => null,
+                'conflicting_rule_ids' => $selectedConflicts,
+                'source_conflicts' => [
+                    'personal' => $personalMatch['conflicting_rule_ids'],
+                    'organization' => $organizationMatch['conflicting_rule_ids'],
+                ],
+            ];
+        } elseif ($selectionRequired || $selected === null) {
             $result = [
                 'status' => $selectionRequired ? 'source_selection_required' : 'no_matching_rule',
                 'day_category' => $dayCategory,
@@ -54,6 +123,11 @@ class ShiftPayCalculationService
                 'is_covered_by_salary' => false,
                 'is_compensatory_time' => false,
                 'compensates_shift_type_id' => null,
+                'conflicting_rule_ids' => [],
+                'source_conflicts' => [
+                    'personal' => $personalMatch['conflicting_rule_ids'],
+                    'organization' => $organizationMatch['conflicting_rule_ids'],
+                ],
             ];
         } else {
             $rule = $selected;
@@ -83,6 +157,11 @@ class ShiftPayCalculationService
                 'is_covered_by_salary' => $covered,
                 'is_compensatory_time' => $isCompensatory,
                 'compensates_shift_type_id' => $isCompensatory ? ($rule['compensates_shift_type_id'] ?? null) : null,
+                'conflicting_rule_ids' => [],
+                'source_conflicts' => [
+                    'personal' => $personalMatch['conflicting_rule_ids'],
+                    'organization' => $organizationMatch['conflicting_rule_ids'],
+                ],
             ];
         }
 
@@ -115,7 +194,7 @@ class ShiftPayCalculationService
         return 'regularWeekday';
     }
 
-    private function match(array $input, string $dayCategory, array $rules): ?array
+    private function match(array $input, string $dayCategory, array $rules): array
     {
         $candidates = [];
         foreach ($rules as $index => $rule) {
@@ -146,7 +225,28 @@ class ShiftPayCalculationService
             return $specificity !== 0 ? $specificity : ($a['index'] <=> $b['index']);
         });
 
-        return $candidates[0]['rule'] ?? null;
+        if ($candidates === []) {
+            return ['rule' => null, 'conflicting_rule_ids' => []];
+        }
+        $highestSpecificity = $candidates[0]['specificity'];
+        $equallySpecific = array_values(array_filter(
+            $candidates,
+            static fn (array $candidate): bool => $candidate['specificity'] === $highestSpecificity,
+        ));
+        if (count($equallySpecific) > 1) {
+            $conflictingRuleIds = array_values(array_map(
+                static fn (array $candidate): string => (string) $candidate['rule']['id'],
+                $equallySpecific,
+            ));
+            sort($conflictingRuleIds, SORT_STRING);
+
+            return [
+                'rule' => null,
+                'conflicting_rule_ids' => $conflictingRuleIds,
+            ];
+        }
+
+        return ['rule' => $candidates[0]['rule'], 'conflicting_rule_ids' => []];
     }
 
     private function matchesOptional(?string $configured, ?string $actual): bool
