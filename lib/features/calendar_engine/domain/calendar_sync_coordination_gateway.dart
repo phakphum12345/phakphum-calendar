@@ -23,6 +23,12 @@ class CalendarSyncRunRecord {
     required this.startedAt,
     required this.heartbeatAt,
     this.finishedAt,
+    this.operationCount = 0,
+    this.insertedCount = 0,
+    this.updatedCount = 0,
+    this.deletedCount = 0,
+    this.failedCount = 0,
+    this.pendingCount = 0,
   });
 
   final String runId;
@@ -32,6 +38,12 @@ class CalendarSyncRunRecord {
   final DateTime startedAt;
   final DateTime heartbeatAt;
   final DateTime? finishedAt;
+  final int operationCount;
+  final int insertedCount;
+  final int updatedCount;
+  final int deletedCount;
+  final int failedCount;
+  final int pendingCount;
 }
 
 class CalendarSyncOperationRecord {
@@ -65,6 +77,11 @@ abstract interface class CalendarSyncCoordinationGateway {
   Future<void> heartbeat(CalendarSyncLease lease);
 
   Future<CalendarSyncRunRecord?> getRun(String runId);
+
+  Future<List<CalendarSyncRunRecord>> listRuns({
+    String? calendarId,
+    int limit = 50,
+  });
 
   Future<List<CalendarSyncOperationRecord>> listOperations(String runId);
 

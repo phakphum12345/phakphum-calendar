@@ -238,6 +238,37 @@ void main() {
     expect(gateway.deletedSyncIds, ['sync-delete']);
   });
 
+  test('maps owner-scoped server run summaries to visible history entries', () async {
+    final coordination = _FakeCoordinationGateway()
+      ..runRecords = [
+        CalendarSyncRunRecord(
+          runId: 'remote-summary-1',
+          calendarId: 'primary',
+          scheduleId: 'schedule-1',
+          status: 'expired',
+          startedAt: DateTime(2026, 11, 26, 8),
+          heartbeatAt: DateTime(2026, 11, 26, 8, 1),
+          operationCount: 4,
+          insertedCount: 1,
+          updatedCount: 1,
+          deletedCount: 0,
+          failedCount: 1,
+          pendingCount: 1,
+        ),
+      ];
+
+    final entries = await ResumeSyncService.listServerHistory(coordination);
+
+    expect(entries, hasLength(1));
+    expect(entries.single.id, 'remote-summary-1');
+    expect(entries.single.serverRunId, 'remote-summary-1');
+    expect(entries.single.status, SyncHistoryStatus.failure);
+    expect(entries.single.inserted, 1);
+    expect(entries.single.updated, 1);
+    expect(entries.single.failed, 1);
+    expect(entries.single.pending, 1);
+  });
+
   test('missing durable server run fails closed without replay', () async {
     final gateway = _FakeCalendarGateway();
     final coordination = _FakeCoordinationGateway();
@@ -462,6 +493,7 @@ class _FakeCoordinationGateway implements CalendarSyncCoordinationGateway {
   bool rejectAcquire = false;
   CalendarSyncRunRecord? runRecord;
   List<CalendarSyncOperationRecord> operationRecords = [];
+  List<CalendarSyncRunRecord> runRecords = [];
 
   final lease = CalendarSyncLease(
     runId: '00000000-0000-4000-8000-000000000001',
@@ -494,6 +526,15 @@ class _FakeCoordinationGateway implements CalendarSyncCoordinationGateway {
     }
     return value;
   }
+
+  @override
+  Future<List<CalendarSyncRunRecord>> listRuns({
+    String? calendarId,
+    int limit = 50,
+  }) async => runRecords
+      .where((run) => calendarId == null || run.calendarId == calendarId)
+      .take(limit)
+      .toList(growable: false);
 
   @override
   Future<List<CalendarSyncOperationRecord>> listOperations(String runId) async =>

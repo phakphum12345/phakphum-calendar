@@ -9,6 +9,7 @@ class SyncHistoryEntry {
     required this.updated,
     required this.deleted,
     required this.failed,
+    this.pending = 0,
     this.finishedAt,
     this.message,
     this.scheduleId = 'unknown',
@@ -23,6 +24,7 @@ class SyncHistoryEntry {
   final int updated;
   final int deleted;
   final int failed;
+  final int pending;
   final String? message;
   final String scheduleId;
   final String? serverRunId;
@@ -34,6 +36,7 @@ class SyncHistoryEntry {
     int? updated,
     int? deleted,
     int? failed,
+    int? pending,
     String? message,
     String? scheduleId,
     String? serverRunId,
@@ -47,6 +50,7 @@ class SyncHistoryEntry {
       updated: updated ?? this.updated,
       deleted: deleted ?? this.deleted,
       failed: failed ?? this.failed,
+      pending: pending ?? this.pending,
       message: message ?? this.message,
       scheduleId: scheduleId ?? this.scheduleId,
       serverRunId: serverRunId ?? this.serverRunId,

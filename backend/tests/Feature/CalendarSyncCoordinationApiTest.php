@@ -104,6 +104,10 @@ class CalendarSyncCoordinationApiTest extends TestCase
             ->assertOk()
             ->assertJsonPath('data.0.operation_payload.sync_id', 'owner-private-op')
             ->assertJsonPath('data.0.operation_payload.title', 'Private shift');
+        $this->getJson('/api/v1/calendar-sync/runs', $this->auth('alice-token'))
+            ->assertOk()->assertJsonCount(1, 'data');
+        $this->getJson('/api/v1/calendar-sync/runs', $this->auth('bob-token'))
+            ->assertOk()->assertJsonCount(0, 'data');
         $this->getJson('/api/v1/calendar-sync/runs/00000000-0000-4000-8000-000000000008/operations', $this->auth('bob-token'))
             ->assertNotFound();
     }
@@ -149,8 +153,14 @@ class CalendarSyncCoordinationApiTest extends TestCase
             'attempt_count' => 1,
             'provider_event_id' => 'provider-event-123',
         ], $this->auth('alice-token'))->assertOk()->assertJsonPath('data.status', 'succeeded');
-        $this->getJson('/api/v1/calendar-sync/runs', $this->auth('alice-token'))
-            ->assertOk()->assertJsonPath('data.0.operation_count', 1);
+        $this->getJson('/api/v1/calendar-sync/runs?calendar_id=primary&limit=10', $this->auth('alice-token'))
+            ->assertOk()
+            ->assertJsonPath('data.0.operation_count', 1)
+            ->assertJsonPath('data.0.inserted_count', 1)
+            ->assertJsonPath('data.0.updated_count', 0)
+            ->assertJsonPath('data.0.deleted_count', 0)
+            ->assertJsonPath('data.0.failed_count', 0)
+            ->assertJsonPath('data.0.pending_count', 0);
         $this->getJson('/api/v1/calendar-sync/runs/00000000-0000-4000-8000-000000000005', $this->auth('alice-token'))
             ->assertOk()->assertJsonPath('data.schedule_id', 'schedule-1');
         $this->getJson('/api/v1/calendar-sync/runs/00000000-0000-4000-8000-000000000005', $this->auth('bob-token'))

@@ -62,10 +62,10 @@ An ambiguous update is reconciled by reading the event and comparing its managed
 identity and normalized desired content; an ambiguous delete is reconciled by
 checking whether the event still exists.
 
-This protects individual provider mutations from stale concurrent writes; it
-does not serialize whole sync runs or provide a shared cross-device operation
-ledger. Sync history and failed-operation records remain local SharedPreferences
-storage in the current production dependency graph.
+This protects individual provider mutations from stale concurrent writes.
+Whole sync runs are serialized through the owner-and-Calendar lease described
+below. Local history remains available offline, while server run summaries are
+also discoverable across devices when the authenticated backend is configured.
 
 ## Backend coordination foundation (2026-11-26)
 
@@ -103,7 +103,20 @@ returns it only through owner-scoped run/operation reads. The explicit
 `ResumeSyncService.recoverHistory(historyId)` path follows the server run ID
 stored with local history, loads the owner-scoped run and encrypted operations,
 rebuilds unfinished work, and resumes it under a newly acquired Calendar lease.
-`recoverRun(runId)` is available when the server run ID is already known. Inserts reconcile by stable Sync ID; updates first compare the current
+`recoverRun(runId)` is available when the server run ID is already known.
+
+The History panel now queries the owner-scoped `GET /calendar-sync/runs`
+summary endpoint and merges server records with local history by server run ID.
+The summary contains operation counts and status only; it does not download
+encrypted event payloads. A run that exists only on the server can be selected
+for recovery by its exact server run ID. Recovery remains an explicit,
+confirmation-gated action; opening the History panel never replays operations.
+If server history cannot be loaded, the UI retains local records and shows the
+server retrieval error rather than treating the failed request as an empty
+history. Local history JSON remains backward-compatible with records that do
+not contain the new pending-operation count.
+
+Inserts reconcile by stable Sync ID; updates first compare the current
 provider event with the desired command before enforcing the original ETag;
 deletes treat an already-missing event as complete and reject changed events.
 

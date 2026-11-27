@@ -38,6 +38,88 @@ void main() {
     controller.dispose();
   });
 
+  test('merges server state into a matching local history entry', () async {
+    final local = _failedEntry();
+    final repository = _MemorySyncHistoryRepository([local]);
+    final remote = SyncHistoryEntry(
+      id: 'remote-run-1',
+      startedAt: local.startedAt,
+      status: SyncHistoryStatus.success,
+      inserted: 2,
+      updated: 1,
+      deleted: 0,
+      failed: 0,
+      pending: 0,
+      scheduleId: local.scheduleId,
+      serverRunId: 'remote-run-1',
+    );
+    final controller = SyncHistoryController(
+      repository,
+      loadServerHistory: () async => [remote],
+    );
+
+    await controller.load();
+
+    expect(controller.entries, hasLength(1));
+    expect(controller.entries.single.id, local.id);
+    expect(controller.entries.single.status, SyncHistoryStatus.success);
+    expect(controller.entries.single.inserted, 2);
+    controller.dispose();
+  });
+
+  test('remote-only history can be recovered by its server run ID', () async {
+    var remote = SyncHistoryEntry(
+      id: 'remote-run-only',
+      startedAt: DateTime(2026, 11, 26, 8),
+      status: SyncHistoryStatus.failure,
+      inserted: 0,
+      updated: 0,
+      deleted: 0,
+      failed: 1,
+      pending: 0,
+      scheduleId: 'schedule-remote',
+      serverRunId: 'remote-run-only',
+    );
+    var recoveredRunId = '';
+    final controller = SyncHistoryController(
+      _MemorySyncHistoryRepository([]),
+      loadServerHistory: () async => [remote],
+      recoverServerRun: (runId) async {
+        recoveredRunId = runId;
+        remote = remote.copyWith(
+          status: SyncHistoryStatus.success,
+          inserted: 1,
+          failed: 0,
+          finishedAt: DateTime(2026, 11, 26, 9),
+        );
+      },
+    );
+
+    await controller.load();
+    expect(controller.entries.single.id, 'remote-run-only');
+
+    final recovered = await controller.recover('remote-run-only');
+
+    expect(recovered, isTrue);
+    expect(recoveredRunId, 'remote-run-only');
+    expect(controller.entries.single.status, SyncHistoryStatus.success);
+    controller.dispose();
+  });
+
+  test('server history failure remains visible without hiding local entries', () async {
+    final entry = _failedEntry();
+    final controller = SyncHistoryController(
+      _MemorySyncHistoryRepository([entry]),
+      loadServerHistory: () async => throw StateError('backend unavailable'),
+    );
+
+    await controller.load();
+
+    expect(controller.entries, hasLength(1));
+    expect(controller.serverHistoryError, contains('backend unavailable'));
+    controller.dispose();
+  });
+
   test('failed recovery reports an error and keeps the failed history', () async {
     final entry = _failedEntry();
     final controller = SyncHistoryController(

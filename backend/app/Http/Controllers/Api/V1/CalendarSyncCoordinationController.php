@@ -441,6 +441,17 @@ class CalendarSyncCoordinationController extends Controller
 
     private function runResource(object $run): array
     {
+        $summary = DB::table('calendar_sync_operations')
+            ->where('owner_user_id', $run->owner_user_id)
+            ->where('run_id', $run->id)
+            ->selectRaw('COUNT(*) as operation_count')
+            ->selectRaw("SUM(CASE WHEN operation_type = 'insert' AND status = 'succeeded' THEN 1 ELSE 0 END) as inserted_count")
+            ->selectRaw("SUM(CASE WHEN operation_type = 'update' AND status = 'succeeded' THEN 1 ELSE 0 END) as updated_count")
+            ->selectRaw("SUM(CASE WHEN operation_type = 'delete' AND status = 'succeeded' THEN 1 ELSE 0 END) as deleted_count")
+            ->selectRaw("SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed_count")
+            ->selectRaw("SUM(CASE WHEN status IN ('prepared', 'running') THEN 1 ELSE 0 END) as pending_count")
+            ->first();
+
         return [
             'run_id' => $run->id,
             'calendar_id' => $run->calendar_id,
@@ -450,9 +461,12 @@ class CalendarSyncCoordinationController extends Controller
             'started_at' => $run->started_at,
             'heartbeat_at' => $run->heartbeat_at,
             'finished_at' => $run->finished_at,
-            'operation_count' => DB::table('calendar_sync_operations')
-                ->where('run_id', $run->id)
-                ->count(),
+            'operation_count' => (int) ($summary->operation_count ?? 0),
+            'inserted_count' => (int) ($summary->inserted_count ?? 0),
+            'updated_count' => (int) ($summary->updated_count ?? 0),
+            'deleted_count' => (int) ($summary->deleted_count ?? 0),
+            'failed_count' => (int) ($summary->failed_count ?? 0),
+            'pending_count' => (int) ($summary->pending_count ?? 0),
         ];
     }
 

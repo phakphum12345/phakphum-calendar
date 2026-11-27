@@ -35,6 +35,40 @@ class ResumeSyncService {
   final FailedSyncRepository _failedRepository;
   final CalendarSyncCoordinationGateway? coordinationGateway;
 
+  /// Reads server-side run summaries for the history screen. The backend
+  /// returns aggregate counts only; encrypted event payloads are not fetched.
+  static Future<List<SyncHistoryEntry>> listServerHistory(
+    CalendarSyncCoordinationGateway coordination, {
+    int limit = 100,
+  }) async {
+    final runs = await coordination.listRuns(limit: limit);
+    return runs.map((run) {
+      final status = switch (run.status) {
+        'running' => SyncHistoryStatus.running,
+        'success' => SyncHistoryStatus.success,
+        'partial_success' => SyncHistoryStatus.partialSuccess,
+        'failed' => SyncHistoryStatus.failure,
+        'cancelled' => SyncHistoryStatus.failure,
+        'expired' => SyncHistoryStatus.failure,
+        _ => SyncHistoryStatus.failure,
+      };
+      return SyncHistoryEntry(
+        id: run.runId,
+        startedAt: run.startedAt,
+        finishedAt: run.finishedAt,
+        status: status,
+        inserted: run.insertedCount,
+        updated: run.updatedCount,
+        deleted: run.deletedCount,
+        failed: run.failedCount,
+        pending: run.pendingCount,
+        message: 'Server run: ${run.status}',
+        scheduleId: run.scheduleId,
+        serverRunId: run.runId,
+      );
+    }).toList(growable: false);
+  }
+
   /// Rebuilds a local recovery queue from the owner-scoped durable ledger.
   ///
   /// This method is explicit; it is never invoked automatically at startup.

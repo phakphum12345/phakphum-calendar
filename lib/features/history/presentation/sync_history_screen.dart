@@ -87,6 +87,11 @@ class SyncHistoryPanelContent extends StatelessWidget {
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 8),
+            if (controller.serverHistoryError != null)
+              Text(
+                'โหลดประวัติจาก Server ไม่สำเร็จ: ${controller.serverHistoryError}',
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
             if (controller.isLoading)
               const LinearProgressIndicator()
             else if (controller.message != null)
@@ -142,7 +147,8 @@ class _SyncHistoryEntryTile extends StatelessWidget {
         'เพิ่ม ${entry.inserted} · '
         'แก้ไข ${entry.updated} · '
         'ลบ ${entry.deleted} · '
-        'ล้มเหลว ${entry.failed}'
+        'ล้มเหลว ${entry.failed} · '
+        'รอดำเนินการ ${entry.pending}'
         '${entry.serverRunId != null ? '\nServer run: ${entry.serverRunId}' : entry.status == SyncHistoryStatus.success ? '' : '\nไม่มี Server Run ID: กู้คืนข้ามอุปกรณ์ไม่ได้'}',
       ),
       isThreeLine: true,

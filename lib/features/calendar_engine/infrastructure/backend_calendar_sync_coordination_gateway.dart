@@ -120,6 +120,41 @@ class BackendCalendarSyncCoordinationGateway
       throw const FormatException('The backend returned an invalid sync run.');
     }
     final record = data.map((key, value) => MapEntry(key.toString(), value));
+    return _parseRunRecord(record);
+  }
+
+  @override
+  Future<List<CalendarSyncRunRecord>> listRuns({
+    String? calendarId,
+    int limit = 50,
+  }) async {
+    if (limit < 1 || limit > 100) {
+      throw ArgumentError.value(limit, 'limit', 'Must be between 1 and 100.');
+    }
+    final query = <String, String>{
+      'limit': limit.toString(),
+      if (calendarId != null && calendarId.trim().isNotEmpty)
+        'calendar_id': calendarId,
+    };
+    final response = await _request(
+      'GET',
+      'api/v1/calendar-sync/runs?${Uri(queryParameters: query).query}',
+    );
+    final data = response['data'];
+    if (data is! List) {
+      throw const FormatException('The backend returned an invalid sync run list.');
+    }
+    return data.map((entry) {
+      if (entry is! Map) {
+        throw const FormatException('The backend returned an invalid sync run.');
+      }
+      return _parseRunRecord(
+        entry.map((key, value) => MapEntry(key.toString(), value)),
+      );
+    }).toList(growable: false);
+  }
+
+  CalendarSyncRunRecord _parseRunRecord(Map<String, dynamic> record) {
     final startedAt = DateTime.tryParse(record['started_at']?.toString() ?? '');
     final heartbeatAt = DateTime.tryParse(record['heartbeat_at']?.toString() ?? '');
     if (record['run_id'] is! String ||
@@ -130,6 +165,14 @@ class BackendCalendarSyncCoordinationGateway
         heartbeatAt == null) {
       throw const FormatException('The backend sync run is missing required fields.');
     }
+    int count(String key) {
+      final value = record[key];
+      if (value == null) return 0;
+      if (value is! num || value < 0) {
+        throw FormatException('The backend sync run has an invalid $key.');
+      }
+      return value.toInt();
+    }
     final finishedAt = DateTime.tryParse(record['finished_at']?.toString() ?? '');
     return CalendarSyncRunRecord(
       runId: record['run_id'] as String,
@@ -139,6 +182,12 @@ class BackendCalendarSyncCoordinationGateway
       startedAt: startedAt,
       heartbeatAt: heartbeatAt,
       finishedAt: finishedAt,
+      operationCount: count('operation_count'),
+      insertedCount: count('inserted_count'),
+      updatedCount: count('updated_count'),
+      deletedCount: count('deleted_count'),
+      failedCount: count('failed_count'),
+      pendingCount: count('pending_count'),
     );
   }
 
