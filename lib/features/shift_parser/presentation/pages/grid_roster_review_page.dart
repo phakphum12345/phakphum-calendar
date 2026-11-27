@@ -220,8 +220,17 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
   String _dateAnomalyKey(
     MonthlyRosterSection section,
     MonthlyRosterDateAnomaly anomaly,
-  ) =>
-      '${section.headerRowIndex}|${anomaly.code}|${anomaly.columnIndex ?? -1}';
+  ) => [
+    section.sourceSpreadsheetId ?? '',
+    section.sourceSheetId?.toString() ?? '',
+    section.sourceSheetTitle ?? '',
+    section.title,
+    section.headerRowIndex.toString(),
+    anomaly.code,
+    anomaly.columnIndex?.toString() ?? '-1',
+    anomaly.displayedDay?.toString() ?? '',
+    anomaly.message,
+  ].join('|');
 
   String _sectionDateChoiceLabel(MonthlyRosterSection section) {
     final choices = section.dateAnomalies
