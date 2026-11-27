@@ -377,14 +377,17 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
                                 ? null
                                 : _pickExcelFile,
                           ),
-                          ExcelImportButton(
-                            label: 'นำเข้า CSV / TSV / TXT แบบ Grid',
-                            icon: Icons.table_rows,
-                            loading: loadingGridRoster,
-                            onPressed: loadingGridRoster
-                                ? null
-                                : _openDelimitedGridRosterReview,
-                          ),
+                          if (widget.gridRosterWorkflow != null &&
+                              widget.employeeRepository != null &&
+                              widget.shiftTemplateControllerFactory != null)
+                            ExcelImportButton(
+                              label: 'นำเข้า CSV / TSV / TXT แบบ Grid',
+                              icon: Icons.table_rows,
+                              loading: loadingGridRoster,
+                              onPressed: loadingGridRoster
+                                  ? null
+                                  : _openDelimitedGridRosterReview,
+                            ),
                           ExcelImportButton(
                             label: context.l10n.cancel,
                             icon: Icons.close,
