@@ -1,3 +1,4 @@
+import '../domain/a1_notation.dart';
 import '../domain/monthly_roster_section.dart';
 import '../domain/normalized_cell.dart';
 import '../domain/roster_grid_axis_mapping.dart';
@@ -154,7 +155,7 @@ class VerticalMonthlyRosterSectionParser {
                 rowIndex: cell.rowIndex,
                 displayedDay: day,
                 message: anomalyCode == 'duplicate_date'
-                    ? 'พบวันที่ $day ซ้ำที่ ${cell.a1}'
+                    ? 'พบวันที่ $day ซ้ำที่ ${_cellReference(cell)}'
                     : anomalyCode == 'out_of_order'
                     ? 'วันที่ $day ที่ ${cell.a1} ไม่เรียงตามปฏิทิน'
                     : 'ไม่สามารถจับคู่วันที่ $day ที่ ${cell.a1} '
@@ -349,7 +350,10 @@ class VerticalMonthlyRosterSectionParser {
                 columnIndex: labelEntry.key,
                 workerName: worker,
                 date: date,
-                sourceCell: workerCell!.a1,
+                sourceCell: A1Notation.fromZeroBased(
+                  rowIndex: sourceRow,
+                  columnIndex: labelEntry.key,
+                ),
                 backgroundColor: workerCell.backgroundColor?.hex,
                 spreadsheetId: input.spreadsheetId,
                 sheetId: input.sheetId,
@@ -397,6 +401,12 @@ class VerticalMonthlyRosterSectionParser {
       warnings: List.unmodifiable(warnings),
     );
   }
+
+  String _cellReference(NormalizedCell cell) =>
+      A1Notation.fromZeroBased(
+        rowIndex: cell.rowIndex,
+        columnIndex: cell.columnIndex,
+      );
 
   bool _isDateCell(NormalizedCell cell) =>
       _day(cell) != null || _explicitDate(cell) != null;
