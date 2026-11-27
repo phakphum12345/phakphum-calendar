@@ -6,7 +6,7 @@ This file is the central map of project documentation. Prefer updating an existi
 
 - [README](README.md) — user installation, setup and usage.
 - [Roadmap](ROADMAP.md) — planned product direction.
-- [Implementation status](IMPLEMENTATION_STATUS.md) — current repository inventory and open gaps.
+- [Historical implementation status snapshot](IMPLEMENTATION_STATUS.md) — 2026-11-25 inventory; current state is in [the live project completion master plan](docs/project/PROJECT_COMPLETION_MASTER_PLAN.md).
 - [Requirements traceability](REQUIREMENTS_TRACEABILITY.md) — requirement-to-code/test evidence map.
 - [Delivery status and merge policy](docs/DELIVERY_STATUS.md) — delivery gates and evidence policy.
 - [Integration status](docs/INTEGRATION_STATUS.md) — integration progress.
