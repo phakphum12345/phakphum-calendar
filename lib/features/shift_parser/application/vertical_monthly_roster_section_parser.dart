@@ -71,9 +71,7 @@ class VerticalMonthlyRosterSectionParser {
           cells: input.cells,
           firstDateRow: firstRow,
           dateColumn: entry.key,
-          minimumRow: periodEvidence != null && periodEvidence.rowIndex >= 0
-              ? periodEvidence.rowIndex
-              : 0,
+          minimumRow: 0,
         );
         final hasAssignmentShape = input.cells
             .where(
