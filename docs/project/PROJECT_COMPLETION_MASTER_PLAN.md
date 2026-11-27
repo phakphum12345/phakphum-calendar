@@ -31,7 +31,7 @@ Safety rules:
 | Main SHA | `68ef85361c2d08e2970160a36475592010d908f7` |
 | Connected account permissions | admin, maintain, push, pull |
 | Local working tree | UNKNOWN — no local checkout was inspected |
-| Branch protection / rulesets | UNKNOWN — not exposed by the repository connector audit |
+| Branch protection / rulesets | Rulesets API returned `[]`; branch-protection endpoint returned HTTP 403 `Resource not accessible by integration`, so branch protection remains UNKNOWN |
 | Open PRs in active completion scope | 11 |
 | Deployment SHA / runtime | UNKNOWN — not verified by this audit |
 
