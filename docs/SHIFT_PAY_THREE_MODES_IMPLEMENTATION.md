@@ -2,7 +2,7 @@
 
 - Status: requirements contract with merged implementation foundations
 - Related PRs: #181 (Flutter source resolution), #183 (backend persistence), #186 (backend calculation and immutable snapshots)
-- Current status: the Personal / Organization / Hybrid rule-source foundation, persistence and single-assignment calculation APIs are merged through PRs #181, #183 and #186; rounding supports profile-specific precision. Follow-up PRs #201 and #203 add conflict-resolution and immutable monthly statement calculation foundations but remain open. Confirmed-assignment integration, persisted monthly statement repository/API/UI, export and full authorization acceptance remain open.
+- Current status: modes, persistence and calculation APIs are merged; profile-specific decimal rounding is supported. PR #201 adds deterministic equal-specificity conflict detection in Dart and backend calculation snapshots; all 12 workflows passed on the prior exact head. Hybrid conflict and explicit source-selection API regression tests were then added and require a fresh exact-head CI run. Confirmed-roster integration and monthly statements remain open.
 - Existing foundation: `ShiftPayCalculator`, `ShiftPayRule`, `ShiftTypeDefinition`, shift templates
 
 ## 1. Product modes
@@ -131,6 +131,16 @@ Every statement must provide:
 
 Do not mix forecast assignments with actual totals. Do not claim statutory payroll, tax, or legal overtime compliance.
 
+## 10. Equal-specificity conflict handling — PR #201
+
+- If multiple active rules match the same assignment at the same highest specificity, return a non-payable configuration conflict.
+- Do not choose the first rule by list order or database iteration order.
+- Return `invalid_rule` / `ambiguous_rule`, sorted conflicting rule IDs and per-source conflict detail.
+- Personal and Organization modes block when their selected source conflicts.
+- Hybrid `personalFirst` / `organizationFirst` block when the priority source conflicts rather than silently falling through to a lower-priority source.
+- Hybrid `requireSelection` reports a rule conflict before source selection; selecting a source must not hide a conflict inside that source.
+- No amount is emitted and no rule snapshot is selected for an ambiguous result.
+
 ## 9. Acceptance gates
 
 - Personal mode can be configured and used with no organization membership.
@@ -142,3 +152,20 @@ Do not mix forecast assignments with actual totals. Do not claim statutory payro
 - Persistence survives restart and migration without historical data loss.
 - Reprocessing the same assignment does not duplicate pay.
 - Monthly report totals reconcile exactly to immutable detail rows.
+
+## 11. Monthly statement calculation core — PR #203
+
+- Adds an immutable monthly-period statement builder over canonical Schedule assignments.
+- Requires an explicit assignment-confirmation predicate; unconfirmed assignments are listed as non-payable and never enter totals.
+- Requires an explicit employment-type resolver; missing employment type is reported and never inferred from employee name or position.
+- Records the exact Schedule revision and a deterministic fingerprint of the complete Shift Pay profile/rule set.
+- Rejects ambiguous equal-specificity rules, missing rules, missing employment type, unresolved hybrid source selection and duplicate assignment identities from payable totals.
+- Uses integer minor units for statement totals after per-line configured rounding.
+- Historical statement objects retain their calculated line amounts and profile fingerprint when later profile versions change.
+
+Acceptance still open:
+
+- The builder is not yet connected to a persisted statement repository, backend API or monthly statement UI.
+- The repository does not yet contain a confirmed-assignment lifecycle contract that this builder can consume; callers must supply the confirmation predicate.
+- Employee currently exposes no persisted employment/payment mode. The existing calculator enum has salaried and dailyPaid; the previously discussed third contractor mode has no retrievable exact definition and must not be guessed.
+- Backend authorization, organization ownership, statement retention/export and read-back verification remain unimplemented.
