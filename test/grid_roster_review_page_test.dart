@@ -207,7 +207,7 @@ void main() {
     );
   });
 
-  testWidgets('reviewer can correct a source-backed date column and revalidate', (
+  testWidgets('reviewer can correct multiple source-backed date columns sequentially and revalidate', (
     tester,
   ) async {
     List<NormalizedCell> row(int rowIndex, List<Object?> values) => [
@@ -233,18 +233,18 @@ void main() {
         sheetTitle: 'X-OPD',
         timeZone: 'Asia/Bangkok',
         cells: [
-          ...row(0, ['GEN 1 พฤศจิกายน 2569 - 7 พฤศจิกายน 2569']),
-          ...row(1, ['วันที่', 1, 2, 3, 4, 5, 5, 7]),
-          ...row(2, ['GEN', 'ก', null, null, null, null, 'ข', 'ค']),
+          ...row(0, ['GEN 1 พฤศจิกายน 2569 - 8 พฤศจิกายน 2569']),
+          ...row(1, ['วันที่', 1, 2, 3, 4, 4, 6, 6, 8]),
+          ...row(2, ['GEN', 'ก', null, null, null, 'ข', null, 'ค', null]),
         ],
       ),
     );
     final parsedSection = parsed.sections.single;
     expect(parsedSection.sourceCells, isNotEmpty);
     expect(parsedSection.startDate, DateTime(2026, 11, 1));
-    expect(parsedSection.endDate, DateTime(2026, 11, 7));
+    expect(parsedSection.endDate, DateTime(2026, 11, 8));
     expect(
-      parsedSection.dateAnomalies.any((anomaly) => anomaly.columnIndex == 6),
+      parsedSection.dateAnomalies.any((anomaly) => anomaly.columnIndex == 5),
       isTrue,
     );
     final report = MonthlyRosterParseReport(
@@ -294,13 +294,28 @@ void main() {
     await tester.tap(correctionAction);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('6').last);
+    await tester.tap(find.text('5').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('ใช้วันที่นี้และตรวจตารางใหม่'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('พบจุดผิดในหัวตารางวันที่'), findsOneWidget);
+    expect(find.text('กำหนดวันที่คอลัมน์นี้'), findsOneWidget);
+
+    final secondCorrectionAction = find.text('กำหนดวันที่คอลัมน์นี้').first;
+    await tester.ensureVisible(secondCorrectionAction);
+    await tester.pumpAndSettle();
+    await tester.tap(secondCorrectionAction);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('7').last);
     await tester.pumpAndSettle();
     await tester.tap(find.text('ใช้วันที่นี้และตรวจตารางใหม่'));
     await tester.pumpAndSettle();
 
     expect(find.text('พบจุดผิดในหัวตารางวันที่'), findsNothing);
-    expect(find.textContaining('2026-11-06'), findsOneWidget);
+    expect(find.textContaining('2026-11-05'), findsOneWidget);
+    expect(find.textContaining('2026-11-07'), findsOneWidget);
     expect(find.text('กำหนดวันที่คอลัมน์นี้'), findsNothing);
   });
 }
