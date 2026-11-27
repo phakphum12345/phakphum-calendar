@@ -1,5 +1,7 @@
 # SCE 3.0 Implementation Map
 
+> This is an architectural migration map with coarse capability dispositions, not a live acceptance report. For current implementation, CI, PR and operational evidence, use [the project completion master plan](project/PROJECT_COMPLETION_MASTER_PLAN.md), [work package status](project/WORK_PACKAGE_STATUS.md) and [acceptance matrix](project/ACCEPTANCE_MATRIX.md).
+
 สถานะนี้ใช้สำหรับวางแผน migration จาก repository ปัจจุบัน โดยต้องตรวจซ้ำ
 หลังแต่ละ phase
 
