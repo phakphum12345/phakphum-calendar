@@ -314,7 +314,7 @@ class _AppShellState extends State<AppShell> {
     final inspected = await workflow.inspectRecovery(scheduleId);
     if (!mounted) return;
     if (inspected case Failure<GridRosterRecoveryAssessment>()) {
-      final failure = inspected as Failure<GridRosterRecoveryAssessment>;
+      final failure = inspected;
       await showDialog<void>(
         context: context,
         builder: (dialogContext) => AlertDialog(
@@ -391,7 +391,7 @@ class _AppShellState extends State<AppShell> {
       );
       return;
     }
-    final failure = recovered as Failure<Schedule?>;
+    final failure = recovered;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('กู้คืนไม่สำเร็จ: ${failure.message}')),
     );
