@@ -60,7 +60,12 @@ jobs:
         run: composer audit --locked
 
       - name: Check PHP formatting
-        run: vendor/bin/pint --test app config database routes tests
+        run: |
+          vendor/bin/pint --test app config database routes tests || {
+            vendor/bin/pint app/Services/Notifications/NotificationOutboxWorker.php
+            git diff -- app/Services/Notifications/NotificationOutboxWorker.php
+            exit 1
+          }
 
       - name: Check Laravel bootstrap syntax
         run: php -l bootstrap/app.php
