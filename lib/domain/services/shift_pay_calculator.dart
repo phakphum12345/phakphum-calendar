@@ -266,14 +266,16 @@ class ShiftPayCalculator {
         .where((candidate) => _specificity(candidate) == highestSpecific)
         .toList(growable: false);
     if (equallySpecific.length > 1) {
+      final conflictingRuleIds = equallySpecific
+          .map((candidate) => candidate.id)
+          .toList()
+        ..sort();
       return ShiftPayCalculation(
         dayCategory: dayCategory,
         rule: null,
         amount: null,
         isCoveredBySalary: false,
-        conflictingRuleIds: List.unmodifiable(
-          equallySpecific.map((candidate) => candidate.id),
-        ),
+        conflictingRuleIds: List.unmodifiable(conflictingRuleIds),
       );
     }
 
