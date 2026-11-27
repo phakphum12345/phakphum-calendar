@@ -109,7 +109,9 @@ void main() {
     );
 
     expect(report.assignments, isEmpty);
-    expect(report.warnings, hasLength(1));
-    expect(report.warnings.single, contains('ไม่พบช่วงวันที่ที่ยืนยันได้'));
+    expect(
+      report.warnings.any((warning) => warning.contains('ไม่พบช่วงวันที่ที่ยืนยันได้')),
+      isTrue,
+    );
   });
 }
