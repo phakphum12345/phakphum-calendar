@@ -136,41 +136,115 @@ class ScheduleController extends Controller
             'expected_revision' => ['required', 'string', 'max:160'],
         ]);
         $expected = $validated['expected_revision'];
-
-        if (preg_match('/^v([1-9][0-9]*):([a-f0-9]{64})$/', $expected, $matches) !== 1) {
+        $ownerId = $request->user()->id;
+        $absentRevision = $this->absentRevision($ownerId, $scheduleId);
+        $isAbsentRevision = hash_equals($absentRevision, $expected);
+        $matchesLiveRevision = preg_match(
+            '/^v([1-9][0-9]*):([a-f0-9]{64})$/',
+            $expected,
+            $matches,
+        ) === 1;
+        if (! $isAbsentRevision && ! $matchesLiveRevision) {
             throw ValidationException::withMessages([
-                'expected_revision' => ['A live revision token is required for deletion.'],
+                'expected_revision' => ['The supplied Schedule revision is invalid.'],
             ]);
         }
 
-        $updated = DB::table('schedule_records')
-            ->where('owner_user_id', $request->user()->id)
-            ->where('schedule_id', $scheduleId)
-            ->where('state', 'live')
-            ->where('generation', (int) $matches[1])
-            ->where('fingerprint', $matches[2])
-            ->update([
-                'generation' => DB::raw('generation + 1'),
-                'state' => 'deleted',
-                'schedule_payload' => null,
-                'fingerprint' => null,
-                'updated_at' => now(),
-            ]);
+        $result = DB::transaction(function () use (
+            $ownerId,
+            $scheduleId,
+            $expected,
+            $isAbsentRevision,
+            $matchesLiveRevision,
+            $matches,
+        ): array {
+            $record = DB::table('schedule_records')
+                ->where('owner_user_id', $ownerId)
+                ->where('schedule_id', $scheduleId)
+                ->lockForUpdate()
+                ->first();
 
-        if ($updated !== 1) {
-            return $this->conflict($request->user()->id, $scheduleId);
+            if ($record === null) {
+                if (! $isAbsentRevision) {
+                    return ['status' => 409];
+                }
+                try {
+                    $id = DB::table('schedule_records')->insertGetId([
+                        'owner_user_id' => $ownerId,
+                        'schedule_id' => $scheduleId,
+                        'generation' => 1,
+                        'state' => 'deleted',
+                        'schedule_payload' => null,
+                        'fingerprint' => null,
+                        'deleted_from_revision' => $expected,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                } catch (QueryException $exception) {
+                    if (! $this->isUniqueConstraintViolation($exception)) {
+                        throw $exception;
+                    }
+
+                    return ['status' => 409];
+                }
+                $record = DB::table('schedule_records')->where('id', $id)->first();
+
+                return ['status' => 201, 'record' => $record];
+            }
+
+            if ($record->state === 'deleted') {
+                $currentRevision = $this->revision($record);
+                if (
+                    hash_equals($currentRevision, $expected)
+                    || ($record->deleted_from_revision !== null
+                        && hash_equals($record->deleted_from_revision, $expected))
+                ) {
+                    return ['status' => 200, 'record' => $record];
+                }
+
+                return ['status' => 409];
+            }
+
+            if (! $matchesLiveRevision) {
+                return ['status' => 409];
+            }
+
+            $updated = DB::table('schedule_records')
+                ->where('id', $record->id)
+                ->where('owner_user_id', $ownerId)
+                ->where('schedule_id', $scheduleId)
+                ->where('state', 'live')
+                ->where('generation', (int) $matches[1])
+                ->where('fingerprint', $matches[2])
+                ->update([
+                    'generation' => DB::raw('generation + 1'),
+                    'state' => 'deleted',
+                    'schedule_payload' => null,
+                    'fingerprint' => null,
+                    'deleted_from_revision' => $expected,
+                    'updated_at' => now(),
+                ]);
+            if ($updated !== 1) {
+                return ['status' => 409];
+            }
+
+            return [
+                'status' => 200,
+                'record' => DB::table('schedule_records')->where('id', $record->id)->first(),
+            ];
+        });
+
+        if ($result['status'] === 409) {
+            return $this->conflict($ownerId, $scheduleId);
         }
 
-        $record = DB::table('schedule_records')
-            ->where('owner_user_id', $request->user()->id)
-            ->where('schedule_id', $scheduleId)
-            ->first();
+        $record = $result['record'];
 
         return response()->json([
             'data' => null,
             'revision' => $this->revision($record),
             'state' => 'deleted',
-        ]);
+        ], $result['status']);
     }
 
     private function saved(object $record, int $status = 200): JsonResponse
