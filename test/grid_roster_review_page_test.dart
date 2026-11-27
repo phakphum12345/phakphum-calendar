@@ -159,12 +159,19 @@ void main() {
       find.text('คำแนะนำพนักงาน: ${aliasEmployee.displayName}'),
       findsOneWidget,
     );
-    final checkbox = tester.widget<CheckboxListTile>(
-      find.byType(CheckboxListTile).first,
-    );
-    expect(checkbox.value, isFalse);
+    final checkboxFinder = find.byType(CheckboxListTile).first;
+    // The fixed commit bar occupies the bottom of the test viewport. Bring
+    // the assignment control fully into the ListView's visible area before
+    // tapping; otherwise the tap can land on the commit bar underneath it.
+    await tester.ensureVisible(checkboxFinder);
+    await tester.pumpAndSettle();
 
-    await tester.tap(find.byType(CheckboxListTile).first);
+    final checkbox = tester.widget<CheckboxListTile>(checkboxFinder);
+    expect(checkbox.value, isFalse);
+    expect(checkbox.onChanged, isNotNull);
+    expect(find.byType(DropdownButtonFormField<String>), findsNothing);
+
+    await tester.tap(checkboxFinder);
     await tester.pumpAndSettle();
 
     final dropdownFinder = find.byType(DropdownButtonFormField<String>);
