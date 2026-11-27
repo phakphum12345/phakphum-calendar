@@ -1,5 +1,7 @@
 # Repository Audit — 2026-11-22
 
+> **Historical repository audit.** This report records main SHA `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5`, five open PRs and CI/deployment evidence from 2026-11-22. Those values are not current. Use [the live project completion master plan](project/PROJECT_COMPLETION_MASTER_PLAN.md), [PR dependency map](project/PR_DEPENDENCY_MAP.md) and [acceptance matrix](project/ACCEPTANCE_MATRIX.md) for current decisions.
+
 Repository: `phakphum12345/phakphum-calendar`
 Default branch: `main`
 Audited main SHA: `e9ed13fb2f0ed82571ce7f2b39b57503d04e5ce5`
