@@ -96,7 +96,7 @@ void main() {
       scheduleRepository: repository,
       journal: GridRosterBundleJournal(store: _MemoryStore()),
     );
-    const workflow = RosterHistoryRestoreWorkflow(
+    final workflow = RosterHistoryRestoreWorkflow(
       gridImportWorkflow: gridWorkflow,
     );
     final revision = _revision('drive-revision-17');
