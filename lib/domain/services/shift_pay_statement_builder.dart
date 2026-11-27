@@ -80,6 +80,7 @@ class ShiftPayStatementBuilder {
     }
 
     final profileFingerprint = _fingerprintProfile(profile);
+    final statementDecimalPlaces = _statementDecimalPlaces(profile);
     final seenAssignments = <String>{};
     final lines = <ShiftPayStatementLine>[];
     for (final month in schedule.months) {
@@ -103,6 +104,7 @@ class ShiftPayStatementBuilder {
                 shiftCode: assignment.shift.code,
                 location: assignment.location,
                 hours: assignment.shift.workingHours,
+                decimalPlaces: profile.decimalPlaces,
                 status: ShiftPayStatementLineStatus.notConfirmed,
                 amount: null,
                 source: null,
@@ -124,6 +126,7 @@ class ShiftPayStatementBuilder {
                 shiftCode: assignment.shift.code,
                 location: assignment.location,
                 hours: assignment.shift.workingHours,
+                decimalPlaces: profile.decimalPlaces,
                 status: ShiftPayStatementLineStatus.duplicateAssignment,
                 amount: null,
                 source: null,
@@ -147,6 +150,7 @@ class ShiftPayStatementBuilder {
                 shiftCode: assignment.shift.code,
                 location: assignment.location,
                 hours: assignment.shift.workingHours,
+                decimalPlaces: profile.decimalPlaces,
                 status: ShiftPayStatementLineStatus.employmentTypeRequired,
                 amount: null,
                 source: null,
@@ -172,6 +176,10 @@ class ShiftPayStatementBuilder {
           );
           final calculation = resolved.calculation;
           final status = _statusFor(resolved);
+          final lineDecimalPlaces = _decimalPlacesForSource(
+            profile,
+            resolved.source,
+          );
           lines.add(
             ShiftPayStatementLine(
               assignmentKey: key,
@@ -183,6 +191,7 @@ class ShiftPayStatementBuilder {
               shiftCode: assignment.shift.code,
               location: assignment.location,
               hours: assignment.shift.workingHours,
+              decimalPlaces: lineDecimalPlaces,
               status: status,
               amount: calculation.amount,
               source: resolved.source,
@@ -208,7 +217,7 @@ class ShiftPayStatementBuilder {
       return left.assignmentKey.compareTo(right.assignmentKey);
     });
 
-    final scale = _decimalScale(profile.decimalPlaces);
+    final scale = _decimalScale(statementDecimalPlaces);
     var totalMinorUnits = 0;
     for (final line in lines) {
       if (line.status == ShiftPayStatementLineStatus.payable &&
@@ -227,7 +236,7 @@ class ShiftPayStatementBuilder {
       periodEnd: end,
       generatedAtUtc: generatedAtUtc,
       currencyCode: profile.currencyCode,
-      decimalPlaces: profile.decimalPlaces,
+      decimalPlaces: statementDecimalPlaces,
       totalMinorUnits: totalMinorUnits,
       lines: List.unmodifiable(lines),
     );
@@ -335,6 +344,28 @@ class ShiftPayStatementBuilder {
       "${value.month.toString().padLeft(2, '0')}-"
       "${value.day.toString().padLeft(2, '0')}";
 
+  int _decimalPlacesForSource(
+    ShiftPayProfile profile,
+    ShiftPayRuleSource? source,
+  ) {
+    if (source == ShiftPayRuleSource.organization) {
+      return profile.organizationDecimalPlaces ?? profile.decimalPlaces;
+    }
+    return profile.decimalPlaces;
+  }
+
+  int _statementDecimalPlaces(ShiftPayProfile profile) {
+    final organizationPrecision =
+        profile.organizationDecimalPlaces ?? profile.decimalPlaces;
+    return switch (profile.mode) {
+      ShiftPayMode.personal => profile.decimalPlaces,
+      ShiftPayMode.organization => organizationPrecision,
+      ShiftPayMode.hybrid => profile.decimalPlaces > organizationPrecision
+          ? profile.decimalPlaces
+          : organizationPrecision,
+    };
+  }
+
   int _decimalScale(int places) => switch (places) {
     0 => 1,
     1 => 10,
@@ -356,6 +387,7 @@ class ShiftPayStatementLine {
     required this.shiftCode,
     required this.location,
     required this.hours,
+    required this.decimalPlaces,
     required this.status,
     required this.amount,
     required this.source,
@@ -376,6 +408,7 @@ class ShiftPayStatementLine {
   final String shiftCode;
   final String? location;
   final double hours;
+  final int decimalPlaces;
   final ShiftPayStatementLineStatus status;
   final double? amount;
   final ShiftPayRuleSource? source;
