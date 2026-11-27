@@ -34,7 +34,6 @@ import '../../features/calendar_engine/domain/failed_sync_repository.dart';
 import '../../features/calendar_engine/infrastructure/google_calendar_sync_gateway.dart';
 import '../../features/calendar_engine/infrastructure/shared_preferences_failed_sync_repository.dart';
 import '../../features/history/domain/sync_history_repository.dart';
-import '../../features/history/domain/sync_history_entry.dart';
 import '../../features/history/application/sync_history_controller.dart';
 import '../../features/history/infrastructure/shared_preferences_sync_history_repository.dart';
 import '../../features/rule_engine/application/rule_engine.dart'
