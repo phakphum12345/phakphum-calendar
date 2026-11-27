@@ -8,6 +8,7 @@ import '../domain/a1_notation.dart';
 import '../domain/monthly_roster_section.dart';
 import '../domain/normalized_cell.dart';
 import '../domain/shift_parser_input.dart';
+import '../../google_sheets/domain/sheet_color.dart';
 import 'monthly_roster_section_parser.dart';
 
 typedef GridRosterWorksheetRowsReader =
@@ -19,6 +20,16 @@ class GridRosterExcelInputAdapter {
 
   String sourceFingerprint(ImportFile file) =>
       'sha256:${sha256.convert(file.bytes)}';
+
+  SheetColor? _sheetColor(int? value) {
+    if (value == null) return null;
+    return SheetColor(
+      red: ((value >> 16) & 0xFF) / 255,
+      green: ((value >> 8) & 0xFF) / 255,
+      blue: (value & 0xFF) / 255,
+      alpha: ((value >> 24) & 0xFF) / 255,
+    );
+  }
 
   ShiftParserInput toParserInput({
     required ImportFile file,
@@ -45,7 +56,7 @@ class GridRosterExcelInputAdapter {
             columnIndex: cell.columnIndex,
             text: cell.displayValue,
             rawValue: cell.value,
-            backgroundColor: null,
+            backgroundColor: _sheetColor(cell.backgroundColorValue),
             isMerged: cell.isMerged,
             mergedAnchorA1: cell.mergedAnchorRowIndex == null ||
                     cell.mergedAnchorColumnIndex == null
