@@ -35,7 +35,7 @@ void main() {
       store: InMemoryScheduleKeyValueStore(),
     );
     final original = canonicalScheduleFixture(name: 'Persisted roster');
-    await repository.save(original);
+    await _seedSchedule(repository, original);
     final controller = ScheduleController(
       service: ScheduleService(schedule: original),
       repository: repository,
@@ -53,7 +53,7 @@ void main() {
       store: InMemoryScheduleKeyValueStore(),
     );
     final original = canonicalScheduleFixture(name: 'Persisted roster');
-    await repository.save(original);
+    await _seedSchedule(repository, original);
     final controller = ScheduleController(
       service: ScheduleService(
         schedule: canonicalScheduleFixture(name: 'Stale imported roster'),
@@ -142,4 +142,19 @@ class _RevisionRepository
 
   @override
   Future<Result<void>> delete(String id) async => const Success(null);
+}
+
+Future<void> _seedSchedule(
+  SharedPreferencesScheduleRepository repository,
+  Schedule schedule,
+) async {
+  final absent = await repository.findById(schedule.id);
+  expect(absent, isA<Success<Schedule?>>());
+  expect((absent as Success<Schedule?>).value, isNull);
+  final absentRevision = repository.revisionForAbsentSchedule(schedule.id);
+  expect(absentRevision, isNotNull);
+  expect(
+    await repository.saveIfRevision(schedule, absentRevision!),
+    isA<Success<Schedule>>(),
+  );
 }
