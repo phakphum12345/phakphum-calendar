@@ -36,6 +36,18 @@ void main() {
     },
   );
 
+  test('legacy save fails closed without the exact caller snapshot revision', () async {
+    final repository = SharedPreferencesScheduleRepository(
+      store: InMemoryScheduleKeyValueStore(),
+    );
+
+    final result = await repository.save(canonicalScheduleFixture());
+    final loaded = await repository.findById('schedule-1');
+
+    expect(result, isA<PersistenceFailure<Schedule>>());
+    expect((loaded as Success<Schedule?>).value, isNull);
+  });
+
   test('missing stored data is a successful not-found result', () async {
     final repository = SharedPreferencesScheduleRepository(
       store: InMemoryScheduleKeyValueStore(),
