@@ -263,7 +263,7 @@ class ShiftPayCalculator {
 
     final highestSpecificity = _specificity(candidates.first);
     final equallySpecific = candidates
-        .where((candidate) => _specificity(candidate) == highestSpecific)
+        .where((candidate) => _specificity(candidate) == highestSpecificity)
         .toList(growable: false);
     if (equallySpecific.length > 1) {
       final conflictingRuleIds = equallySpecific
