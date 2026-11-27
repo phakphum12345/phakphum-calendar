@@ -64,6 +64,7 @@ class GridRosterCanonicalConversionResult {
       targetScheduleRevision: preparedProvenance.targetScheduleRevision,
       lifecycle: GridRosterImportLifecycle.committed,
       acceptedScheduleFingerprint: acceptedScheduleFingerprint,
+      sourceRevisionId: preparedProvenance.sourceRevisionId,
       sections: preparedProvenance.sections,
       assignments: preparedProvenance.assignments,
       diagnostics: preparedProvenance.diagnostics,
@@ -96,6 +97,7 @@ class GridRosterCanonicalConverter {
     required String importRunId,
     required String parserVersion,
     required DateTime createdAtUtc,
+    String? sourceRevisionId,
   }) {
     _requireText(importRunId, 'importRunId');
     _requireText(parserVersion, 'parserVersion');
@@ -399,6 +401,7 @@ class GridRosterCanonicalConverter {
       targetScheduleId: targetSchedule.id,
       targetScheduleRevision: session.targetScheduleRevision,
       lifecycle: GridRosterImportLifecycle.prepared,
+      sourceRevisionId: sourceRevisionId,
       sections: provenanceSections,
       assignments: provenanceAssignments,
       diagnostics: diagnostics,
