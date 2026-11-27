@@ -180,6 +180,19 @@ class ScheduleController extends Controller
                     'updated_at' => now(),
                 ]);
                 if ($inserted !== 1) {
+                    $record = DB::table('schedule_records')
+                        ->where('owner_user_id', $ownerId)
+                        ->where('schedule_id', $scheduleId)
+                        ->first();
+                    if (
+                        $record !== null
+                        && $record->state === 'deleted'
+                        && $record->deleted_from_revision !== null
+                        && hash_equals($record->deleted_from_revision, $expected)
+                    ) {
+                        return ['status' => 200, 'record' => $record];
+                    }
+
                     return ['status' => 409];
                 }
                 $record = DB::table('schedule_records')
