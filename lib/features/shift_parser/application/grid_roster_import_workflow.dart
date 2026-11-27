@@ -10,6 +10,7 @@ import '../../../domain/repositories/schedule_repository.dart';
 import '../../../domain/repositories/conditional_schedule_writer.dart';
 import '../../../domain/repositories/schedule_revision_source.dart';
 import '../../excel_import/domain/workbook_info.dart';
+import '../../../services/local_roster_file_service.dart';
 import '../../schedule/data/schedule_json_codec.dart';
 import '../data/backend_grid_roster_import_journal_gateway.dart';
 import '../data/grid_roster_bundle_journal.dart';
@@ -97,6 +98,33 @@ class GridRosterImportWorkflow {
     return workbookScanner.scan(
       workbook: workbook,
       readWorksheet: readWorksheet,
+    );
+  }
+
+  /// Scans CSV, TSV and delimited text documents through the same review path.
+  /// XLSX must use [scanWorkbook] so merged-cell and cell-style provenance is
+  /// read from the original workbook rather than a lossy row snapshot.
+  MonthlyRosterParseReport scanDelimitedDocument({
+    required LocalRosterDocument document,
+    required String fileName,
+    String? timeZone,
+  }) {
+    if (document.extension == 'xlsx') {
+      throw ArgumentError(
+        'XLSX documents must use scanWorkbook to preserve workbook metadata.',
+      );
+    }
+    final fingerprint = document.sourceFingerprint;
+    if (fingerprint == null || fingerprint.trim().isEmpty) {
+      throw ArgumentError(
+        'Delimited roster document is missing its source fingerprint.',
+      );
+    }
+    return workbookScanner.scanSnapshots(
+      snapshots: document.snapshots,
+      spreadsheetTitle: fileName,
+      sourceFingerprint: fingerprint,
+      timeZone: timeZone,
     );
   }
 
