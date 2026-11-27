@@ -18,7 +18,9 @@ return new class extends Migration
             $table->unsignedInteger('attempts')->default(0);
             $table->timestamp('available_at')->index();
             $table->timestamp('claimed_at')->nullable();
+            $table->uuid('claim_token')->nullable()->index();
             $table->timestamp('sent_at')->nullable();
+            $table->timestamp('dead_lettered_at')->nullable();
             $table->text('last_error')->nullable();
             $table->timestamps();
 
