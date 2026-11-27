@@ -60,6 +60,8 @@ final class WebPushSender implements WebPushTransport
             return ['status' => 'permanent', 'error_code' => 'push_provider_rejected_request'];
         } catch (\Illuminate\Http\Client\ConnectionException) {
             return ['status' => 'retryable', 'error_code' => 'push_provider_unreachable'];
+        } catch (WebPushConfigurationException) {
+            return ['status' => 'retryable', 'error_code' => 'push_configuration_unavailable'];
         } catch (Throwable) {
             // Never persist provider endpoints, payloads, tokens or exception text.
             return ['status' => 'permanent', 'error_code' => 'push_payload_or_configuration_invalid'];
