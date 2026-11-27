@@ -62,7 +62,7 @@ PR #192 extends the existing parser boundary rather than introducing a separate 
 - Source fingerprint and section provenance remain attached through review and conditional Schedule persistence.
 - Date-axis validation occurs before worker assignment; ambiguous or invalid date sequences remain review/blocking diagnostics.
 
-**Current evidence:** PR #192 head `2f6f9043db8876ea5ed49d85961658fac95942ac` has new exact-head CI pending after the latest source/test changes. PR #199's standalone orientation foundation was closed without merge after its work was superseded by #192.
+**Current evidence:** PR #192 head `b3dd82757c9652a774b35f7a975170a0bc6f26af` has new exact-head CI pending after the latest source/test changes. PR #199's standalone orientation foundation was closed without merge after its work was superseded by #192.
 
 **Known limitations:** theme-color resolution remains unimplemented; source color values must be validated against real workbooks. Original X-OPD November 2569, 16 Nov–15 Dec 2569 and US Clinic ภปร.4 workbook acceptance is still pending. Synthetic fixtures do not establish correctness for those original files.
 
