@@ -24,7 +24,7 @@
 | E-02 | Owner/calendar scoped lease and fencing | #196 | CI VERIFIED (PR head) | Multi-client lease expiry/reclaim and stale worker tests |
 | E-03 | Ambiguous insert reconciliation | #196 design | PARTIAL | Real provider timeout and read-back test |
 | E-04 | Production backend HTTPS/auth/durable DB/APP_KEY recovery | Not proven by PR CI | UNKNOWN | Deployment config and restore evidence |
-| E-05 | Explicit Calendar crash-resume/recovery after worker/process restart | No recovery endpoint or executor recovery method found in #196; insert reconciler only handles an in-flight ambiguous response | NOT IMPLEMENTED / UNKNOWN | Add an explicit owner-authorized recovery workflow with durable replay evidence and controlled provider tests |
+| E-05 | Explicit Calendar crash-resume/recovery after worker/process restart | #196 `ResumeSyncService.recoverRun` / `recoverHistory`, encrypted durable ledger replay, lease reacquisition and original ETag/sync-ID preconditions; unit/API tests | PARTIAL — CI VERIFIED on PR head | Controlled Google test-calendar crash/timeout/restart acceptance and production database contention |
 | F-01 | Personal/Organization/Hybrid rule-source resolution | Existing mainline foundations + #201 | PARTIAL | Cross-client/API parity |
 | F-02 | Immutable monthly statement calculation | #203 | CI VERIFIED (PR head) | Canonical confirmed assignment lifecycle |
 | F-03 | Persisted statements/API/UI/export/authorization | Not in #203 current scope | NOT IMPLEMENTED / UNKNOWN | Implement and test end-to-end |
