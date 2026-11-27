@@ -11,7 +11,7 @@ import 'package:phakphum_calendar/models/app_settings.dart';
 import 'package:phakphum_calendar/models/roster_period.dart';
 import 'package:phakphum_calendar/models/shift.dart';
 import 'package:phakphum_calendar/services/local_roster_file_service.dart';
-import 'package:phakphum_calendar/test/support/in_memory_conditional_schedule_repository.dart';
+import 'support/in_memory_conditional_schedule_repository.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
