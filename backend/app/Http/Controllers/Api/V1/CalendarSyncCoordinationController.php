@@ -339,7 +339,12 @@ class CalendarSyncCoordinationController extends Controller
             'status' => ['required', 'in:prepared,running,succeeded,failed'],
             'attempt_count' => ['required', 'integer', 'min:0', 'max:65535'],
             'provider_event_id' => ['nullable', 'string', 'max:512'],
-            'last_error' => ['nullable', 'string', 'max:4000'],
+            'last_error' => [
+                'nullable',
+                'string',
+                'max:64',
+                'in:stale_precondition,provider_timeout,provider_event_not_found,provider_operation_failed,operation_exception',
+            ],
         ]);
 
         $result = DB::transaction(function () use ($request, $runId, $operationKey, $data): array {
