@@ -1,6 +1,6 @@
 # Roster Configuration & Intelligent Sync Roadmap
 
-- Status: Active target roadmap; delivery evidence and remaining gaps are tracked in section 17.
+- Status: Active target roadmap; delivery evidence and remaining gaps are tracked in sections 17–18 as dated snapshots. Current repository/PR acceptance status is maintained in [the live project completion master plan](project/PROJECT_COMPLETION_MASTER_PLAN.md), [work package status](project/WORK_PACKAGE_STATUS.md) and [acceptance matrix](project/ACCEPTANCE_MATRIX.md).
 - Repository: `phakphum12345/phakphum-calendar`
 - Evidence baseline refreshed: `main@19a28843fa379c16417acff5fcdd691fc4f9818f` (2026-11-18)
 - Execution rule: READ → ANALYZE → MODIFY → TEST → AUDIT
@@ -298,7 +298,9 @@ The statements in this section describe the original planning baseline and must 
 The initial source-level findings are recorded in [Roster Phase 0 Source Audit](ROSTER_PHASE_0_SOURCE_AUDIT.md). That audit is a historical snapshot from 2026-11-10, not a current claim that the first execution task is still pending. Any remaining call-site tracing or fresh test baseline must be tracked as an explicit open item and verified against current main before closure.
 
 
-## 17. Implementation status and evidence — 2026-11-18
+## 17. Historical implementation status and evidence — 2026-11-18
+
+> Historical snapshot against `main@19a28843fa379c16417acff5fcdd691fc4f9818f`; not current status. See the project completion documents linked above.
 
 This section records the roster-import/review/preview delivery track. It is a current-state supplement to the target workflow above, not a claim that every target capability is complete. The broader Flexible Workforce phases in `docs/flexible-workforce/ROADMAP.md` remain a separate product roadmap.
 
@@ -354,7 +356,9 @@ The roster review, template-resolution, synthetic-layout, preview, and local-con
 
 ---
 
-## 18. Universal multi-source roster ingestion — reconciliation plan (2026-11-26)
+## 18. Historical universal multi-source roster ingestion reconciliation — 2026-11-26
+
+> Historical source-audit snapshot against `main@7ae6b3020c0cc331e2ab730591df44646b0ef530`; current implementation and CI status are in the project completion documents linked above.
 
 **Status:** Source-level reconciliation completed for the current `main` snapshot. Implementation is not yet complete. This section extends the existing roadmap; it deliberately does not create a second import specification or a parallel parser.
 
