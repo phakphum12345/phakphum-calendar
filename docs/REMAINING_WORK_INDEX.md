@@ -1,5 +1,7 @@
 # Remaining Work Index — 2026-11-24
 
+> **Historical backlog snapshot.** PR states, feature status and priorities below were recorded on 2026-11-24. Do not use this file as the current execution tracker. Use [live work package status](project/WORK_PACKAGE_STATUS.md), [master plan](project/PROJECT_COMPLETION_MASTER_PLAN.md) and [acceptance matrix](project/ACCEPTANCE_MATRIX.md).
+
 This is the concise execution checklist. The detailed design and test criteria are in the linked documents.
 
 ## P0 — Required for the requested feature
