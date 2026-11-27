@@ -16,7 +16,7 @@
 9. **Notification delivery is not fully accepted.** #191 CI does not prove actual browser push delivery, expired subscription cleanup under production conditions, worker operations or native iOS/Android push.
 10. **Deployment is unverified.** README identifies GitHub Pages as the web app, but this audit did not verify the current deployed commit or production runtime.
 11. **Xcode runner scheduling is not accepted.** #192 macOS Xcode passed on its latest head while iOS remains queued; #196 has iOS/macOS pending; #208's new base-updated head has macOS/iOS queued (the prior head's macOS pass and cancelled iOS rerun do not apply). Workflows use `vars.IOS_RUNNER_LABEL` / `vars.MACOS_RUNNER_LABEL` and fall back to `macos-15`; repository variable values and actual runner allocation were not visible through the connector. Do not count queued/cancelled jobs as platform-build PASS or claim signed/device-ready artifacts.
-12. **Branch protection is unknown.** Repository metadata does not expose required status checks/rulesets through the connected audit functions. Confirm in GitHub Settings before merge.
+12. **Branch protection is not verified.** The repository rulesets API returned an empty list; the branch-protection endpoint returned HTTP 403 `Resource not accessible by integration`. Do not assume server-enforced required checks; verify the branch protection setting in GitHub before any merge.
 13. **Local working tree is unknown.** The connected GitHub audit does not inspect the user's local Windows checkout or uncommitted changes.
 
 ## Data-safety boundaries
