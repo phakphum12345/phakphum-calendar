@@ -179,6 +179,78 @@ void main() {
     );
   });
 
+  test('supports repeated explicit corrections against the rebuilt source grid', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'November 2026',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['GEN 1 พฤศจิกายน 2569 - 8 พฤศจิกายน 2569']),
+        ..._row(1, ['วันที่', 1, 2, 3, 4, 5, 5, 7, 7]),
+        ..._row(2, ['GEN', 'ก', null, null, null, null, 'ข', 'ค', 'ง']),
+      ],
+    );
+    const parser = MonthlyRosterSectionParser();
+    final original = parser.parse(input).sections.single;
+
+    final firstCorrection = parser.correctDateColumns(
+      section: original,
+      correctedDatesByColumn: {6: DateTime(2026, 11, 6)},
+    );
+    expect(firstCorrection.dateAnomalies, isNotEmpty);
+    expect(firstCorrection.sourceCells, isNotEmpty);
+
+    final secondCorrection = parser.correctDateColumns(
+      section: firstCorrection,
+      correctedDatesByColumn: {8: DateTime(2026, 11, 8)},
+    );
+
+    expect(secondCorrection.dateAnomalies, isEmpty);
+    expect(secondCorrection.dateColumns, hasLength(8));
+    expect(
+      secondCorrection.assignments
+          .singleWhere((item) => item.workerName == 'ง')
+          .date,
+      DateTime(2026, 11, 8),
+    );
+    expect(
+      secondCorrection.sourceCells.any(
+        (cell) =>
+            cell.rowIndex == secondCorrection.headerRowIndex &&
+            cell.columnIndex == 8 &&
+            cell.rawValue == DateTime(2026, 11, 8),
+      ),
+      isTrue,
+    );
+  });
+
+  test('rejects an explicit date correction outside the section period', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'November 2026',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['GEN 1 พฤศจิกายน 2569 - 7 พฤศจิกายน 2569']),
+        ..._row(1, ['วันที่', 1, 2, 3, 4, 5, 5, 7]),
+        ..._row(2, ['GEN', 'ก', null, null, null, null, 'ข', 'ค']),
+      ],
+    );
+    const parser = MonthlyRosterSectionParser();
+    final section = parser.parse(input).sections.single;
+
+    expect(
+      () => parser.correctDateColumns(
+        section: section,
+        correctedDatesByColumn: {6: DateTime(2026, 11, 8)},
+      ),
+      throwsArgumentError,
+    );
+  });
+
   test('does not apply a date correction without a source header column', () {
     final input = ShiftParserInput(
       spreadsheetId: 'spreadsheet',
