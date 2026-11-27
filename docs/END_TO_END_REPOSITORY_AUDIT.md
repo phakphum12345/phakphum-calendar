@@ -1,5 +1,7 @@
 # End-to-End Repository Audit
 
+> **Historical audit snapshot (2026-11-22).** This audit describes main SHA `168559498de58a071ac43a81e410227f0f83ec4b` and PR state at that date. Use [the live project completion master plan](project/PROJECT_COMPLETION_MASTER_PLAN.md) and [PR dependency map](project/PR_DEPENDENCY_MAP.md) for current repository evidence.
+
 **Repository:** `phakphum12345/phakphum-calendar`  
 **Audit date:** 2026-11-22  
 **Audited main SHA:** `168559498de58a071ac43a81e410227f0f83ec4b`  
