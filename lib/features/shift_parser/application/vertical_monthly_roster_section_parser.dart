@@ -526,16 +526,6 @@ class VerticalMonthlyRosterSectionParser {
     return null;
   }
 
-  bool _isPeriodEvidence(String text) {
-    if (text.trim().isEmpty) return false;
-    try {
-      periodParser.parse(text);
-      return true;
-    } on FormatException {
-      return _parseMonthOnly(text) != null;
-    }
-  }
-
   ThaiRosterPeriod? _parseMonthOnly(String text) {
     const months = <String, int>{
       'มกราคม': 1,
