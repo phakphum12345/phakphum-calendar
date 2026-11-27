@@ -238,6 +238,51 @@ void main() {
     expect(gateway.deletedSyncIds, ['sync-delete']);
   });
 
+  test('does not replay a terminal successful server run', () async {
+    final history = _MemoryHistoryRepository()
+      ..entries['local-history-success'] = SyncHistoryEntry(
+        id: 'local-history-success',
+        startedAt: DateTime(2026, 11, 26, 8),
+        status: SyncHistoryStatus.success,
+        inserted: 1,
+        updated: 0,
+        deleted: 0,
+        failed: 0,
+        scheduleId: 'schedule-success',
+        serverRunId: 'remote-run-success',
+      );
+    final gateway = _FakeCalendarGateway();
+    final coordination = _FakeCoordinationGateway()
+      ..runRecord = CalendarSyncRunRecord(
+        runId: 'remote-run-success',
+        calendarId: 'primary',
+        scheduleId: 'schedule-success',
+        status: 'success',
+        startedAt: DateTime(2026, 11, 26, 8),
+        heartbeatAt: DateTime(2026, 11, 26, 8, 1),
+      );
+
+    await expectLater(
+      ResumeSyncService(
+        gateway: gateway,
+        historyRepository: history,
+        failedRepository: _MemoryFailedSyncRepository(),
+        coordinationGateway: coordination,
+      ).recoverHistory('local-history-success'),
+      throwsA(isA<StateError>().having(
+        (error) => error.message,
+        'message',
+        contains('not eligible for recovery'),
+      )),
+    );
+
+    expect(gateway.insertCount, 0);
+    expect(
+      coordination.calls.where((call) => call.startsWith('acquire:')),
+      isEmpty,
+    );
+  });
+
   test('maps owner-scoped server run summaries to visible history entries', () async {
     final coordination = _FakeCoordinationGateway()
       ..runRecords = [
