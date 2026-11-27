@@ -298,7 +298,7 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
                   section.endDate != null)
                 TextButton.icon(
                   key: ValueKey(
-                    'grid-roster-correct-date-${section.sourceSheetId ?? 'local'}-${section.headerRowIndex}-$column',
+                    'grid-roster-correct-date-${section.sourceSheetId ?? 'local'}-${section.headerRowIndex}-$column-${anomaly.code}',
                   ),
                   onPressed: () => _correctDateColumn(section, column),
                   icon: const Icon(Icons.edit_calendar),
