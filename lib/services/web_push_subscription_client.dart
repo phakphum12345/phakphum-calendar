@@ -60,8 +60,10 @@ class WebPushSubscriptionClient {
     );
   }
 
+  bool get isApiConfigured => _baseUri != null;
+
   bool get isConfigured =>
-      _baseUri != null && vapidPublicKey.isNotEmpty && _browser.isSupported;
+      isApiConfigured && vapidPublicKey.isNotEmpty && _browser.isSupported;
 
   bool get isSupported => _browser.isSupported;
 
