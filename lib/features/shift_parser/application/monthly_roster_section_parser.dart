@@ -263,8 +263,24 @@ class MonthlyRosterSectionParser {
           ),
       ];
       final rosterRows = <MonthlyRosterRow>[];
-      final configuredStart = layoutProfile?.dataStartRow;
-      final configuredEnd = layoutProfile?.dataEndRow;
+      final profileStartRow = layoutProfile?.dataStartRow;
+      final profileEndRow = layoutProfile?.dataEndRow;
+      // Row coordinates in a reusable profile are anchored to its first
+      // configured date header. Apply the same relative offsets to each
+      // subsequent dated section instead of treating the first block's
+      // absolute worksheet rows as universal coordinates.
+      final profileHeaderAnchor = configuredHeaderRows.isEmpty
+          ? (detectedHeaderRows.isEmpty
+              ? headerRow
+              : detectedHeaderRows.reduce((a, b) => a < b ? a : b))
+          : configuredHeaderRows.reduce((a, b) => a < b ? a : b);
+      final sectionRowOffset = headerRow - profileHeaderAnchor;
+      final configuredStart = profileStartRow == null
+          ? null
+          : profileStartRow + sectionRowOffset;
+      final configuredEnd = profileEndRow == null
+          ? null
+          : profileEndRow + sectionRowOffset;
       final hasValidConfiguredStart = configuredStart != null &&
           configuredStart > headerRow &&
           configuredStart < nextHeader;
@@ -277,8 +293,8 @@ class MonthlyRosterSectionParser {
       final sectionEnd = hasValidConfiguredEnd
           ? configuredEnd + 1
           : nextHeader;
-      if (configuredStart != null && !hasValidConfiguredStart ||
-          configuredEnd != null && !hasValidConfiguredEnd) {
+      if ((profileStartRow != null && !hasValidConfiguredStart) ||
+          (profileEndRow != null && !hasValidConfiguredEnd)) {
         warnings.add('Layout Profile ไม่ตรงกับขอบเขตส่วน "$title"; ใช้ขอบเขตที่ค้นพบจากแหล่งข้อมูลแทน');
       }
       var previousWasGen = false;
