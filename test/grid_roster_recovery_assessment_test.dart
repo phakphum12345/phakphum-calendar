@@ -133,10 +133,13 @@ void main() {
     );
   });
 
-  Future<void> writeCommittedJournal(Schedule candidate) async {
+  Future<void> writeCommittedJournal(
+    Schedule candidate, {
+    String importRunId = 'recovery-run-1',
+  }) async {
     final expectedRevision = repository.revisionForAbsentSchedule(scheduleId)!;
     final prepared = GridRosterImportProvenance(
-      importRunId: 'recovery-run-1',
+      importRunId: importRunId,
       sourceFingerprint: 'sha256:source',
       parserVersion: 'grid-parser/1',
       createdAtUtc: createdAt,
@@ -225,6 +228,26 @@ void main() {
       GridRosterRecoveryDisposition.alreadyApplied,
     );
     expect(assessment.canRecover, isFalse);
+  });
+
+  test('rejects a journal replaced after the reviewer inspected it', () async {
+    final reviewedCandidate =
+        Schedule(id: scheduleId, name: 'Reviewed candidate');
+    await writeCommittedJournal(reviewedCandidate);
+    final inspected = await workflow.inspectRecovery(scheduleId);
+    expect(inspected, isA<Success<GridRosterRecoveryAssessment>>());
+    final assessment =
+        (inspected as Success<GridRosterRecoveryAssessment>).value;
+
+    await writeCommittedJournal(
+      Schedule(id: scheduleId, name: 'Replacement candidate'),
+      importRunId: 'recovery-run-2',
+    );
+
+    final recovered = await workflow.recoverAssessment(assessment);
+
+    expect(recovered, isA<ValidationFailure<Schedule?>>());
+    expect(repository.value, isNull);
   });
 
   test('does not treat remote journal failure as an empty journal', () async {
