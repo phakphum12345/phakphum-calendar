@@ -978,7 +978,7 @@ class MonthlyRosterSectionParser {
         if (entry.value.length == 1) {
           missing.add(_formatDate(entry.value.single));
         } else {
-          missing.add('วันที่ \${entry.key} ขาด $missingCount ครั้งในช่วงที่ระบุ');
+          missing.add('วันที่ ${entry.key} ขาด $missingCount ครั้งในช่วงที่ระบุ');
         }
       }
 
@@ -992,7 +992,7 @@ class MonthlyRosterSectionParser {
             code: 'day_sequence_mismatch',
             columnIndex: columns[offset],
             displayedDay: actualDay,
-            message: 'คอลัมน์ \${columns[offset] + 1} แสดงวันที่ $actualDay แต่ตามช่วงที่ระบุควรเป็น \${expected.day}',
+            message: 'คอลัมน์ ${columns[offset] + 1} แสดงวันที่ $actualDay แต่ตามช่วงที่ระบุควรเป็น ${expected.day}',
           ),
         );
 
@@ -1006,7 +1006,7 @@ class MonthlyRosterSectionParser {
               code: 'out_of_order',
               columnIndex: columns[offset],
               displayedDay: actualDay,
-              message: 'วันที่ในคอลัมน์ \${columns[offset] + 1} ไม่เรียงตามช่วงที่ระบุ',
+              message: 'วันที่ในคอลัมน์ ${columns[offset] + 1} ไม่เรียงตามช่วงที่ระบุ',
             ),
           );
         }
@@ -1016,7 +1016,7 @@ class MonthlyRosterSectionParser {
         anomalies.add(
           MonthlyRosterDateAnomaly(
             code: 'missing_dates',
-            message: 'ไม่สามารถจับคู่วันที่ในช่วงที่ระบุได้ครบ: \${missing.join(', ')}',
+            message: 'ไม่สามารถจับคู่วันที่ในช่วงที่ระบุได้ครบ: ${missing.join(', ')}',
           ),
         );
       }
