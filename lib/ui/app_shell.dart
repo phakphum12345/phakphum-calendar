@@ -801,11 +801,13 @@ class _AppShellState extends State<AppShell> {
     }
     _historyRestoreBusy = true;
 
-    final employeeController = widget.employeeDirectoryControllerFactory(
-      widget.controller.effectiveSchedule,
-    );
-    final templateController = widget.shiftTemplateControllerFactory();
+    EmployeeDirectoryController? employeeController;
+    ShiftTemplateController? templateController;
     try {
+      employeeController = widget.employeeDirectoryControllerFactory(
+        widget.controller.effectiveSchedule,
+      );
+      templateController = widget.shiftTemplateControllerFactory();
       await employeeController.load();
       if (!mounted) return;
       if (employeeController.error != null) {
@@ -874,8 +876,8 @@ class _AppShellState extends State<AppShell> {
         );
       }
     } finally {
-      employeeController.dispose();
-      templateController.dispose();
+      employeeController?.dispose();
+      templateController?.dispose();
       _historyRestoreBusy = false;
     }
   }
