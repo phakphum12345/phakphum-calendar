@@ -2,6 +2,14 @@
 
 This file is the central map of project documentation. Prefer updating an existing canonical document over creating another document with overlapping scope.
 
+## Current delivery checkpoint — 2026-11-27
+
+- Main SHA: `68ef85361c2d08e2970160a36475592010d908f7`.
+- Current source of truth: [Implementation status](IMPLEMENTATION_STATUS.md), [Requirements traceability](REQUIREMENTS_TRACEABILITY.md), [Remaining work](docs/REMAINING_WORK_INDEX.md), [Acceptance matrix](docs/END_TO_END_ACCEPTANCE_MATRIX.md).
+- Open Draft PRs: #191, #192, #196, #201, #202, #203 and #204. PR #199 is closed without merge; orientation work was superseded by #192.
+- No open PR has an independent review. Main branch protection is disabled and required status checks are not enforced.
+- PR CI is not post-merge or production acceptance.
+
 ## Project overview and status
 
 - [README](README.md) — user installation, setup and usage.
