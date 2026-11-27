@@ -14,6 +14,7 @@ Start with the [Master Documentation Index](DOCUMENTATION_MASTER_INDEX.md), whic
 - [Quality and acceptance](quality/README.md)
 - [Operations](operations/README.md)
 - [Governance](governance/README.md)
+- [Project completion and live audit](project/README.md)
 
 ## Existing documentation areas
 - [Architecture decisions](adr/)
