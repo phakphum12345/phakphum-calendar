@@ -105,7 +105,7 @@ class LocalRosterFileService
     return LocalRosterDocument(
       extension: extension,
       snapshots: snapshots,
-      sourceFingerprint: 'sha256:' + sha256.convert(bytes).toString(),
+      sourceFingerprint: 'sha256:${sha256.convert(bytes)}',
       sourceFileName: name,
     );
   }
