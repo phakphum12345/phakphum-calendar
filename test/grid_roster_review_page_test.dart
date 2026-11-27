@@ -158,22 +158,38 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    final scrollable = find.byType(Scrollable).first;
     final choices = find.text('เลือกวิธีจัดการ');
-    expect(choices, findsNWidgets(2));
+    expect(choices, findsOneWidget);
 
     await tester.tap(choices.first);
     await tester.pumpAndSettle();
     await tester.tap(find.text('ข้าม Section นี้ทั้งส่วน'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('เลือกวิธีจัดการ').last);
+    await tester.scrollUntilVisible(
+      find.text('X-OPD B'),
+      250,
+      scrollable: scrollable,
+    );
+    await tester.tap(find.text('เลือกวิธีจัดการ'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('กลับไปแก้ไฟล์ต้นฉบับและนำเข้าใหม่'));
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(
+      find.text('X-OPD A'),
+      250,
+      scrollable: scrollable,
+    );
     expect(
       find.textContaining('ข้าม Section นี้ทั้งส่วน จะไม่นำรายการเวร'),
       findsOneWidget,
+    );
+    await tester.scrollUntilVisible(
+      find.text('X-OPD B'),
+      250,
+      scrollable: scrollable,
     );
     expect(
       find.textContaining('กลับไปแก้ไฟล์ต้นฉบับและนำเข้าใหม่ — ยังบันทึก'),
@@ -213,6 +229,14 @@ void main() {
         ],
       ),
     );
+    final parsedSection = parsed.sections.single;
+    expect(parsedSection.sourceCells, isNotEmpty);
+    expect(parsedSection.startDate, DateTime(2026, 11, 1));
+    expect(parsedSection.endDate, DateTime(2026, 11, 7));
+    expect(
+      parsedSection.dateAnomalies.any((anomaly) => anomaly.columnIndex == 6),
+      isTrue,
+    );
     final report = MonthlyRosterParseReport(
       sections: parsed.sections,
       warnings: parsed.warnings,
@@ -248,6 +272,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    await tester.scrollUntilVisible(
+      find.text('duplicate_day'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     expect(find.text('กำหนดวันที่คอลัมน์นี้'), findsAtLeastNWidgets(1));
     await tester.tap(find.text('กำหนดวันที่คอลัมน์นี้').first);
     await tester.pumpAndSettle();
