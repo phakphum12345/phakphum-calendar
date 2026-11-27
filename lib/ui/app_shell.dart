@@ -850,6 +850,7 @@ class _AppShellState extends State<AppShell> {
             contextSnapshot: reviewContext,
             employees: employees,
             shiftTemplates: templates,
+            sourceLabel: 'Drive revision ${revision.revisionId}',
           ),
         ),
       );
