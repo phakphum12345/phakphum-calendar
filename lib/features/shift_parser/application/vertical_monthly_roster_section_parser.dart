@@ -294,13 +294,25 @@ class VerticalMonthlyRosterSectionParser {
           if (hasData) labelsByColumn[cell.columnIndex] = label;
         }
 
-        // Some workbooks put the date axis at the right edge. Only use
-        // columns to its left when there is a single candidate date axis.
-        if (labelsByColumn.isEmpty && dateAxisColumns.length == 1) {
+        // Some workbooks put assignment columns to the left of the date
+        // axis. Bound that search by the previous date axis so adjacent
+        // vertical sections do not borrow one another's headers.
+        final previousDateAxis = dateAxisColumns
+            .where((column) => column < entry.key)
+            .fold<int?>(
+              null,
+              (current, column) =>
+                  current == null || column > current ? column : current,
+            );
+        if (labelsByColumn.isEmpty) {
           for (final cell in input.cells.where(
             (cell) => cell.rowIndex == headerRow,
           )) {
-            if (cell.columnIndex >= entry.key) continue;
+            if (cell.columnIndex >= entry.key ||
+                (previousDateAxis != null &&
+                    cell.columnIndex <= previousDateAxis)) {
+              continue;
+            }
             final label = cell.text?.trim() ?? '';
             if (label.isEmpty ||
                 _isDateCell(cell) ||
