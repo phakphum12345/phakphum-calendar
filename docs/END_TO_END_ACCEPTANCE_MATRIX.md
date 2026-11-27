@@ -1,5 +1,7 @@
 # End-to-End Acceptance Matrix
 
+> This is the earlier acceptance catalogue for Shift Pay, Google authentication, platform installation and AI Assistant. The live cross-package completion state and current evidence are tracked in [project/ACCEPTANCE_MATRIX.md](project/ACCEPTANCE_MATRIX.md). Keep this document as a detailed domain scenario catalogue, not as the current overall completion status.
+
 A feature is accepted only when its relevant tests pass on the exact code revision intended for release. A skipped, missing, cancelled, or unknown result is not a pass.
 
 ## 1. Shift-pay modes
