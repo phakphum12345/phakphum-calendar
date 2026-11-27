@@ -143,7 +143,7 @@ void main() {
       cells: [
         ..._row(0, ['GEN 1 พฤศจิกายน 2569 - 7 พฤศจิกายน 2569']),
         ..._row(1, ['วันที่', 1, 2, 3, 4, 5, 5, 7]),
-        ..._row(2, ['GEN', 'ก', null, null, null, 'ข', null, 'ค']),
+        ..._row(2, ['GEN', 'ก', null, null, null, null, 'ข', 'ค']),
       ],
     );
     const parser = MonthlyRosterSectionParser();
