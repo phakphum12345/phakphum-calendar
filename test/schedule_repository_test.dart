@@ -164,31 +164,72 @@ void main() {
     );
   });
 
-  test('delete and recreate advances the absent revision to prevent ABA', () async {
+  test('conditional tombstones make delete retries idempotent and block stale recreation', () async {
     final repository = SharedPreferencesScheduleRepository(
       store: InMemoryScheduleKeyValueStore(),
     );
     final ConditionalScheduleWriter writer = repository;
+    final ConditionalScheduleDeleter deleter = repository;
     final ScheduleRevisionSource revisionSource = repository;
     await repository.findById('schedule-1');
     final originalAbsent = revisionSource.revisionForAbsentSchedule('schedule-1')!;
 
-    expect(
-      await writer.saveIfRevision(
-        canonicalScheduleFixture(name: 'Original'),
-        originalAbsent,
-      ),
-      isA<Success<Schedule>>(),
+    final saved = await writer.saveIfRevision(
+      canonicalScheduleFixture(name: 'Original'),
+      originalAbsent,
     );
-    expect(await repository.delete('schedule-1'), isA<Success<void>>());
-    await repository.findById('schedule-1');
-    final newAbsent = revisionSource.revisionForAbsentSchedule('schedule-1')!;
+    expect(saved, isA<Success<Schedule>>());
+    final savedSchedule = (saved as Success<Schedule>).value;
+    final liveRevision = revisionSource.revisionForSnapshot(savedSchedule)!;
 
-    expect(newAbsent, isNot(originalAbsent));
+    expect(
+      await deleter.deleteIfRevision('schedule-1', liveRevision),
+      isA<Success<void>>(),
+    );
+    expect(
+      await deleter.deleteIfRevision('schedule-1', liveRevision),
+      isA<Success<void>>(),
+    );
+    expect(revisionSource.revisionForAbsentSchedule('schedule-1'), isNull);
+
     expect(
       await writer.saveIfRevision(
         canonicalScheduleFixture(name: 'Stale recreate'),
-        originalAbsent,
+        liveRevision,
+      ),
+      isA<ValidationFailure<Schedule>>(),
+    );
+    expect(
+      (await repository.findById('schedule-1') as Success<Schedule?>).value,
+      isNull,
+    );
+  });
+
+  test('deleting an absent identity creates a tombstone that rejects stale creates', () async {
+    final repository = SharedPreferencesScheduleRepository(
+      store: InMemoryScheduleKeyValueStore(),
+    );
+    final ConditionalScheduleWriter writer = repository;
+    final ConditionalScheduleDeleter deleter = repository;
+    final ScheduleRevisionSource revisionSource = repository;
+
+    await repository.findById('schedule-absent');
+    final absentRevision =
+        revisionSource.revisionForAbsentSchedule('schedule-absent')!;
+
+    expect(
+      await deleter.deleteIfRevision('schedule-absent', absentRevision),
+      isA<Success<void>>(),
+    );
+    expect(
+      await deleter.deleteIfRevision('schedule-absent', absentRevision),
+      isA<Success<void>>(),
+    );
+    expect(revisionSource.revisionForAbsentSchedule('schedule-absent'), isNull);
+    expect(
+      await writer.saveIfRevision(
+        canonicalScheduleFixture(id: 'schedule-absent', name: 'Stale create'),
+        absentRevision,
       ),
       isA<ValidationFailure<Schedule>>(),
     );
