@@ -22,6 +22,8 @@ Route::prefix('v1')->group(function (): void {
         ->name('api.v1.diagnostics.client-errors');
 
     Route::middleware(['throttle:120,1', 'google.account'])->group(function (): void {
+        Route::get('/schedules/import-journals', [ScheduleImportJournalController::class, 'discover'])
+            ->name('api.v1.schedules.import-journals.discover');
         Route::get('/schedules/{scheduleId}', [ScheduleController::class, 'show'])
             ->where('scheduleId', '[A-Za-z0-9._:-]{1,128}')
             ->name('api.v1.schedules.show');
