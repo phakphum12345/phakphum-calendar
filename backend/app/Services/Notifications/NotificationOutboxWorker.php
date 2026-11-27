@@ -125,6 +125,7 @@ final class NotificationOutboxWorker
         try {
             $subscriptions = DB::table('web_push_subscriptions')
                 ->where('user_id', $outbox->user_id)
+                ->whereNull('expired_at')
                 ->orderBy('id')
                 ->get();
 
@@ -164,7 +165,10 @@ final class NotificationOutboxWorker
                     DB::table('web_push_subscriptions')
                         ->where('id', $subscription->id)
                         ->where('user_id', $outbox->user_id)
-                        ->delete();
+                        ->update([
+                            'expired_at' => now(),
+                            'updated_at' => now(),
+                        ]);
                 }
             }
 
