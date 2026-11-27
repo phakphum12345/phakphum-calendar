@@ -1,4 +1,5 @@
 import '../../../models/shift.dart';
+import 'roster_grid_axis_mapping.dart';
 
 /// A resolved calendar date attached to its original spreadsheet column.
 class MonthlyRosterDateColumn {
@@ -6,11 +7,14 @@ class MonthlyRosterDateColumn {
     required this.columnIndex,
     required this.displayedDay,
     required this.date,
+    this.rowIndex,
   });
 
   final int columnIndex;
   final int displayedDay;
   final DateTime date;
+  /// Original worksheet row for date-down layouts.
+  final int? rowIndex;
 }
 
 /// A blocking date-grid issue that must be reviewed before calendar sync.
@@ -20,19 +24,23 @@ class MonthlyRosterDateAnomaly {
     required this.message,
     this.columnIndex,
     this.displayedDay,
+    this.rowIndex,
   });
 
   final String code;
   final String message;
   final int? columnIndex;
   final int? displayedDay;
+  final int? rowIndex;
 }
 
 /// A shift row discovered independently of the worker names in its cells.
 class MonthlyRosterRow {
-  const MonthlyRosterRow({required this.rowIndex, required this.label});
+  const MonthlyRosterRow({required this.rowIndex, required this.label, this.columnIndex});
 
   final int rowIndex;
+  /// Original worksheet column for date-down layouts.
+  final int? columnIndex;
   final String label;
 }
 
@@ -47,6 +55,7 @@ class MonthlyRosterSection {
     this.startDate,
     this.endDate,
     this.dateAnomalies = const [],
+    this.orientation = RosterGridOrientation.datesAcrossColumns,
   });
 
   final String title;
@@ -58,6 +67,7 @@ class MonthlyRosterSection {
   final DateTime? startDate;
   final DateTime? endDate;
   final List<MonthlyRosterDateAnomaly> dateAnomalies;
+  final RosterGridOrientation orientation;
 
   bool get hasBlockingDateAnomalies => dateAnomalies.isNotEmpty;
 }
@@ -74,11 +84,14 @@ class MonthlyRosterAssignment {
     this.spreadsheetId,
     this.sheetId,
     this.sheetTitle,
+    this.columnIndex,
   });
 
   final String sectionTitle;
   final String rowLabel;
   final int rowIndex;
+  /// Original worksheet column for date-down layouts.
+  final int? columnIndex;
   final String workerName;
   final DateTime date;
   final String sourceCell;
@@ -291,6 +304,7 @@ class MonthlyRosterParseReport {
         MonthlyRosterSection(
           title: section.title,
           headerRowIndex: section.headerRowIndex,
+          orientation: section.orientation,
           assignments: List.unmodifiable(filteredAssignments),
           rowLabels: section.rowLabels,
           dateColumns: section.dateColumns,
