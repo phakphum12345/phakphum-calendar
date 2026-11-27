@@ -77,6 +77,39 @@ void main() {
     ]);
   });
 
+  test('keeps canonical-name and alternate-name collisions ambiguous', () {
+    final result = resolver.resolve(
+      sourceName: 'สมชาย ใจดี',
+      employees: [
+        _employee(
+          'e1',
+          firstName: 'สมชาย',
+          lastName: 'ใจดี',
+          nickname: 'ชาย',
+        ),
+        _employee(
+          'e2',
+          firstName: 'มาลี',
+          lastName: 'รักดี',
+          nickname: 'ไหม',
+          alternateNames: 'สมชาย ใจดี',
+        ),
+      ],
+    );
+
+    expect(
+      result.status,
+      EmployeeIdentityResolutionStatus.ambiguousExactCandidates,
+    );
+    expect(result.candidates.map((item) => item.employee.id), ['e1', 'e2']);
+    expect(
+      result.candidates.map((item) => item.matchKind),
+      [EmployeeIdentityMatchKind.fullName, EmployeeIdentityMatchKind.alias],
+    );
+    expect(result.selectedEmployeeId, isNull);
+    expect(result.canCommit, isFalse);
+  });
+
   test('keeps duplicate exact names ambiguous', () {
     final result = resolver.resolve(
       sourceName: 'สมชาย ใจดี',
@@ -106,7 +139,7 @@ void main() {
     expect(result.selectedEmployeeId, isNull);
   });
 
-  test('uses exact employee code as stronger evidence than a nickname', () {
+  test('ranks an exact employee code first but keeps nickname collisions for review', () {
     final result = resolver.resolve(
       sourceName: '002',
       employees: [
@@ -129,13 +162,18 @@ void main() {
 
     expect(
       result.status,
-      EmployeeIdentityResolutionStatus.exactUniqueCandidate,
+      EmployeeIdentityResolutionStatus.ambiguousExactCandidates,
     );
-    expect(result.candidates.single.employee.id, 'e2');
+    expect(result.candidates.map((item) => item.employee.id), ['e2', 'e1']);
     expect(
-      result.candidates.single.matchKind,
-      EmployeeIdentityMatchKind.employeeCode,
+      result.candidates.map((item) => item.matchKind),
+      [
+        EmployeeIdentityMatchKind.employeeCode,
+        EmployeeIdentityMatchKind.nickname,
+      ],
     );
+    expect(result.selectedEmployeeId, isNull);
+    expect(result.canCommit, isFalse);
   });
 
   test('returns substring matches as suggestions only', () {
