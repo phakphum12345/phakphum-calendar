@@ -279,10 +279,15 @@ class AppController extends ChangeNotifier implements ControllerState {
   List<RecentOwnedSheet> recentOwnedSheets = [];
   Set<String> existingKeys = {};
   Map<String, RosterAssignmentTimeline> _revisionTimelines = const {};
+  List<RosterRevisionDocument> _revisionDocuments = const [];
 
   /// Read-only historical roster ownership chains for connected workspaces.
   Map<String, RosterAssignmentTimeline> get revisionTimelines =>
       Map.unmodifiable(_revisionTimelines);
+
+  /// Read-only archived Drive revisions available for explicit restore review.
+  List<RosterRevisionDocument> get revisionDocuments =>
+      List.unmodifiable(_revisionDocuments);
   int _loadedRevisionCount = 0;
   int _timelineLoadGeneration = 0;
   bool timelineLoading = false;
@@ -672,6 +677,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       _currentAllRosterShifts = [];
       _referenceAllRosterShifts = [];
       _revisionTimelines = const {};
+      _revisionDocuments = const [];
       _loadedRevisionCount = 0;
       timelineWarning = null;
       _resetSyncRange();
@@ -1224,6 +1230,7 @@ class AppController extends ChangeNotifier implements ControllerState {
                 left.modifiedAt.compareTo(right.modifiedAt));
 
           if (generation != _timelineLoadGeneration) return;
+          _revisionDocuments = List.unmodifiable(mergedRevisions);
           _loadedRevisionCount = mergedRevisions.length + 1;
           final generatedTimeline = await timelineGenerator
               .generateFromDocumentsWithDiagnosticsAsync([
@@ -1312,6 +1319,7 @@ class AppController extends ChangeNotifier implements ControllerState {
         timelineLoading = false;
         _loadedRevisionCount = 1;
         _revisionTimelines = const {};
+        _revisionDocuments = const [];
         await _addAudit('sheet.timeline.background.failed', timelineWarning!, false);
         notifyListeners();
       }
