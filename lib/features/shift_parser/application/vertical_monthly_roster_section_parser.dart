@@ -51,7 +51,6 @@ class VerticalMonthlyRosterSectionParser {
         final axisKey = '${entry.key}:${dateCells.first.rowIndex}:${dateCells.last.rowIndex}';
         if (!occupiedDateAxes.add(axisKey)) continue;
         final firstRow = dateCells.first.rowIndex;
-        final lastRow = dateCells.last.rowIndex;
         final periodEvidence = _periodEvidence(
           input: input,
           cells: input.cells,
