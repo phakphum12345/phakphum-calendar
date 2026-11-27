@@ -1,3 +1,5 @@
+> **Historical snapshot notice:** This file's original status table predates the merge of PR #201. The authoritative live repository baseline and exact-head PR status are maintained in [LIVE_EXECUTION_CHECKPOINT_2026-11-28.md](LIVE_EXECUTION_CHECKPOINT_2026-11-28.md). Treat older SHA and CI observations below as historical unless revalidated.
+
 # Pull Request Dependency Map — 2026-11-27
 
 **Audited main:** `68ef85361c2d08e2970160a36475592010d908f7`
