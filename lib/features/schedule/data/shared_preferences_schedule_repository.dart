@@ -9,6 +9,7 @@ import '../../../domain/entities/schedule.dart';
 import '../../../domain/entities/schedule_month.dart';
 import '../../../domain/repositories/schedule_repository.dart';
 import '../../../domain/repositories/conditional_schedule_writer.dart';
+import '../../../domain/repositories/conditional_schedule_deleter.dart';
 import '../../../domain/repositories/schedule_revision_source.dart';
 import 'schedule_json_codec.dart';
 
@@ -57,7 +58,8 @@ class SharedPreferencesScheduleRepository
     implements
         ScheduleRepository,
         ScheduleRevisionSource,
-        ConditionalScheduleWriter {
+        ConditionalScheduleWriter,
+        ConditionalScheduleDeleter {
   SharedPreferencesScheduleRepository({
     ScheduleKeyValueStore? store,
     this.codec = const ScheduleJsonCodec(),
@@ -138,6 +140,20 @@ class SharedPreferencesScheduleRepository
     if (payload == null) {
       throw FormatException('Stored schedule "$id" is missing its active payload.');
     }
+    final decoded = jsonDecode(payload);
+    if (decoded is Map &&
+        decoded['format'] == 'shift-tools.schedule-tombstone' &&
+        decoded['version'] == 1 &&
+        decoded['state'] == 'deleted' &&
+        decoded['generation'] == generation) {
+      return _StoredScheduleState(
+        schedule: null,
+        activeSlot: activeSlot,
+        generation: generation,
+        revision: _deletedRevision(generation),
+        isDeleted: true,
+      );
+    }
     final schedule = codec.decode(payload);
     if (schedule.id != id) {
       throw FormatException(
@@ -155,10 +171,17 @@ class SharedPreferencesScheduleRepository
   String _liveRevision(int generation, String payload) =>
       'v$generation:${sha256.convert(utf8.encode(payload))}';
 
+  String _deletedRevision(int generation) =>
+      'v$generation:${List.filled(64, '0').join()}';
+
   void _rememberState(String id, _StoredScheduleState state) {
     _revisions[id] = state.revision;
     if (state.schedule == null) {
-      _absentRevisions[id] = state.revision;
+      if (state.isDeleted) {
+        _absentRevisions.remove(id);
+      } else {
+        _absentRevisions[id] = state.revision;
+      }
       return;
     }
     _absentRevisions.remove(id);
@@ -218,30 +241,15 @@ class SharedPreferencesScheduleRepository
 
   @override
   Future<Result<Schedule>> save(Schedule schedule) {
-    return _withScheduleLock(schedule.id, () async {
-      try {
-        final current = await _readState(schedule.id);
-        return await _writeNext(schedule, current);
-      } on ScheduleCodecException catch (error, stackTrace) {
-        return ValidationFailure(
-          error.message,
-          cause: error,
-          stackTrace: stackTrace,
-        );
-      } on FormatException catch (error, stackTrace) {
-        return ValidationFailure(
-          error.message,
-          cause: error,
-          stackTrace: stackTrace,
-        );
-      } on Object catch (error, stackTrace) {
-        return PersistenceFailure(
-          'Could not save schedule "${schedule.id}".',
-          cause: error,
-          stackTrace: stackTrace,
-        );
-      }
-    });
+    final expectedRevision = _snapshotRevisions[schedule];
+    if (expectedRevision == null) {
+      return Future.value(
+        const PersistenceFailure(
+          'Cannot save a Schedule without the exact revision captured for this snapshot.',
+        ),
+      );
+    }
+    return saveIfRevision(schedule, expectedRevision);
   }
 
   @override
@@ -290,6 +298,11 @@ class SharedPreferencesScheduleRepository
     Schedule schedule,
     _StoredScheduleState current,
   ) async {
+    if (current.isDeleted) {
+      return const PersistenceFailure(
+        'A deleted Schedule cannot be recreated by a stale save. Create a new Schedule identity or use an explicit restore workflow.',
+      );
+    }
     final payload = codec.encode(schedule);
     final targetSlot = current.activeSlot == 'a' ? 'b' : 'a';
     final targetKey = _slotKey(schedule.id, targetSlot);
@@ -330,25 +343,71 @@ class SharedPreferencesScheduleRepository
   }
 
   @override
-  Future<Result<void>> delete(String id) {
+  Future<Result<void>> delete(String id) async => const PersistenceFailure(
+    'Unconditional Schedule deletion is disabled. Supply the revision from the exact snapshot being deleted.',
+  );
+
+  @override
+  Future<Result<void>> deleteIfRevision(
+    String id,
+    String expectedRevision,
+  ) {
+    if (expectedRevision.trim().isEmpty) {
+      return Future.value(
+        const ValidationFailure('An expected Schedule revision is required.'),
+      );
+    }
     return _withScheduleLock(id, () async {
       try {
         final current = await _readState(id);
+        if (current.revision != expectedRevision) {
+          _rememberState(id, current);
+          return const ValidationFailure(
+            'Schedule revision conflict. Reload the latest Schedule before deleting.',
+          );
+        }
+        if (current.isDeleted || current.schedule == null) {
+          _rememberState(id, current);
+          return const Success(null);
+        }
+
         final nextGeneration = current.generation + 1;
+        final targetSlot = current.activeSlot == 'a' ? 'b' : 'a';
+        final tombstone = jsonEncode({
+          'format': 'shift-tools.schedule-tombstone',
+          'version': 1,
+          'state': 'deleted',
+          'generation': nextGeneration,
+        });
+        final targetKey = _slotKey(id, targetSlot);
+        await _store.setString(targetKey, tombstone);
+        final staged = await _store.getString(targetKey);
+        if (staged != tombstone) {
+          return const PersistenceFailure(
+            'The Schedule tombstone could not be read back.',
+          );
+        }
+
+        // Invalidate old revisions before switching the active slot. A crash
+        // here leaves the old payload readable but makes stale writers fail.
         await _store.setString(
           _generationKey(id),
           nextGeneration.toString(),
         );
-        await _store.remove(_activeKey(id));
-        await _store.remove(_slotKey(id, 'a'));
-        await _store.remove(_slotKey(id, 'b'));
-        final revision = 'absent:$nextGeneration';
-        _revisions[id] = revision;
-        _absentRevisions[id] = revision;
+        await _store.setString(_activeKey(id), targetSlot);
+        final verified = await _readState(id);
+        if (!verified.isDeleted ||
+            verified.generation != nextGeneration ||
+            verified.revision != _deletedRevision(nextGeneration)) {
+          return const PersistenceFailure(
+            'Schedule tombstone read-back verification failed.',
+          );
+        }
+        _rememberState(id, verified);
         return const Success(null);
       } on Object catch (error, stackTrace) {
         return PersistenceFailure(
-          'Could not delete schedule "$id".',
+          'Could not conditionally delete Schedule "$id".',
           cause: error,
           stackTrace: stackTrace,
         );
@@ -363,12 +422,14 @@ class _StoredScheduleState {
     required this.activeSlot,
     required this.generation,
     required this.revision,
+    this.isDeleted = false,
   });
 
   final Schedule? schedule;
   final String? activeSlot;
   final int generation;
   final String revision;
+  final bool isDeleted;
 }
 
 Result<TTarget> _copyFailure<TSource, TTarget>(Result<TSource> result) {
