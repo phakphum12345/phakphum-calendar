@@ -19,6 +19,37 @@ import 'grid_roster_canonical_converter.dart';
 import 'grid_roster_review_session.dart';
 
 /// A review session bound to the exact Schedule revision loaded for review.
+enum GridRosterRecoveryDisposition {
+  noCommittedBundle,
+  ready,
+  alreadyApplied,
+  conflict,
+}
+
+/// Read-only assessment of a journal before any recovery write is attempted.
+class GridRosterRecoveryAssessment {
+  const GridRosterRecoveryAssessment({
+    required this.scheduleId,
+    required this.disposition,
+    required this.currentSchedule,
+    this.candidateSchedule,
+    this.expectedRevision,
+    this.importRunId,
+    this.message,
+  });
+
+  final String scheduleId;
+  final GridRosterRecoveryDisposition disposition;
+  final Schedule? currentSchedule;
+  final Schedule? candidateSchedule;
+  final String? expectedRevision;
+  final String? importRunId;
+  final String? message;
+
+  bool get canRecover =>
+      disposition == GridRosterRecoveryDisposition.ready;
+}
+
 class GridRosterImportReviewContext {
   const GridRosterImportReviewContext({
     required this.session,
@@ -265,18 +296,39 @@ class GridRosterImportWorkflow {
     return {...localIds, ...remoteIds}.toList()..sort();
   }
 
-  /// Replays a committed journal bundle only if the canonical repository is
-  /// still at the exact base revision recorded by that import.
-  Future<Result<Schedule?>> recover(String scheduleId) async {
+  /// Inspects a journal without mutating canonical Schedule storage.
+  ///
+  /// A configured remote journal is authoritative for discovery/recovery
+  /// failures: network or authorization errors are surfaced, never treated as
+  /// an empty journal. The caller must present a [ready] assessment to the
+  /// user before calling [recover].
+  Future<Result<GridRosterRecoveryAssessment>> inspectRecovery(
+    String scheduleId,
+  ) async {
+    if (scheduleId.trim().isEmpty) {
+      return const ValidationFailure('A Schedule ID is required for recovery.');
+    }
+
     final liveResult = await _scheduleRepository.findById(scheduleId);
-    if (liveResult case Failure<Schedule?>()) return liveResult;
+    if (liveResult case Failure<Schedule?>()) {
+      return _copyFailure<Schedule?, GridRosterRecoveryAssessment>(liveResult);
+    }
     final live = (liveResult as Success<Schedule?>).value;
 
     try {
       final localSnapshot = await _journal.recover(scheduleId);
       final remoteSnapshot = await remoteJournalGateway?.recover(scheduleId);
       final snapshot = _newerJournalSnapshot(localSnapshot, remoteSnapshot);
-      if (snapshot == null) return Success(live);
+      if (snapshot == null) {
+        return Success(
+          GridRosterRecoveryAssessment(
+            scheduleId: scheduleId,
+            disposition: GridRosterRecoveryDisposition.noCommittedBundle,
+            currentSchedule: live,
+            message: 'No committed import bundle is available.',
+          ),
+        );
+      }
 
       final acceptedFingerprint =
           snapshot.provenance.acceptedScheduleFingerprint;
@@ -285,47 +337,111 @@ class GridRosterImportWorkflow {
           'Committed journal is missing its accepted Schedule fingerprint.',
         );
       }
-      if (live != null &&
-          scheduleFingerprint(live) == acceptedFingerprint) {
-        return Success(live);
+      if (live != null && scheduleFingerprint(live) == acceptedFingerprint) {
+        return Success(
+          GridRosterRecoveryAssessment(
+            scheduleId: scheduleId,
+            disposition: GridRosterRecoveryDisposition.alreadyApplied,
+            currentSchedule: live,
+            candidateSchedule: snapshot.schedule,
+            expectedRevision: snapshot.provenance.targetScheduleRevision,
+            importRunId: snapshot.provenance.importRunId,
+            message: 'The accepted Schedule is already present.',
+          ),
+        );
       }
 
       final liveRevision = revisionFor(live, scheduleId);
       if (liveRevision != snapshot.provenance.targetScheduleRevision) {
-        return const ValidationFailure(
-          'Recovery conflict: canonical Schedule changed after the journal base revision.',
+        return Success(
+          GridRosterRecoveryAssessment(
+            scheduleId: scheduleId,
+            disposition: GridRosterRecoveryDisposition.conflict,
+            currentSchedule: live,
+            candidateSchedule: snapshot.schedule,
+            expectedRevision: snapshot.provenance.targetScheduleRevision,
+            importRunId: snapshot.provenance.importRunId,
+            message:
+                'Canonical Schedule changed after the journal base revision.',
+          ),
         );
       }
 
-      final beforeRecoverySave = await _scheduleRepository.findById(scheduleId);
-      if (beforeRecoverySave case Failure<Schedule?>()) {
-        return beforeRecoverySave;
-      }
-      final latest = (beforeRecoverySave as Success<Schedule?>).value;
-      if (revisionFor(latest, scheduleId) != snapshot.provenance.targetScheduleRevision) {
-        if (latest != null &&
-            scheduleFingerprint(latest) == acceptedFingerprint) {
-          return Success(latest);
-        }
-        return const ValidationFailure(
-          'Recovery target changed during replay. No Schedule was overwritten.',
-        );
-      }
-      final saved = await _saveWithRevision(
-        snapshot.schedule,
-        snapshot.provenance.targetScheduleRevision,
+      return Success(
+        GridRosterRecoveryAssessment(
+          scheduleId: scheduleId,
+          disposition: GridRosterRecoveryDisposition.ready,
+          currentSchedule: live,
+          candidateSchedule: snapshot.schedule,
+          expectedRevision: snapshot.provenance.targetScheduleRevision,
+          importRunId: snapshot.provenance.importRunId,
+          message: 'The committed bundle can be recovered against its base revision.',
+        ),
       );
-      return switch (saved) {
-        Success<Schedule>(value: final schedule) => Success(schedule),
-        Failure<Schedule>() => _copyFailure<Schedule, Schedule?>(saved),
-      };
     } on Object catch (error, stackTrace) {
       return ValidationFailure(
-        'Could not recover the Grid import bundle.',
+        'Could not inspect the Grid import journal.',
         cause: error,
         stackTrace: stackTrace,
       );
     }
+  }
+
+  /// Replays a committed journal bundle only after an explicit caller action.
+  ///
+  /// The read-only assessment is repeated immediately before the conditional
+  /// write. A changed target is rejected and the journal remains available
+  /// for a later, deliberate conflict-resolution workflow.
+  Future<Result<Schedule?>> recover(String scheduleId) async {
+    final assessmentResult = await inspectRecovery(scheduleId);
+    if (assessmentResult case Failure<GridRosterRecoveryAssessment>()) {
+      return _copyFailure<GridRosterRecoveryAssessment, Schedule?>(
+        assessmentResult,
+      );
+    }
+    final assessment =
+        (assessmentResult as Success<GridRosterRecoveryAssessment>).value;
+
+    switch (assessment.disposition) {
+      case GridRosterRecoveryDisposition.noCommittedBundle:
+      case GridRosterRecoveryDisposition.alreadyApplied:
+        return Success(assessment.currentSchedule);
+      case GridRosterRecoveryDisposition.conflict:
+        return const ValidationFailure(
+          'Recovery conflict: canonical Schedule changed after the journal base revision.',
+        );
+      case GridRosterRecoveryDisposition.ready:
+        break;
+    }
+
+    final candidate = assessment.candidateSchedule;
+    final expectedRevision = assessment.expectedRevision;
+    if (candidate == null ||
+        expectedRevision == null ||
+        assessment.importRunId == null) {
+      return const ValidationFailure(
+        'Recovery assessment is missing its candidate or revision evidence.',
+      );
+    }
+
+    final latestResult = await _scheduleRepository.findById(scheduleId);
+    if (latestResult case Failure<Schedule?>()) return latestResult;
+    final latest = (latestResult as Success<Schedule?>).value;
+    if (latest != null &&
+        scheduleFingerprint(latest) == scheduleFingerprint(candidate)) {
+      return Success(latest);
+    }
+    if (revisionFor(latest, scheduleId) != expectedRevision) {
+      return const ValidationFailure(
+        'Recovery target changed after inspection. No Schedule was overwritten.',
+      );
+    }
+
+    final saved = await _saveWithRevision(candidate, expectedRevision);
+    return switch (saved) {
+      Success<Schedule>(value: final schedule) => Success(schedule),
+      Failure<Schedule>() => _copyFailure<Schedule, Schedule?>(saved),
+    };
   }
 
   Future<Result<Schedule>> _saveWithRevision(
