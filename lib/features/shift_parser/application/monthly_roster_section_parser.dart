@@ -169,7 +169,7 @@ class MonthlyRosterSectionParser {
           ? headerRows[index + 1]
           : (cellsByRow.keys.fold<int>(headerRow, (a, b) => a > b ? a : b) + 1);
       final previousHeader = index == 0 ? -1 : headerRows[index - 1];
-      final sectionSourceCells = List.unmodifiable(
+      final sectionSourceCells = List<NormalizedCell>.unmodifiable(
         input.cells.where(
           (cell) =>
               cell.rowIndex > previousHeader && cell.rowIndex < nextHeader,
