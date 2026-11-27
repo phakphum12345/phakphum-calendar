@@ -3,8 +3,6 @@
 namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\Crypt;
-
 final class GenerateWebPushVapidKeys extends Command
 {
     protected $signature = 'notifications:vapid-keys';
