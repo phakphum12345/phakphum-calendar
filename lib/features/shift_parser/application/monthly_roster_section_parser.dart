@@ -523,7 +523,7 @@ class MonthlyRosterSectionParser {
     final firstDateColumn = dateColumns.reduce((a, b) => a < b ? a : b);
     final automaticColumns = cells
         .where((cell) => cell.columnIndex < firstDateColumn)
-        .map((cell) => cell.columnIndex)
+        .map<int>((cell) => cell.columnIndex as int)
         .toSet();
     List<dynamic> nonEmptyCandidates(Iterable<int> columns) =>
         cells
