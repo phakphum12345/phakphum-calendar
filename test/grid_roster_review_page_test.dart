@@ -305,7 +305,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('พบจุดผิดในหัวตารางวันที่'), findsOneWidget);
-    expect(find.text('กำหนดวันที่คอลัมน์นี้'), findsOneWidget);
+    // Revalidation keeps the remaining source-backed anomalies visible;
+    // each anomaly has its own correction action, so multiple matches are
+    // expected until the final date column is corrected.
+    expect(find.text('กำหนดวันที่คอลัมน์นี้'), findsAtLeastNWidgets(1));
 
     final secondCorrectionAction = find.text('กำหนดวันที่คอลัมน์นี้').first;
     await tester.ensureVisible(secondCorrectionAction);
