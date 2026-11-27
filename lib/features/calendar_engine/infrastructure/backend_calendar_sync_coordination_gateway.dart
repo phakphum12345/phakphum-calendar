@@ -305,6 +305,7 @@ class BackendCalendarSyncCoordinationGateway
     };
     final encodedBody = body == null ? null : jsonEncode(body);
     final pending = switch (method) {
+      'GET' => _http.get(uri, headers: headers),
       'POST' => _http.post(uri, headers: headers, body: encodedBody),
       'PUT' => _http.put(uri, headers: headers, body: encodedBody),
       'PATCH' => _http.patch(uri, headers: headers, body: encodedBody),
