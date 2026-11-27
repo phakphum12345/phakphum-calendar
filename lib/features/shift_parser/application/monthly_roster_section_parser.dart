@@ -145,12 +145,18 @@ class MonthlyRosterSectionParser {
         'At least one explicit date correction is required.',
       );
     }
-    if (section.sourceCells.isEmpty || section.dateColumns.isEmpty) {
+    if (section.sourceCells.isEmpty ||
+        (section.dateColumns.isEmpty && section.dateAnomalies.isEmpty)) {
       throw StateError(
         'The original worksheet grid is unavailable for correction.',
       );
     }
-    final dateColumn = section.dateColumns.first.columnIndex;
+    final dateColumn = section.dateColumns.isNotEmpty
+        ? section.dateColumns.first.columnIndex
+        : section.dateAnomalies.first.columnIndex;
+    if (dateColumn == null) {
+      throw StateError('The vertical date-axis column is unknown.');
+    }
     final validRows = <int>{
       ...section.dateColumns
           .map((column) => column.rowIndex)
