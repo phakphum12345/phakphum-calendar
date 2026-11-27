@@ -1,5 +1,7 @@
 # Flexible Workforce & Shift Scheduler — Phase 0 Traceability Matrix
 
+> **Historical traceability snapshot.** The initial audit is from 2026-11-14; the roster delivery evidence is from 2026-11-18 and the PR #86 CI table is historical. Do not use its PR/CI state as current. Current repository implementation and acceptance status are maintained in [the project completion master plan](../project/PROJECT_COMPLETION_MASTER_PLAN.md), [work package status](../project/WORK_PACKAGE_STATUS.md) and [acceptance matrix](../project/ACCEPTANCE_MATRIX.md).
+
 ## Audit record
 
 - Audit target: `main` at the repository state inspected on 2026-11-14.
