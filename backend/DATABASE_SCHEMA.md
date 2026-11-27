@@ -185,5 +185,12 @@ The following migrations exist on Draft PR branches only. They are not part of t
   - `calendar_sync_leases`: owner + Calendar ID uniqueness, Run ID, client instance, lease token and expiry/heartbeat timestamps.
   - `calendar_sync_operations`: Run ID, owner, operation key/type/status, payload hash, encrypted payload ciphertext, attempt count, provider event ID and safe error/timing metadata.
 
+**Application-layer encryption added in PR #192:**
+- New `schedule_records.schedule_payload` and `schedule_import_journals.schedule_payload` values use a versioned `enc:v1:` Laravel Crypt envelope.
+- `schedule_import_journals.provenance` stores an encrypted JSON envelope with `encryption_version` and ciphertext.
+- Existing legacy plaintext records remain readable during migration; new writes are encrypted.
+- The encryption key is Laravel `APP_KEY`. Back it up and rehearse restore before deployment; losing or rotating the key without re-encryption makes encrypted Schedule/journal data unreadable.
+- The encrypted-at-rest change is source-level work in open PR #192; exact-head CI and database acceptance are still required.
+
 **Deployment gate:** no migration in these open PRs has been applied to production by this documentation change. Before deployment, inspect the exact PR migration diffs, run upgrade/rollback tests against a copy of existing data, verify foreign-key and lock semantics on the selected database engine, back up Laravel `APP_KEY`, and rehearse restore. Never reset or replace production data to make a migration pass.
 
