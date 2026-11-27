@@ -4,6 +4,7 @@ import 'package:phakphum_calendar/domain/entities/department.dart';
 import 'package:phakphum_calendar/domain/entities/employee.dart';
 import 'package:phakphum_calendar/domain/entities/schedule.dart';
 import 'package:phakphum_calendar/domain/entities/schedule_month.dart';
+import 'package:phakphum_calendar/domain/entities/shift_template.dart';
 import 'package:phakphum_calendar/domain/repositories/conditional_schedule_writer.dart';
 import 'package:phakphum_calendar/domain/repositories/schedule_repository.dart';
 import 'package:phakphum_calendar/features/schedule/data/shared_preferences_schedule_repository.dart' show ScheduleKeyValueStore, ScheduleKeyEnumerator;
@@ -113,6 +114,16 @@ void main() {
       position: 'Doctor',
     );
 
+    const morningTemplate = ShiftTemplate(
+      id: 'shift-morning',
+      code: 'M',
+      name: 'Morning',
+      shortName: 'M',
+      startTime: Duration(hours: 8),
+      endTime: Duration(hours: 16),
+      color: 0xFF039BE5,
+      workingHours: 8,
+    );
     final report = workflow.scanRevision(revision, timeZone: 'Asia/Bangkok');
     expect(report.sourceFingerprint, startsWith('sha256:'));
     expect(report.assignments, hasLength(7));
@@ -122,7 +133,7 @@ void main() {
       targetScheduleId: 'schedule-1',
       targetScheduleName: 'Restored November roster',
       employees: [employee],
-      shiftTemplates: const [],
+      shiftTemplates: const [morningTemplate],
       timeZone: 'Asia/Bangkok',
     );
     expect(reviewResult, isA<Success<GridRosterImportReviewContext>>());
@@ -136,6 +147,7 @@ void main() {
         ): GridRosterAssignmentDecision(
           include: true,
           employeeId: employee.id,
+          shiftTemplateId: morningTemplate.id,
           reviewerId: 'history-reviewer',
           reviewedAtUtc: DateTime.utc(2026, 11, 27, 8),
         ),
