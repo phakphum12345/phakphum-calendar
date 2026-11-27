@@ -1,6 +1,6 @@
 # PR and Delivery Tracker — 2026-11-24
 
-> Historical snapshot only. The current tracker is [PR_DELIVERY_TRACKER_2026-11-25.md](PR_DELIVERY_TRACKER_2026-11-25.md).
+> Historical snapshot only. Current delivery evidence is in [the project completion master plan](project/PROJECT_COMPLETION_MASTER_PLAN.md) and [PR dependency map](project/PR_DEPENDENCY_MAP.md).
 
 This is a point-in-time snapshot. Always refresh live PR metadata and exact-head workflow runs before taking a merge or release action.
 
