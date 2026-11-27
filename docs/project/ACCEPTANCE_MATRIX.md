@@ -14,6 +14,7 @@
 | B-02 | Ambiguous employee is never preselected | #208 implementation and test correction | CI PENDING on new head | New exact-head CI and reviewer acceptance |
 | B-03 | Alias collision shows all candidates | #208 resolver tests | TESTED (automated) | UI collision review and save/reload |
 | B-04 | Date/orientation corrections revalidate source | #192/#205 | PARTIAL | Fingerprint/revision invalidation and real workbook tests |
+| B-05 | Built-in shift label/time mapping is presented as a suggestion and requires explicit reviewer opt-in; configured templates can override it | #192 Grid Review wording + widget regression | CI PENDING on latest #192 head | Verify all built-in labels against real workbooks and prove ambiguous labels never auto-resolve |
 | C-01 | Every Schedule writer uses caller-bound CAS | #192 backend work | PARTIAL | Full writer inventory and concurrent multi-client proof |
 | C-02 | Read-back before success | #206 | CI VERIFIED (PR head) | Backend integration and crash/recovery proof |
 | C-03 | Durable operation ledger and recovery | #192/#204 foundations | PARTIAL | Transaction durability and process crash injection |
