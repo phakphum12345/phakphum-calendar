@@ -219,6 +219,61 @@ class CalendarSyncCoordinationApiTest extends TestCase
             ->assertJsonCount(1, 'data');
     }
 
+    public function test_operation_ledger_rejects_raw_error_messages_and_accepts_safe_codes(): void
+    {
+        $runId = '00000000-0000-4000-8000-000000000011';
+        $lease = $this->postJson(
+            '/api/v1/calendar-sync/leases',
+            $this->lease($runId, 'safe-error-device'),
+            $this->auth('alice-token'),
+        )->assertCreated()->json('data');
+
+        $payload = [
+            'lease_token' => $lease['lease_token'],
+            'operation_key' => 'safe-error-operation',
+            'operation_type' => 'update',
+            'operation_payload' => ['sync_id' => 'safe-error-sync'],
+            'payload_hash' => hash('sha256', json_encode(['sync_id' => 'safe-error-sync'])),
+        ];
+        $this->postJson(
+            '/api/v1/calendar-sync/leases/'.$runId.'/operations',
+            $payload,
+            $this->auth('alice-token'),
+        )->assertCreated();
+
+        $this->patchJson(
+            '/api/v1/calendar-sync/leases/'.$runId.'/operations/safe-error-operation',
+            [
+                'lease_token' => $lease['lease_token'],
+                'status' => 'running',
+                'attempt_count' => 1,
+            ],
+            $this->auth('alice-token'),
+        )->assertOk();
+
+        $this->patchJson(
+            '/api/v1/calendar-sync/leases/'.$runId.'/operations/safe-error-operation',
+            [
+                'lease_token' => $lease['lease_token'],
+                'status' => 'failed',
+                'attempt_count' => 1,
+                'last_error' => 'Google API failed with bearer token secret-value',
+            ],
+            $this->auth('alice-token'),
+        )->assertUnprocessable();
+
+        $this->patchJson(
+            '/api/v1/calendar-sync/leases/'.$runId.'/operations/safe-error-operation',
+            [
+                'lease_token' => $lease['lease_token'],
+                'status' => 'failed',
+                'attempt_count' => 1,
+                'last_error' => 'provider_timeout',
+            ],
+            $this->auth('alice-token'),
+        )->assertOk()->assertJsonPath('data.last_error', 'provider_timeout');
+    }
+
     private function lease(string $runId, string $client): array
     {
         return [
