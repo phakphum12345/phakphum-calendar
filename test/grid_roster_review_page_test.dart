@@ -174,20 +174,27 @@ void main() {
     await tester.tap(checkboxFinder);
     await tester.pumpAndSettle();
 
-    final dropdownFinder = find.byType(DropdownButtonFormField<String>);
-    expect(dropdownFinder, findsOneWidget);
+    // Each opted-in assignment has two independent controls: employee
+    // resolution and shift-template resolution. Scope this assertion to the
+    // employee field instead of assuming the card contains only one dropdown.
+    final employeeDropdownFinder = find.byWidgetPredicate(
+      (widget) =>
+          widget is DropdownButtonFormField<String> &&
+          widget.decoration.labelText == 'ยืนยันพนักงาน',
+    );
+    expect(employeeDropdownFinder, findsOneWidget);
     var dropdown = tester.widget<DropdownButtonFormField<String>>(
-      dropdownFinder,
+      employeeDropdownFinder,
     );
     expect(dropdown.initialValue, isNull);
 
-    await tester.tap(dropdownFinder);
+    await tester.tap(employeeDropdownFinder);
     await tester.pumpAndSettle();
     await tester.tap(find.text(aliasEmployee.displayName).last);
     await tester.pumpAndSettle();
 
     dropdown = tester.widget<DropdownButtonFormField<String>>(
-      dropdownFinder,
+      employeeDropdownFinder,
     );
     expect(dropdown.initialValue, aliasEmployee.id);
   });
