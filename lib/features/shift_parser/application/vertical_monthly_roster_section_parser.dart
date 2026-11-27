@@ -94,6 +94,51 @@ class VerticalMonthlyRosterSectionParser {
           cursor = DateTime(resolved.year, resolved.month, resolved.day + 1);
         }
 
+        final expectedDayCount = DateTime.utc(
+          period.end.year,
+          period.end.month,
+          period.end.day,
+        ).difference(DateTime.utc(
+          period.start.year,
+          period.start.month,
+          period.start.day,
+        )).inDays + 1;
+        if (dateCells.length >= (expectedDayCount * 0.9).ceil()) {
+          final orderedDates = resolvedDates.entries.toList()
+            ..sort((left, right) => left.value.compareTo(right.value));
+          for (var index = 1; index < orderedDates.length; index++) {
+            final previous = orderedDates[index - 1].value;
+            final current = orderedDates[index].value;
+            final gap = DateTime.utc(
+              current.year,
+              current.month,
+              current.day,
+            ).difference(DateTime.utc(
+              previous.year,
+              previous.month,
+              previous.day,
+            )).inDays;
+            if (gap > 1) {
+              final missing = <String>[
+                for (var offset = 1; offset < gap; offset++)
+                  DateTime(
+                    previous.year,
+                    previous.month,
+                    previous.day + offset,
+                  ).toIso8601String().substring(0, 10),
+              ];
+              anomalies.add(
+                MonthlyRosterDateAnomaly(
+                  code: 'missing_dates',
+                  columnIndex: entry.key,
+                  rowIndex: orderedDates[index].key,
+                  message: 'แกนวันที่แนวตั้งขาดวันที่ ${missing.join(', ')}',
+                ),
+              );
+            }
+          }
+        }
+
         final headerRow = _findHeaderRow(
           cells: input.cells,
           firstDateRow: firstRow,
