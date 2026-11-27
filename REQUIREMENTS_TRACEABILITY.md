@@ -1,7 +1,7 @@
 # Requirements Traceability
 
-**Review date:** 2026-11-25  
-**Repository snapshot:** `aed2f1177bdfc85f6ff53bb200116812a51bd9e3`  
+**Review date:** 2026-11-27  
+**Repository snapshot:** `68ef85361c2d08e2970160a36475592010d908f7`  
 **Status:** Evidence-based partial inventory. PARTIAL, MISSING, UNKNOWN and NEEDS REVIEW remain open work.
 
 | Requirement | Primary implementation | Evidence / test surface | Status and remaining gap |
@@ -127,3 +127,16 @@ The spike has its own `pubspec.yaml` and is not a root application dependency. T
 | RI-042 | Provide atomic compare-and-set for local/offline fallback across independent instances | SharedPreferences two-slot repository remains non-transactional | MISSING / OPEN | Select a cross-platform storage transaction strategy and run multi-instance/platform crash tests |
 
 The backend Grid path now closes the final read/save race and ABA gap by passing the exact server revision token from review/journal into the conditional write. This does not make the entire application concurrency-safe: other writer paths and the local fallback remain open. No global CAS claim is made.
+
+
+## Live execution checkpoint — 2026-11-27
+
+- Audited main SHA: `68ef85361c2d08e2970160a36475592010d908f7`.
+- PR #192 is the integration branch for universal roster work: horizontal/vertical parser, XLSX scanner, source provenance, review and row correction are being kept in one workflow.
+- PR #200 is superseded by the integrated implementation in #192; do not merge both parser branches.
+- PR #199 orientation primitives and tests are being consolidated into #192; do not merge a duplicate foundation.
+- PR #191 and #196 remain independent notification and Calendar Sync foundations.
+- Exact-head CI on the current #192 branch must be re-fetched after the latest commit; previous green results do not apply to a moved head.
+- Original X-OPD November 2569, 16 Nov–15 Dec 2569 and US Clinic ภปร.4 workbooks are not available for actual-file acceptance.
+- See `COMPLETION_STATUS.md` and `IMPLEMENTATION_EVIDENCE.md` for live status and evidence boundaries.
+
