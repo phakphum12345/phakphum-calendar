@@ -1,6 +1,48 @@
 # Repository Implementation Status
 
-## Current main snapshot — 2026-11-25
+## Current repository snapshot — 2026-11-27
+
+**Verified main SHA:** `68ef85361c2d08e2970160a36475592010d908f7`
+
+This is the current repository-level status. The historical 2026-11-25 snapshot below is retained as an audit record and must not be treated as current.
+
+| PR | Scope | Exact head SHA | Latest exact-head CI evidence | Review / acceptance |
+|---|---|---|---|---|
+| [#191](https://github.com/phakphum12345/phakphum-calendar/pull/191) | Web Push delivery/outbox | `cf7eaa22eaf81e04b0b444acfc3aee2a8ca51e5e` | 13/13 workflows passed | Draft; no review; real-device delivery not accepted |
+| [#192](https://github.com/phakphum12345/phakphum-calendar/pull/192) | Universal roster import, source provenance, CAS/recovery | `2f6f` (full SHA in PR) | New exact-head runs not yet available | Draft; no review; original workbook acceptance pending |
+| [#196](https://github.com/phakphum12345/phakphum-calendar/pull/196) | Calendar Sync ETag/lease/ledger reliability | `8e186790e447f9278eda8612a1bb1b6f7e7b77c9` | 13/13 workflows passed | Draft; no review; controlled Google test calendar pending |
+| [#201](https://github.com/phakphum12345/phakphum-calendar/pull/201) | Shift Pay rule conflict/precedence | `d3f228dcdaea4f1a3771c271421226ab71ab00b5` | 12/12 workflows passed | Draft; no review; business-rule acceptance pending |
+| [#202](https://github.com/phakphum12345/phakphum-calendar/pull/202) | Schedule generation preview/approval/commit | `ca6ebd095ef6566fcce00e9bc49e9c820470b80d` | 12/12 workflows passed | Draft; no review; dependent on #192 |
+| [#203](https://github.com/phakphum12345/phakphum-calendar/pull/203) | Monthly Shift Pay statement calculation core | `9ddcca51de57b71c721f60665f3c9f8cf0e7bbcb` | 11/11 workflows passed; 716 tests passed | Draft; no review; statement persistence/UI not integrated |
+| [#204](https://github.com/phakphum12345/phakphum-calendar/pull/204) | Historical Drive revision restore | `ba73` (full SHA in PR) | New exact-head runs not yet available | Draft; no review; real Drive revision acceptance pending |
+
+PR #199 was closed without merge after its orientation foundation was superseded by the parser integration work in #192. All seven currently open PRs remain Draft and have no submitted reviews or review threads.
+
+### Current capability evidence
+
+| Work package | Evidence level | Remaining acceptance |
+|---|---|---|
+| Universal roster import | IN PROGRESS — implementation in #192; horizontal/vertical/mixed section handling, CSV/TSV/TXT input, merged-cell and color provenance, date correction, source fingerprint and explicit recovery path | Run exact-head CI; validate original X-OPD November 2569, 16 Nov–15 Dec 2569 and US Clinic ภปร.4 workbooks; verify ambiguous orientation/identity review |
+| Schedule persistence | IN PROGRESS — revision-bound conditional writer and journal recovery are being consolidated in #192 | Verify every production writer, cross-process/device CAS, backend transaction behavior, tombstone deletion and crash recovery against the deployed backend |
+| Calendar Sync | IN PROGRESS — server coordination, ETag-aware provider operations and durable operation history in #196 | Controlled test-calendar insert/update/delete, ambiguous provider timeout recovery and cross-device lease contention |
+| Notifications | IN PROGRESS — VAPID/Web Push sender, subscription lifecycle, outbox worker and retry/dead-letter path in #191 | Registered-device delivery, permission-denied/expired-subscription behavior and production scheduler acceptance |
+| Schedule generation | IN PROGRESS — immutable preview, revision-bound approval and conditional commit in #202 | Refresh base against current #192, verify UI integration and end-to-end approval/read-back recovery |
+| Shift Pay | IN PROGRESS — existing Personal/Organization/Hybrid foundations plus conflict resolution in #201 and monthly statement builder in #203 | Persist statements, connect confirmed assignments, deliver statement UI and verify exact contractor employment/payment modes |
+| History restore | IN PROGRESS — Drive revision list, read-only snapshot fingerprint, Grid review and conditional commit in #204 | Exact per-assignment before/after diff, real revision export fixture and external-account acceptance |
+| Organization/security | PARTIAL — existing membership and role foundations | Tenant-isolation negative tests, backend authorization coverage, rate-limit and privacy-log acceptance |
+| Quality/performance/accessibility | PARTIAL / UNKNOWN | Reproducible large-workbook, event-volume, history, memory, accessibility and device benchmarks |
+| Documentation/release | IN PROGRESS | Reconcile feature docs with each PR, verify deployment SHA/health, backup/restore and rollback |
+
+### Main-branch and release gates
+
+- GitHub reports `main.protected = false`; branch-protection enforcement is `off` and required status-check contexts are empty.
+- The exact main SHA above returned no workflow runs and no combined-status entries. Do not describe this as a passing main CI run.
+- Exact-head PR CI is not post-merge CI. No post-merge verification or production deployment is claimed for the open PRs.
+- No open PR is eligible for merge until its latest exact head has all required checks completed, a complete diff review, independent review, and applicable product/external acceptance.
+- External dependencies still include original workbooks, a controlled Google Calendar/account, registered notification device/browser permission, production backend availability and release credentials.
+
+
+## Historical main snapshot — 2026-11-25
 
 **Verified main SHA:** `aed2f1177bdfc85f6ff53bb200116812a51bd9e3`
 
