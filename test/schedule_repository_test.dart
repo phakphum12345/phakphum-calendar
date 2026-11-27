@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:phakphum_calendar/core/result/result.dart';
 import 'package:phakphum_calendar/domain/entities/schedule.dart';
 import 'package:phakphum_calendar/domain/repositories/conditional_schedule_writer.dart';
+import 'package:phakphum_calendar/domain/repositories/conditional_schedule_deleter.dart';
 import 'package:phakphum_calendar/domain/repositories/schedule_revision_source.dart';
 import 'package:phakphum_calendar/features/schedule/data/shared_preferences_schedule_repository.dart';
 
@@ -17,7 +18,7 @@ void main() {
       );
       final schedule = canonicalScheduleFixture();
 
-      final saved = await repository.save(schedule);
+      final saved = await _saveCurrentSnapshot(repository, schedule);
       final loaded = await repository.findById(schedule.id);
       final july = await repository.loadMonth(schedule.id, DateTime(2026, 7));
 
@@ -50,7 +51,7 @@ void main() {
     final store = InMemoryScheduleKeyValueStore();
     final repository = SharedPreferencesScheduleRepository(store: store);
     final schedule = canonicalScheduleFixture();
-    await repository.save(schedule);
+    await _saveCurrentSnapshot(repository, schedule);
     final keys = store.values.keys;
     final activeKey = keys.singleWhere((key) => key.endsWith('.active'));
     final activeSlot = store.values[activeKey];
@@ -70,10 +71,11 @@ void main() {
       final store = InMemoryScheduleKeyValueStore();
       final repository = SharedPreferencesScheduleRepository(store: store);
       final original = canonicalScheduleFixture(name: 'Original');
-      expect(await repository.save(original), isA<Success<Schedule>>());
+      expect(await _saveCurrentSnapshot(repository, original), isA<Success<Schedule>>());
       store.failActivePointerWrites = true;
 
-      final failed = await repository.save(
+      final failed = await _saveCurrentSnapshot(
+        repository,
         canonicalScheduleFixture(name: 'Replacement'),
       );
       final loaded = await repository.findById(original.id);
@@ -89,9 +91,13 @@ void main() {
       final repository = SharedPreferencesScheduleRepository(
         store: InMemoryScheduleKeyValueStore(),
       );
-      await repository.save(canonicalScheduleFixture(name: 'First'));
+      await _saveCurrentSnapshot(
+        repository,
+        canonicalScheduleFixture(name: 'First'),
+      );
 
-      final second = await repository.save(
+      final second = await _saveCurrentSnapshot(
+        repository,
         canonicalScheduleFixture(name: 'Second'),
       );
       final loaded = await repository.findById('schedule-1');
@@ -241,7 +247,7 @@ void main() {
     final ConditionalScheduleWriter writer = repository;
     final ScheduleRevisionSource revisionSource = repository;
     final original = canonicalScheduleFixture(name: 'Original');
-    await repository.save(original);
+    await _saveCurrentSnapshot(repository, original);
     final loaded = await repository.findById(original.id);
     final snapshot = (loaded as Success<Schedule?>).value!;
     final staleRevision = revisionSource.revisionForSnapshot(snapshot)!;
@@ -274,7 +280,7 @@ void main() {
     final store = InMemoryScheduleKeyValueStore();
     final repository = SharedPreferencesScheduleRepository(store: store);
 
-    await repository.save(canonicalScheduleFixture());
+    await _saveCurrentSnapshot(repository, canonicalScheduleFixture());
     final keys = store.values.keys;
 
     expect(keys, isNotEmpty);
@@ -289,4 +295,25 @@ void main() {
     expect(keys.any((key) => key == 'source_url'), isFalse);
     expect(keys.any((key) => key == 'saved_sheets'), isFalse);
   });
+}
+
+Future<Result<Schedule>> _saveCurrentSnapshot(
+  SharedPreferencesScheduleRepository repository,
+  Schedule schedule,
+) async {
+  final loaded = await repository.findById(schedule.id) as Success<Schedule?>;
+  final revisions = repository as ScheduleRevisionSource;
+  final expectedRevision = loaded.value == null
+      ? revisions.revisionForAbsentSchedule(schedule.id)
+      : revisions.revisionForSnapshot(loaded.value!);
+  if (expectedRevision == null) {
+    return const PersistenceFailure(
+      'The test could not capture a caller-owned Schedule revision.',
+    );
+  }
+
+  return (repository as ConditionalScheduleWriter).saveIfRevision(
+    schedule,
+    expectedRevision,
+  );
 }
