@@ -9,6 +9,7 @@ import '../../application/grid_roster_import_workflow.dart';
 import '../../application/grid_roster_review_session.dart';
 import '../../application/monthly_roster_section_parser.dart';
 import '../../domain/monthly_roster_section.dart';
+import '../../domain/roster_grid_axis_mapping.dart';
 
 /// Human review screen for a parsed multi-sheet Grid workbook.
 ///
@@ -236,6 +237,7 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
     section.headerRowIndex.toString(),
     anomaly.code,
     anomaly.columnIndex?.toString() ?? '-1',
+    anomaly.rowIndex?.toString() ?? '-1',
     anomaly.displayedDay?.toString() ?? '',
     anomaly.message,
   ].join('|');
@@ -260,12 +262,15 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
   ) {
     final key = _dateAnomalyKey(section, anomaly);
     final choice = _dateAnomalyChoices[key];
-    final column = anomaly.columnIndex;
+    final isVertical =
+        section.orientation == RosterGridOrientation.datesDownRows;
+    final axisIndex = isVertical ? anomaly.rowIndex : anomaly.columnIndex;
     final location = [
       if (section.sourceSheetTitle?.isNotEmpty ?? false)
         'ชีต ${section.sourceSheetTitle}',
-      'แถวหัววันที่ ${section.headerRowIndex + 1}',
-      if (column != null) 'คอลัมน์ ${column + 1}',
+      'แถวแกนวันที่ ${section.headerRowIndex + 1}',
+      if (axisIndex != null)
+        isVertical ? 'แถววันที่ ${axisIndex + 1}' : 'คอลัมน์วันที่ ${axisIndex + 1}',
       if (anomaly.displayedDay != null) 'เลขวันที่ ${anomaly.displayedDay}',
     ].join(' • ');
     return Container(
@@ -292,17 +297,20 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
                 icon: const Icon(Icons.tune),
                 label: Text(choice == null ? 'เลือกวิธีจัดการ' : 'เปลี่ยนตัวเลือก'),
               ),
-              if (column != null &&
+              if (axisIndex != null &&
                   section.sourceCells.isNotEmpty &&
                   section.startDate != null &&
                   section.endDate != null)
                 TextButton.icon(
                   key: ValueKey(
-                    'grid-roster-correct-date-${section.sourceSheetId ?? 'local'}-${section.headerRowIndex}-$column-${anomaly.code}',
+                    'grid-roster-correct-date-${section.sourceSheetId ?? 'local'}-${section.headerRowIndex}-$axisIndex-${anomaly.code}',
                   ),
-                  onPressed: () => _correctDateColumn(section, column),
+                  onPressed: () =>
+                      _correctDateAxis(section, axisIndex, isVertical),
                   icon: const Icon(Icons.edit_calendar),
-                  label: const Text('กำหนดวันที่คอลัมน์นี้'),
+                  label: Text(
+                    isVertical ? 'กำหนดวันที่แถวนี้' : 'กำหนดวันที่คอลัมน์นี้',
+                  ),
                 ),
               if (choice != null)
                 Text(
@@ -316,16 +324,19 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
     );
   }
 
-  Future<void> _correctDateColumn(
+  Future<void> _correctDateAxis(
     MonthlyRosterSection section,
-    int columnIndex,
+    int axisIndex,
+    bool isVertical,
   ) async {
     final start = section.startDate;
     final end = section.endDate;
     if (start == null || end == null || section.sourceCells.isEmpty) return;
     var initialDate = DateTime(start.year, start.month, start.day);
     for (final column in section.dateColumns) {
-      if (column.columnIndex == columnIndex) {
+      if (isVertical
+          ? column.rowIndex == axisIndex
+          : column.columnIndex == axisIndex) {
         initialDate = column.date;
         break;
       }
@@ -335,17 +346,24 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
       initialDate: initialDate,
       firstDate: DateTime(start.year, start.month, start.day),
       lastDate: DateTime(end.year, end.month, end.day),
-      helpText: 'เลือกวันที่จริงของคอลัมน์ ${columnIndex + 1}',
+      helpText: isVertical
+          ? 'เลือกวันที่จริงของแถว ${axisIndex + 1}'
+          : 'เลือกวันที่จริงของคอลัมน์ ${axisIndex + 1}',
       confirmText: 'ใช้วันที่นี้และตรวจตารางใหม่',
     );
     if (!mounted || selected == null) return;
 
     try {
       final parser = const MonthlyRosterSectionParser();
-      final corrected = parser.correctDateColumns(
-        section: section,
-        correctedDatesByColumn: {columnIndex: selected},
-      );
+      final corrected = isVertical
+          ? parser.correctDateRows(
+              section: section,
+              correctedDatesByRow: {axisIndex: selected},
+            )
+          : parser.correctDateColumns(
+              section: section,
+              correctedDatesByColumn: {axisIndex: selected},
+            );
       final sections = _reviewContext.session.sections
           .map((review) {
             final current = review.assessment.section;
@@ -378,8 +396,6 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
           targetSchedule: _reviewContext.targetSchedule,
           targetExisted: _reviewContext.targetExisted,
         );
-        // A correction changes the anomaly set; prior per-anomaly decisions
-        // must not be carried over to the newly validated source grid.
         _dateAnomalyChoices.clear();
         _error = null;
       });
