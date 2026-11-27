@@ -735,15 +735,15 @@ class MonthlyRosterSectionParser {
     final result = <int, int>{};
     for (final cell in cells) {
       final value = cell.rawValue ?? cell.text;
-      // Date-formatted Excel cells arrive as DateTime values; numeric cells
-      // may also be represented as integral doubles. Never truncate fractions.
-      final day = value is DateTime
-          ? value.day
-          : value is num
-          ? (value.isFinite && value == value.roundToDouble()
-                ? value.toInt()
-                : null)
-          : int.tryParse(value?.toString().trim() ?? '');
+      // Explicit dates take precedence over numeric day labels. This supports
+      // Excel DateTime cells and textual Gregorian/Buddhist Era date cells.
+      final explicitDate = _explicitDateValue(value);
+      final day = explicitDate?.day ??
+          (value is num
+              ? (value.isFinite && value == value.roundToDouble()
+                    ? value.toInt()
+                    : null)
+              : int.tryParse(value?.toString().trim() ?? ''));
       if (day != null && day >= 1 && day <= 31) {
         result[cell.columnIndex as int] = day;
       }
@@ -754,16 +754,2212 @@ class MonthlyRosterSectionParser {
   Map<int, DateTime> _explicitDatesByColumn(List<dynamic> cells) {
     final result = <int, DateTime>{};
     for (final cell in cells) {
-      final value = cell.rawValue ?? cell.text;
-      if (value is DateTime) {
-        result[cell.columnIndex as int] = DateTime(
-          value.year,
-          value.month,
-          value.day,
+      final date = _explicitDateValue(cell.rawValue ?? cell.text);
+      if (date != null) result[cell.columnIndex as int] = date;
+    }
+    return result;
+  }
+
+  DateTime? _explicitDateValue(Object? value) {
+    if (value is DateTime) {
+      return DateTime(_normalizeRosterYear(value.year), value.month, value.day);
+    }
+    final text = value?.toString().trim() ?? '';
+    if (text.isEmpty) return null;
+
+    final iso = DateTime.tryParse(text);
+    if (iso != null &&
+        RegExp(r'^\\d{4}-\\d{1,2}-\\d{1,2}(?:$|[T\\s])').hasMatch(text)) {
+      return DateTime(_normalizeRosterYear(iso.year), iso.month, iso.day);
+    }
+
+    final ymd = RegExp(
+      r'^(\\d{4})[-/.](\\d{1,2})[-/.](\\d{1,2})
+
+  List<MonthlyRosterDateAnomaly> _validateDateColumns({
+    required Map<int, int> daysByColumn,
+    required Map<int, DateTime> datesByColumn,
+    required DateTime start,
+    required DateTime end,
+  }) {
+    final anomalies = <MonthlyRosterDateAnomaly>[];
+    final columns = daysByColumn.keys.toList()..sort();
+    final columnsByDay = <int, List<int>>{};
+    for (final column in columns) {
+      columnsByDay.putIfAbsent(daysByColumn[column]!, () => []).add(column);
+    }
+
+    // Repeated day numbers are valid across different months only when the
+    // declared period actually contains that many occurrences of the day.
+    for (final entry in columnsByDay.entries) {
+      var possibleOccurrences = 0;
+      for (
+        var date = DateTime(start.year, start.month, start.day);
+        !date.isAfter(end);
+        date = DateTime(date.year, date.month, date.day + 1)
+      ) {
+        if (date.day == entry.key) possibleOccurrences++;
+      }
+      if (entry.value.length > 1 &&
+          entry.value.length > possibleOccurrences) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'duplicate_day',
+            displayedDay: entry.key,
+            columnIndex: entry.value[1],
+            message: 'พบเลขวันที่ ${entry.key} ซ้ำในช่วงวันที่ของส่วนนี้',
+          ),
         );
       }
     }
+
+    final expectedDayCount = DateTime.utc(
+      end.year, end.month, end.day,
+    ).difference(DateTime.utc(start.year, start.month, start.day)).inDays + 1;
+    final completeRangeHeader = columns.length == expectedDayCount;
+    // Treat near-full headers as complete enough to validate their endpoints;
+    // short sample grids remain valid when they cover only part of a period.
+    final nearCompleteRangeHeader =
+        columns.length >= (expectedDayCount * 0.9).ceil();
+    DateTime? previousResolved;
+    for (final column in columns) {
+      final resolved = datesByColumn[column];
+      if (resolved == null) {
+        if (!completeRangeHeader) {
+          final day = daysByColumn[column]!;
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'unresolved_date',
+              displayedDay: day,
+              columnIndex: column,
+              message: 'วันที่ $day ที่คอลัมน์ ${column + 1} เรียงผิดลำดับหรืออยู่นอกช่วงที่ระบุ',
+            ),
+          );
+        }
+        continue;
+      }
+      if (nearCompleteRangeHeader && previousResolved != null) {
+        final gap = DateTime.utc(
+          resolved.year, resolved.month, resolved.day,
+        ).difference(DateTime.utc(
+          previousResolved.year, previousResolved.month, previousResolved.day,
+        )).inDays;
+        if (gap > 1) {
+          final missing = <String>[];
+          for (var offset = 1; offset < gap; offset++) {
+            final missingDate = DateTime(
+              previousResolved.year,
+              previousResolved.month,
+              previousResolved.day + offset,
+            );
+            missing.add(_formatDate(missingDate));
+          }
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'missing_dates',
+              columnIndex: column,
+              displayedDay: daysByColumn[column],
+              message: 'ลำดับวันที่ขาด ${missing.join(', ')} ก่อนคอลัมน์ ${column + 1}',
+            ),
+          );
+        } else if (gap <= 0) {
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'out_of_order',
+              columnIndex: column,
+              displayedDay: daysByColumn[column],
+              message: 'วันที่ในคอลัมน์ ${column + 1} ไม่เรียงตามปฏิทิน',
+            ),
+          );
+        }
+      }
+      previousResolved = resolved;
+    }
+
+    if (!completeRangeHeader && nearCompleteRangeHeader && columns.isNotEmpty) {
+      final firstResolved = datesByColumn[columns.first];
+      if (firstResolved == null ||
+          firstResolved.year != start.year ||
+          firstResolved.month != start.month ||
+          firstResolved.day != start.day) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'missing_start_date',
+            columnIndex: columns.first,
+            displayedDay: daysByColumn[columns.first],
+            message: 'หัวตารางขาดวันเริ่มต้น ${_formatDate(start)}',
+          ),
+        );
+      }
+      final lastResolved = datesByColumn[columns.last];
+      if (lastResolved == null ||
+          lastResolved.year != end.year ||
+          lastResolved.month != end.month ||
+          lastResolved.day != end.day) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'missing_end_date',
+            columnIndex: columns.last,
+            displayedDay: daysByColumn[columns.last],
+            message: 'หัวตารางขาดวันสิ้นสุด ${_formatDate(end)}',
+          ),
+        );
+      }
+    }
+
+    if (completeRangeHeader) {
+      final resolvedKeys = datesByColumn.values
+          .map((date) => '${date.year}-${date.month}-${date.day}')
+          .toSet();
+      final missing = <String>[];
+      for (var offset = 0; offset < expectedDayCount; offset++) {
+        final expected = DateTime(start.year, start.month, start.day + offset);
+        final expectedKey = '${expected.year}-${expected.month}-${expected.day}';
+        if (!resolvedKeys.contains(expectedKey)) {
+          missing.add(_formatDate(expected));
+        }
+        final actualDay = daysByColumn[columns[offset]]!;
+        if (actualDay != expected.day) {
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'day_sequence_mismatch',
+              columnIndex: columns[offset],
+              displayedDay: actualDay,
+              message: 'คอลัมน์ ${columns[offset] + 1} แสดงวันที่ $actualDay แต่ตามช่วงที่ระบุควรเป็น ${expected.day}',
+            ),
+          );
+        }
+      }
+      if (missing.isNotEmpty) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'missing_dates',
+            message: 'ไม่สามารถจับคู่วันที่ในช่วงที่ระบุได้ครบ: ${missing.join(', ')}',
+          ),
+        );
+      }
+    }
+
+    // A duplicate day in a declared period can leave a trailing portion of
+    // the period unresolved even when the header is far shorter than 90% of
+    // the expected range. Report the actual missing dates as well as the
+    // duplicate so users can repair the header without guessing.
+    if (!completeRangeHeader &&
+        anomalies.any((anomaly) => anomaly.code == 'duplicate_day')) {
+      final resolvedKeys = datesByColumn.values
+          .map((date) => '${date.year}-${date.month}-${date.day}')
+          .toSet();
+      final missing = <String>[];
+      for (
+        var date = DateTime(start.year, start.month, start.day);
+        !date.isAfter(end);
+        date = DateTime(date.year, date.month, date.day + 1)
+      ) {
+        final key = '${date.year}-${date.month}-${date.day}';
+        if (!resolvedKeys.contains(key)) missing.add(_formatDate(date));
+      }
+      if (missing.isNotEmpty) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'missing_dates',
+            message: 'ไม่สามารถจับคู่วันที่ในช่วงที่ระบุได้ครบ: ${missing.join(', ')}',
+          ),
+        );
+      }
+    }
+
+    final unique = <String, MonthlyRosterDateAnomaly>{};
+    for (final anomaly in anomalies) {
+      final key = '${anomaly.code}|${anomaly.columnIndex ?? ''}|${anomaly.displayedDay ?? ''}|${anomaly.message}';
+      unique.putIfAbsent(key, () => anomaly);
+    }
+    return List.unmodifiable(unique.values);
+  }
+
+  Map<int, DateTime> _resolveDatesByColumn({
+    required Map<int, int> daysByColumn,
+    required Map<int, DateTime> explicitDatesByColumn,
+    required DateTime start,
+    required DateTime end,
+    required String sectionTitle,
+    required List<String> warnings,
+  }) {
+    final result = <int, DateTime>{};
+    final columns = daysByColumn.keys.toList()..sort();
+
+    var cursor = DateTime(start.year, start.month, start.day);
+
+    for (final column in columns) {
+      final displayedDay = daysByColumn[column]!;
+      final explicitDate = explicitDatesByColumn[column];
+
+      final resolved = explicitDate == null
+          ? _resolveNextRosterDate(
+              displayedDay: displayedDay,
+              cursor: cursor,
+              start: start,
+              end: end,
+            )
+          : _resolveExplicitRosterDate(
+              value: explicitDate,
+              cursor: cursor,
+              start: start,
+              end: end,
+            );
+
+      if (resolved == null) {
+        warnings.add(
+          'วันที่ $displayedDay ในส่วน "$sectionTitle" '
+          'อยู่นอกช่วง ${_formatDate(start)} - ${_formatDate(end)}',
+        );
+        continue;
+      }
+
+      result[column] = resolved;
+
+      // Treat roster dates as calendar dates, not elapsed 24-hour durations.
+      // Dart's local timezone has historical Bangkok offsets (e.g. year 1920),
+      // so resolved.add(const Duration(days: 1)) can produce a cursor such as
+      // 02/04/1920 00:17:56 while the next candidate is 02/04/1920 00:00:00.
+      // Reconstructing the next calendar date avoids that historical timezone
+      // comparison bug.
+      cursor = DateTime(resolved.year, resolved.month, resolved.day + 1);
+    }
+
     return result;
+  }
+
+  DateTime? _resolveExplicitRosterDate({
+    required DateTime value,
+    required DateTime cursor,
+    required DateTime start,
+    required DateTime end,
+  }) {
+    final date = DateTime(value.year, value.month, value.day);
+    if (date.isBefore(cursor) || date.isBefore(start) || date.isAfter(end)) {
+      return null;
+    }
+    return date;
+  }
+
+  DateTime? _resolveNextRosterDate({
+    required int displayedDay,
+    required DateTime cursor,
+    required DateTime start,
+    required DateTime end,
+  }) {
+    var monthCursor = DateTime(cursor.year, cursor.month);
+    final lastMonth = DateTime(end.year, end.month);
+
+    while (!monthCursor.isAfter(lastMonth)) {
+      final daysInMonth = DateTime(
+        monthCursor.year,
+        monthCursor.month + 1,
+        0,
+      ).day;
+
+      if (displayedDay <= daysInMonth) {
+        final candidate = DateTime(
+          monthCursor.year,
+          monthCursor.month,
+          displayedDay,
+        );
+
+        if (!candidate.isBefore(cursor) &&
+            !candidate.isBefore(start) &&
+            !candidate.isAfter(end)) {
+          return candidate;
+        }
+      }
+
+      monthCursor = DateTime(monthCursor.year, monthCursor.month + 1);
+    }
+
+    return null;
+  }
+
+  String _formatDate(DateTime date) =>
+      '${date.day.toString().padLeft(2, '0')}/'
+      '${date.month.toString().padLeft(2, '0')}/${date.year}';
+
+  String _sectionTitle({
+    required ShiftParserInput input,
+    required Map<int, List<dynamic>> cellsByRow,
+    required int headerRow,
+  }) {
+    final candidates = <String>[];
+    // Search back to the previous date grid, not a fixed number of rows.
+    // Real workbooks often place section labels and merged headings far above
+    // the date row, especially after inserted explanatory rows.
+    for (var row = headerRow - 1; row >= 0; row--) {
+      final rowCells = cellsByRow[row] ?? const [];
+      if (_isDateHeaderRow(rowCells)) break;
+      final texts = rowCells
+          .map((cell) => cell.text?.toString().trim())
+          .whereType<String>()
+          .where((text) => text.isNotEmpty)
+          .toList();
+      candidates.addAll(texts);
+    }
+    // Some real workbooks place the explicit period heading immediately
+    // below the numeric date row. Only consume consecutive period-heading
+    // rows: scanning through assignment rows can accidentally borrow a later
+    // section's heading when that section shares the same worksheet.
+    final lastRow = cellsByRow.keys.fold<int>(
+      headerRow,
+      (current, row) => current > row ? current : row,
+    );
+    for (var row = headerRow + 1; row <= lastRow; row++) {
+      final rowCells = cellsByRow[row] ?? const [];
+      if (_isDateHeaderRow(rowCells)) break;
+      final texts = rowCells
+          .map((cell) => cell.text?.toString().trim())
+          .whereType<String>()
+          .where((text) => text.isNotEmpty)
+          .toList();
+      final hasPeriodHeading = texts.any(
+        (text) => _tryParsePeriod(text) != null || text.contains('ประจำเดือน'),
+      );
+      if (!hasPeriodHeading) break;
+      candidates.addAll(texts);
+    }
+
+    // An explicit month/range heading is authoritative even when the sheet
+    // tab was named for a different month. Prefer the closest valid heading.
+    final dated = candidates.where((text) => _tryParsePeriod(text) != null);
+    if (dated.isNotEmpty) return dated.first;
+
+    // Preserve malformed explicit ranges as section evidence. Dropping them
+    // here would let the worksheet title silently replace an invalid range.
+    final explicitRange = candidates.where(_hasExplicitRangeExpression);
+    if (explicitRange.isNotEmpty) return explicitRange.first;
+
+    final periodTitle = candidates.where((text) => text.contains('ประจำเดือน'));
+    if (periodTitle.isNotEmpty) return periodTitle.first;
+    final descriptive = candidates.where(
+      (text) => text.contains('เวร') || text.contains('คลิน'),
+    );
+    if (descriptive.isNotEmpty) return descriptive.first;
+    return 'ส่วนตารางแถว ${headerRow + 1}';
+  }
+
+  bool _looksLikeHeading(String value) {
+    final normalized = value.replaceAll(RegExp(r'\s+'), '');
+    return normalized == 'วันที่' ||
+        normalized == 'เวร' ||
+        normalized.contains('ประจำเดือน') ||
+        _tryParsePeriod(value) != null;
+  }
+}
+
+
+/// Converts recognizable monthly-grid assignments into calendar shifts.
+/// This is the fallback when the legacy row parser cannot recognize a sheet.
+class MonthlyRosterShiftAdapter {
+  const MonthlyRosterShiftAdapter();
+
+  List<Shift> parseForWorkers(
+    MonthlyRosterParseReport report, {
+    required Iterable<String> targetNames,
+    Iterable<ShiftTemplate> shiftTemplates = const [],
+  }) {
+    final targets = targetNames
+        .map(_compact)
+        .where((value) => value.length >= 2)
+        .toSet();
+    if (targets.isEmpty) return const [];
+
+    final shiftsByKey = <String, Shift>{};
+    for (final section in report.sections) {
+      if (section.hasBlockingDateAnomalies) continue;
+      for (final assignment in section.assignments) {
+        final worker = assignment.workerName.trim();
+        final normalizedWorker = _compact(worker);
+        if (worker.isEmpty || !targets.any(normalizedWorker.contains)) {
+          continue;
+        }
+  
+        final rule = _ruleForLabel(
+          assignment.rowLabel,
+          shiftTemplates: shiftTemplates,
+        );
+        if (rule == null) continue;
+  
+        final date = assignment.date;
+        final start = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          rule.startHour,
+          rule.startMinute,
+        );
+        var end = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          rule.endHour,
+          rule.endMinute,
+        );
+        if (!end.isAfter(start)) end = end.add(const Duration(days: 1));
+  
+        final sourceColor = _colorValue(assignment.backgroundColor);
+        final colorMatch = ShiftColorService.classify(sourceColor);
+        final shift = Shift(
+          code: rule.code,
+          rowLabel: assignment.rowLabel,
+          assignedName: worker,
+          start: start,
+          end: end,
+          sheetTitle: assignment.sheetTitle ?? assignment.sectionTitle,
+          cell: assignment.sourceCell,
+          category: colorMatch?.category ?? rule.category,
+          sourceColorValue: sourceColor,
+          sourceSpreadsheetId: assignment.spreadsheetId,
+          sourceSheetId: assignment.sheetId,
+        );
+        shiftsByKey.putIfAbsent(shift.sourceIdentityKey, () => shift);
+      }
+    }
+
+    return shiftsByKey.values.toList()
+      ..sort((left, right) => left.start.compareTo(right.start));
+  }
+
+  /// Exposes the source of a row-label mapping without changing the
+  /// legacy conversion behavior. A resolved rule is still review-only.
+  MonthlyRosterShiftRuleResolution resolveRuleForLabel(
+    String label, {
+    Iterable<ShiftTemplate> shiftTemplates = const [],
+  }) {
+    final normalizedLabel = _compact(label);
+    if (normalizedLabel.isEmpty) {
+      return const MonthlyRosterShiftRuleResolution(
+        status: MonthlyRosterShiftRuleStatus.emptyLabel,
+      );
+    }
+
+    final templates = shiftTemplates.toList(growable: false);
+    final matchingTemplates = templates.where((template) {
+      if (!template.active) return false;
+      return [
+        template.code,
+        template.name,
+        template.shortName,
+      ].any(
+        (alias) =>
+            alias.trim().isNotEmpty && _compact(alias) == normalizedLabel,
+      );
+    }).toList(growable: false);
+
+    if (matchingTemplates.length > 1) {
+      return const MonthlyRosterShiftRuleResolution(
+        status: MonthlyRosterShiftRuleStatus.ambiguousTemplate,
+      );
+    }
+
+    final rule = _ruleForLabel(
+      label,
+      shiftTemplates: templates,
+    );
+    if (rule == null) {
+      return const MonthlyRosterShiftRuleResolution(
+        status: MonthlyRosterShiftRuleStatus.unsupportedLabel,
+      );
+    }
+
+    return MonthlyRosterShiftRuleResolution(
+      status: matchingTemplates.isEmpty
+          ? MonthlyRosterShiftRuleStatus.builtInRule
+          : MonthlyRosterShiftRuleStatus.configuredTemplate,
+      code: rule.code,
+      startTime: Duration(
+        hours: rule.startHour,
+        minutes: rule.startMinute,
+      ),
+      endTime: Duration(
+        hours: rule.endHour,
+        minutes: rule.endMinute,
+      ),
+      category: rule.category,
+      templateId: matchingTemplates.isEmpty
+          ? null
+          : matchingTemplates.single.id,
+    );
+  }
+
+  _MonthlyShiftRule? _ruleForLabel(
+    String label, {
+    required Iterable<ShiftTemplate> shiftTemplates,
+  }) {
+    final normalizedLabel = _compact(label);
+    final matchingTemplates = shiftTemplates.where((template) {
+      if (!template.active) return false;
+      return [
+        template.code,
+        template.name,
+        template.shortName,
+      ].any((alias) => alias.trim().isNotEmpty && _compact(alias) == normalizedLabel);
+    }).toList(growable: false);
+
+    // A configured template is authoritative. Never choose arbitrarily when
+    // two active templates share an alias (for example, across departments).
+    if (matchingTemplates.isNotEmpty) {
+      if (matchingTemplates.length != 1) return null;
+      final template = matchingTemplates.single;
+      return _MonthlyShiftRule(
+        code: template.code,
+        startHour: template.startTime.inHours.remainder(24),
+        startMinute: template.startTime.inMinutes.remainder(60),
+        endHour: template.endTime.inHours.remainder(24),
+        endMinute: template.endTime.inMinutes.remainder(60),
+        category: ShiftCategory.own,
+      );
+    }
+
+    final value = label
+        .toUpperCase()
+        .replaceAll(RegExp(r'[\s.\-_]+'), '');
+    if (value == 'ER' || value == 'CT') {
+      return _MonthlyShiftRule(
+        code: 'U$value',
+        startHour: 8,
+        startMinute: 0,
+        endHour: 16,
+        endMinute: 0,
+      );
+    }
+    if (value == 'GEN') {
+      return const _MonthlyShiftRule(
+        code: 'UG',
+        startHour: 7,
+        startMinute: 30,
+        endHour: 12,
+        endMinute: 0,
+        category: ShiftCategory.clinic,
+      );
+    }
+    if (value == 'GENบ่าย' || value == 'AG') {
+      return const _MonthlyShiftRule(
+        code: 'AG',
+        startHour: 16,
+        startMinute: 30,
+        endHour: 20,
+        endMinute: 0,
+        category: ShiftCategory.clinic,
+      );
+    }
+    if (value.contains('14ชั้น')) {
+      return const _MonthlyShiftRule(
+        code: 'U14',
+        startHour: 7,
+        startMinute: 0,
+        endHour: 8,
+        endMinute: 0,
+      );
+    }
+
+    final p = RegExp(r'^P([1-4])(เช้า|บ่าย|ดึก)$').firstMatch(value);
+    if (p != null) {
+      final base = 'P${p.group(1)}';
+      return switch (p.group(2)) {
+        'เช้า' => _MonthlyShiftRule(
+          code: 'U$base',
+          startHour: 8,
+          startMinute: 0,
+          endHour: 16,
+          endMinute: 0,
+        ),
+        'บ่าย' => _MonthlyShiftRule(
+          code: 'A$base',
+          startHour: 16,
+          startMinute: 0,
+          endHour: 0,
+          endMinute: 0,
+        ),
+        'ดึก' => _MonthlyShiftRule(
+          code: 'N$base',
+          startHour: 0,
+          startMinute: 0,
+          endHour: 8,
+          endMinute: 0,
+        ),
+        _ => null,
+      };
+    }
+
+    for (final base in const ['CTIPD', 'CTER', 'IPD', 'ER']) {
+      if (!value.startsWith(base)) continue;
+      final period = value.substring(base.length);
+      if (period == 'เช้า') {
+        return _MonthlyShiftRule(
+          code: 'U$base',
+          startHour: 8,
+          startMinute: 0,
+          endHour: 16,
+          endMinute: 0,
+        );
+      }
+      if (period == 'บ่าย') {
+        final overnight = base != 'ER';
+        return _MonthlyShiftRule(
+          code: 'A$base',
+          startHour: 16,
+          startMinute: 0,
+          endHour: overnight ? 8 : 0,
+          endMinute: 0,
+        );
+      }
+      if (period == 'ดึก' && base == 'ER') {
+        return const _MonthlyShiftRule(
+          code: 'NER',
+          startHour: 0,
+          startMinute: 0,
+          endHour: 8,
+          endMinute: 0,
+        );
+      }
+    }
+    return null;
+  }
+
+  String _compact(String value) =>
+      value.trim().replaceAll(RegExp(r'\s+'), '').toLowerCase();
+
+  int? _colorValue(String? hex) {
+    if (hex == null) return null;
+    final value = hex.trim().replaceFirst('#', '');
+    if (!RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(value)) return null;
+    return int.parse('FF$value', radix: 16);
+  }
+}
+
+class _MonthlyShiftRule {
+  const _MonthlyShiftRule({
+    required this.code,
+    required this.startHour,
+    required this.startMinute,
+    required this.endHour,
+    required this.endMinute,
+    this.category = ShiftCategory.own,
+  });
+
+  final String code;
+  final int startHour;
+  final int startMinute;
+  final int endHour;
+  final int endMinute;
+  final ShiftCategory category;
+}
+
+
+enum MonthlyRosterShiftRuleStatus {
+  configuredTemplate,
+  builtInRule,
+  ambiguousTemplate,
+  unsupportedLabel,
+  emptyLabel,
+}
+
+/// Review-only description of the existing monthly-grid shift mapping rule.
+class MonthlyRosterShiftRuleResolution {
+  const MonthlyRosterShiftRuleResolution({
+    required this.status,
+    this.code,
+    this.startTime,
+    this.endTime,
+    this.category,
+    this.templateId,
+  });
+
+  final MonthlyRosterShiftRuleStatus status;
+  final String? code;
+  final Duration? startTime;
+  final Duration? endTime;
+  final ShiftCategory? category;
+  final String? templateId;
+
+  bool get isResolved =>
+      status == MonthlyRosterShiftRuleStatus.configuredTemplate ||
+      status == MonthlyRosterShiftRuleStatus.builtInRule;
+
+  bool get requiresHumanConfirmation => true;
+
+  /// Mapping evidence alone never authorizes persistence.
+  bool get canCommit => false;
+}
+,
+    ).firstMatch(text);
+    if (ymd != null) {
+      return _checkedRosterDate(
+        year: _normalizeRosterYear(int.parse(ymd.group(1)!)),
+        month: int.parse(ymd.group(2)!),
+        day: int.parse(ymd.group(3)!),
+      );
+    }
+
+    final dmy = RegExp(
+      r'^(\\d{1,2})[-/.](\\d{1,2})[-/.](\\d{2,4})
+
+  List<MonthlyRosterDateAnomaly> _validateDateColumns({
+    required Map<int, int> daysByColumn,
+    required Map<int, DateTime> datesByColumn,
+    required DateTime start,
+    required DateTime end,
+  }) {
+    final anomalies = <MonthlyRosterDateAnomaly>[];
+    final columns = daysByColumn.keys.toList()..sort();
+    final columnsByDay = <int, List<int>>{};
+    for (final column in columns) {
+      columnsByDay.putIfAbsent(daysByColumn[column]!, () => []).add(column);
+    }
+
+    // Repeated day numbers are valid across different months only when the
+    // declared period actually contains that many occurrences of the day.
+    for (final entry in columnsByDay.entries) {
+      var possibleOccurrences = 0;
+      for (
+        var date = DateTime(start.year, start.month, start.day);
+        !date.isAfter(end);
+        date = DateTime(date.year, date.month, date.day + 1)
+      ) {
+        if (date.day == entry.key) possibleOccurrences++;
+      }
+      if (entry.value.length > 1 &&
+          entry.value.length > possibleOccurrences) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'duplicate_day',
+            displayedDay: entry.key,
+            columnIndex: entry.value[1],
+            message: 'พบเลขวันที่ ${entry.key} ซ้ำในช่วงวันที่ของส่วนนี้',
+          ),
+        );
+      }
+    }
+
+    final expectedDayCount = DateTime.utc(
+      end.year, end.month, end.day,
+    ).difference(DateTime.utc(start.year, start.month, start.day)).inDays + 1;
+    final completeRangeHeader = columns.length == expectedDayCount;
+    // Treat near-full headers as complete enough to validate their endpoints;
+    // short sample grids remain valid when they cover only part of a period.
+    final nearCompleteRangeHeader =
+        columns.length >= (expectedDayCount * 0.9).ceil();
+    DateTime? previousResolved;
+    for (final column in columns) {
+      final resolved = datesByColumn[column];
+      if (resolved == null) {
+        if (!completeRangeHeader) {
+          final day = daysByColumn[column]!;
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'unresolved_date',
+              displayedDay: day,
+              columnIndex: column,
+              message: 'วันที่ $day ที่คอลัมน์ ${column + 1} เรียงผิดลำดับหรืออยู่นอกช่วงที่ระบุ',
+            ),
+          );
+        }
+        continue;
+      }
+      if (nearCompleteRangeHeader && previousResolved != null) {
+        final gap = DateTime.utc(
+          resolved.year, resolved.month, resolved.day,
+        ).difference(DateTime.utc(
+          previousResolved.year, previousResolved.month, previousResolved.day,
+        )).inDays;
+        if (gap > 1) {
+          final missing = <String>[];
+          for (var offset = 1; offset < gap; offset++) {
+            final missingDate = DateTime(
+              previousResolved.year,
+              previousResolved.month,
+              previousResolved.day + offset,
+            );
+            missing.add(_formatDate(missingDate));
+          }
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'missing_dates',
+              columnIndex: column,
+              displayedDay: daysByColumn[column],
+              message: 'ลำดับวันที่ขาด ${missing.join(', ')} ก่อนคอลัมน์ ${column + 1}',
+            ),
+          );
+        } else if (gap <= 0) {
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'out_of_order',
+              columnIndex: column,
+              displayedDay: daysByColumn[column],
+              message: 'วันที่ในคอลัมน์ ${column + 1} ไม่เรียงตามปฏิทิน',
+            ),
+          );
+        }
+      }
+      previousResolved = resolved;
+    }
+
+    if (!completeRangeHeader && nearCompleteRangeHeader && columns.isNotEmpty) {
+      final firstResolved = datesByColumn[columns.first];
+      if (firstResolved == null ||
+          firstResolved.year != start.year ||
+          firstResolved.month != start.month ||
+          firstResolved.day != start.day) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'missing_start_date',
+            columnIndex: columns.first,
+            displayedDay: daysByColumn[columns.first],
+            message: 'หัวตารางขาดวันเริ่มต้น ${_formatDate(start)}',
+          ),
+        );
+      }
+      final lastResolved = datesByColumn[columns.last];
+      if (lastResolved == null ||
+          lastResolved.year != end.year ||
+          lastResolved.month != end.month ||
+          lastResolved.day != end.day) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'missing_end_date',
+            columnIndex: columns.last,
+            displayedDay: daysByColumn[columns.last],
+            message: 'หัวตารางขาดวันสิ้นสุด ${_formatDate(end)}',
+          ),
+        );
+      }
+    }
+
+    if (completeRangeHeader) {
+      final resolvedKeys = datesByColumn.values
+          .map((date) => '${date.year}-${date.month}-${date.day}')
+          .toSet();
+      final missing = <String>[];
+      for (var offset = 0; offset < expectedDayCount; offset++) {
+        final expected = DateTime(start.year, start.month, start.day + offset);
+        final expectedKey = '${expected.year}-${expected.month}-${expected.day}';
+        if (!resolvedKeys.contains(expectedKey)) {
+          missing.add(_formatDate(expected));
+        }
+        final actualDay = daysByColumn[columns[offset]]!;
+        if (actualDay != expected.day) {
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'day_sequence_mismatch',
+              columnIndex: columns[offset],
+              displayedDay: actualDay,
+              message: 'คอลัมน์ ${columns[offset] + 1} แสดงวันที่ $actualDay แต่ตามช่วงที่ระบุควรเป็น ${expected.day}',
+            ),
+          );
+        }
+      }
+      if (missing.isNotEmpty) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'missing_dates',
+            message: 'ไม่สามารถจับคู่วันที่ในช่วงที่ระบุได้ครบ: ${missing.join(', ')}',
+          ),
+        );
+      }
+    }
+
+    // A duplicate day in a declared period can leave a trailing portion of
+    // the period unresolved even when the header is far shorter than 90% of
+    // the expected range. Report the actual missing dates as well as the
+    // duplicate so users can repair the header without guessing.
+    if (!completeRangeHeader &&
+        anomalies.any((anomaly) => anomaly.code == 'duplicate_day')) {
+      final resolvedKeys = datesByColumn.values
+          .map((date) => '${date.year}-${date.month}-${date.day}')
+          .toSet();
+      final missing = <String>[];
+      for (
+        var date = DateTime(start.year, start.month, start.day);
+        !date.isAfter(end);
+        date = DateTime(date.year, date.month, date.day + 1)
+      ) {
+        final key = '${date.year}-${date.month}-${date.day}';
+        if (!resolvedKeys.contains(key)) missing.add(_formatDate(date));
+      }
+      if (missing.isNotEmpty) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'missing_dates',
+            message: 'ไม่สามารถจับคู่วันที่ในช่วงที่ระบุได้ครบ: ${missing.join(', ')}',
+          ),
+        );
+      }
+    }
+
+    final unique = <String, MonthlyRosterDateAnomaly>{};
+    for (final anomaly in anomalies) {
+      final key = '${anomaly.code}|${anomaly.columnIndex ?? ''}|${anomaly.displayedDay ?? ''}|${anomaly.message}';
+      unique.putIfAbsent(key, () => anomaly);
+    }
+    return List.unmodifiable(unique.values);
+  }
+
+  Map<int, DateTime> _resolveDatesByColumn({
+    required Map<int, int> daysByColumn,
+    required Map<int, DateTime> explicitDatesByColumn,
+    required DateTime start,
+    required DateTime end,
+    required String sectionTitle,
+    required List<String> warnings,
+  }) {
+    final result = <int, DateTime>{};
+    final columns = daysByColumn.keys.toList()..sort();
+
+    var cursor = DateTime(start.year, start.month, start.day);
+
+    for (final column in columns) {
+      final displayedDay = daysByColumn[column]!;
+      final explicitDate = explicitDatesByColumn[column];
+
+      final resolved = explicitDate == null
+          ? _resolveNextRosterDate(
+              displayedDay: displayedDay,
+              cursor: cursor,
+              start: start,
+              end: end,
+            )
+          : _resolveExplicitRosterDate(
+              value: explicitDate,
+              cursor: cursor,
+              start: start,
+              end: end,
+            );
+
+      if (resolved == null) {
+        warnings.add(
+          'วันที่ $displayedDay ในส่วน "$sectionTitle" '
+          'อยู่นอกช่วง ${_formatDate(start)} - ${_formatDate(end)}',
+        );
+        continue;
+      }
+
+      result[column] = resolved;
+
+      // Treat roster dates as calendar dates, not elapsed 24-hour durations.
+      // Dart's local timezone has historical Bangkok offsets (e.g. year 1920),
+      // so resolved.add(const Duration(days: 1)) can produce a cursor such as
+      // 02/04/1920 00:17:56 while the next candidate is 02/04/1920 00:00:00.
+      // Reconstructing the next calendar date avoids that historical timezone
+      // comparison bug.
+      cursor = DateTime(resolved.year, resolved.month, resolved.day + 1);
+    }
+
+    return result;
+  }
+
+  DateTime? _resolveExplicitRosterDate({
+    required DateTime value,
+    required DateTime cursor,
+    required DateTime start,
+    required DateTime end,
+  }) {
+    final date = DateTime(value.year, value.month, value.day);
+    if (date.isBefore(cursor) || date.isBefore(start) || date.isAfter(end)) {
+      return null;
+    }
+    return date;
+  }
+
+  DateTime? _resolveNextRosterDate({
+    required int displayedDay,
+    required DateTime cursor,
+    required DateTime start,
+    required DateTime end,
+  }) {
+    var monthCursor = DateTime(cursor.year, cursor.month);
+    final lastMonth = DateTime(end.year, end.month);
+
+    while (!monthCursor.isAfter(lastMonth)) {
+      final daysInMonth = DateTime(
+        monthCursor.year,
+        monthCursor.month + 1,
+        0,
+      ).day;
+
+      if (displayedDay <= daysInMonth) {
+        final candidate = DateTime(
+          monthCursor.year,
+          monthCursor.month,
+          displayedDay,
+        );
+
+        if (!candidate.isBefore(cursor) &&
+            !candidate.isBefore(start) &&
+            !candidate.isAfter(end)) {
+          return candidate;
+        }
+      }
+
+      monthCursor = DateTime(monthCursor.year, monthCursor.month + 1);
+    }
+
+    return null;
+  }
+
+  String _formatDate(DateTime date) =>
+      '${date.day.toString().padLeft(2, '0')}/'
+      '${date.month.toString().padLeft(2, '0')}/${date.year}';
+
+  String _sectionTitle({
+    required ShiftParserInput input,
+    required Map<int, List<dynamic>> cellsByRow,
+    required int headerRow,
+  }) {
+    final candidates = <String>[];
+    // Search back to the previous date grid, not a fixed number of rows.
+    // Real workbooks often place section labels and merged headings far above
+    // the date row, especially after inserted explanatory rows.
+    for (var row = headerRow - 1; row >= 0; row--) {
+      final rowCells = cellsByRow[row] ?? const [];
+      if (_isDateHeaderRow(rowCells)) break;
+      final texts = rowCells
+          .map((cell) => cell.text?.toString().trim())
+          .whereType<String>()
+          .where((text) => text.isNotEmpty)
+          .toList();
+      candidates.addAll(texts);
+    }
+    // Some real workbooks place the explicit period heading immediately
+    // below the numeric date row. Only consume consecutive period-heading
+    // rows: scanning through assignment rows can accidentally borrow a later
+    // section's heading when that section shares the same worksheet.
+    final lastRow = cellsByRow.keys.fold<int>(
+      headerRow,
+      (current, row) => current > row ? current : row,
+    );
+    for (var row = headerRow + 1; row <= lastRow; row++) {
+      final rowCells = cellsByRow[row] ?? const [];
+      if (_isDateHeaderRow(rowCells)) break;
+      final texts = rowCells
+          .map((cell) => cell.text?.toString().trim())
+          .whereType<String>()
+          .where((text) => text.isNotEmpty)
+          .toList();
+      final hasPeriodHeading = texts.any(
+        (text) => _tryParsePeriod(text) != null || text.contains('ประจำเดือน'),
+      );
+      if (!hasPeriodHeading) break;
+      candidates.addAll(texts);
+    }
+
+    // An explicit month/range heading is authoritative even when the sheet
+    // tab was named for a different month. Prefer the closest valid heading.
+    final dated = candidates.where((text) => _tryParsePeriod(text) != null);
+    if (dated.isNotEmpty) return dated.first;
+
+    // Preserve malformed explicit ranges as section evidence. Dropping them
+    // here would let the worksheet title silently replace an invalid range.
+    final explicitRange = candidates.where(_hasExplicitRangeExpression);
+    if (explicitRange.isNotEmpty) return explicitRange.first;
+
+    final periodTitle = candidates.where((text) => text.contains('ประจำเดือน'));
+    if (periodTitle.isNotEmpty) return periodTitle.first;
+    final descriptive = candidates.where(
+      (text) => text.contains('เวร') || text.contains('คลิน'),
+    );
+    if (descriptive.isNotEmpty) return descriptive.first;
+    return 'ส่วนตารางแถว ${headerRow + 1}';
+  }
+
+  bool _looksLikeHeading(String value) {
+    final normalized = value.replaceAll(RegExp(r'\s+'), '');
+    return normalized == 'วันที่' ||
+        normalized == 'เวร' ||
+        normalized.contains('ประจำเดือน') ||
+        _tryParsePeriod(value) != null;
+  }
+}
+
+
+/// Converts recognizable monthly-grid assignments into calendar shifts.
+/// This is the fallback when the legacy row parser cannot recognize a sheet.
+class MonthlyRosterShiftAdapter {
+  const MonthlyRosterShiftAdapter();
+
+  List<Shift> parseForWorkers(
+    MonthlyRosterParseReport report, {
+    required Iterable<String> targetNames,
+    Iterable<ShiftTemplate> shiftTemplates = const [],
+  }) {
+    final targets = targetNames
+        .map(_compact)
+        .where((value) => value.length >= 2)
+        .toSet();
+    if (targets.isEmpty) return const [];
+
+    final shiftsByKey = <String, Shift>{};
+    for (final section in report.sections) {
+      if (section.hasBlockingDateAnomalies) continue;
+      for (final assignment in section.assignments) {
+        final worker = assignment.workerName.trim();
+        final normalizedWorker = _compact(worker);
+        if (worker.isEmpty || !targets.any(normalizedWorker.contains)) {
+          continue;
+        }
+  
+        final rule = _ruleForLabel(
+          assignment.rowLabel,
+          shiftTemplates: shiftTemplates,
+        );
+        if (rule == null) continue;
+  
+        final date = assignment.date;
+        final start = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          rule.startHour,
+          rule.startMinute,
+        );
+        var end = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          rule.endHour,
+          rule.endMinute,
+        );
+        if (!end.isAfter(start)) end = end.add(const Duration(days: 1));
+  
+        final sourceColor = _colorValue(assignment.backgroundColor);
+        final colorMatch = ShiftColorService.classify(sourceColor);
+        final shift = Shift(
+          code: rule.code,
+          rowLabel: assignment.rowLabel,
+          assignedName: worker,
+          start: start,
+          end: end,
+          sheetTitle: assignment.sheetTitle ?? assignment.sectionTitle,
+          cell: assignment.sourceCell,
+          category: colorMatch?.category ?? rule.category,
+          sourceColorValue: sourceColor,
+          sourceSpreadsheetId: assignment.spreadsheetId,
+          sourceSheetId: assignment.sheetId,
+        );
+        shiftsByKey.putIfAbsent(shift.sourceIdentityKey, () => shift);
+      }
+    }
+
+    return shiftsByKey.values.toList()
+      ..sort((left, right) => left.start.compareTo(right.start));
+  }
+
+  /// Exposes the source of a row-label mapping without changing the
+  /// legacy conversion behavior. A resolved rule is still review-only.
+  MonthlyRosterShiftRuleResolution resolveRuleForLabel(
+    String label, {
+    Iterable<ShiftTemplate> shiftTemplates = const [],
+  }) {
+    final normalizedLabel = _compact(label);
+    if (normalizedLabel.isEmpty) {
+      return const MonthlyRosterShiftRuleResolution(
+        status: MonthlyRosterShiftRuleStatus.emptyLabel,
+      );
+    }
+
+    final templates = shiftTemplates.toList(growable: false);
+    final matchingTemplates = templates.where((template) {
+      if (!template.active) return false;
+      return [
+        template.code,
+        template.name,
+        template.shortName,
+      ].any(
+        (alias) =>
+            alias.trim().isNotEmpty && _compact(alias) == normalizedLabel,
+      );
+    }).toList(growable: false);
+
+    if (matchingTemplates.length > 1) {
+      return const MonthlyRosterShiftRuleResolution(
+        status: MonthlyRosterShiftRuleStatus.ambiguousTemplate,
+      );
+    }
+
+    final rule = _ruleForLabel(
+      label,
+      shiftTemplates: templates,
+    );
+    if (rule == null) {
+      return const MonthlyRosterShiftRuleResolution(
+        status: MonthlyRosterShiftRuleStatus.unsupportedLabel,
+      );
+    }
+
+    return MonthlyRosterShiftRuleResolution(
+      status: matchingTemplates.isEmpty
+          ? MonthlyRosterShiftRuleStatus.builtInRule
+          : MonthlyRosterShiftRuleStatus.configuredTemplate,
+      code: rule.code,
+      startTime: Duration(
+        hours: rule.startHour,
+        minutes: rule.startMinute,
+      ),
+      endTime: Duration(
+        hours: rule.endHour,
+        minutes: rule.endMinute,
+      ),
+      category: rule.category,
+      templateId: matchingTemplates.isEmpty
+          ? null
+          : matchingTemplates.single.id,
+    );
+  }
+
+  _MonthlyShiftRule? _ruleForLabel(
+    String label, {
+    required Iterable<ShiftTemplate> shiftTemplates,
+  }) {
+    final normalizedLabel = _compact(label);
+    final matchingTemplates = shiftTemplates.where((template) {
+      if (!template.active) return false;
+      return [
+        template.code,
+        template.name,
+        template.shortName,
+      ].any((alias) => alias.trim().isNotEmpty && _compact(alias) == normalizedLabel);
+    }).toList(growable: false);
+
+    // A configured template is authoritative. Never choose arbitrarily when
+    // two active templates share an alias (for example, across departments).
+    if (matchingTemplates.isNotEmpty) {
+      if (matchingTemplates.length != 1) return null;
+      final template = matchingTemplates.single;
+      return _MonthlyShiftRule(
+        code: template.code,
+        startHour: template.startTime.inHours.remainder(24),
+        startMinute: template.startTime.inMinutes.remainder(60),
+        endHour: template.endTime.inHours.remainder(24),
+        endMinute: template.endTime.inMinutes.remainder(60),
+        category: ShiftCategory.own,
+      );
+    }
+
+    final value = label
+        .toUpperCase()
+        .replaceAll(RegExp(r'[\s.\-_]+'), '');
+    if (value == 'ER' || value == 'CT') {
+      return _MonthlyShiftRule(
+        code: 'U$value',
+        startHour: 8,
+        startMinute: 0,
+        endHour: 16,
+        endMinute: 0,
+      );
+    }
+    if (value == 'GEN') {
+      return const _MonthlyShiftRule(
+        code: 'UG',
+        startHour: 7,
+        startMinute: 30,
+        endHour: 12,
+        endMinute: 0,
+        category: ShiftCategory.clinic,
+      );
+    }
+    if (value == 'GENบ่าย' || value == 'AG') {
+      return const _MonthlyShiftRule(
+        code: 'AG',
+        startHour: 16,
+        startMinute: 30,
+        endHour: 20,
+        endMinute: 0,
+        category: ShiftCategory.clinic,
+      );
+    }
+    if (value.contains('14ชั้น')) {
+      return const _MonthlyShiftRule(
+        code: 'U14',
+        startHour: 7,
+        startMinute: 0,
+        endHour: 8,
+        endMinute: 0,
+      );
+    }
+
+    final p = RegExp(r'^P([1-4])(เช้า|บ่าย|ดึก)$').firstMatch(value);
+    if (p != null) {
+      final base = 'P${p.group(1)}';
+      return switch (p.group(2)) {
+        'เช้า' => _MonthlyShiftRule(
+          code: 'U$base',
+          startHour: 8,
+          startMinute: 0,
+          endHour: 16,
+          endMinute: 0,
+        ),
+        'บ่าย' => _MonthlyShiftRule(
+          code: 'A$base',
+          startHour: 16,
+          startMinute: 0,
+          endHour: 0,
+          endMinute: 0,
+        ),
+        'ดึก' => _MonthlyShiftRule(
+          code: 'N$base',
+          startHour: 0,
+          startMinute: 0,
+          endHour: 8,
+          endMinute: 0,
+        ),
+        _ => null,
+      };
+    }
+
+    for (final base in const ['CTIPD', 'CTER', 'IPD', 'ER']) {
+      if (!value.startsWith(base)) continue;
+      final period = value.substring(base.length);
+      if (period == 'เช้า') {
+        return _MonthlyShiftRule(
+          code: 'U$base',
+          startHour: 8,
+          startMinute: 0,
+          endHour: 16,
+          endMinute: 0,
+        );
+      }
+      if (period == 'บ่าย') {
+        final overnight = base != 'ER';
+        return _MonthlyShiftRule(
+          code: 'A$base',
+          startHour: 16,
+          startMinute: 0,
+          endHour: overnight ? 8 : 0,
+          endMinute: 0,
+        );
+      }
+      if (period == 'ดึก' && base == 'ER') {
+        return const _MonthlyShiftRule(
+          code: 'NER',
+          startHour: 0,
+          startMinute: 0,
+          endHour: 8,
+          endMinute: 0,
+        );
+      }
+    }
+    return null;
+  }
+
+  String _compact(String value) =>
+      value.trim().replaceAll(RegExp(r'\s+'), '').toLowerCase();
+
+  int? _colorValue(String? hex) {
+    if (hex == null) return null;
+    final value = hex.trim().replaceFirst('#', '');
+    if (!RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(value)) return null;
+    return int.parse('FF$value', radix: 16);
+  }
+}
+
+class _MonthlyShiftRule {
+  const _MonthlyShiftRule({
+    required this.code,
+    required this.startHour,
+    required this.startMinute,
+    required this.endHour,
+    required this.endMinute,
+    this.category = ShiftCategory.own,
+  });
+
+  final String code;
+  final int startHour;
+  final int startMinute;
+  final int endHour;
+  final int endMinute;
+  final ShiftCategory category;
+}
+
+
+enum MonthlyRosterShiftRuleStatus {
+  configuredTemplate,
+  builtInRule,
+  ambiguousTemplate,
+  unsupportedLabel,
+  emptyLabel,
+}
+
+/// Review-only description of the existing monthly-grid shift mapping rule.
+class MonthlyRosterShiftRuleResolution {
+  const MonthlyRosterShiftRuleResolution({
+    required this.status,
+    this.code,
+    this.startTime,
+    this.endTime,
+    this.category,
+    this.templateId,
+  });
+
+  final MonthlyRosterShiftRuleStatus status;
+  final String? code;
+  final Duration? startTime;
+  final Duration? endTime;
+  final ShiftCategory? category;
+  final String? templateId;
+
+  bool get isResolved =>
+      status == MonthlyRosterShiftRuleStatus.configuredTemplate ||
+      status == MonthlyRosterShiftRuleStatus.builtInRule;
+
+  bool get requiresHumanConfirmation => true;
+
+  /// Mapping evidence alone never authorizes persistence.
+  bool get canCommit => false;
+}
+,
+    ).firstMatch(text);
+    if (dmy != null) {
+      return _checkedRosterDate(
+        year: _normalizeRosterYear(int.parse(dmy.group(3)!)),
+        month: int.parse(dmy.group(2)!),
+        day: int.parse(dmy.group(1)!),
+      );
+    }
+
+    if (RegExp(r'^\\d{1,2}\\s*[ก-๙.]+\\s*\\d{2,4}
+
+  List<MonthlyRosterDateAnomaly> _validateDateColumns({
+    required Map<int, int> daysByColumn,
+    required Map<int, DateTime> datesByColumn,
+    required DateTime start,
+    required DateTime end,
+  }) {
+    final anomalies = <MonthlyRosterDateAnomaly>[];
+    final columns = daysByColumn.keys.toList()..sort();
+    final columnsByDay = <int, List<int>>{};
+    for (final column in columns) {
+      columnsByDay.putIfAbsent(daysByColumn[column]!, () => []).add(column);
+    }
+
+    // Repeated day numbers are valid across different months only when the
+    // declared period actually contains that many occurrences of the day.
+    for (final entry in columnsByDay.entries) {
+      var possibleOccurrences = 0;
+      for (
+        var date = DateTime(start.year, start.month, start.day);
+        !date.isAfter(end);
+        date = DateTime(date.year, date.month, date.day + 1)
+      ) {
+        if (date.day == entry.key) possibleOccurrences++;
+      }
+      if (entry.value.length > 1 &&
+          entry.value.length > possibleOccurrences) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'duplicate_day',
+            displayedDay: entry.key,
+            columnIndex: entry.value[1],
+            message: 'พบเลขวันที่ ${entry.key} ซ้ำในช่วงวันที่ของส่วนนี้',
+          ),
+        );
+      }
+    }
+
+    final expectedDayCount = DateTime.utc(
+      end.year, end.month, end.day,
+    ).difference(DateTime.utc(start.year, start.month, start.day)).inDays + 1;
+    final completeRangeHeader = columns.length == expectedDayCount;
+    // Treat near-full headers as complete enough to validate their endpoints;
+    // short sample grids remain valid when they cover only part of a period.
+    final nearCompleteRangeHeader =
+        columns.length >= (expectedDayCount * 0.9).ceil();
+    DateTime? previousResolved;
+    for (final column in columns) {
+      final resolved = datesByColumn[column];
+      if (resolved == null) {
+        if (!completeRangeHeader) {
+          final day = daysByColumn[column]!;
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'unresolved_date',
+              displayedDay: day,
+              columnIndex: column,
+              message: 'วันที่ $day ที่คอลัมน์ ${column + 1} เรียงผิดลำดับหรืออยู่นอกช่วงที่ระบุ',
+            ),
+          );
+        }
+        continue;
+      }
+      if (nearCompleteRangeHeader && previousResolved != null) {
+        final gap = DateTime.utc(
+          resolved.year, resolved.month, resolved.day,
+        ).difference(DateTime.utc(
+          previousResolved.year, previousResolved.month, previousResolved.day,
+        )).inDays;
+        if (gap > 1) {
+          final missing = <String>[];
+          for (var offset = 1; offset < gap; offset++) {
+            final missingDate = DateTime(
+              previousResolved.year,
+              previousResolved.month,
+              previousResolved.day + offset,
+            );
+            missing.add(_formatDate(missingDate));
+          }
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'missing_dates',
+              columnIndex: column,
+              displayedDay: daysByColumn[column],
+              message: 'ลำดับวันที่ขาด ${missing.join(', ')} ก่อนคอลัมน์ ${column + 1}',
+            ),
+          );
+        } else if (gap <= 0) {
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'out_of_order',
+              columnIndex: column,
+              displayedDay: daysByColumn[column],
+              message: 'วันที่ในคอลัมน์ ${column + 1} ไม่เรียงตามปฏิทิน',
+            ),
+          );
+        }
+      }
+      previousResolved = resolved;
+    }
+
+    if (!completeRangeHeader && nearCompleteRangeHeader && columns.isNotEmpty) {
+      final firstResolved = datesByColumn[columns.first];
+      if (firstResolved == null ||
+          firstResolved.year != start.year ||
+          firstResolved.month != start.month ||
+          firstResolved.day != start.day) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'missing_start_date',
+            columnIndex: columns.first,
+            displayedDay: daysByColumn[columns.first],
+            message: 'หัวตารางขาดวันเริ่มต้น ${_formatDate(start)}',
+          ),
+        );
+      }
+      final lastResolved = datesByColumn[columns.last];
+      if (lastResolved == null ||
+          lastResolved.year != end.year ||
+          lastResolved.month != end.month ||
+          lastResolved.day != end.day) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'missing_end_date',
+            columnIndex: columns.last,
+            displayedDay: daysByColumn[columns.last],
+            message: 'หัวตารางขาดวันสิ้นสุด ${_formatDate(end)}',
+          ),
+        );
+      }
+    }
+
+    if (completeRangeHeader) {
+      final resolvedKeys = datesByColumn.values
+          .map((date) => '${date.year}-${date.month}-${date.day}')
+          .toSet();
+      final missing = <String>[];
+      for (var offset = 0; offset < expectedDayCount; offset++) {
+        final expected = DateTime(start.year, start.month, start.day + offset);
+        final expectedKey = '${expected.year}-${expected.month}-${expected.day}';
+        if (!resolvedKeys.contains(expectedKey)) {
+          missing.add(_formatDate(expected));
+        }
+        final actualDay = daysByColumn[columns[offset]]!;
+        if (actualDay != expected.day) {
+          anomalies.add(
+            MonthlyRosterDateAnomaly(
+              code: 'day_sequence_mismatch',
+              columnIndex: columns[offset],
+              displayedDay: actualDay,
+              message: 'คอลัมน์ ${columns[offset] + 1} แสดงวันที่ $actualDay แต่ตามช่วงที่ระบุควรเป็น ${expected.day}',
+            ),
+          );
+        }
+      }
+      if (missing.isNotEmpty) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'missing_dates',
+            message: 'ไม่สามารถจับคู่วันที่ในช่วงที่ระบุได้ครบ: ${missing.join(', ')}',
+          ),
+        );
+      }
+    }
+
+    // A duplicate day in a declared period can leave a trailing portion of
+    // the period unresolved even when the header is far shorter than 90% of
+    // the expected range. Report the actual missing dates as well as the
+    // duplicate so users can repair the header without guessing.
+    if (!completeRangeHeader &&
+        anomalies.any((anomaly) => anomaly.code == 'duplicate_day')) {
+      final resolvedKeys = datesByColumn.values
+          .map((date) => '${date.year}-${date.month}-${date.day}')
+          .toSet();
+      final missing = <String>[];
+      for (
+        var date = DateTime(start.year, start.month, start.day);
+        !date.isAfter(end);
+        date = DateTime(date.year, date.month, date.day + 1)
+      ) {
+        final key = '${date.year}-${date.month}-${date.day}';
+        if (!resolvedKeys.contains(key)) missing.add(_formatDate(date));
+      }
+      if (missing.isNotEmpty) {
+        anomalies.add(
+          MonthlyRosterDateAnomaly(
+            code: 'missing_dates',
+            message: 'ไม่สามารถจับคู่วันที่ในช่วงที่ระบุได้ครบ: ${missing.join(', ')}',
+          ),
+        );
+      }
+    }
+
+    final unique = <String, MonthlyRosterDateAnomaly>{};
+    for (final anomaly in anomalies) {
+      final key = '${anomaly.code}|${anomaly.columnIndex ?? ''}|${anomaly.displayedDay ?? ''}|${anomaly.message}';
+      unique.putIfAbsent(key, () => anomaly);
+    }
+    return List.unmodifiable(unique.values);
+  }
+
+  Map<int, DateTime> _resolveDatesByColumn({
+    required Map<int, int> daysByColumn,
+    required Map<int, DateTime> explicitDatesByColumn,
+    required DateTime start,
+    required DateTime end,
+    required String sectionTitle,
+    required List<String> warnings,
+  }) {
+    final result = <int, DateTime>{};
+    final columns = daysByColumn.keys.toList()..sort();
+
+    var cursor = DateTime(start.year, start.month, start.day);
+
+    for (final column in columns) {
+      final displayedDay = daysByColumn[column]!;
+      final explicitDate = explicitDatesByColumn[column];
+
+      final resolved = explicitDate == null
+          ? _resolveNextRosterDate(
+              displayedDay: displayedDay,
+              cursor: cursor,
+              start: start,
+              end: end,
+            )
+          : _resolveExplicitRosterDate(
+              value: explicitDate,
+              cursor: cursor,
+              start: start,
+              end: end,
+            );
+
+      if (resolved == null) {
+        warnings.add(
+          'วันที่ $displayedDay ในส่วน "$sectionTitle" '
+          'อยู่นอกช่วง ${_formatDate(start)} - ${_formatDate(end)}',
+        );
+        continue;
+      }
+
+      result[column] = resolved;
+
+      // Treat roster dates as calendar dates, not elapsed 24-hour durations.
+      // Dart's local timezone has historical Bangkok offsets (e.g. year 1920),
+      // so resolved.add(const Duration(days: 1)) can produce a cursor such as
+      // 02/04/1920 00:17:56 while the next candidate is 02/04/1920 00:00:00.
+      // Reconstructing the next calendar date avoids that historical timezone
+      // comparison bug.
+      cursor = DateTime(resolved.year, resolved.month, resolved.day + 1);
+    }
+
+    return result;
+  }
+
+  DateTime? _resolveExplicitRosterDate({
+    required DateTime value,
+    required DateTime cursor,
+    required DateTime start,
+    required DateTime end,
+  }) {
+    final date = DateTime(value.year, value.month, value.day);
+    if (date.isBefore(cursor) || date.isBefore(start) || date.isAfter(end)) {
+      return null;
+    }
+    return date;
+  }
+
+  DateTime? _resolveNextRosterDate({
+    required int displayedDay,
+    required DateTime cursor,
+    required DateTime start,
+    required DateTime end,
+  }) {
+    var monthCursor = DateTime(cursor.year, cursor.month);
+    final lastMonth = DateTime(end.year, end.month);
+
+    while (!monthCursor.isAfter(lastMonth)) {
+      final daysInMonth = DateTime(
+        monthCursor.year,
+        monthCursor.month + 1,
+        0,
+      ).day;
+
+      if (displayedDay <= daysInMonth) {
+        final candidate = DateTime(
+          monthCursor.year,
+          monthCursor.month,
+          displayedDay,
+        );
+
+        if (!candidate.isBefore(cursor) &&
+            !candidate.isBefore(start) &&
+            !candidate.isAfter(end)) {
+          return candidate;
+        }
+      }
+
+      monthCursor = DateTime(monthCursor.year, monthCursor.month + 1);
+    }
+
+    return null;
+  }
+
+  String _formatDate(DateTime date) =>
+      '${date.day.toString().padLeft(2, '0')}/'
+      '${date.month.toString().padLeft(2, '0')}/${date.year}';
+
+  String _sectionTitle({
+    required ShiftParserInput input,
+    required Map<int, List<dynamic>> cellsByRow,
+    required int headerRow,
+  }) {
+    final candidates = <String>[];
+    // Search back to the previous date grid, not a fixed number of rows.
+    // Real workbooks often place section labels and merged headings far above
+    // the date row, especially after inserted explanatory rows.
+    for (var row = headerRow - 1; row >= 0; row--) {
+      final rowCells = cellsByRow[row] ?? const [];
+      if (_isDateHeaderRow(rowCells)) break;
+      final texts = rowCells
+          .map((cell) => cell.text?.toString().trim())
+          .whereType<String>()
+          .where((text) => text.isNotEmpty)
+          .toList();
+      candidates.addAll(texts);
+    }
+    // Some real workbooks place the explicit period heading immediately
+    // below the numeric date row. Only consume consecutive period-heading
+    // rows: scanning through assignment rows can accidentally borrow a later
+    // section's heading when that section shares the same worksheet.
+    final lastRow = cellsByRow.keys.fold<int>(
+      headerRow,
+      (current, row) => current > row ? current : row,
+    );
+    for (var row = headerRow + 1; row <= lastRow; row++) {
+      final rowCells = cellsByRow[row] ?? const [];
+      if (_isDateHeaderRow(rowCells)) break;
+      final texts = rowCells
+          .map((cell) => cell.text?.toString().trim())
+          .whereType<String>()
+          .where((text) => text.isNotEmpty)
+          .toList();
+      final hasPeriodHeading = texts.any(
+        (text) => _tryParsePeriod(text) != null || text.contains('ประจำเดือน'),
+      );
+      if (!hasPeriodHeading) break;
+      candidates.addAll(texts);
+    }
+
+    // An explicit month/range heading is authoritative even when the sheet
+    // tab was named for a different month. Prefer the closest valid heading.
+    final dated = candidates.where((text) => _tryParsePeriod(text) != null);
+    if (dated.isNotEmpty) return dated.first;
+
+    // Preserve malformed explicit ranges as section evidence. Dropping them
+    // here would let the worksheet title silently replace an invalid range.
+    final explicitRange = candidates.where(_hasExplicitRangeExpression);
+    if (explicitRange.isNotEmpty) return explicitRange.first;
+
+    final periodTitle = candidates.where((text) => text.contains('ประจำเดือน'));
+    if (periodTitle.isNotEmpty) return periodTitle.first;
+    final descriptive = candidates.where(
+      (text) => text.contains('เวร') || text.contains('คลิน'),
+    );
+    if (descriptive.isNotEmpty) return descriptive.first;
+    return 'ส่วนตารางแถว ${headerRow + 1}';
+  }
+
+  bool _looksLikeHeading(String value) {
+    final normalized = value.replaceAll(RegExp(r'\s+'), '');
+    return normalized == 'วันที่' ||
+        normalized == 'เวร' ||
+        normalized.contains('ประจำเดือน') ||
+        _tryParsePeriod(value) != null;
+  }
+}
+
+
+/// Converts recognizable monthly-grid assignments into calendar shifts.
+/// This is the fallback when the legacy row parser cannot recognize a sheet.
+class MonthlyRosterShiftAdapter {
+  const MonthlyRosterShiftAdapter();
+
+  List<Shift> parseForWorkers(
+    MonthlyRosterParseReport report, {
+    required Iterable<String> targetNames,
+    Iterable<ShiftTemplate> shiftTemplates = const [],
+  }) {
+    final targets = targetNames
+        .map(_compact)
+        .where((value) => value.length >= 2)
+        .toSet();
+    if (targets.isEmpty) return const [];
+
+    final shiftsByKey = <String, Shift>{};
+    for (final section in report.sections) {
+      if (section.hasBlockingDateAnomalies) continue;
+      for (final assignment in section.assignments) {
+        final worker = assignment.workerName.trim();
+        final normalizedWorker = _compact(worker);
+        if (worker.isEmpty || !targets.any(normalizedWorker.contains)) {
+          continue;
+        }
+  
+        final rule = _ruleForLabel(
+          assignment.rowLabel,
+          shiftTemplates: shiftTemplates,
+        );
+        if (rule == null) continue;
+  
+        final date = assignment.date;
+        final start = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          rule.startHour,
+          rule.startMinute,
+        );
+        var end = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          rule.endHour,
+          rule.endMinute,
+        );
+        if (!end.isAfter(start)) end = end.add(const Duration(days: 1));
+  
+        final sourceColor = _colorValue(assignment.backgroundColor);
+        final colorMatch = ShiftColorService.classify(sourceColor);
+        final shift = Shift(
+          code: rule.code,
+          rowLabel: assignment.rowLabel,
+          assignedName: worker,
+          start: start,
+          end: end,
+          sheetTitle: assignment.sheetTitle ?? assignment.sectionTitle,
+          cell: assignment.sourceCell,
+          category: colorMatch?.category ?? rule.category,
+          sourceColorValue: sourceColor,
+          sourceSpreadsheetId: assignment.spreadsheetId,
+          sourceSheetId: assignment.sheetId,
+        );
+        shiftsByKey.putIfAbsent(shift.sourceIdentityKey, () => shift);
+      }
+    }
+
+    return shiftsByKey.values.toList()
+      ..sort((left, right) => left.start.compareTo(right.start));
+  }
+
+  /// Exposes the source of a row-label mapping without changing the
+  /// legacy conversion behavior. A resolved rule is still review-only.
+  MonthlyRosterShiftRuleResolution resolveRuleForLabel(
+    String label, {
+    Iterable<ShiftTemplate> shiftTemplates = const [],
+  }) {
+    final normalizedLabel = _compact(label);
+    if (normalizedLabel.isEmpty) {
+      return const MonthlyRosterShiftRuleResolution(
+        status: MonthlyRosterShiftRuleStatus.emptyLabel,
+      );
+    }
+
+    final templates = shiftTemplates.toList(growable: false);
+    final matchingTemplates = templates.where((template) {
+      if (!template.active) return false;
+      return [
+        template.code,
+        template.name,
+        template.shortName,
+      ].any(
+        (alias) =>
+            alias.trim().isNotEmpty && _compact(alias) == normalizedLabel,
+      );
+    }).toList(growable: false);
+
+    if (matchingTemplates.length > 1) {
+      return const MonthlyRosterShiftRuleResolution(
+        status: MonthlyRosterShiftRuleStatus.ambiguousTemplate,
+      );
+    }
+
+    final rule = _ruleForLabel(
+      label,
+      shiftTemplates: templates,
+    );
+    if (rule == null) {
+      return const MonthlyRosterShiftRuleResolution(
+        status: MonthlyRosterShiftRuleStatus.unsupportedLabel,
+      );
+    }
+
+    return MonthlyRosterShiftRuleResolution(
+      status: matchingTemplates.isEmpty
+          ? MonthlyRosterShiftRuleStatus.builtInRule
+          : MonthlyRosterShiftRuleStatus.configuredTemplate,
+      code: rule.code,
+      startTime: Duration(
+        hours: rule.startHour,
+        minutes: rule.startMinute,
+      ),
+      endTime: Duration(
+        hours: rule.endHour,
+        minutes: rule.endMinute,
+      ),
+      category: rule.category,
+      templateId: matchingTemplates.isEmpty
+          ? null
+          : matchingTemplates.single.id,
+    );
+  }
+
+  _MonthlyShiftRule? _ruleForLabel(
+    String label, {
+    required Iterable<ShiftTemplate> shiftTemplates,
+  }) {
+    final normalizedLabel = _compact(label);
+    final matchingTemplates = shiftTemplates.where((template) {
+      if (!template.active) return false;
+      return [
+        template.code,
+        template.name,
+        template.shortName,
+      ].any((alias) => alias.trim().isNotEmpty && _compact(alias) == normalizedLabel);
+    }).toList(growable: false);
+
+    // A configured template is authoritative. Never choose arbitrarily when
+    // two active templates share an alias (for example, across departments).
+    if (matchingTemplates.isNotEmpty) {
+      if (matchingTemplates.length != 1) return null;
+      final template = matchingTemplates.single;
+      return _MonthlyShiftRule(
+        code: template.code,
+        startHour: template.startTime.inHours.remainder(24),
+        startMinute: template.startTime.inMinutes.remainder(60),
+        endHour: template.endTime.inHours.remainder(24),
+        endMinute: template.endTime.inMinutes.remainder(60),
+        category: ShiftCategory.own,
+      );
+    }
+
+    final value = label
+        .toUpperCase()
+        .replaceAll(RegExp(r'[\s.\-_]+'), '');
+    if (value == 'ER' || value == 'CT') {
+      return _MonthlyShiftRule(
+        code: 'U$value',
+        startHour: 8,
+        startMinute: 0,
+        endHour: 16,
+        endMinute: 0,
+      );
+    }
+    if (value == 'GEN') {
+      return const _MonthlyShiftRule(
+        code: 'UG',
+        startHour: 7,
+        startMinute: 30,
+        endHour: 12,
+        endMinute: 0,
+        category: ShiftCategory.clinic,
+      );
+    }
+    if (value == 'GENบ่าย' || value == 'AG') {
+      return const _MonthlyShiftRule(
+        code: 'AG',
+        startHour: 16,
+        startMinute: 30,
+        endHour: 20,
+        endMinute: 0,
+        category: ShiftCategory.clinic,
+      );
+    }
+    if (value.contains('14ชั้น')) {
+      return const _MonthlyShiftRule(
+        code: 'U14',
+        startHour: 7,
+        startMinute: 0,
+        endHour: 8,
+        endMinute: 0,
+      );
+    }
+
+    final p = RegExp(r'^P([1-4])(เช้า|บ่าย|ดึก)$').firstMatch(value);
+    if (p != null) {
+      final base = 'P${p.group(1)}';
+      return switch (p.group(2)) {
+        'เช้า' => _MonthlyShiftRule(
+          code: 'U$base',
+          startHour: 8,
+          startMinute: 0,
+          endHour: 16,
+          endMinute: 0,
+        ),
+        'บ่าย' => _MonthlyShiftRule(
+          code: 'A$base',
+          startHour: 16,
+          startMinute: 0,
+          endHour: 0,
+          endMinute: 0,
+        ),
+        'ดึก' => _MonthlyShiftRule(
+          code: 'N$base',
+          startHour: 0,
+          startMinute: 0,
+          endHour: 8,
+          endMinute: 0,
+        ),
+        _ => null,
+      };
+    }
+
+    for (final base in const ['CTIPD', 'CTER', 'IPD', 'ER']) {
+      if (!value.startsWith(base)) continue;
+      final period = value.substring(base.length);
+      if (period == 'เช้า') {
+        return _MonthlyShiftRule(
+          code: 'U$base',
+          startHour: 8,
+          startMinute: 0,
+          endHour: 16,
+          endMinute: 0,
+        );
+      }
+      if (period == 'บ่าย') {
+        final overnight = base != 'ER';
+        return _MonthlyShiftRule(
+          code: 'A$base',
+          startHour: 16,
+          startMinute: 0,
+          endHour: overnight ? 8 : 0,
+          endMinute: 0,
+        );
+      }
+      if (period == 'ดึก' && base == 'ER') {
+        return const _MonthlyShiftRule(
+          code: 'NER',
+          startHour: 0,
+          startMinute: 0,
+          endHour: 8,
+          endMinute: 0,
+        );
+      }
+    }
+    return null;
+  }
+
+  String _compact(String value) =>
+      value.trim().replaceAll(RegExp(r'\s+'), '').toLowerCase();
+
+  int? _colorValue(String? hex) {
+    if (hex == null) return null;
+    final value = hex.trim().replaceFirst('#', '');
+    if (!RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(value)) return null;
+    return int.parse('FF$value', radix: 16);
+  }
+}
+
+class _MonthlyShiftRule {
+  const _MonthlyShiftRule({
+    required this.code,
+    required this.startHour,
+    required this.startMinute,
+    required this.endHour,
+    required this.endMinute,
+    this.category = ShiftCategory.own,
+  });
+
+  final String code;
+  final int startHour;
+  final int startMinute;
+  final int endHour;
+  final int endMinute;
+  final ShiftCategory category;
+}
+
+
+enum MonthlyRosterShiftRuleStatus {
+  configuredTemplate,
+  builtInRule,
+  ambiguousTemplate,
+  unsupportedLabel,
+  emptyLabel,
+}
+
+/// Review-only description of the existing monthly-grid shift mapping rule.
+class MonthlyRosterShiftRuleResolution {
+  const MonthlyRosterShiftRuleResolution({
+    required this.status,
+    this.code,
+    this.startTime,
+    this.endTime,
+    this.category,
+    this.templateId,
+  });
+
+  final MonthlyRosterShiftRuleStatus status;
+  final String? code;
+  final Duration? startTime;
+  final Duration? endTime;
+  final ShiftCategory? category;
+  final String? templateId;
+
+  bool get isResolved =>
+      status == MonthlyRosterShiftRuleStatus.configuredTemplate ||
+      status == MonthlyRosterShiftRuleStatus.builtInRule;
+
+  bool get requiresHumanConfirmation => true;
+
+  /// Mapping evidence alone never authorizes persistence.
+  bool get canCommit => false;
+}
+).hasMatch(text)) {
+      try {
+        return periodParser.parse('$text - $text').start;
+      } on FormatException {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  int _normalizeRosterYear(int year) {
+    if (year < 100) year += 2500;
+    if (year >= 2400) year -= 543;
+    return year;
+  }
+
+  DateTime? _checkedRosterDate({
+    required int year,
+    required int month,
+    required int day,
+  }) {
+    final date = DateTime(year, month, day);
+    if (date.year != year || date.month != month || date.day != day) {
+      return null;
+    }
+    return date;
   }
 
   List<MonthlyRosterDateAnomaly> _validateDateColumns({
