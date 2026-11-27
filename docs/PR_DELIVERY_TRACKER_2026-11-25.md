@@ -7,7 +7,7 @@ This tracker originally recorded the 2026-11-25 delivery sequence. The following
 | PR | Base | Head SHA | Latest exact-head CI | Review | State |
 |---|---|---|---|---|---|
 | #191 | main | `cf7eaa22eaf81e04b0b444acfc3aee2a8ca51e5e` | 13/13 pass | None | Draft; device acceptance pending |
-| #192 | main | `2f6f9043db8876ea5ed49d85961658fac95942ac` | Pending for latest head | None | Draft; original workbook acceptance pending |
+| #192 | main | `b3dd82757c9652a774b35f7a975170a0bc6f26af` | Pending for latest head | None | Draft; original workbook acceptance pending |
 | #196 | main | `8e186790e447f9278eda8612a1bb1b6f7e7b77c9` | 13/13 pass | None | Draft; test calendar acceptance pending |
 | #201 | main | `d3f228dcdaea4f1a3771c271421226ab71ab00b5` | 12/12 pass | None | Draft; business acceptance pending |
 | #202 | #192 branch | `ca6ebd095ef6566fcce00e9bc49e9c820470b80d` | 12/12 pass | None | Draft; dependent on #192 |
