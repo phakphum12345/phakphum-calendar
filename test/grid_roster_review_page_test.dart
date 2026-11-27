@@ -161,6 +161,13 @@ void main() {
     final scrollable = find.byType(Scrollable).first;
     final choices = find.text('เลือกวิธีจัดการ');
     expect(choices, findsOneWidget);
+    await tester.scrollUntilVisible(
+      choices,
+      200,
+      scrollable: scrollable,
+    );
+    await tester.ensureVisible(choices);
+    await tester.pumpAndSettle();
 
     await tester.tap(choices.first);
     await tester.pumpAndSettle();
@@ -172,7 +179,10 @@ void main() {
       250,
       scrollable: scrollable,
     );
-    await tester.tap(find.text('เลือกวิธีจัดการ'));
+    final secondChoices = find.text('เลือกวิธีจัดการ');
+    await tester.ensureVisible(secondChoices);
+    await tester.pumpAndSettle();
+    await tester.tap(secondChoices);
     await tester.pumpAndSettle();
     await tester.tap(find.text('กลับไปแก้ไฟล์ต้นฉบับและนำเข้าใหม่'));
     await tester.pumpAndSettle();
@@ -277,8 +287,11 @@ void main() {
       200,
       scrollable: find.byType(Scrollable).first,
     );
+    final correctionAction = find.text('กำหนดวันที่คอลัมน์นี้').first;
     expect(find.text('กำหนดวันที่คอลัมน์นี้'), findsAtLeastNWidgets(1));
-    await tester.tap(find.text('กำหนดวันที่คอลัมน์นี้').first);
+    await tester.ensureVisible(correctionAction);
+    await tester.pumpAndSettle();
+    await tester.tap(correctionAction);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('6').last);
