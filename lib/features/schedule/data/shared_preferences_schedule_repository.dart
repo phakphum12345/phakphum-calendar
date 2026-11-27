@@ -152,6 +152,9 @@ class SharedPreferencesScheduleRepository
         generation: generation,
         revision: _deletedRevision(generation),
         isDeleted: true,
+        deletedFromRevision: decoded['deleted_from_revision'] is String
+            ? decoded['deleted_from_revision'] as String
+            : null,
       );
     }
     final schedule = codec.decode(payload);
@@ -360,15 +363,22 @@ class SharedPreferencesScheduleRepository
     return _withScheduleLock(id, () async {
       try {
         final current = await _readState(id);
-        if (current.revision != expectedRevision) {
+        if (current.isDeleted) {
+          if (expectedRevision == current.revision ||
+              expectedRevision == current.deletedFromRevision) {
+            _rememberState(id, current);
+            return const Success(null);
+          }
           _rememberState(id, current);
           return const ValidationFailure(
             'Schedule revision conflict. Reload the latest Schedule before deleting.',
           );
         }
-        if (current.isDeleted || current.schedule == null) {
+        if (current.revision != expectedRevision) {
           _rememberState(id, current);
-          return const Success(null);
+          return const ValidationFailure(
+            'Schedule revision conflict. Reload the latest Schedule before deleting.',
+          );
         }
 
         final nextGeneration = current.generation + 1;
@@ -378,6 +388,7 @@ class SharedPreferencesScheduleRepository
           'version': 1,
           'state': 'deleted',
           'generation': nextGeneration,
+          'deleted_from_revision': expectedRevision,
         });
         final targetKey = _slotKey(id, targetSlot);
         await _store.setString(targetKey, tombstone);
@@ -398,7 +409,8 @@ class SharedPreferencesScheduleRepository
         final verified = await _readState(id);
         if (!verified.isDeleted ||
             verified.generation != nextGeneration ||
-            verified.revision != _deletedRevision(nextGeneration)) {
+            verified.revision != _deletedRevision(nextGeneration) ||
+            verified.deletedFromRevision != expectedRevision) {
           return const PersistenceFailure(
             'Schedule tombstone read-back verification failed.',
           );
@@ -423,6 +435,7 @@ class _StoredScheduleState {
     required this.generation,
     required this.revision,
     this.isDeleted = false,
+    this.deletedFromRevision,
   });
 
   final Schedule? schedule;
@@ -430,6 +443,7 @@ class _StoredScheduleState {
   final int generation;
   final String revision;
   final bool isDeleted;
+  final String? deletedFromRevision;
 }
 
 Result<TTarget> _copyFailure<TSource, TTarget>(Result<TSource> result) {
