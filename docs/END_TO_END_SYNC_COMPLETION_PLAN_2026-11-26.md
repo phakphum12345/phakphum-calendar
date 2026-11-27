@@ -1013,3 +1013,27 @@ No implementation PR merged. No production data writes or deployment. Native bui
 - Do not inherit earlier implementation-head results as CI for these new documentation commits.
 
 No implementation merge, backend deployment, production Schedule mutation, or Google Calendar mutation was performed.
+
+
+### 8.53 Live execution checkpoint — 2026-11-27 (fresh exact-head reconciliation)
+
+This checkpoint supersedes earlier PR-head and workflow snapshots above. It records the live GitHub state checked for this execution; it is not a merge authorization.
+
+| PR | Current head | Exact-head workflows | PR/review state |
+|---|---|---:|---|
+| #191 notification outbox | `6787fe710ceb351581eb42c9b7045c49a93c9cfb` | 10/10 success | Draft, open, no submitted reviews |
+| #192 roster import / Schedule persistence | `066b82471f060885218bab804e8d7093cb38fe01` | 14/14 success | Draft, open, no submitted reviews |
+| #196 Calendar sync coordination | `b9890c2983208b394232f9bc2c2125ec1212e16f` | 13/13 success | Draft, open, no submitted reviews |
+| #197 execution checkpoint docs | `993ac36be1a93e0362489e65c4c6f11d2a71742b` | 2/2 success | Draft, open, no submitted reviews |
+
+All four PRs still target `main@d18454680879a10c6efe9e44ffb37cd0695f25a6`; GitHub reports them mergeable, but mergeability is not acceptance. No PR was merged.
+
+**#192 current product gap:** the review page identifies each date anomaly and offers whole-section exclusion or source-file re-import. It still does not implement the requested in-app date/column correction overlay. The current UI has no focused widget tests for the new anomaly-choice interaction. The actual failing workbook has not been supplied or validated. Backend production reachability/authentication, durable database locking, cross-device contention and journal/Schedule reconciliation remain unverified. The CAS Storage Spike is not the production repository.
+
+**#196 current product gap:** server-side leases, durable operation ledger, ETag guards and explicit recovery are implemented in the PR branch, but production backend deployment/configuration and controlled Google test-calendar acceptance remain unverified. The lease scope is authenticated Google owner + Calendar ID, not a global lock across different Google accounts sharing one Calendar.
+
+**#191 current product gap:** transactional notification intents are implemented; actual push sender/worker, retry/backoff, dead-letter processing, opt-in UI and device delivery acceptance are not.
+
+**#197 current product gap:** this plan needs a follow-up after each implementation change and after every authorized merge; it must not mark a requirement complete from CI alone.
+
+**Next merge order remains conditional:** #192 data correctness and Schedule persistence → #196 Calendar concurrency/recovery → #191 notification delivery → #197 final documentation. Each stage requires implementation acceptance, independent review, exact-head checks and post-merge verification before the next stage. Until then, keep all PRs Draft. No production Schedule writes, Calendar mutations, notification delivery, migration or deployment occurred during this checkpoint.
