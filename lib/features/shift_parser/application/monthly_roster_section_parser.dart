@@ -36,24 +36,7 @@ class MonthlyRosterSectionParser {
   /// Runs both phases in order: build date/row structure, then fill workers.
   MonthlyRosterParseReport parse(ShiftParserInput input) {
     final structure = generateDateStructure(input);
-    final horizontalReport = populateAssignments(input, structure);
-    final verticalReport = VerticalMonthlyRosterSectionParser(
-      periodParser: periodParser,
-    ).parse(input);
-    return MonthlyRosterParseReport(
-      sections: List.unmodifiable([
-        ...horizontalReport.sections,
-        ...verticalReport.sections,
-      ]),
-      warnings: List.unmodifiable([
-        ...horizontalReport.warnings.where(
-          (warning) =>
-              verticalReport.sections.isEmpty ||
-              !warning.contains('ไม่พบบล็อกตารางรายเดือน'),
-        ),
-        ...verticalReport.warnings,
-      ]),
-    );
+    return populateAssignments(input, structure);
   }
 
   /// Phase 1: identify each section, its own period, date columns, and shift rows.
@@ -205,7 +188,12 @@ class MonthlyRosterSectionParser {
       );
     }
 
-    if (headerRows.isEmpty) {
+    final verticalStructure = VerticalMonthlyRosterSectionParser(
+      periodParser: periodParser,
+    ).parse(input, populateAssignments: false);
+    sections.addAll(verticalStructure.sections);
+    warnings.addAll(verticalStructure.warnings);
+    if (headerRows.isEmpty && verticalStructure.sections.isEmpty) {
       warnings.add('ไม่พบบล็อกตารางรายเดือนในชีต ${input.sheetTitle}');
     }
     return MonthlyRosterParseReport(
@@ -229,6 +217,55 @@ class MonthlyRosterSectionParser {
     for (final section in structure.sections) {
       final assignments = <MonthlyRosterAssignment>[];
       final configuredNameColumns = layoutProfile?.nameColumns.toSet();
+
+      if (section.orientation == RosterGridOrientation.datesDownRows) {
+        for (final dateColumn in section.dateColumns) {
+          final sourceRow = dateColumn.rowIndex;
+          if (sourceRow == null) continue;
+          for (final rosterColumn in section.rosterRows) {
+            final sourceColumn = rosterColumn.columnIndex;
+            if (sourceColumn == null ||
+                (configuredNameColumns != null &&
+                    configuredNameColumns.isNotEmpty &&
+                    !configuredNameColumns.contains(sourceColumn))) {
+              continue;
+            }
+            final workerCell = cellsByCoordinate[(sourceRow, sourceColumn)];
+            final worker = workerCell?.text?.toString().trim() ?? '';
+            if (worker.isEmpty) continue;
+            assignments.add(
+              MonthlyRosterAssignment(
+                sectionTitle: section.title,
+                rowLabel: rosterColumn.label,
+                rowIndex: sourceRow,
+                columnIndex: sourceColumn,
+                workerName: worker,
+                date: dateColumn.date,
+                sourceCell: workerCell!.a1,
+                backgroundColor: workerCell.backgroundColor?.hex,
+                spreadsheetId: input.spreadsheetId,
+                sheetId: input.sheetId,
+                sheetTitle: input.sheetTitle,
+              ),
+            );
+          }
+        }
+        populatedSections.add(
+          MonthlyRosterSection(
+            title: section.title,
+            headerRowIndex: section.headerRowIndex,
+            orientation: section.orientation,
+            assignments: List.unmodifiable(assignments),
+            rowLabels: section.rowLabels,
+            dateColumns: section.dateColumns,
+            rosterRows: section.rosterRows,
+            startDate: section.startDate,
+            endDate: section.endDate,
+            dateAnomalies: section.dateAnomalies,
+          ),
+        );
+        continue;
+      }
       for (final row in section.rosterRows) {
         for (final dateColumn in section.dateColumns) {
           if (configuredNameColumns != null &&
