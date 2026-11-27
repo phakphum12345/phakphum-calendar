@@ -1,6 +1,8 @@
 # Repository Implementation Status
 
-## Current main snapshot — 2026-11-25
+> **Historical snapshot only.** The main SHA, PR inventory, branch-protection observation and CI results below were recorded on 2026-11-25. They are not current repository state. Use [the live project completion master plan](docs/project/PROJECT_COMPLETION_MASTER_PLAN.md), [work package status](docs/project/WORK_PACKAGE_STATUS.md) and [acceptance matrix](docs/project/ACCEPTANCE_MATRIX.md) for current evidence.
+
+## Historical main snapshot — 2026-11-25
 
 **Verified main SHA:** `aed2f1177bdfc85f6ff53bb200116812a51bd9e3`
 
