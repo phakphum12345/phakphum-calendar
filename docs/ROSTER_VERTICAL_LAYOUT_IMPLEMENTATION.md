@@ -10,7 +10,7 @@
 - Vertical date-axis detection and a two-phase parser integration: resolve the date structure first, then populate assignments.
 - Horizontal and vertical sections can coexist in one worksheet; separate vertical tables can be discovered by date-axis column.
 - Date-down sections preserve date-row index, assignment-column index, source A1 cell, source sheet metadata and normalized source cells.
-- Thai month/year headings, explicit Thai date ranges, explicit Gregorian/Thai Buddhist Era date cells and Excel DateTime values are handled without inventing a period.
+- Thai month/year headings, explicit Thai date ranges, explicit Gregorian/Thai Buddhist Era date cells and Excel DateTime values are handled without inventing a period. Horizontal and vertical axes normalize Buddhist Era years to Gregorian years for textual ISO and Excel DateTime values; both paths have regression coverage.
 - Duplicate, out-of-order, unresolved and near-complete missing-date diagnostics include source coordinates.
 - The Grid review page can correct a date-down row against retained source cells, rebuild the section and revalidate the anomaly set.
 - The monthly roster view renders date-down sections with date rows and assignment columns.
@@ -19,8 +19,8 @@
 ## Current limits — do not claim complete universal import
 
 - Automatic inference is still conservative and expects a date axis with at least seven recognizable date cells plus an assignment-header/data shape.
-- Reviewer-selected orientation for genuinely ambiguous structures is not yet exposed as a complete UI decision.
-- Multi-level and merged-header propagation is not fully implemented for all workbook sources.
+- Reviewer-selected orientation for genuinely ambiguous structures is implemented in stacked PR #205 (exact-head CI 12/12 passed); it is not yet merged into #192 or independently reviewed.
+- Single-level merged-header resolution is implemented in stacked PR #207 (exact-head CI 12/12 passed); multi-level propagation and all workbook-source variants are not yet accepted.
 - All left/right assignment-axis permutations and employee-columns-with-shift-values semantic reversal are not yet accepted.
 - Profile hints are not yet applied consistently to the vertical axis.
 - Actual X-OPD November 2569, 16 November–15 December 2569 and US Clinic ภปร.4 source workbooks have not been validated in this execution.

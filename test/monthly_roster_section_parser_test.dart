@@ -48,36 +48,36 @@ void main() {
 
   test('preserves row 33 เวรเช้า14 ชั้น across a 16th-to-15th schedule block', () {
     const workers = <Object?>[
-      'ธราวุธ',
-      'บุบผา',
-      'บุบผา',
-      'ประภาพร',
-      'บุบผา',
+      'Employee A',
+      'Employee B',
+      'Employee B',
+      'Employee C',
+      'Employee B',
       null,
       null,
-      'ธราวุธ',
-      'อดิศักดิ์',
-      'ธราวุธ',
-      'ธนพร',
-      'วรรณิกานต์',
+      'Employee A',
+      'Employee D',
+      'Employee A',
+      'Employee E',
+      'Employee F',
       null,
       null,
-      'อัมพร',
-      'ธราวุธ',
-      'จักรกฤษณ์',
-      'สุวดี',
-      'ธราวุธ',
+      'Employee G',
+      'Employee A',
+      'Employee H',
+      'Employee I',
+      'Employee A',
       null,
       null,
       null,
-      'กรรทร',
-      'ธราวุธ',
+      'Employee J',
+      'Employee A',
       null,
-      'ธราวุธ',
+      'Employee A',
       null,
       null,
-      'วรวุฒิ',
-      'ธราวุธ',
+      'Employee K',
+      'Employee A',
     ];
     expect(workers, hasLength(30));
     final days = [
@@ -115,7 +115,7 @@ void main() {
         .toList();
     final shifts = const MonthlyRosterShiftAdapter().parseForWorkers(
       report,
-      targetNames: const ['ธราวุธ'],
+      targetNames: const ['Employee A'],
     );
 
     expect(report.warnings, isEmpty);
@@ -153,7 +153,15 @@ void main() {
     final original = parsed.sections.single;
 
     expect(original.dateAnomalies, isNotEmpty);
-    expect(original.assignments, hasLength(2));
+    expect(original.hasBlockingDateAnomalies, isTrue);
+    expect(original.assignments, hasLength(3));
+    expect(
+      original.assignments
+          .singleWhere((item) => item.workerName == 'ข')
+          .date,
+      DateTime(2026, 11, 6),
+      reason: 'Positional alignment is review-only while the section is blocked.',
+    );
     expect(original.sourceCells, isNotEmpty);
     expect(original.startDate, DateTime(2026, 11, 1));
     expect(original.endDate, DateTime(2026, 11, 7));
@@ -476,9 +484,9 @@ void main() {
           'วันที่',
           ...List<int>.generate(16, (index) => index + 1),
           30,
-          30,
+          ...List<int>.generate(13, (index) => index + 18),
         ]),
-        ..._row(6, ['X-OPD', ...List<String>.filled(18, 'นาย ข')]),
+        ..._row(6, ['X-OPD', ...List<String>.filled(30, 'นาย ข')]),
       ],
     );
 
@@ -498,11 +506,19 @@ void main() {
       xopd.dateAnomalies.singleWhere((item) => item.code == 'missing_dates').message,
       contains('17/11/2026'),
     );
-    expect(
-      xopd.dateAnomalies.singleWhere((item) => item.code == 'missing_dates').message,
-      contains('29/11/2026'),
-    );
     expect(xopd.dateAnomalies, isNotEmpty);
+    expect(xopd.dateColumns, hasLength(30));
+    expect(xopd.assignments, hasLength(30));
+    expect(xopd.dateAnomalies.map((item) => item.code), contains('day_sequence_mismatch'));
+    expect(xopd.dateAnomalies.map((item) => item.code), contains('out_of_order'));
+    final missingMessage = xopd.dateAnomalies
+        .singleWhere((item) => item.code == 'missing_dates')
+        .message;
+    for (var day = 18; day <= 29; day++) {
+      final dateLabel = '${day.toString().padLeft(2, '0')}/11/2026';
+      expect(missingMessage, isNot(contains(dateLabel)));
+    }
+    expect(missingMessage, contains('17/11/2026'));
 
     final shifts = const MonthlyRosterShiftAdapter().parseForWorkers(
       report,
@@ -949,6 +965,81 @@ void main() {
     expect(populated.warnings, isEmpty);
   });
 
+  test('discovers a short vertical roster when the worksheet has a local period heading', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 86,
+      sheetTitle: 'Roster tab',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, [null, 'เวรเช้า']),
+        ..._row(1, ['ประจำเดือน พฤศจิกายน พ.ศ. 2569']),
+        ..._row(2, [1, 'นาย ก']),
+        ..._row(3, [2, 'นาย ข']),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, hasLength(1));
+    expect(
+      report.sections.single.orientation,
+      RosterGridOrientation.datesDownRows,
+    );
+    expect(report.sections.single.dateColumns, hasLength(2));
+    expect(report.sections.single.dateColumns.first.date, DateTime(2026, 11, 1));
+    expect(report.sections.single.dateColumns.last.date, DateTime(2026, 11, 2));
+    expect(report.assignments, hasLength(2));
+    expect(report.assignments.first.sourceCell, 'B3');
+    expect(report.assignments.last.sourceCell, 'B4');
+    expect(report.warnings, isEmpty);
+  });
+
+  test('uses an explicit date-axis label for a short vertical roster with a month tab', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 88,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['Date', 'เวรเช้า']),
+        ..._row(1, [1, 'นาย ก']),
+        ..._row(2, [2, 'นาย ข']),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, hasLength(1));
+    expect(report.sections.single.orientation, RosterGridOrientation.datesDownRows);
+    expect(report.sections.single.dateColumns, hasLength(2));
+    expect(report.assignments, hasLength(2));
+    expect(report.assignments.first.date, DateTime(2026, 11, 1));
+    expect(report.assignments.last.date, DateTime(2026, 11, 2));
+  });
+
+  test('does not interpret a short numeric ID column as dates from the sheet title alone', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 87,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['รหัส', 'ชื่อบุคลากร']),
+        ..._row(1, [1, 'นาย ก']),
+        ..._row(2, [2, 'นาย ข']),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, isEmpty);
+    expect(report.assignments, isEmpty);
+  });
+
   test('keeps side-by-side vertical sections bound to their nearest header side', () {
     final input = ShiftParserInput(
       spreadsheetId: 'spreadsheet',
@@ -1252,6 +1343,80 @@ void main() {
     expect(report.assignments.single.workerName, 'ก');
     expect(report.assignments.single.date, DateTime(2026, 8, 1));
     expect(report.warnings, isNotEmpty);
+  });
+
+  test('normalizes explicit vertical ISO and DateTime Buddhist Era dates', () {
+    final sourceDates = <Object?>[
+      '2569-11-01',
+      '2569-11-02',
+      DateTime(2569, 11, 3),
+      DateTime(2569, 11, 4),
+      DateTime(2569, 11, 5),
+      DateTime(2569, 11, 6),
+      DateTime(2569, 11, 7),
+    ];
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 85,
+      sheetTitle: 'Vertical Buddhist Era',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, [null, 'เวรเช้า']),
+        ..._row(1, ['ประจำเดือน พฤศจิกายน พ.ศ. 2569']),
+        for (var index = 0; index < sourceDates.length; index++)
+          ..._row(index + 2, [sourceDates[index], 'นาย ก$index']),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, hasLength(1));
+    expect(report.sections.single.orientation, RosterGridOrientation.datesDownRows);
+    expect(report.sections.single.dateAnomalies, isEmpty);
+    expect(
+      report.sections.single.dateColumns.map((column) => column.date),
+      [for (var day = 1; day <= 7; day++) DateTime(2026, 11, day)],
+    );
+    expect(report.assignments, hasLength(7));
+    expect(report.assignments.first.date, DateTime(2026, 11, 1));
+    expect(report.assignments.last.date, DateTime(2026, 11, 7));
+  });
+
+  test('normalizes explicit horizontal ISO and DateTime Buddhist Era dates', () {
+    final sourceDates = <Object?>[
+      '2569-11-01',
+      '2569-11-02',
+      DateTime(2569, 11, 3),
+      DateTime(2569, 11, 4),
+      DateTime(2569, 11, 5),
+      DateTime(2569, 11, 6),
+      DateTime(2569, 11, 7),
+    ];
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 86,
+      sheetTitle: 'Horizontal Buddhist Era',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['GEN 1 พฤศจิกายน พ.ศ. 2569 - 7 พฤศจิกายน พ.ศ. 2569']),
+        ..._row(1, ['วันที่', ...sourceDates]),
+        ..._row(2, ['เวรเช้า', ...List<String>.filled(7, 'นาย ก')]),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, hasLength(1));
+    expect(report.sections.single.dateAnomalies, isEmpty);
+    expect(
+      report.sections.single.dateColumns.map((column) => column.date),
+      [for (var day = 1; day <= 7; day++) DateTime(2026, 11, day)],
+    );
+    expect(report.assignments, hasLength(7));
+    expect(report.assignments.first.date, DateTime(2026, 11, 1));
+    expect(report.assignments.last.date, DateTime(2026, 11, 7));
   });
 
 }
