@@ -10,6 +10,7 @@ import 'package:phakphum_calendar/features/shift_parser/data/backend_grid_roster
 import 'package:phakphum_calendar/features/schedule/data/shared_preferences_schedule_repository.dart';
 import 'package:phakphum_calendar/features/shift_parser/data/grid_roster_bundle_journal.dart';
 import 'package:phakphum_calendar/features/shift_parser/domain/grid_roster_import_provenance.dart';
+import 'package:phakphum_calendar/features/shift_parser/domain/monthly_roster_section.dart';
 
 class _MemoryStore implements ScheduleKeyValueStore, ScheduleKeyEnumerator {
   final Map<String, String> values = {};
@@ -228,6 +229,36 @@ void main() {
       GridRosterRecoveryDisposition.alreadyApplied,
     );
     expect(assessment.canRecover, isFalse);
+  });
+
+  test('blocks a new import review while a committed journal is unresolved', () async {
+    await writeCommittedJournal(
+      Schedule(id: scheduleId, name: 'Pending recovery'),
+    );
+
+    final result = await workflow.prepareReview(
+      report: MonthlyRosterParseReport(
+        sections: [
+          MonthlyRosterSection(
+            title: 'Detected section',
+            headerRowIndex: 0,
+            assignments: const [],
+          ),
+        ],
+        warnings: const [],
+        sourceFingerprint: 'sha256:workbook',
+      ),
+      targetScheduleId: scheduleId,
+      targetScheduleName: 'Replacement import',
+      employees: const [],
+      shiftTemplates: const [],
+    );
+
+    expect(
+      result,
+      isA<ValidationFailure<GridRosterImportReviewContext>>(),
+    );
+    expect(repository.value, isNull);
   });
 
   test('rejects a journal replaced after the reviewer inspected it', () async {
