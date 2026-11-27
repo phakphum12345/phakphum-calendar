@@ -67,6 +67,9 @@ class WebPushSubscriptionClient {
 
   String get permission => _browser.permission;
 
+  Future<bool> get isSubscribed async =>
+      await _browser.currentSubscription() != null;
+
   Future<void> subscribe() async {
     final uri = _subscriptionUri;
     if (uri == null) throw StateError('Notification API URL is not configured.');
@@ -108,7 +111,7 @@ class WebPushSubscriptionClient {
     final uri = _subscriptionUri;
     if (uri == null) throw StateError('Notification API URL is not configured.');
 
-    final subscription = await _browser.unsubscribe();
+    final subscription = await _browser.currentSubscription();
     if (subscription == null) return false;
 
     final token = await idTokenProvider();
@@ -136,6 +139,7 @@ class WebPushSubscriptionClient {
         _errorMessage(response.body),
       );
     }
+    await _browser.unsubscribe();
     return true;
   }
 
