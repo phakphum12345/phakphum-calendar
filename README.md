@@ -242,7 +242,8 @@ Copyright 2026 Phakphum. Licensed under the [Apache License 2.0](LICENSE).
 ## Repository engineering documentation
 
 - [Documentation index](DOCUMENTATION_INDEX.md)
-- [Implementation status](IMPLEMENTATION_STATUS.md)
+- [Historical implementation status snapshot (2026-11-25)](IMPLEMENTATION_STATUS.md)
+- [Live project completion status](docs/project/PROJECT_COMPLETION_MASTER_PLAN.md)
 - [Requirements traceability](REQUIREMENTS_TRACEABILITY.md)
 - [Backend API](backend/API_DOCUMENTATION.md)
 - [Backend database schema](backend/DATABASE_SCHEMA.md)
