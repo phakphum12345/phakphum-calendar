@@ -185,7 +185,7 @@ class GridRosterWorkbookScanner {
         final report = sectionParser.parse(input);
         sections.addAll(report.sections);
         warnings.addAll(
-          report.warnings.map((warning) => snapshot.title + ': ' + warning),
+          report.warnings.map((warning) => '${snapshot.title}: $warning'),
         );
         summaries.add(
           MonthlyRosterSheetScanSummary(
@@ -199,7 +199,7 @@ class GridRosterWorkbookScanner {
         );
       } on Object catch (error) {
         warnings.add(
-          'อ่าน Worksheet "' + snapshot.title + '" ไม่สำเร็จ: ' + error.toString(),
+          'อ่าน Worksheet "${snapshot.title}" ไม่สำเร็จ: $error',
         );
         summaries.add(
           MonthlyRosterSheetScanSummary(
