@@ -38,7 +38,7 @@ This graph reflects declared PR stacking and observed base branches, not permiss
 
 | PR | Base branch | Base SHA reported | Head SHA | Reconciliation |
 |---|---|---|---|---|
-| #192 | main | `68ef85361c2d08e2970160a36475592010d908f7` | `fb670c84d2ec521f7356342b0147777d6b4f0602` | Mainline base at audit |
+| #192 | main | `68ef85361c2d08e2970160a36475592010d908f7` | `87181d550917625659e715b46014ae05fdfab3f3` | Documentation-only reconciliation commit added; exact-head CI rerunning |
 | #205 | #192 feature branch | `4d6808d4943236c93a327a079474b0a9915b220a` | `1cfceeeabd3af3f36421f9b06bd286966863b70b` | Base predates current #192 head; reconcile |
 | #207 | #192 feature branch | `4d6808d4943236c93a327a079474b0a9915b220a` | `7f6df4380ed60edf436402ca01264eb93dbd416b` | Base predates current #192 head; GitHub reported mergeable=false |
 | #206 | #192 feature branch | `4d6808d4943236c93a327a079474b0a9915b220a` | `997c249394bd02c4fd868f4532829e20df9f58fe` | Base predates current #192 head; reconcile |
