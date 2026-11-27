@@ -68,6 +68,20 @@ void main() {
     expect((loaded as Success<Schedule?>).value!.name, 'Persisted roster');
   });
 
+  test('controller fails closed when repository has no atomic CAS contract', () async {
+    final schedule = canonicalScheduleFixture(name: 'Unversioned roster');
+    final repository = _UnversionedRepository(schedule);
+    final controller = ScheduleController(
+      service: ScheduleService(schedule: schedule),
+      repository: repository,
+    );
+
+    final saved = await controller.saveSchedule();
+
+    expect(saved, isA<PersistenceFailure<Schedule>>());
+    expect(repository.saveCount, 0);
+  });
+
   test('two editors loaded at one revision cannot both overwrite the Schedule', () async {
     final initial = Schedule(id: 'roster-1', name: 'November');
     final repository = _RevisionRepository(initial);
@@ -88,6 +102,31 @@ void main() {
     expect((secondSave as NetworkFailure<Schedule>).statusCode, 409);
     expect(repository.saveCount, 1);
   });
+}
+
+class _UnversionedRepository implements ScheduleRepository {
+  _UnversionedRepository(this.schedule);
+
+  Schedule schedule;
+  int saveCount = 0;
+
+  @override
+  Future<Result<Schedule?>> findById(String id) async =>
+      id == schedule.id ? Success(schedule) : const Success(null);
+
+  @override
+  Future<Result<ScheduleMonth?>> loadMonth(String scheduleId, DateTime month) async =>
+      const Success(null);
+
+  @override
+  Future<Result<Schedule>> save(Schedule value) async {
+    saveCount++;
+    schedule = value;
+    return Success(value);
+  }
+
+  @override
+  Future<Result<void>> delete(String id) async => const Success(null);
 }
 
 class _RevisionRepository

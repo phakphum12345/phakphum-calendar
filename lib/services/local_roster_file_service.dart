@@ -1,16 +1,25 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
+
 import 'package:excel/excel.dart';
 import 'package:file_selector/file_selector.dart';
 
 import '../models/shift.dart';
 
 class LocalRosterDocument {
-  const LocalRosterDocument({required this.extension, required this.snapshots});
+  const LocalRosterDocument({
+    required this.extension,
+    required this.snapshots,
+    this.sourceFingerprint,
+    this.sourceFileName,
+  });
 
   final String extension;
   final List<SheetSnapshot> snapshots;
+  final String? sourceFingerprint;
+  final String? sourceFileName;
 }
 
 /// Selects and reads roster files from the local device.
@@ -18,7 +27,12 @@ abstract interface class LocalRosterSource {
   Future<LocalRosterDocument?> pickAndRead();
 }
 
-class LocalRosterFileService implements LocalRosterSource {
+abstract interface class LocalDelimitedRosterSource {
+  Future<LocalRosterDocument?> pickAndReadDelimited();
+}
+
+class LocalRosterFileService
+    implements LocalRosterSource, LocalDelimitedRosterSource {
   const LocalRosterFileService();
 
   static const supportedExtensions = ['xlsx', 'csv', 'tsv', 'txt'];
@@ -38,6 +52,22 @@ class LocalRosterFileService implements LocalRosterSource {
             'text/tab-separated-values',
             'text/plain',
           ],
+        ),
+      ],
+      confirmButtonText: 'อ่านตารางเวร',
+    );
+    if (file == null) return null;
+    return readBytes(name: file.name, bytes: await file.readAsBytes());
+  }
+
+  @override
+  Future<LocalRosterDocument?> pickAndReadDelimited() async {
+    final file = await openFile(
+      acceptedTypeGroups: const [
+        XTypeGroup(
+          label: 'ตารางเวรแบบข้อความ',
+          extensions: ['csv', 'tsv', 'txt'],
+          mimeTypes: ['text/csv', 'text/tab-separated-values', 'text/plain'],
         ),
       ],
       confirmButtonText: 'อ่านตารางเวร',
@@ -72,7 +102,12 @@ class LocalRosterFileService implements LocalRosterSource {
         'ไฟล์มีข้อมูลเกิน 200,000 เซลล์ กรุณาแบ่งไฟล์ก่อนอ่าน',
       );
     }
-    return LocalRosterDocument(extension: extension, snapshots: snapshots);
+    return LocalRosterDocument(
+      extension: extension,
+      snapshots: snapshots,
+      sourceFingerprint: 'sha256:${sha256.convert(bytes)}',
+      sourceFileName: name,
+    );
   }
 
   List<SheetSnapshot> _readExcel(Uint8List bytes) {
@@ -94,7 +129,7 @@ class LocalRosterFileService implements LocalRosterSource {
   }
 
   SheetSnapshot _readDelimited(Uint8List bytes, {required String extension}) {
-    final text = utf8.decode(bytes, allowMalformed: true);
+    final text = utf8.decode(bytes, allowMalformed: true).replaceFirst('\uFEFF', '');
     final delimiter = extension == 'tsv'
         ? '\t'
         : extension == 'csv'

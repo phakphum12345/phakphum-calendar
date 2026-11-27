@@ -10,6 +10,7 @@ import '../../../domain/repositories/schedule_repository.dart';
 import '../../../domain/repositories/conditional_schedule_writer.dart';
 import '../../../domain/repositories/schedule_revision_source.dart';
 import '../../excel_import/domain/workbook_info.dart';
+import '../../../services/local_roster_file_service.dart';
 import '../../schedule/data/schedule_json_codec.dart';
 import '../data/backend_grid_roster_import_journal_gateway.dart';
 import '../data/grid_roster_bundle_journal.dart';
@@ -100,6 +101,33 @@ class GridRosterImportWorkflow {
     );
   }
 
+  /// Scans CSV, TSV and delimited text documents through the same review path.
+  /// XLSX must use [scanWorkbook] so merged-cell and cell-style provenance is
+  /// read from the original workbook rather than a lossy row snapshot.
+  MonthlyRosterParseReport scanDelimitedDocument({
+    required LocalRosterDocument document,
+    required String fileName,
+    String? timeZone,
+  }) {
+    if (document.extension == 'xlsx') {
+      throw ArgumentError(
+        'XLSX documents must use scanWorkbook to preserve workbook metadata.',
+      );
+    }
+    final fingerprint = document.sourceFingerprint;
+    if (fingerprint == null || fingerprint.trim().isEmpty) {
+      throw ArgumentError(
+        'Delimited roster document is missing its source fingerprint.',
+      );
+    }
+    return workbookScanner.scanSnapshots(
+      snapshots: document.snapshots,
+      spreadsheetTitle: fileName,
+      sourceFingerprint: fingerprint,
+      timeZone: timeZone,
+    );
+  }
+
   /// Loads the current target from the canonical repository before review.
   /// A missing target is represented as an empty Schedule plus an explicit
   /// absent-revision token, not as a guessed existing revision.
@@ -155,6 +183,12 @@ class GridRosterImportWorkflow {
     final target = existing ??
         Schedule(id: targetScheduleId, name: targetScheduleName);
     final revision = revisionFor(existing, targetScheduleId);
+    if (revision == null || revision.trim().isEmpty) {
+      return const PersistenceFailure(
+        'The Schedule repository did not provide an authoritative revision. '
+        'Import review cannot continue without atomic conditional persistence.',
+      );
+    }
     try {
       final session = reviewSessionBuilder.build(
         report: report,
@@ -246,6 +280,12 @@ class GridRosterImportWorkflow {
     }
     final live = (liveResult as Success<Schedule?>).value;
     final liveRevision = revisionFor(live, context.session.targetScheduleId);
+    if (liveRevision == null || liveRevision.trim().isEmpty) {
+      return const PersistenceFailure(
+        'The Schedule repository no longer provides an authoritative revision. '
+        'No import data was committed.',
+      );
+    }
     if (liveRevision != context.targetScheduleRevision) {
       return const ValidationFailure(
         'Target Schedule changed after review. Reload and review again.',
@@ -285,8 +325,11 @@ class GridRosterImportWorkflow {
       }
       final beforeSave =
           (beforeSaveResult as Success<Schedule?>).value;
-      if (revisionFor(beforeSave, context.session.targetScheduleId) !=
-          liveRevision) {
+      final beforeSaveRevision = revisionFor(
+        beforeSave,
+        context.session.targetScheduleId,
+      );
+      if (beforeSaveRevision == null || beforeSaveRevision != liveRevision) {
         return const ValidationFailure(
           'Target Schedule changed while the bundle was being committed. '
           'The journal is retained for conflict-aware recovery.',
@@ -376,6 +419,12 @@ class GridRosterImportWorkflow {
       }
 
       final liveRevision = revisionFor(live, scheduleId);
+      if (liveRevision == null || liveRevision.trim().isEmpty) {
+        return const PersistenceFailure(
+          'The Schedule repository cannot verify the journal base revision. '
+          'Recovery is blocked without atomic conditional persistence.',
+        );
+      }
       if (liveRevision != snapshot.provenance.targetScheduleRevision) {
         return Success(
           GridRosterRecoveryAssessment(
@@ -465,7 +514,8 @@ class GridRosterImportWorkflow {
           scheduleFingerprint(latest) == acceptedFingerprint) {
         return Success(latest);
       }
-      if (revisionFor(latest, assessment.scheduleId) != expectedRevision) {
+      final latestRevision = revisionFor(latest, assessment.scheduleId);
+      if (latestRevision == null || latestRevision != expectedRevision) {
         return const ValidationFailure(
           'Recovery target changed after preview. No Schedule was overwritten.',
         );
@@ -485,10 +535,9 @@ class GridRosterImportWorkflow {
     }
   }
 
-  /// Replays a committed journal bundle only after an explicit caller action.
-  ///
-  /// User interfaces should call [inspectRecovery], display the assessment,
-  /// and pass that same object to [recoverAssessment] after confirmation.
+  /// Read-only compatibility entry point. A ready journal is never replayed
+  /// here; callers must show inspectRecovery to the user and then pass that
+  /// exact assessment to recoverAssessment after explicit confirmation.
   Future<Result<Schedule?>> recover(String scheduleId) async {
     final assessmentResult = await inspectRecovery(scheduleId);
     if (assessmentResult case Failure<GridRosterRecoveryAssessment>()) {
@@ -498,7 +547,6 @@ class GridRosterImportWorkflow {
     }
     final assessment =
         (assessmentResult as Success<GridRosterRecoveryAssessment>).value;
-
     switch (assessment.disposition) {
       case GridRosterRecoveryDisposition.noCommittedBundle:
       case GridRosterRecoveryDisposition.alreadyApplied:
@@ -508,7 +556,10 @@ class GridRosterImportWorkflow {
           'Recovery conflict: canonical Schedule changed after the journal base revision.',
         );
       case GridRosterRecoveryDisposition.ready:
-        return recoverAssessment(assessment);
+        return const ValidationFailure(
+          'Recovery is ready but requires explicit review and confirmation. '
+          'Pass the reviewed assessment to recoverAssessment.',
+        );
     }
   }
 
@@ -517,28 +568,30 @@ class GridRosterImportWorkflow {
     String expectedRevision,
   ) {
     final repository = scheduleRepository;
-    if (repository is ConditionalScheduleWriter) {
-      return (repository as ConditionalScheduleWriter)
-          .saveIfRevision(schedule, expectedRevision);
+    if (repository is! ConditionalScheduleWriter) {
+      return Future.value(
+        const PersistenceFailure<Schedule>(
+          'The Schedule repository does not support atomic conditional writes. '
+          'No Schedule was saved.',
+        ),
+      );
     }
-    return repository.save(schedule);
+    return (repository as ConditionalScheduleWriter).saveIfRevision(
+      schedule,
+      expectedRevision,
+    );
   }
 
   String scheduleFingerprint(Schedule schedule) =>
       'sha256:${sha256.convert(utf8.encode(scheduleCodec.encode(schedule)))}';
 
-  String revisionFor(Schedule? schedule, String scheduleId) {
+  String? revisionFor(Schedule? schedule, String scheduleId) {
     final source = scheduleRepository;
-    final revisionSource = source is ScheduleRevisionSource
-        ? source as ScheduleRevisionSource
-        : null;
-    final authoritative = revisionSource == null
-        ? null
-        : schedule == null
+    if (source is! ScheduleRevisionSource) return null;
+    final revisionSource = source as ScheduleRevisionSource;
+    return schedule == null
         ? revisionSource.revisionForAbsentSchedule(scheduleId)
         : revisionSource.revisionForSnapshot(schedule);
-    if (authoritative != null) return authoritative;
-    return schedule == null ? 'absent:$scheduleId' : scheduleFingerprint(schedule);
   }
 
 }

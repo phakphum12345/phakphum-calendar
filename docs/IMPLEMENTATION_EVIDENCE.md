@@ -34,24 +34,32 @@ Evidence levels are separate: source implementation, test source, tests executed
 
 ## B. Persistence — PR #192
 
-PR #192 includes a backend CAS/revision contract, revision-aware repository/writer migration, durable journal/recovery foundations and conditional deletion/tombstone behavior in the backend. Exact-head CI success on earlier SHA does not prove all production writers or cross-device runtime behavior. Current PR head is under test; verify writer inventory, startup journal discovery, local fallback, two-client contention, crash recovery and tombstone recreation prevention.
+PR #192 includes a backend CAS/revision contract, revision-aware repository/writer migration, durable journal/recovery foundations and conditional deletion/tombstone behavior. The 2026-11-27 follow-up adds:
+
+- Read-only recovery assessment states: no committed bundle, ready, already applied and conflict.
+- AppShell startup discovery of local and remote journal IDs; remote discovery failure is surfaced without discarding local findings.
+- A review list and explicit per-Schedule confirmation; no automatic replay.
+- A review-bound recovery commit that rechecks the exact journal run ID, target revision, accepted fingerprint and candidate payload before CAS and read-back.
+- Same-Schedule edit/re-import guards while a committed recovery is ready or conflicting.
+
+Test source in test/grid_roster_recovery_assessment_test.dart covers empty, ready, conflict, already-applied, remote failure, journal replacement after preview and re-import blocking. On exact head 8d262dc7365a63c279e06affcdedbdbcf1b6fadc, Dart format, static analysis, unit tests and Linux integration tests passed; Windows PowerShell quality and macOS build passed. Windows build had startup_failure and caused PR Gate failure; Linux POSIX and iOS evidence remained in progress. This is not a full pass. Remaining: every legacy writer/edit route, global conflict resolution UI, cross-device database transactions, process-crash recovery and local fallback guarantees.
 
 ## C. Calendar Sync — PR #196
 
-PR #196 contains scoped lease/ledger/ETag and recovery foundations. Live insert/update/delete, controlled Google test-calendar acceptance, production backend durability and ambiguous provider outcome recovery remain external acceptance.
+PR #196 contains scoped lease/ledger/ETag and recovery foundations. Exact-head e4e09e3c74856c64306030679a9701ec51a3b18b has 13/13 observed workflows successful. Live insert/update/delete on a controlled Google test calendar, production backend durability, multi-client contention and ambiguous provider outcome recovery remain external acceptance.
 
 ## D. Notifications — PR #191
 
-PR #191 contains a transactional user-scoped outbox foundation. It does not prove actual Web Push transport or device delivery. VAPID sender, RFC 8291 encryption, worker claim/retry/dead-letter, subscription lifecycle and real device acceptance remain open.
+PR #191 now contains a transactional user-scoped outbox, worker claim tokens, per-device delivery records, retry/backoff/dead-letter handling, expired subscription cleanup, VAPID authorization, RFC 8291 aes128gcm payload encryption, authenticated browser subscription registration/removal, Flutter Web opt-in/settings UI and a dedicated service-worker scope. Laravel Backend CI and 11 other observed workflows passed on exact head cf7eaa22eaf81e04b0b444acfc3aee2a8ca51e5e; Cross-platform Runtime remained in progress and macOS queued. Fake HTTP/provider tests do not prove a real registered device received a notification. Scheduler deployment, real browser delivery, production concurrency, alerting and native mobile push remain unaccepted.
 
 ## E–K. Other work packages
 
-- Generation: exact input revision snapshots, immutable preview, approval invalidation and conditional commit/recovery are not yet accepted.
-- Shift Pay: three rule-source modes and profile persistence/calculation APIs exist. PR #201 adds Dart/backend equal-specificity conflict rejection with non-payable snapshots; exact-head CI is pending. Confirmed assignment linkage, client/UI, monthly statements and immutable historical calculation acceptance remain open.
+- Generation: PR #202 adds immutable preview, source/input/candidate fingerprints, employee/catalog/policy revision binding, exact-preview approval, deterministic candidate re-run, conditional CAS and read-back. Its first exact-head Auto Detect run found one unused-import analyzer issue; that import was removed on head ca6ebd095ef6566fcce00e9bc49e9c820470b80d and CI is rerunning. UI, durable approval/provenance journal, crash recovery and cross-device acceptance remain open.
+- Shift Pay: three rule-source modes and profile persistence/calculation APIs exist. PR #201 adds Dart/backend equal-specificity conflict rejection with non-payable snapshots; exact head d3f228dcdaea4f1a3771c271421226ab71ab00b5 has 12/12 observed workflows successful. Confirmed assignment linkage, client/UI, monthly statements and immutable historical calculation acceptance remain open.
 - History restore: read-only history exists; safe preview/diff/conditional restore and audit acceptance remain open.
 - Organization/security: authorization and tenant foundations exist; full negative endpoint tests and privacy/security review remain open.
 - Quality: CI foundations exist; reproducible benchmarks, fuzz/property tests, accessibility and real responsive acceptance remain open.
-- Documentation: current status overlays are being reconciled; complete 176-file Markdown/source audit remains in progress.
+- Documentation: completion status, implementation evidence, Grid recovery/concurrency and generation approval documents are being reconciled against current source. The repository-wide Markdown/source audit remains in progress.
 - Release: no production deployment SHA, live health, rollback or backup/restore evidence is claimed.
 
 ## Evidence vocabulary

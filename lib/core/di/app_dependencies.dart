@@ -434,7 +434,9 @@ class AppDependencies {
       }
       return conditionalWriter.saveIfRevision(schedule, revision);
     }
-    return repository.save(schedule);
+    return const PersistenceFailure(
+      'The configured Schedule repository does not support atomic conditional writes.',
+    );
   }
 
   /// Creates a rule engine from the rules registered at the composition root.

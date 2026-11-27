@@ -101,6 +101,31 @@ class _MemoryScheduleRepository implements ScheduleRepository, ScheduleRevisionS
   }
 }
 
+class _UnversionedScheduleRepository implements ScheduleRepository {
+  Schedule? value;
+  int saveCount = 0;
+
+  @override
+  Future<Result<Schedule?>> findById(String id) async => Success(value);
+
+  @override
+  Future<Result<ScheduleMonth?>> loadMonth(String scheduleId, DateTime month) async =>
+      Success(value?.month(month));
+
+  @override
+  Future<Result<Schedule>> save(Schedule schedule) async {
+    saveCount++;
+    value = schedule;
+    return Success(schedule);
+  }
+
+  @override
+  Future<Result<void>> delete(String id) async {
+    value = null;
+    return const Success(null);
+  }
+}
+
 class _MemoryRemoteJournalGateway implements GridRosterImportJournalGateway {
   final calls = <String>[];
   bool failCommitted = false;
@@ -332,7 +357,14 @@ void main() {
     expect(commit, isA<PersistenceFailure<Schedule>>());
     expect(repository.value, isNull);
 
-    final recovered = await workflow.recover('schedule-1');
+    final inspection = await workflow.inspectRecovery('schedule-1');
+    expect(inspection, isA<Success<GridRosterRecoveryAssessment>>());
+    final assessment =
+        (inspection as Success<GridRosterRecoveryAssessment>).value;
+    expect(assessment.disposition, GridRosterRecoveryDisposition.ready);
+    expect(repository.value, isNull);
+
+    final recovered = await workflow.recoverAssessment(assessment);
     expect(recovered, isA<Success<Schedule?>>());
     expect(repository.value?.id, 'schedule-1');
     expect(
@@ -359,10 +391,33 @@ void main() {
     );
     repository.value = newerSchedule;
 
-    final recovered = await workflow.recover('schedule-1');
+    final inspection = await workflow.inspectRecovery('schedule-1');
+    expect(inspection, isA<Success<GridRosterRecoveryAssessment>>());
+    final assessment =
+        (inspection as Success<GridRosterRecoveryAssessment>).value;
+    expect(assessment.disposition, GridRosterRecoveryDisposition.conflict);
 
+    final recovered = await workflow.recoverAssessment(assessment);
     expect(recovered, isA<ValidationFailure<Schedule?>>());
     expect(repository.value, same(newerSchedule));
+  });
+
+  test('recover never replays a ready journal without an explicit reviewed assessment', () async {
+    final context = await prepareContext();
+    final conversion = convertContext(context);
+    repository.failNextSave = true;
+
+    final commit = await workflow.commit(
+      context: context,
+      conversion: conversion,
+    );
+    expect(commit, isA<PersistenceFailure<Schedule>>());
+    expect(repository.value, isNull);
+
+    final result = await workflow.recover('schedule-1');
+
+    expect(result, isA<ValidationFailure<Schedule?>>());
+    expect(repository.value, isNull);
   });
 
   test('recovery is idempotent when canonical Schedule already matches journal', () async {
@@ -442,11 +497,35 @@ void main() {
       remoteJournalGateway: remote,
     );
 
-    final recovered = await remoteWorkflow.recover('schedule-1');
+    final inspection = await remoteWorkflow.inspectRecovery('schedule-1');
+    expect(inspection, isA<Success<GridRosterRecoveryAssessment>>());
+    final assessment =
+        (inspection as Success<GridRosterRecoveryAssessment>).value;
+    expect(assessment.disposition, GridRosterRecoveryDisposition.ready);
 
+    final recovered = await remoteWorkflow.recoverAssessment(assessment);
     expect(recovered, isA<Success<Schedule?>>());
     expect(repository.value?.id, 'schedule-1');
     expect(repository.value, conversion.schedule);
+  });
+
+  test('review fails closed when repository cannot provide an authoritative revision', () async {
+    final unversioned = _UnversionedScheduleRepository();
+    final unversionedWorkflow = GridRosterImportWorkflow(
+      scheduleRepository: unversioned,
+      journal: GridRosterBundleJournal(store: _MemoryStore()),
+    );
+
+    final result = await unversionedWorkflow.prepareReview(
+      report: _report(),
+      targetScheduleId: 'schedule-1',
+      targetScheduleName: 'November roster',
+      employees: [_employee],
+      shiftTemplates: const [],
+    );
+
+    expect(result, isA<PersistenceFailure<GridRosterImportReviewContext>>());
+    expect(unversioned.saveCount, 0);
   });
 
   test('Grid commit fails closed when another writer wins after the final read', () async {
