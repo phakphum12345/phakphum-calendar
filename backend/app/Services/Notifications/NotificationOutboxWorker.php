@@ -146,6 +146,7 @@ final class NotificationOutboxWorker
                     if ($existing === 'failed') {
                         $permanent = true;
                     }
+
                     continue;
                 }
 
