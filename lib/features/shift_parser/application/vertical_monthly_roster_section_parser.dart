@@ -315,6 +315,11 @@ class VerticalMonthlyRosterSectionParser {
           }
         }
 
+        final sourceStartRow = periodEvidence != null &&
+                periodEvidence.rowIndex >= 0 &&
+                periodEvidence.rowIndex < headerRow
+            ? periodEvidence.rowIndex
+            : headerRow;
         final rosterRows = <MonthlyRosterRow>[
           for (final entry in labelsByColumn.entries)
             MonthlyRosterRow(
@@ -387,7 +392,7 @@ class VerticalMonthlyRosterSectionParser {
             sourceCells: List.unmodifiable(
               input.cells.where(
                 (cell) =>
-                    cell.rowIndex >= firstRow - 12 &&
+                    cell.rowIndex >= sourceStartRow &&
                     cell.rowIndex <= axisCells.last.rowIndex,
               ),
             ),
@@ -497,7 +502,7 @@ class VerticalMonthlyRosterSectionParser {
   }) {
     for (
       var row = firstDateRow - 1;
-      row >= 0 && row >= firstDateRow - 8;
+      row >= 0;
       row--
     ) {
       final hasOtherHeader = cells.any(
@@ -519,27 +524,26 @@ class VerticalMonthlyRosterSectionParser {
     required int firstDateRow,
     required int dateColumn,
   }) {
-    final candidates = <({String text, int distance})>[];
+    final candidates = <({String text, int distance, int rowIndex})>[];
     for (final cell in cells) {
       final text = cell.text?.trim() ?? '';
       if (text.isEmpty || _isDateCell(cell)) continue;
       final rowDistance = (cell.rowIndex - firstDateRow).abs();
-      if (rowDistance > 12) continue;
       final distance =
           rowDistance * 100 + (cell.columnIndex - dateColumn).abs();
-      candidates.add((text: text, distance: distance));
+      candidates.add((text: text, distance: distance, rowIndex: cell.rowIndex));
     }
-    candidates.add((text: input.sheetTitle, distance: 100000));
+    candidates.add((text: input.sheetTitle, distance: 100000, rowIndex: -1));
     candidates.sort((a, b) => a.distance.compareTo(b.distance));
 
     for (final candidate in candidates) {
       try {
         final period = periodParser.parse(candidate.text);
-        return _PeriodEvidence(candidate.text, period);
+        return _PeriodEvidence(candidate.text, period, candidate.rowIndex);
       } on FormatException {
         final monthPeriod = _parseMonthOnly(candidate.text);
         if (monthPeriod != null) {
-          return _PeriodEvidence(candidate.text, monthPeriod);
+          return _PeriodEvidence(candidate.text, monthPeriod, candidate.rowIndex);
         }
       }
     }
@@ -642,8 +646,9 @@ class VerticalMonthlyRosterSectionParser {
 }
 
 class _PeriodEvidence {
-  const _PeriodEvidence(this.title, this.period);
+  const _PeriodEvidence(this.title, this.period, this.rowIndex);
 
   final String title;
   final ThaiRosterPeriod period;
+  final int rowIndex;
 }
