@@ -1,5 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:phakphum_calendar/features/shift_parser/application/monthly_roster_section_parser.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/monthly_roster_workbook_scanner.dart';
+import 'package:phakphum_calendar/features/shift_parser/domain/a1_notation.dart';
+import 'package:phakphum_calendar/features/shift_parser/domain/normalized_cell.dart';
+import 'package:phakphum_calendar/features/shift_parser/domain/shift_parser_input.dart';
 import 'package:phakphum_calendar/features/shift_parser/domain/roster_grid_axis_mapping.dart';
 import 'package:phakphum_calendar/models/shift.dart';
 
@@ -43,6 +47,58 @@ void main() {
     expect(section.assignments.first.columnIndex, 1);
     expect(report.sheetSummaries.single.blockCount, 1);
     expect(report.sheetSummaries.single.assignmentCount, 7);
+  });
+
+  test('resolves vertical date structure before populating worker assignments', () {
+    final rows = <List<Object?>>[
+      [null, 'เวรเช้า'],
+      ['ประจำเดือน พฤศจิกายน พ.ศ. 2569'],
+      [1, 'นาย ก'],
+      [2, 'นาย ข'],
+      [3, 'นาย ค'],
+      [4, 'นาย ง'],
+      [5, 'นาย จ'],
+      [6, 'นาย ฉ'],
+      [7, 'นาย ช'],
+    ];
+    final cells = <NormalizedCell>[
+      for (var rowIndex = 0; rowIndex < rows.length; rowIndex++)
+        for (var columnIndex = 0;
+            columnIndex < rows[rowIndex].length;
+            columnIndex++)
+          if (rows[rowIndex][columnIndex] != null)
+            NormalizedCell(
+              sheetId: 46,
+              sheetTitle: 'ตารางแนวตั้ง',
+              a1: A1Notation.fromZeroBased(
+                rowIndex: rowIndex,
+                columnIndex: columnIndex,
+              ),
+              rowIndex: rowIndex,
+              columnIndex: columnIndex,
+              text: rows[rowIndex][columnIndex].toString(),
+              rawValue: rows[rowIndex][columnIndex],
+            ),
+    ];
+    final input = ShiftParserInput(
+      spreadsheetId: 'book-two-phase',
+      spreadsheetTitle: 'ตัวอย่าง',
+      sheetId: 46,
+      sheetTitle: 'ตารางแนวตั้ง',
+      timeZone: 'Asia/Bangkok',
+      cells: cells,
+    );
+    const parser = MonthlyRosterSectionParser();
+
+    final structure = parser.generateDateStructure(input);
+    expect(structure.sections, hasLength(1));
+    expect(structure.assignments, isEmpty);
+    expect(structure.sections.single.rosterRows.single.columnIndex, 1);
+
+    final populated = parser.populateAssignments(input, structure);
+    expect(populated.assignments, hasLength(7));
+    expect(populated.assignments.first.sourceCell, 'B3');
+    expect(populated.assignments.first.date, DateTime(2026, 11, 1));
   });
 
   test('supports vertical and horizontal sections in one worksheet', () {
