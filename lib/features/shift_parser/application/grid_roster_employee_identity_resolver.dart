@@ -3,6 +3,7 @@ import '../../../domain/entities/employee.dart';
 enum EmployeeIdentityMatchKind {
   employeeCode,
   fullName,
+  alias,
   displayName,
   nickname,
   containsText,
@@ -75,6 +76,8 @@ class GridRosterEmployeeIdentityResolver {
       final fields = <(String, EmployeeIdentityMatchKind)>[
         (employee.employeeCode, EmployeeIdentityMatchKind.employeeCode),
         (employee.fullName, EmployeeIdentityMatchKind.fullName),
+        for (final alias in employee.aliases)
+          (alias, EmployeeIdentityMatchKind.alias),
         (employee.displayName, EmployeeIdentityMatchKind.displayName),
         (employee.nickname, EmployeeIdentityMatchKind.nickname),
       ];
@@ -154,9 +157,10 @@ class GridRosterEmployeeIdentityResolver {
   int _rank(EmployeeIdentityMatchKind kind) => switch (kind) {
     EmployeeIdentityMatchKind.employeeCode => 0,
     EmployeeIdentityMatchKind.fullName => 1,
-    EmployeeIdentityMatchKind.displayName => 2,
-    EmployeeIdentityMatchKind.nickname => 3,
-    EmployeeIdentityMatchKind.containsText => 4,
+    EmployeeIdentityMatchKind.alias => 2,
+    EmployeeIdentityMatchKind.displayName => 3,
+    EmployeeIdentityMatchKind.nickname => 4,
+    EmployeeIdentityMatchKind.containsText => 5,
   };
 
   String _normalize(String value) =>
