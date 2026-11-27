@@ -172,6 +172,37 @@ void main() {
     expect(report.assignments, hasLength(28));
   });
 
+  test('distinguishes duplicate and out-of-order dates in vertical grids', () {
+    for (final scenario in [
+      (days: [1, 2, 2, 3, 4, 5, 6], code: 'duplicate_date'),
+      (days: [1, 2, 4, 3, 5, 6, 7], code: 'out_of_order'),
+    ]) {
+      final report = const MonthlyRosterWorkbookScanner().scan(
+        snapshots: [
+          SheetSnapshot(
+            title: 'พฤศจิกายน 2569',
+            spreadsheetId: 'book-${scenario.code}',
+            sheetId: 47,
+            rows: [
+              [null, 'เวรเช้า'],
+              ['ประจำเดือน พฤศจิกายน พ.ศ. 2569'],
+              for (final day in scenario.days) [day, 'นาย ก'],
+            ],
+          ),
+        ],
+        spreadsheetId: 'book-${scenario.code}',
+        spreadsheetTitle: 'ตัวอย่างตรวจวันที่',
+      );
+
+      expect(report.sections, hasLength(1));
+      expect(
+        report.sections.single.dateAnomalies.map((item) => item.code),
+        contains(scenario.code),
+      );
+      expect(report.sections.single.hasBlockingDateAnomalies, isTrue);
+    }
+  });
+
   test('reports missing dates in a near-complete vertical date axis', () {
     final days = <int>[...List<int>.generate(16, (index) => index + 1), ...List<int>.generate(13, (index) => index + 18)];
     final report = const MonthlyRosterWorkbookScanner().scan(
