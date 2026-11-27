@@ -2,6 +2,11 @@
 
 This roadmap is evidence-driven. A phase is complete only when implementation, tests, security review, documentation and exact-head CI agree. Roadmap presence is not proof of implementation.
 
+## Current delivery checkpoint — 2026-11-27
+
+Main is `68ef85361c2d08e2970160a36475592010d908f7`. The active work is in Draft PRs #191, #192, #196, #201, #202, #203 and #204. PR #199 was superseded by #192. No open PR has an independent review; branch protection is disabled and production deployment is not verified. See [Implementation Status](IMPLEMENTATION_STATUS.md) and [Requirements Traceability](REQUIREMENTS_TRACEABILITY.md) for exact SHAs and evidence.
+
+
 ## Phase 1 — Core roster and calendar workflows
 
 **Existing foundation**
@@ -10,10 +15,14 @@ This roadmap is evidence-driven. A phase is complete only when implementation, t
 - Guarded Google Calendar synchronization, reconciliation and resume behavior.
 - Shift give-up, exchange and exchange-and-return transaction flows.
 
+**Implementation in progress — PR #192**
+- The parser path is being extended for per-section horizontal/vertical/mixed orientation, source-coordinate/merged-cell/color provenance and CSV/TSV/TXT input.
+- Exact-head CI is pending after the latest source/test changes.
+
 **Remaining acceptance work**
 - Verify year overview and week-boundary behavior with focused widget/E2E tests.
-- Validate the original X-OPD November 2569 and US Clinic ภปร.4 workbooks without guessing date headers.
-- Verify authorized Google Calendar behavior and ambiguous network recovery in a controlled test account.
+- Validate the original X-OPD November 2569, 16 Nov–15 Dec 2569 and US Clinic ภปร.4 workbooks without guessing date headers.
+- Verify ambiguous orientation and employee identity decisions with real workbook evidence.
 
 ## Phase 2 — Organization administration and audit
 
@@ -45,39 +54,29 @@ This roadmap is evidence-driven. A phase is complete only when implementation, t
 
 ## Phase 4 — Notifications and reminders
 
-**Missing implementation**
-- `NotificationService` currently defines an interface but no concrete delivery implementation was found.
+**Implementation in progress — PR #191**
+- Adds subscription ownership/lifecycle, VAPID Web Push sender, encrypted payload delivery, durable outbox worker, retry/backoff, dead-letter state and a scheduled delivery command.
+- Exact-head CI passed 13/13 on the recorded PR head; the PR remains Draft and unreviewed.
 
-**Decisions required before implementation**
-- Supported platforms and minimum OS versions.
-- Whether reminders must fire while the app is closed or device is offline.
-- Timezone and daylight-saving policy.
-- Permission denial, rescheduling, cancellation and duplicate-delivery behavior.
-
-**Acceptance criteria**
-- Permission-aware local notification adapter and/or backend push delivery.
-- Stable notification IDs and idempotent schedule/cancel operations.
-- Tests for timezone boundaries, changed/cancelled shifts, denied permissions and app restart.
-- No secrets or roster data exposed in notification payloads or logs.
+**Remaining acceptance**
+- Verify delivery to a real registered browser/device, permission denial, expired subscriptions, worker crash/retry and timezone boundaries.
+- Verify the scheduler is actually running in the intended self-hosted deployment. Source code and CI do not prove live delivery.
 
 ## Phase 5 — Historical roster recovery
 
-**Existing foundation**
-- Read-only Google Drive revision listing/export and timeline generation.
+**Implementation in progress — PR #204**
+- Adds a revision picker in History and routes read-only Drive revision snapshots through the Grid review and revision-bound Schedule commit workflow.
+- The source revision ID and snapshot content are bound into import provenance. No Drive write scope or source-file mutation is added.
 
-**Missing capability**
-- A safe restore workflow that writes a selected historical state back to the source.
-
-**Acceptance criteria**
-- Read-only preview with before/after diff and date/assignment validation.
-- Explicit user confirmation immediately before any write.
-- Conflict detection if the source changed after preview.
-- Append-only audit record and recoverable failure handling.
-- Any OAuth Drive write-scope expansion must be separately reviewed and explicitly approved. No automatic writes.
+**Remaining acceptance**
+- Add a per-assignment before/after diff, not only counts.
+- Verify with original Drive revision exports and a non-owner account.
+- Confirm stale target revisions are rejected and recovery is idempotent. No automatic writes.
 
 ## Phase 6 — Reliability, security and performance
 
 - Verify Composer audit and backend authorization on current source.
+- Add and enforce required branch protection/status checks; current `main` protection is disabled.
 - Review local roster/revision persistence, encryption, retention and data deletion semantics.
 - Complete mobile/tablet/desktop responsive and accessibility audit.
 - Add reproducible benchmarks for large workbooks, event volume, memory and long histories.
