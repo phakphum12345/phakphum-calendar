@@ -478,3 +478,24 @@ Existing tests to extend before considering new test files include:
 The current app has useful source-specific entry points, but they do not yet provide a universal, source-neutral import lifecycle. In particular, image capture currently leads to manual entry rather than OCR/table extraction, and the general website option is metadata/manual entry rather than URL ingestion. The two local-file/import paths and two monthly/legacy parsing paths must be reconciled before adding more adapters.
 
 **Overall status: IN PROGRESS.** Phase A source-level audit is complete for the paths listed above. Phases B–G are planned, not implemented or passed. This document update does not claim OCR, arbitrary URL import, universal layout detection, or end-to-end cross-source parity is already available.
+
+## 19. Current implementation checkpoint — 2026-11-27
+
+This section supersedes the earlier main-snapshot statements in sections 17–18 for current delivery status. It records open-PR work, not merged functionality.
+
+| Area | Current work | Evidence / remaining gap |
+|---|---|---|
+| Per-section orientation | PR #192 integrates horizontal/vertical/mixed axis handling into the roster import pipeline; PR #199 was closed without merge as superseded | Exact latest #192 CI is pending; original workbook acceptance remains open |
+| Workbook source evidence | PR #192 captures merged-cell anchors, background colors, A1 coordinates and source fingerprints | Theme-color resolution and all real workbook variants still need verification |
+| Delimited sources | PR #192 adds CSV/TSV/TXT to the shared Grid review lifecycle | Validate Thai encodings, large files and user-selected ambiguous orientation |
+| Date-first parsing | Existing date-first parser and diagnostics are extended in #192 | Validate cross-month/cross-year and long-range source fixtures, including real 6+ month schedules |
+| Employee/shift resolution | Existing template/identity review is reused; unknown or ambiguous records remain unresolved until review | Alias collision, multiple departments and profile lifecycle acceptance remain open |
+| Persistence/recovery | #192 consolidates caller-revision CAS, durable journal discovery and explicit recovery assessment | Cross-device backend transaction, conditional delete/tombstone and crash-restart acceptance remain open |
+| Calendar Sync | #196 adds durable coordination/ETag-aware operation handling | Controlled Google test-calendar acceptance remains external |
+| Notifications | #191 adds Web Push sender/outbox worker/retry path | Registered-device and deployed scheduler acceptance remain external |
+| Schedule generation | #202 adds revision-bound preview/approval/commit foundation | Revalidate base against #192 and complete UI/read-back recovery |
+| Shift Pay | #201 rule conflict/precedence; #203 monthly statement calculation core | Statement persistence/UI and confirmed-assignment integration remain open |
+| Historical restore | #204 adds read-only Drive revision restore through Grid review and conditional Schedule commit | Per-assignment diff and real Drive revision acceptance remain open |
+
+Current main remains `68ef85361c2d08e2970160a36475592010d908f7`. All open feature PRs are Draft and unreviewed. Main branch protection is disabled; no exact-main CI or production deployment is claimed. See [Implementation Status](../IMPLEMENTATION_STATUS.md) and [Requirements Traceability](../REQUIREMENTS_TRACEABILITY.md).
+
