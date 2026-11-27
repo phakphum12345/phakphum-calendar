@@ -9,6 +9,7 @@ This is the concise execution checklist. The detailed design and test criteria a
 - PR #200 is superseded by the integrated implementation in #192; do not merge both parser branches.
 - PR #199 orientation primitives and tests are being consolidated into #192; do not merge a duplicate foundation.
 - PR #191 and #196 remain independent notification and Calendar Sync foundations.
+- PR #201 adds deterministic equal-specificity Shift Pay rule conflict handling; it remains Draft until exact-head Dart/backend CI and review pass.
 - Exact-head CI on the current #192 branch must be re-fetched after the latest commit; previous green results do not apply to a moved head.
 - Original X-OPD November 2569, 16 Nov–15 Dec 2569 and US Clinic ภปร.4 workbooks are not available for actual-file acceptance.
 - See `COMPLETION_STATUS.md` and `IMPLEMENTATION_EVIDENCE.md` for live status and evidence boundaries.
