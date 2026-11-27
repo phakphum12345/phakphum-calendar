@@ -9,7 +9,7 @@ This is the current repository-level status. The historical 2026-11-25 snapshot 
 | PR | Scope | Exact head SHA | Latest exact-head CI evidence | Review / acceptance |
 |---|---|---|---|---|
 | [#191](https://github.com/phakphum12345/phakphum-calendar/pull/191) | Web Push delivery/outbox | `cf7eaa22eaf81e04b0b444acfc3aee2a8ca51e5e` | 13/13 workflows passed | Draft; no review; real-device delivery not accepted |
-| [#192](https://github.com/phakphum12345/phakphum-calendar/pull/192) | Universal roster import, source provenance, CAS/recovery | `2f6f9043db8876ea5ed49d85961658fac95942ac` | New exact-head runs not yet available | Draft; no review; original workbook acceptance pending |
+| [#192](https://github.com/phakphum12345/phakphum-calendar/pull/192) | Universal roster import, source provenance, CAS/recovery | `b3dd82757c9652a774b35f7a975170a0bc6f26af` | New exact-head runs not yet available | Draft; no review; original workbook acceptance pending |
 | [#196](https://github.com/phakphum12345/phakphum-calendar/pull/196) | Calendar Sync ETag/lease/ledger reliability | `8e186790e447f9278eda8612a1bb1b6f7e7b77c9` | 13/13 workflows passed | Draft; no review; controlled Google test calendar pending |
 | [#201](https://github.com/phakphum12345/phakphum-calendar/pull/201) | Shift Pay rule conflict/precedence | `d3f228dcdaea4f1a3771c271421226ab71ab00b5` | 12/12 workflows passed | Draft; no review; business-rule acceptance pending |
 | [#202](https://github.com/phakphum12345/phakphum-calendar/pull/202) | Schedule generation preview/approval/commit | `ca6ebd095ef6566fcce00e9bc49e9c820470b80d` | 12/12 workflows passed | Draft; no review; dependent on #192 |
