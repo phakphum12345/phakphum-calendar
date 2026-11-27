@@ -1,16 +1,23 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
+
 import 'package:excel/excel.dart';
 import 'package:file_selector/file_selector.dart';
 
 import '../models/shift.dart';
 
 class LocalRosterDocument {
-  const LocalRosterDocument({required this.extension, required this.snapshots});
+  const LocalRosterDocument({
+    required this.extension,
+    required this.snapshots,
+    this.sourceFingerprint,
+  });
 
   final String extension;
   final List<SheetSnapshot> snapshots;
+  final String? sourceFingerprint;
 }
 
 /// Selects and reads roster files from the local device.
@@ -72,7 +79,11 @@ class LocalRosterFileService implements LocalRosterSource {
         'ไฟล์มีข้อมูลเกิน 200,000 เซลล์ กรุณาแบ่งไฟล์ก่อนอ่าน',
       );
     }
-    return LocalRosterDocument(extension: extension, snapshots: snapshots);
+    return LocalRosterDocument(
+      extension: extension,
+      snapshots: snapshots,
+      sourceFingerprint: 'sha256:' + sha256.convert(bytes).toString(),
+    );
   }
 
   List<SheetSnapshot> _readExcel(Uint8List bytes) {
