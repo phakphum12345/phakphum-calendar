@@ -175,7 +175,13 @@ void main() {
       conversion: conversion,
     );
 
-    expect(committed, isA<Success<Schedule>>());
+    expect(
+      committed,
+      isA<Success<Schedule>>(),
+      reason: committed is Failure<Schedule>
+          ? 'message=${committed.message}; cause=${committed.cause}; stack=${committed.stackTrace}'
+          : null,
+    );
     expect(repository.value?.id, 'schedule-1');
     expect(
       repository.value!.month(DateTime(2026, 11, 1))!
