@@ -6,6 +6,7 @@ import '../../../services/shift_color_service.dart';
 import '../domain/shift_parser_input.dart';
 import '../domain/roster_layout_profile.dart';
 import '../domain/thai_roster_period_parser.dart';
+import 'vertical_monthly_roster_section_parser.dart';
 
 /// Parses repeated monthly roster blocks without requiring known section or
 /// row labels. A block is discovered from its numeric date-header row.
@@ -35,7 +36,24 @@ class MonthlyRosterSectionParser {
   /// Runs both phases in order: build date/row structure, then fill workers.
   MonthlyRosterParseReport parse(ShiftParserInput input) {
     final structure = generateDateStructure(input);
-    return populateAssignments(input, structure);
+    final horizontalReport = populateAssignments(input, structure);
+    final verticalReport = VerticalMonthlyRosterSectionParser(
+      periodParser: periodParser,
+    ).parse(input);
+    return MonthlyRosterParseReport(
+      sections: List.unmodifiable([
+        ...horizontalReport.sections,
+        ...verticalReport.sections,
+      ]),
+      warnings: List.unmodifiable([
+        ...horizontalReport.warnings.where(
+          (warning) =>
+              verticalReport.sections.isEmpty ||
+              !warning.contains('ไม่พบบล็อกตารางรายเดือน'),
+        ),
+        ...verticalReport.warnings,
+      ]),
+    );
   }
 
   /// Phase 1: identify each section, its own period, date columns, and shift rows.
