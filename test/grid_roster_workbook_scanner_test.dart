@@ -152,7 +152,7 @@ void main() {
   });
 
   test('scans CSV snapshots through the Grid parser with a byte fingerprint', () {
-    const csv = 'เวรประจำเดือน พฤศจิกายน พ.ศ. 2569\n'
+    const csv = '\uFEFFเวรประจำเดือน พฤศจิกายน พ.ศ. 2569\n'
         'วันที่,1,2,3,4,5,6,7\n'
         'เวรเช้า,ก,ก,ก,ก,ก,ก,ก\n';
     final document = const LocalRosterFileService().readBytes(
