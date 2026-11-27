@@ -32,14 +32,37 @@ class VerticalMonthlyRosterSectionParser {
 
     final sections = <MonthlyRosterSection>[];
     final warnings = <String>[];
-    final dateAxisColumns = byColumn.entries
-        .where((entry) => entry.value.where(_isDateCell).length >= 7)
-        .map((entry) => entry.key)
-        .toSet();
-
+    // Seven or more date cells are strong structural evidence. Shorter
+    // vertical ranges are also valid, but require an explicit date-axis label
+    // or a period heading in the worksheet; a month-like sheet tab alone is
+    // not enough to reinterpret a short numeric ID column as calendar dates.
+    final dateAxisColumns = <int>{};
     for (final entry in byColumn.entries) {
       final dateCells = entry.value.where(_isDateCell).toList(growable: false);
-      if (dateCells.length < 7) continue;
+      if (dateCells.length >= 7) {
+        dateAxisColumns.add(entry.key);
+        continue;
+      }
+      if (dateCells.length < 2) continue;
+      final firstDateRow = dateCells.first.rowIndex;
+      final periodEvidence = _periodEvidence(
+        input: input,
+        cells: input.cells,
+        firstDateRow: firstDateRow,
+        dateColumn: entry.key,
+      );
+      final hasLocalPeriod =
+          periodEvidence != null && periodEvidence.rowIndex >= 0;
+      if (hasLocalPeriod ||
+          _hasDateAxisLabel(input.cells, entry.key, firstDateRow)) {
+        dateAxisColumns.add(entry.key);
+      }
+    }
+
+    for (final entry in byColumn.entries) {
+      if (!dateAxisColumns.contains(entry.key)) continue;
+      final dateCells = entry.value.where(_isDateCell).toList(growable: false);
+      if (dateCells.length < 2) continue;
 
       // Separate stacked tables when a period heading occurs between date runs.
       final runs = <List<NormalizedCell>>[];
@@ -54,12 +77,12 @@ class VerticalMonthlyRosterSectionParser {
         if (run.isNotEmpty &&
             (cell.rowIndex - run.last.rowIndex > 2 ||
                 hasPeriodHeadingBetween)) {
-          if (run.length >= 7) runs.add(run);
+          if (run.length >= 2) runs.add(run);
           run = <NormalizedCell>[];
         }
         run.add(cell);
       }
-      if (run.length >= 7) runs.add(run);
+      if (run.length >= 2) runs.add(run);
 
       for (final axisCells in runs) {
         final firstRow = axisCells.first.rowIndex;
@@ -528,10 +551,31 @@ class VerticalMonthlyRosterSectionParser {
   bool _isDateCell(NormalizedCell cell) =>
       _day(cell) != null || _explicitDate(cell) != null;
 
+  bool _hasDateAxisLabel(
+    List<NormalizedCell> cells,
+    int dateColumn,
+    int firstDateRow,
+  ) {
+    return cells.any((cell) {
+      if (cell.columnIndex != dateColumn ||
+          cell.rowIndex >= firstDateRow) {
+        return false;
+      }
+      final label = (cell.text ?? cell.rawValue?.toString() ?? '')
+          .toLowerCase()
+          .replaceAll(RegExp(r'[\s._:/-]+'), '');
+      return label == 'date' ||
+          label == 'day' ||
+          label == 'วันที่' ||
+          label == 'วันปฏิบัติงาน' ||
+          label == 'วันที่ปฏิบัติงาน';
+    });
+  }
+
   DateTime? _explicitDate(NormalizedCell cell) {
     final raw = cell.rawValue;
     if (raw is DateTime) {
-      return DateTime(raw.year, raw.month, raw.day);
+      return DateTime(_normalizeYear(raw.year), raw.month, raw.day);
     }
     final text = cell.text?.trim() ?? raw?.toString().trim() ?? '';
     if (text.isEmpty) return null;
@@ -539,7 +583,7 @@ class VerticalMonthlyRosterSectionParser {
     final iso = DateTime.tryParse(text);
     if (iso != null &&
         RegExp(r'^\d{4}-\d{1,2}-\d{1,2}').hasMatch(text)) {
-      return DateTime(iso.year, iso.month, iso.day);
+      return DateTime(_normalizeYear(iso.year), iso.month, iso.day);
     }
 
     final ymd = RegExp(
