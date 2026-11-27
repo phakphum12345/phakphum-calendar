@@ -1,5 +1,7 @@
 # Requirements Traceability
 
+> **Historical evidence snapshot (2026-11-25).** The implementation and deployment observations below were recorded against SHA `aed2f1177bdfc85f6ff53bb200116812a51bd9e3`; do not use them as current completion status. Current implementation state and acceptance evidence are maintained in [the project work-package status](docs/project/WORK_PACKAGE_STATUS.md) and [acceptance matrix](docs/project/ACCEPTANCE_MATRIX.md).
+
 **Review date:** 2026-11-25  
 **Repository snapshot:** `aed2f1177bdfc85f6ff53bb200116812a51bd9e3`  
 **Status:** Evidence-based partial inventory. PARTIAL, MISSING, UNKNOWN and NEEDS REVIEW remain open work.
