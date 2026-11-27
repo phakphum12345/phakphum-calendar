@@ -540,12 +540,15 @@ class GridRosterImportWorkflow {
   ) {
     final repository = scheduleRepository;
     if (repository is! ConditionalScheduleWriter) {
-      return const PersistenceFailure(
+      return const PersistenceFailure<Schedule>(
         'The Schedule repository does not support atomic conditional writes. '
         'No Schedule was saved.',
       );
     }
-    return repository.saveIfRevision(schedule, expectedRevision);
+    return (repository as ConditionalScheduleWriter).saveIfRevision(
+      schedule,
+      expectedRevision,
+    );
   }
 
   String scheduleFingerprint(Schedule schedule) =>
