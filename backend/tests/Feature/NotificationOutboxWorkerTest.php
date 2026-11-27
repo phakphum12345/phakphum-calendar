@@ -128,6 +128,24 @@ class NotificationOutboxWorkerTest extends TestCase
         ]);
     }
 
+    public function test_outbox_without_registered_devices_is_not_reported_as_sent(): void
+    {
+        $userId = $this->createUser();
+        $outbox = $this->enqueue($userId);
+        $transport = new FakeWebPushTransport([]);
+
+        $stats = (new NotificationOutboxWorker($transport))->deliverBatch();
+
+        $this->assertSame(1, $stats['no_subscriptions']);
+        $this->assertSame([], $transport->calls);
+        $this->assertDatabaseHas('notification_outbox', [
+            'id' => $outbox['id'],
+            'status' => 'no_subscriptions',
+            'sent_at' => null,
+            'last_error' => 'no_active_subscription',
+        ]);
+    }
+
     public function test_attempt_limit_moves_retryable_delivery_to_dead_letter(): void
     {
         config(['services.web_push.max_attempts' => 1]);
