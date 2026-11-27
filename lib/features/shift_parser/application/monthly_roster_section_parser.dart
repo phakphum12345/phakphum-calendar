@@ -6,7 +6,9 @@ import '../../../services/shift_color_service.dart';
 import '../domain/shift_parser_input.dart';
 import '../domain/normalized_cell.dart';
 import '../domain/roster_layout_profile.dart';
+import '../domain/roster_grid_axis_mapping.dart';
 import '../domain/thai_roster_period_parser.dart';
+import 'vertical_monthly_roster_section_parser.dart';
 
 /// Parses repeated monthly roster blocks without requiring known section or
 /// row labels. A block is discovered from its numeric date-header row.
@@ -258,6 +260,7 @@ class MonthlyRosterSectionParser {
         for (final entry in datesByColumn.entries)
           MonthlyRosterDateColumn(
             columnIndex: entry.key,
+            rowIndex: headerRow,
             displayedDay: daysByColumn[entry.key]!,
             date: entry.value,
           ),
@@ -344,7 +347,12 @@ class MonthlyRosterSectionParser {
       );
     }
 
-    if (headerRows.isEmpty) {
+    final verticalStructure = VerticalMonthlyRosterSectionParser(
+      periodParser: periodParser,
+    ).parse(input, populateAssignments: false);
+    sections.addAll(verticalStructure.sections);
+    warnings.addAll(verticalStructure.warnings);
+    if (headerRows.isEmpty && verticalStructure.sections.isEmpty) {
       warnings.add('ไม่พบบล็อกตารางรายเดือนในชีต ${input.sheetTitle}');
     }
     return MonthlyRosterParseReport(
@@ -369,6 +377,56 @@ class MonthlyRosterSectionParser {
     for (final section in structure.sections) {
       final assignments = <MonthlyRosterAssignment>[];
       final configuredNameColumns = layoutProfile?.nameColumns.toSet();
+
+      if (section.orientation == RosterGridOrientation.datesDownRows) {
+        for (final dateColumn in section.dateColumns) {
+          final sourceRow = dateColumn.rowIndex;
+          if (sourceRow == null) continue;
+          for (final rosterColumn in section.rosterRows) {
+            final sourceColumn = rosterColumn.columnIndex;
+            if (sourceColumn == null) continue;
+            final workerCell =
+                cellsByCoordinate[(sourceRow, sourceColumn)];
+            final worker = workerCell?.text?.toString().trim() ?? '';
+            if (worker.isEmpty) continue;
+            assignments.add(
+              MonthlyRosterAssignment(
+                sectionTitle: section.title,
+                rowLabel: rosterColumn.label,
+                rowIndex: sourceRow,
+                columnIndex: sourceColumn,
+                workerName: worker,
+                date: dateColumn.date,
+                sourceCell: workerCell!.a1,
+                backgroundColor: workerCell.backgroundColor?.hex,
+                spreadsheetId: input.spreadsheetId,
+                sheetId: input.sheetId,
+                sheetTitle: input.sheetTitle,
+              ),
+            );
+          }
+        }
+        populatedSections.add(
+          MonthlyRosterSection(
+            title: section.title,
+            headerRowIndex: section.headerRowIndex,
+            orientation: section.orientation,
+            assignments: List.unmodifiable(assignments),
+            rowLabels: section.rowLabels,
+            dateColumns: section.dateColumns,
+            rosterRows: section.rosterRows,
+            startDate: section.startDate,
+            endDate: section.endDate,
+            dateAnomalies: section.dateAnomalies,
+            sourceSpreadsheetId: section.sourceSpreadsheetId,
+            sourceSheetId: section.sourceSheetId,
+            sourceSheetTitle: section.sourceSheetTitle,
+            sourceCells: section.sourceCells,
+          ),
+        );
+        continue;
+      }
+
       final resolvedDateColumns = section.dateColumns
           .map((column) => column.columnIndex)
           .toSet();
@@ -399,6 +457,7 @@ class MonthlyRosterSectionParser {
               sectionTitle: section.title,
               rowLabel: row.label,
               rowIndex: row.rowIndex,
+              columnIndex: dateColumn.columnIndex,
               workerName: worker,
               date: dateColumn.date,
               sourceCell: A1Notation.fromZeroBased(
