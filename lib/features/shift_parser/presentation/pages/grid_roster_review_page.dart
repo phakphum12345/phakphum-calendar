@@ -10,6 +10,7 @@ import '../../application/grid_roster_review_session.dart';
 import '../../application/monthly_roster_section_parser.dart';
 import '../../domain/monthly_roster_section.dart';
 import '../../domain/roster_grid_axis_mapping.dart';
+import '../../domain/shift_parser_input.dart';
 
 /// Human review screen for a parsed multi-sheet Grid workbook.
 ///
@@ -141,6 +142,41 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
                             Text(
                               'สถานะ: ${section.assessment.readiness.name}',
                             ),
+                            if (section.assessment.section.sourceCells.isNotEmpty) ...[
+                              const SizedBox(height: 8),
+                              DropdownButtonFormField<RosterGridOrientation>(
+                                key: ValueKey(
+                                  'grid-roster-orientation-${section.assessment.section.sourceSheetId ?? 'local'}-${section.assessment.section.headerRowIndex}-${section.assessment.section.title}',
+                                ),
+                                initialValue: section.assessment.section.orientation,
+                                decoration: const InputDecoration(
+                                  labelText: 'แนววันที่ของ Section นี้',
+                                  helperText:
+                                      'เปลี่ยนได้เมื่อระบบตรวจจับไม่ตรงกับไฟล์ต้นฉบับ ระบบจะอ่านข้อมูลต้นฉบับใหม่และล้างตัวเลือกเดิม',
+                                  border: OutlineInputBorder(),
+                                ),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: RosterGridOrientation.datesAcrossColumns,
+                                    child: Text('วันที่เรียงตามคอลัมน์'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: RosterGridOrientation.datesDownRows,
+                                    child: Text('วันที่เรียงตามแถว'),
+                                  ),
+                                ],
+                                onChanged: _saving
+                                    ? null
+                                    : (value) {
+                                        if (value != null) {
+                                          _selectOrientation(
+                                            section.assessment.section,
+                                            value,
+                                          );
+                                        }
+                                      },
+                              ),
+                            ],
                             if (section.assessment.section.startDate != null &&
                                 section.assessment.section.endDate != null)
                               Text(
@@ -322,6 +358,112 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _selectOrientation(
+    MonthlyRosterSection section,
+    RosterGridOrientation orientation,
+  ) async {
+    if (_saving || orientation == section.orientation) return;
+    final approved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('ยืนยันเปลี่ยนแนววันที่'),
+        content: const Text(
+          'ระบบจะอ่าน Section นี้จากเซลล์ต้นฉบับอีกครั้ง ไม่บันทึก Schedule '
+          'และจะล้างการเลือกพนักงาน/กะเดิมเพื่อให้ตรวจสอบใหม่ทั้งหมด',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('ยกเลิก'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('เปลี่ยนแนววันที่และตรวจตารางใหม่'),
+          ),
+        ],
+      ),
+    );
+    if (approved != true || !mounted) return;
+
+    try {
+      if (section.sourceCells.isEmpty) {
+        throw StateError('ไม่พบเซลล์ต้นฉบับสำหรับตรวจแนววันที่ใหม่');
+      }
+      final firstCell = section.sourceCells.first;
+      final input = ShiftParserInput(
+        spreadsheetId: section.sourceSpreadsheetId ?? '',
+        spreadsheetTitle: section.sourceSheetTitle ?? section.title,
+        sheetId: section.sourceSheetId ?? firstCell.sheetId,
+        sheetTitle: section.sourceSheetTitle ?? firstCell.sheetTitle,
+        timeZone: null,
+        cells: List.unmodifiable(section.sourceCells),
+      );
+      final parsed = const MonthlyRosterSectionParser().parseWithOrientation(
+        input,
+        orientation,
+      );
+      if (parsed.sections.length != 1) {
+        final details = parsed.warnings.isEmpty
+            ? 'ไม่พบ Section ที่ตรงกับแนววันที่ที่เลือก'
+            : parsed.warnings.join('\n');
+        throw StateError(
+          'ต้องพบ Section ที่ตีความได้เพียงหนึ่งส่วน แต่พบ ${parsed.sections.length} ส่วน: $details',
+        );
+      }
+
+      final nextSections = <MonthlyRosterSection>[];
+      var replaced = false;
+      for (final review in _reviewContext.session.sections) {
+        if (identical(review.assessment.section, section)) {
+          nextSections.add(parsed.sections.single);
+          replaced = true;
+        } else {
+          nextSections.add(review.assessment.section);
+        }
+      }
+      if (!replaced) {
+        throw StateError('ไม่พบ Section เดิมใน Review session');
+      }
+
+      final currentSession = _reviewContext.session;
+      final report = MonthlyRosterParseReport(
+        sections: List.unmodifiable(nextSections),
+        warnings: List.unmodifiable([
+          ...currentSession.warnings,
+          ...parsed.warnings,
+        ]),
+        sourceSheetCount: currentSession.sourceSheetCount,
+        sourceFingerprint: currentSession.sourceFingerprint,
+      );
+      final nextSession = widget.workflow.reviewSessionBuilder.build(
+        report: report,
+        employees: widget.employees,
+        shiftTemplates: widget.shiftTemplates,
+        sourceFingerprint: currentSession.sourceFingerprint,
+        targetScheduleId: currentSession.targetScheduleId,
+        targetScheduleRevision: currentSession.targetScheduleRevision,
+      );
+      setState(() {
+        _reviewContext = GridRosterImportReviewContext(
+          session: nextSession,
+          targetSchedule: _reviewContext.targetSchedule,
+          targetExisted: _reviewContext.targetExisted,
+          sourceRevisionId: _reviewContext.sourceRevisionId,
+        );
+        _included.clear();
+        _selectedEmployees.clear();
+        _selectedTemplates.clear();
+        _dateAnomalyChoices.clear();
+        _error = null;
+      });
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'เปลี่ยนแนววันที่ไม่ได้: $error';
+      });
+    }
   }
 
   Future<void> _correctDateAxis(
