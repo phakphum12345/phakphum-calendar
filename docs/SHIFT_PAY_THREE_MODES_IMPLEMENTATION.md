@@ -2,7 +2,7 @@
 
 - Status: requirements contract with merged implementation foundations
 - Related PRs: #181 (Flutter source resolution), #183 (backend persistence), #186 (backend calculation and immutable snapshots)
-- Current status: modes, persistence and calculation APIs are merged; Flutter calculation now supports profile-specific decimal rounding, including a separate organization precision. Confirmed-roster integration and monthly statements remain open.
+- Current status: the Personal / Organization / Hybrid rule-source foundation, persistence and single-assignment calculation APIs are merged through PRs #181, #183 and #186; rounding supports profile-specific precision. Follow-up PRs #201 and #203 add conflict-resolution and immutable monthly statement calculation foundations but remain open. Confirmed-assignment integration, persisted monthly statement repository/API/UI, export and full authorization acceptance remain open.
 - Existing foundation: `ShiftPayCalculator`, `ShiftPayRule`, `ShiftTypeDefinition`, shift templates
 
 ## 1. Product modes
