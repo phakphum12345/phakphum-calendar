@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 
 class ScheduleImportJournalController extends Controller
@@ -90,6 +91,9 @@ class ScheduleImportJournalController extends Controller
         $payload = isset($validated['schedule'])
             ? json_encode($validated['schedule'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR)
             : null;
+        $storedPayload = $payload === null ? null : $this->encodeSchedulePayload($payload);
+        $provenance = json_encode($validated['provenance'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+        $storedProvenance = $this->encodeProvenance($provenance);
 
         if ($validated['lifecycle'] === 'committed' &&
             hash_equals($validated['accepted_schedule_fingerprint'], hash('sha256', $payload)) === false) {
@@ -109,8 +113,8 @@ class ScheduleImportJournalController extends Controller
             'base_revision' => $validated['base_revision'],
             'source_fingerprint' => $validated['source_fingerprint'],
             'accepted_schedule_fingerprint' => $validated['accepted_schedule_fingerprint'] ?? null,
-            'provenance' => json_encode($validated['provenance'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR),
-            'schedule_payload' => $payload,
+            'provenance' => $storedProvenance,
+            'schedule_payload' => $storedPayload,
             'created_at' => now(),
             'updated_at' => now(),
         ];
@@ -134,8 +138,10 @@ class ScheduleImportJournalController extends Controller
                 $existing->base_revision === $validated['base_revision'] &&
                 $existing->source_fingerprint === $validated['source_fingerprint'] &&
                 $existing->accepted_schedule_fingerprint === ($validated['accepted_schedule_fingerprint'] ?? null) &&
-                $existing->provenance === $attributes['provenance'] &&
-                $existing->schedule_payload === $payload) {
+                $this->decodeProvenance($existing->provenance) === json_decode($provenance, true, 512, JSON_THROW_ON_ERROR) &&
+                ($existing->schedule_payload === null
+                    ? $payload === null
+                    : $this->decodeSchedulePayload($existing->schedule_payload) === $payload)) {
                 return response()->json(['data' => $this->resource($existing)], 200);
             }
 
@@ -154,6 +160,53 @@ class ScheduleImportJournalController extends Controller
         $record = DB::table('schedule_import_journals')->where('id', $id)->first();
 
         return response()->json(['data' => $this->resource($record)], 201);
+    }
+
+    private function encodeSchedulePayload(string $payload): string
+    {
+        return 'enc:v1:'.Crypt::encryptString($payload);
+    }
+
+    private function decodeSchedulePayload(string $payload): string
+    {
+        if (! str_starts_with($payload, 'enc:v1:')) {
+            // Legacy journal records remain readable after encryption rollout.
+            return $payload;
+        }
+
+        return Crypt::decryptString(substr($payload, strlen('enc:v1:')));
+    }
+
+    private function encodeProvenance(string $provenance): string
+    {
+        return json_encode([
+            'encryption_version' => 1,
+            'ciphertext' => Crypt::encryptString($provenance),
+        ], JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+    }
+
+    private function decodeProvenance(string $stored): array
+    {
+        $decoded = json_decode($stored, true, 512, JSON_THROW_ON_ERROR);
+        if (is_array($decoded) && array_key_exists('encryption_version', $decoded)) {
+            if (($decoded['encryption_version'] ?? null) !== 1 ||
+                ! is_string($decoded['ciphertext'] ?? null)) {
+                throw new UnexpectedValueException('Unsupported encrypted provenance envelope.');
+            }
+
+            $decoded = json_decode(
+                Crypt::decryptString($decoded['ciphertext']),
+                true,
+                512,
+                JSON_THROW_ON_ERROR,
+            );
+        }
+
+        if (! is_array($decoded)) {
+            throw new UnexpectedValueException('Import journal provenance must decode to an object.');
+        }
+
+        return $decoded;
     }
 
     private function isUniqueConstraintViolation(QueryException $exception): bool
@@ -186,10 +239,10 @@ class ScheduleImportJournalController extends Controller
             'base_revision' => $record->base_revision,
             'source_fingerprint' => $record->source_fingerprint,
             'accepted_schedule_fingerprint' => $record->accepted_schedule_fingerprint,
-            'provenance' => json_decode($record->provenance, true, 512, JSON_THROW_ON_ERROR),
+            'provenance' => $this->decodeProvenance($record->provenance),
             'schedule' => $record->schedule_payload === null
                 ? null
-                : json_decode($record->schedule_payload, true, 512, JSON_THROW_ON_ERROR),
+                : json_decode($this->decodeSchedulePayload($record->schedule_payload), true, 512, JSON_THROW_ON_ERROR),
             'created_at' => $record->created_at,
         ];
     }
