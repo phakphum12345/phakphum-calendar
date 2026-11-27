@@ -272,14 +272,18 @@ class VerticalMonthlyRosterSectionParser {
               (current, column) =>
                   current == null || column < current ? column : current,
             );
-        final labelsByColumn = <int, String>{};
+        final previousDateAxis = dateAxisColumns
+            .where((column) => column < entry.key)
+            .fold<int?>(
+              null,
+              (current, column) =>
+                  current == null || column > current ? column : current,
+            );
+        final rightLabels = <int, String>{};
+        final leftLabels = <int, String>{};
         for (final cell in input.cells.where(
           (cell) => cell.rowIndex == headerRow,
         )) {
-          if (cell.columnIndex <= entry.key ||
-              (nextDateAxis != null && cell.columnIndex >= nextDateAxis)) {
-            continue;
-          }
           final label = cell.text?.trim() ?? '';
           if (label.isEmpty ||
               _isDateCell(cell) ||
@@ -291,41 +295,45 @@ class VerticalMonthlyRosterSectionParser {
                 byCoordinate[(dateCell.rowIndex, cell.columnIndex)]?.text;
             return value?.trim().isNotEmpty ?? false;
           });
-          if (hasData) labelsByColumn[cell.columnIndex] = label;
+          if (!hasData) continue;
+          if (cell.columnIndex > entry.key &&
+              (nextDateAxis == null || cell.columnIndex < nextDateAxis)) {
+            rightLabels[cell.columnIndex] = label;
+          } else if (cell.columnIndex < entry.key &&
+              (previousDateAxis == null ||
+                  cell.columnIndex > previousDateAxis)) {
+            leftLabels[cell.columnIndex] = label;
+          }
         }
 
-        // Some workbooks put assignment columns to the left of the date
-        // axis. Bound that search by the previous date axis so adjacent
-        // vertical sections do not borrow one another's headers.
-        final previousDateAxis = dateAxisColumns
-            .where((column) => column < entry.key)
-            .fold<int?>(
-              null,
-              (current, column) =>
-                  current == null || column > current ? column : current,
-            );
+        final rightDistance = rightLabels.isEmpty
+            ? null
+            : rightLabels.keys.reduce((a, b) => a < b ? a : b) - entry.key;
+        final leftDistance = leftLabels.isEmpty
+            ? null
+            : entry.key - leftLabels.keys.reduce((a, b) => a > b ? a : b);
+        final labelsByColumn = <int, String>{};
+        if (rightDistance != null &&
+            leftDistance != null &&
+            rightDistance == leftDistance) {
+          warnings.add(
+            'ไม่สามารถระบุด้านของหัวคอลัมน์งานสำหรับแกนวันที่ '
+            '${entry.key + 1} ได้อย่างมั่นใจ; ต้องให้ผู้ตรวจเลือกแนวแกน',
+          );
+          continue;
+        }
+        if (rightDistance != null &&
+            (leftDistance == null || rightDistance < leftDistance)) {
+          labelsByColumn.addAll(rightLabels);
+        } else if (leftDistance != null) {
+          labelsByColumn.addAll(leftLabels);
+        }
         if (labelsByColumn.isEmpty) {
-          for (final cell in input.cells.where(
-            (cell) => cell.rowIndex == headerRow,
-          )) {
-            if (cell.columnIndex >= entry.key ||
-                (previousDateAxis != null &&
-                    cell.columnIndex <= previousDateAxis)) {
-              continue;
-            }
-            final label = cell.text?.trim() ?? '';
-            if (label.isEmpty ||
-                _isDateCell(cell) ||
-                _isPeriodEvidence(label)) {
-              continue;
-            }
-            final hasData = axisCells.any((dateCell) {
-              final value =
-                  byCoordinate[(dateCell.rowIndex, cell.columnIndex)]?.text;
-              return value?.trim().isNotEmpty ?? false;
-            });
-            if (hasData) labelsByColumn[cell.columnIndex] = label;
-          }
+          warnings.add(
+            'พบแกนวันที่แนวตั้งที่คอลัมน์ ${entry.key + 1} '
+            'แต่ไม่พบหัวคอลัมน์งานที่จับคู่กับข้อมูลได้',
+          );
+          continue;
         }
 
         final sourceStartRow = periodEvidence != null &&
