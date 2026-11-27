@@ -13,6 +13,9 @@ import 'grid_roster_import_provenance_json_codec.dart';
 /// Remote append-only journal contract used alongside the local two-slot
 /// journal. Implementations must fail closed when the backend is configured.
 abstract interface class GridRosterImportJournalGateway {
+  /// Lists all Schedule IDs with journals owned by the authenticated account.
+  Future<List<String>> discoverScheduleIds();
+
   Future<void> appendPrepared({
     required String scheduleId,
     required GridRosterImportProvenance provenance,
@@ -59,6 +62,27 @@ class BackendGridRosterImportJournalGateway
     return parsed.replace(
       path: parsed.path.endsWith('/') ? parsed.path : '${parsed.path}/',
     );
+  }
+
+  @override
+  Future<List<String>> discoverScheduleIds() async {
+    final response = await _request('GET', 'api/v1/schedules/import-journals');
+    final data = response['data'];
+    if (data is! List) {
+      throw const FormatException(
+        'The backend journal discovery response is missing its data list.',
+      );
+    }
+    final ids = <String>{};
+    for (final value in data) {
+      if (value is! String || value.trim().isEmpty || value.length > 128 || value.contains('/')) {
+        throw const FormatException(
+          'The backend returned an invalid Schedule ID in journal discovery.',
+        );
+      }
+      ids.add(value);
+    }
+    return ids.toList()..sort();
   }
 
   @override
