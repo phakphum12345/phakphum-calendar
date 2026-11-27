@@ -20,9 +20,11 @@ class VerticalMonthlyRosterSectionParser {
   }) {
     final byColumn = <int, List<NormalizedCell>>{};
     final byCoordinate = <(int, int), NormalizedCell>{};
+    final byA1 = <String, NormalizedCell>{};
     for (final cell in input.cells) {
       byColumn.putIfAbsent(cell.columnIndex, () => []).add(cell);
       byCoordinate[(cell.rowIndex, cell.columnIndex)] = cell;
+      if (cell.a1.trim().isNotEmpty) byA1[cell.a1] = cell;
     }
     for (final cells in byColumn.values) {
       cells.sort((a, b) => a.rowIndex.compareTo(b.rowIndex));
@@ -78,9 +80,9 @@ class VerticalMonthlyRosterSectionParser {
               (cell) =>
                   cell.rowIndex == headerRow &&
                   cell.columnIndex != entry.key &&
-                  (cell.text?.trim().isNotEmpty ?? false) &&
+                  (_headerText(cell, byA1)?.isNotEmpty ?? false) &&
                   !_isDateCell(cell) &&
-                  !_isPeriodEvidence(cell.text ?? ''),
+                  !_isPeriodEvidence(_headerText(cell, byA1) ?? ''),
             )
             .any(
               (headerCell) => axisCells.any((dateCell) {
@@ -284,7 +286,7 @@ class VerticalMonthlyRosterSectionParser {
         for (final cell in input.cells.where(
           (cell) => cell.rowIndex == headerRow,
         )) {
-          final label = cell.text?.trim() ?? '';
+          final label = _headerText(cell, byA1) ?? '';
           if (label.isEmpty ||
               _isDateCell(cell) ||
               _isPeriodEvidence(label)) {
@@ -426,6 +428,21 @@ class VerticalMonthlyRosterSectionParser {
       sections: List.unmodifiable(sections),
       warnings: List.unmodifiable(warnings),
     );
+  }
+
+  /// Resolves a blank merged header cell to its original anchor label.
+  /// The source cell itself is never rewritten, so raw workbook provenance
+  /// remains available to review and correction workflows.
+  String? _headerText(
+    NormalizedCell cell,
+    Map<String, NormalizedCell> cellsByA1,
+  ) {
+    final direct = cell.text?.trim();
+    if (direct != null && direct.isNotEmpty) return direct;
+    final anchorA1 = cell.mergedAnchorA1;
+    if (anchorA1 == null || anchorA1.trim().isEmpty) return null;
+    final anchorText = cellsByA1[anchorA1]?.text?.trim();
+    return anchorText == null || anchorText.isEmpty ? null : anchorText;
   }
 
   String _cellReference(NormalizedCell cell) =>
