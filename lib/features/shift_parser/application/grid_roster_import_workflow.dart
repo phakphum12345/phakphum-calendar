@@ -18,7 +18,7 @@ import '../domain/monthly_roster_section.dart';
 import 'grid_roster_canonical_converter.dart';
 import 'grid_roster_review_session.dart';
 
-/// A review session bound to the exact Schedule revision loaded for review.
+/// Outcome of inspecting a committed Grid import journal.
 enum GridRosterRecoveryDisposition {
   noCommittedBundle,
   ready,
@@ -50,6 +50,7 @@ class GridRosterRecoveryAssessment {
       disposition == GridRosterRecoveryDisposition.ready;
 }
 
+/// A review session bound to the exact Schedule revision loaded for review.
 class GridRosterImportReviewContext {
   const GridRosterImportReviewContext({
     required this.session,
