@@ -4,6 +4,7 @@ import '../../../models/shift.dart';
 import '../../../domain/entities/shift_template.dart';
 import '../../../services/shift_color_service.dart';
 import '../domain/shift_parser_input.dart';
+import '../domain/normalized_cell.dart';
 import '../domain/roster_layout_profile.dart';
 import '../domain/thai_roster_period_parser.dart';
 
@@ -36,6 +37,73 @@ class MonthlyRosterSectionParser {
   MonthlyRosterParseReport parse(ShiftParserInput input) {
     final structure = generateDateStructure(input);
     return populateAssignments(input, structure);
+  }
+
+  /// Rebuilds a section from its retained source grid after an explicit
+  /// reviewer-selected date correction. Every correction is re-parsed and
+  /// revalidated; this method never infers a replacement date.
+  MonthlyRosterSection correctDateColumns({
+    required MonthlyRosterSection section,
+    required Map<int, DateTime> correctedDatesByColumn,
+  }) {
+    if (correctedDatesByColumn.isEmpty) {
+      throw ArgumentError('At least one explicit date correction is required.');
+    }
+    if (section.sourceCells.isEmpty) {
+      throw StateError('The original worksheet grid is unavailable for correction.');
+    }
+    final headerCells = section.sourceCells
+        .where((cell) => cell.rowIndex == section.headerRowIndex)
+        .map((cell) => cell.columnIndex)
+        .toSet();
+    for (final entry in correctedDatesByColumn.entries) {
+      if (!headerCells.contains(entry.key)) {
+        throw ArgumentError('Column ${entry.key + 1} is not present in the source header.');
+      }
+      final date = DateTime(entry.value.year, entry.value.month, entry.value.day);
+      final start = section.startDate;
+      final end = section.endDate;
+      if (start != null && date.isBefore(DateTime(start.year, start.month, start.day)) ||
+          end != null && date.isAfter(DateTime(end.year, end.month, end.day))) {
+        throw ArgumentError('Corrected dates must remain inside the declared section period.');
+      }
+    }
+
+    final cells = section.sourceCells.map((cell) {
+      final corrected = correctedDatesByColumn[cell.columnIndex];
+      if (cell.rowIndex != section.headerRowIndex || corrected == null) {
+        return cell;
+      }
+      final date = DateTime(corrected.year, corrected.month, corrected.day);
+      return NormalizedCell(
+        sheetId: cell.sheetId,
+        sheetTitle: cell.sheetTitle,
+        a1: cell.a1,
+        rowIndex: cell.rowIndex,
+        columnIndex: cell.columnIndex,
+        text: date.day.toString(),
+        rawValue: date,
+        backgroundColor: cell.backgroundColor,
+        isMerged: cell.isMerged,
+        mergedAnchorA1: cell.mergedAnchorA1,
+      );
+    }).toList(growable: false);
+    final input = ShiftParserInput(
+      spreadsheetId: section.sourceSpreadsheetId ?? '',
+      spreadsheetTitle: section.sourceSheetTitle ?? section.title,
+      sheetId: section.sourceSheetId ?? cells.first.sheetId,
+      sheetTitle: section.sourceSheetTitle ?? cells.first.sheetTitle,
+      timeZone: null,
+      cells: List.unmodifiable(cells),
+    );
+    final rebuilt = parse(input).sections.where((candidate) =>
+        candidate.headerRowIndex == section.headerRowIndex &&
+        candidate.title == section.title &&
+        candidate.sourceSheetId == section.sourceSheetId);
+    if (rebuilt.length != 1) {
+      throw StateError('Could not uniquely rebuild the corrected source section.');
+    }
+    return rebuilt.single;
   }
 
   /// Phase 1: identify each section, its own period, date columns, and shift rows.
@@ -115,6 +183,7 @@ class MonthlyRosterSectionParser {
               sourceSpreadsheetId: input.spreadsheetId,
               sourceSheetId: input.sheetId,
               sourceSheetTitle: input.sheetTitle,
+              sourceCells: List.unmodifiable(input.cells),
               dateAnomalies: const [
                 MonthlyRosterDateAnomaly(
                   code: 'unresolved_period',
@@ -210,6 +279,7 @@ class MonthlyRosterSectionParser {
           sourceSpreadsheetId: input.spreadsheetId,
           sourceSheetId: input.sheetId,
           sourceSheetTitle: input.sheetTitle,
+          sourceCells: List.unmodifiable(input.cells),
           dateAnomalies: List.unmodifiable(dateAnomalies),
         ),
       );
@@ -283,6 +353,7 @@ class MonthlyRosterSectionParser {
           sourceSpreadsheetId: section.sourceSpreadsheetId,
           sourceSheetId: section.sourceSheetId,
           sourceSheetTitle: section.sourceSheetTitle,
+          sourceCells: section.sourceCells,
         ),
       );
     }
