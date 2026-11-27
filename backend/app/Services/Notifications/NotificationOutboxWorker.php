@@ -136,7 +136,6 @@ final class NotificationOutboxWorker
             }
 
             $payload = $this->notificationPayload($outbox);
-            $retryable = false;
             $permanent = false;
 
             foreach ($subscriptions as $subscription) {
@@ -147,7 +146,6 @@ final class NotificationOutboxWorker
                         ->where('subscription_id', $subscription->id)
                         ->value('status');
                     if (!in_array($existing, ['sent', 'expired', 'failed'], true)) {
-                        $retryable = true;
                     }
                     if ($existing === 'failed') {
                         $permanent = true;
@@ -157,9 +155,7 @@ final class NotificationOutboxWorker
 
                 $result = $this->transport->send($subscription, $payload);
                 $this->finishDelivery($delivery, $outbox, $result);
-                if ($result['status'] === 'retryable') {
-                    $retryable = true;
-                } elseif ($result['status'] === 'permanent') {
+                if ($result['status'] === 'permanent') {
                     $permanent = true;
                 } elseif ($result['status'] === 'expired') {
                     DB::table('web_push_subscriptions')
@@ -199,6 +195,16 @@ final class NotificationOutboxWorker
                 return 'no_subscriptions';
             }
             if ((int) $outbox->attempts >= $maxAttempts) {
+                DB::table('notification_deliveries')
+                    ->where('outbox_id', $outbox->id)
+                    ->whereIn('status', ['pending', 'processing'])
+                    ->update([
+                        'status' => 'failed',
+                        'claim_token' => null,
+                        'claimed_at' => null,
+                        'last_error' => 'delivery_attempt_limit_reached',
+                        'updated_at' => now(),
+                    ]);
                 $this->finishOutbox($outbox, 'dead_letter', 'delivery_attempt_limit_reached');
 
                 return 'dead_lettered';
