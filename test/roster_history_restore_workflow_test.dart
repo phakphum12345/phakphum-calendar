@@ -154,6 +154,10 @@ void main() {
     expect(conversionResult, isA<Success<GridRosterCanonicalConversionResult>>());
     final conversion =
         (conversionResult as Success<GridRosterCanonicalConversionResult>).value;
+    expect(
+      conversion.preparedProvenance.sourceRevisionId,
+      'drive-revision-17',
+    );
 
     final committed = await workflow.commit(
       context: context,
