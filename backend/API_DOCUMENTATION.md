@@ -222,6 +222,8 @@ The routes are inside the existing `google.account` and API throttle middleware.
 
 Schedule IDs are bounded opaque identifiers. Owner scoping, expected revision, lifecycle and tombstone behavior are enforced by the controller/repository contract; inspect the exact PR source before client integration.
 
+New Schedule and journal payloads in #192 are encrypted at rest with Laravel Crypt using `APP_KEY`; legacy plaintext rows remain readable. The API decrypts only after owner scoping. `APP_KEY` backup/restore is therefore a release gate.
+
 ### PR #196 — Calendar Sync coordination
 
 | Method | Path | Purpose |
