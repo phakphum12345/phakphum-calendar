@@ -220,6 +220,8 @@ class _ShiftToolsAppState extends State<ShiftToolsApp> {
         shiftTemplateControllerFactory:
             dependencies.createShiftTemplateController,
         scheduleControllerFactory: dependencies.createRosterEditorController,
+        gridRosterImportWorkflowFactory:
+            dependencies.createGridRosterImportWorkflow,
       ),
     );
   }
