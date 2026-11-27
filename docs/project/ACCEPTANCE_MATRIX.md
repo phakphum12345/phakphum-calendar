@@ -25,6 +25,7 @@
 | E-03 | Ambiguous insert reconciliation | #196 design | PARTIAL | Real provider timeout and read-back test |
 | E-04 | Production backend HTTPS/auth/durable DB/APP_KEY recovery | Not proven by PR CI | UNKNOWN | Deployment config and restore evidence |
 | E-05 | Explicit Calendar crash-resume/recovery after worker/process restart | #196 `ResumeSyncService.recoverRun` / `recoverHistory`, encrypted durable ledger replay, lease reacquisition, original ETag/sync-ID preconditions; new guard blocks terminal-success replay | PARTIAL — prior head CI VERIFIED; latest safety fix CI PENDING | Controlled Google test-calendar crash/timeout/restart acceptance and production database contention |
+| E-06 | Reconcile ambiguous update/delete that provider applied before response loss | #196 replays with original ETag and sync ID; stale ETag blocks overwrite but already-applied update/delete is not yet automatically recognized as success | PARTIAL / MANUAL CONFLICT RESOLUTION | Add provider read-by-ID reconciliation and controlled timeout-after-commit tests for update and delete |
 | F-01 | Personal/Organization/Hybrid rule-source resolution | Existing mainline foundations + #201 | PARTIAL | Cross-client/API parity |
 | F-02 | Immutable monthly statement calculation | #203 | CI VERIFIED (PR head) | Canonical confirmed assignment lifecycle |
 | F-03 | Persisted statements/API/UI/export/authorization | Not in #203 current scope | NOT IMPLEMENTED / UNKNOWN | Implement and test end-to-end |
