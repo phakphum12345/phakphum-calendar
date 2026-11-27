@@ -3,6 +3,8 @@ import 'dart:js_interop';
 
 import 'web_push_browser_bridge.dart';
 
+export 'web_push_browser_bridge.dart';
+
 @JS('shiftToolsPush.isSupported')
 external JSBoolean _isSupported();
 
