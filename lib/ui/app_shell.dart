@@ -378,6 +378,15 @@ class _AppShellState extends State<AppShell> {
         ],
       ),
     );
+    if (!assessment.canRecover &&
+        (assessment.disposition == GridRosterRecoveryDisposition.noCommittedBundle ||
+            assessment.disposition == GridRosterRecoveryDisposition.alreadyApplied)) {
+      if (mounted) {
+        setState(() {
+          _gridRecoveryScheduleIds.remove(scheduleId);
+        });
+      }
+    }
     if (confirmed != true || !mounted) return;
 
     final recovered = await workflow.recoverAssessment(assessment);
@@ -816,14 +825,55 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
-  Future<void> _openRosterEditor() {
-    return Navigator.of(context).push<void>(
+  Future<void> _openRosterEditor() async {
+    final schedule = widget.controller.canonicalSchedule;
+    final workflow = _gridRosterRecoveryWorkflow;
+    if (workflow != null) {
+      final inspected = await workflow.inspectRecovery(schedule.id);
+      if (!mounted) return;
+      if (inspected case Failure<GridRosterRecoveryAssessment>()) {
+        final failure = inspected;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('ตรวจสอบข้อมูลกู้คืนก่อนแก้ไขไม่สำเร็จ: ${failure.message}')),
+        );
+        return;
+      }
+      final assessment =
+          (inspected as Success<GridRosterRecoveryAssessment>).value;
+      if (assessment.disposition == GridRosterRecoveryDisposition.ready ||
+          assessment.disposition == GridRosterRecoveryDisposition.conflict) {
+        await _reviewGridRecovery(schedule.id);
+        if (!mounted) return;
+        final rechecked = await workflow.inspectRecovery(schedule.id);
+        if (!mounted) return;
+        if (rechecked case Failure<GridRosterRecoveryAssessment>()) {
+          final failure = rechecked;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('ยังตรวจสอบสถานะกู้คืนไม่ได้: ${failure.message}')),
+          );
+          return;
+        }
+        final latest =
+            (rechecked as Success<GridRosterRecoveryAssessment>).value;
+        if (latest.disposition == GridRosterRecoveryDisposition.ready ||
+            latest.disposition == GridRosterRecoveryDisposition.conflict) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('ยังแก้ไข Schedule นี้ไม่ได้จนกว่าจะจัดการรายการกู้คืนที่ค้างอยู่'),
+            ),
+          );
+          return;
+        }
+      }
+    }
+
+    await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (context) => _OwnedScheduleEditorRoute(
-          schedule: widget.controller.canonicalSchedule,
+          schedule: schedule,
           controllerFactory: widget.scheduleControllerFactory,
-          onCommitted: (schedule) => widget.controller.adoptCanonicalSchedule(
-            schedule,
+          onCommitted: (updated) => widget.controller.adoptCanonicalSchedule(
+            updated,
             persist: false,
           ),
         ),
