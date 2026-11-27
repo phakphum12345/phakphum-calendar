@@ -22,7 +22,7 @@ final class VapidTokenGenerator
             || strlen($decodedPrivateKey) !== 32
             || $subject === ''
         ) {
-            throw new RuntimeException('Web Push VAPID configuration is incomplete or invalid.');
+            throw new WebPushConfigurationException('Web Push VAPID configuration is incomplete or invalid.');
         }
 
         $parts = parse_url($endpoint);
@@ -51,12 +51,12 @@ final class VapidTokenGenerator
         $privatePem = $this->privateKeyPem($decodedPrivateKey, $decodedPublicKey);
         $key = openssl_pkey_get_private($privatePem);
         if ($key === false) {
-            throw new RuntimeException('Could not load the Web Push VAPID private key.');
+            throw new WebPushConfigurationException('Could not load the Web Push VAPID private key.');
         }
 
         $derSignature = '';
         if (! openssl_sign($signingInput, $derSignature, $key, OPENSSL_ALGO_SHA256)) {
-            throw new RuntimeException('Could not sign the Web Push VAPID token.');
+            throw new WebPushConfigurationException('Could not sign the Web Push VAPID token.');
         }
 
         return $signingInput.'.'.$this->base64UrlEncode(
