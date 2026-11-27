@@ -61,10 +61,19 @@ class VerticalMonthlyRosterSectionParser {
 
       for (final axisCells in runs) {
         final firstRow = axisCells.first.rowIndex;
+        final periodEvidence = _periodEvidence(
+          input: input,
+          cells: input.cells,
+          firstDateRow: firstRow,
+          dateColumn: entry.key,
+        );
         final headerRow = _findHeaderRow(
           cells: input.cells,
           firstDateRow: firstRow,
           dateColumn: entry.key,
+          minimumRow: periodEvidence != null && periodEvidence.rowIndex >= 0
+              ? periodEvidence.rowIndex
+              : 0,
         );
         final hasAssignmentShape = input.cells
             .where(
@@ -85,12 +94,6 @@ class VerticalMonthlyRosterSectionParser {
             );
         if (!hasAssignmentShape) continue;
 
-        final periodEvidence = _periodEvidence(
-          input: input,
-          cells: input.cells,
-          firstDateRow: firstRow,
-          dateColumn: entry.key,
-        );
         final explicitDates = axisCells
             .map(_explicitDate)
             .whereType<DateTime>()
@@ -499,10 +502,11 @@ class VerticalMonthlyRosterSectionParser {
     required List<NormalizedCell> cells,
     required int firstDateRow,
     required int dateColumn,
+    required int minimumRow,
   }) {
     for (
       var row = firstDateRow - 1;
-      row >= 0;
+      row >= minimumRow;
       row--
     ) {
       final hasOtherHeader = cells.any(
