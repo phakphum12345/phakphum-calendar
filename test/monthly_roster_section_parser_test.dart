@@ -3,6 +3,7 @@ import 'package:phakphum_calendar/features/shift_parser/application/monthly_rost
 import 'package:phakphum_calendar/features/shift_parser/domain/monthly_roster_section.dart';
 import 'package:phakphum_calendar/features/shift_parser/domain/normalized_cell.dart';
 import 'package:phakphum_calendar/features/shift_parser/domain/shift_parser_input.dart';
+import 'package:phakphum_calendar/features/shift_parser/domain/roster_layout_profile.dart';
 import 'package:phakphum_calendar/models/shift.dart';
 
 void main() {
@@ -830,6 +831,43 @@ void main() {
     expect(shifts.map((shift) => shift.cell), [
       'B4', 'B5', 'B6', 'B7', 'B8', 'B9', 'B10',
     ]);
+  });
+
+
+  test('stale layout profile remains advisory and auto discovery still parses', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'ตารางเวร',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['หน่วยงานใหม่ ประจำเดือน สิงหาคม พ.ศ. 2569']),
+        ..._row(1, ['วันที่', 1, 2, 3, 4, 5, 6, 7]),
+        ..._row(2, ['เวรเช้า', 'ก', null, null, null, null, null, null]),
+      ],
+    );
+    const staleProfile = RosterLayoutProfile(
+      profileId: 'old-profile',
+      profileName: 'Old workbook layout',
+      dateHeaderRows: [99],
+      nameColumns: [99],
+      shiftLabelColumns: [99],
+      dataStartRow: 99,
+      dataEndRow: 120,
+    );
+
+    final report = MonthlyRosterSectionParser(
+      layoutProfile: staleProfile,
+    ).parse(input);
+
+    expect(report.sections, hasLength(1));
+    expect(report.sections.single.headerRowIndex, 1);
+    expect(report.sections.single.rosterRows.single.label, 'เวรเช้า');
+    expect(report.assignments, hasLength(1));
+    expect(report.assignments.single.workerName, 'ก');
+    expect(report.assignments.single.date, DateTime(2026, 8, 1));
+    expect(report.warnings, isNotEmpty);
   });
 
 }
