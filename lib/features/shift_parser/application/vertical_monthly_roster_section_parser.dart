@@ -357,10 +357,10 @@ class VerticalMonthlyRosterSectionParser {
                 workerName: worker,
                 date: date,
                 sourceCell: A1Notation.fromZeroBased(
-                  rowIndex: sourceRow,
+                  rowIndex: dateCell.rowIndex,
                   columnIndex: labelEntry.key,
                 ),
-                backgroundColor: workerCell.backgroundColor?.hex,
+                backgroundColor: workerCell?.backgroundColor?.hex,
                 spreadsheetId: input.spreadsheetId,
                 sheetId: input.sheetId,
                 sheetTitle: input.sheetTitle,
