@@ -35,6 +35,11 @@ class ScheduleApiTest extends TestCase
 
         $this->assertSame('live', $first['state']);
         $this->assertStringStartsWith('v1:', $first['revision']);
+        $storedPayload = DB::table('schedule_records')
+            ->where('schedule_id', 'roster-2026-11')
+            ->value('schedule_payload');
+        $this->assertStringStartsWith('enc:v1:', $storedPayload);
+        $this->assertStringNotContainsString('November', $storedPayload);
 
         $updated = $this->putJson('/api/v1/schedules/roster-2026-11', [
             'expected_revision' => $first['revision'],
@@ -56,6 +61,29 @@ class ScheduleApiTest extends TestCase
     }
 
     // Keep unexpected storage failures distinct from stale-revision conflicts.
+    public function test_legacy_plaintext_schedule_payload_remains_readable(): void
+    {
+        $this->signIn('alice-token');
+        $absent = $this->getJson('/api/v1/schedules/legacy-schedule', $this->auth('alice-token'))
+            ->assertOk()->json('revision');
+        $this->putJson('/api/v1/schedules/legacy-schedule', [
+            'expected_revision' => $absent,
+            'schedule' => $this->schedulePayload('legacy-schedule', 'Legacy schedule'),
+        ], $this->auth('alice-token'))->assertCreated();
+
+        $legacyPayload = json_encode(
+            $this->schedulePayload('legacy-schedule', 'Legacy schedule'),
+            JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION | JSON_THROW_ON_ERROR,
+        );
+        DB::table('schedule_records')
+            ->where('schedule_id', 'legacy-schedule')
+            ->update(['schedule_payload' => $legacyPayload]);
+
+        $this->getJson('/api/v1/schedules/legacy-schedule', $this->auth('alice-token'))
+            ->assertOk()
+            ->assertJsonPath('data.schedule.name', 'Legacy schedule');
+    }
+
     public function test_schedule_insert_database_failure_is_not_reported_as_a_revision_conflict(): void
     {
         $this->signIn('alice-token');
@@ -213,14 +241,30 @@ class ScheduleApiTest extends TestCase
             ->assertOk()->json('data');
 
         $this->assertSame($created['import_run_id'], $replayed['import_run_id']);
+        $this->assertSame($payload['provenance'], $created['provenance']);
+        $storedPrepared = DB::table('schedule_import_journals')
+            ->where('import_run_id', $payload['import_run_id'])
+            ->where('lifecycle', 'prepared')
+            ->first();
+        $preparedEnvelope = json_decode($storedPrepared->provenance, true, 512, JSON_THROW_ON_ERROR);
+        $this->assertSame(1, $preparedEnvelope['encryption_version']);
+        $this->assertStringNotContainsString('workbook.xlsx', $storedPrepared->provenance);
 
         $committed = $payload;
         $committed['lifecycle'] = 'committed';
         $committed['schedule'] = $this->schedulePayload('roster', 'Imported roster');
         $committed['accepted_schedule_fingerprint'] = hash('sha256', json_encode($committed['schedule'], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION));
         $committed['provenance'] = ['source' => 'workbook.xlsx', 'parser_version' => '1', 'accepted' => true];
-        $this->postJson('/api/v1/schedules/roster/import-journals', $committed, $this->auth('alice-token'))
-            ->assertCreated()->assertJsonPath('data.lifecycle', 'committed');
+        $committedResponse = $this->postJson('/api/v1/schedules/roster/import-journals', $committed, $this->auth('alice-token'))
+            ->assertCreated()->assertJsonPath('data.lifecycle', 'committed')
+            ->json('data');
+        $this->assertSame('Imported roster', $committedResponse['schedule']['schedule']['name']);
+        $storedCommitted = DB::table('schedule_import_journals')
+            ->where('import_run_id', $payload['import_run_id'])
+            ->where('lifecycle', 'committed')
+            ->first();
+        $this->assertStringStartsWith('enc:v1:', $storedCommitted->schedule_payload);
+        $this->assertStringNotContainsString('Imported roster', $storedCommitted->schedule_payload);
         $this->postJson('/api/v1/schedules/roster/import-journals', $committed, $this->auth('alice-token'))
             ->assertOk()->assertJsonPath('data.lifecycle', 'committed');
 
@@ -233,6 +277,31 @@ class ScheduleApiTest extends TestCase
         $different['provenance'] = ['source' => 'different.xlsx'];
         $this->postJson('/api/v1/schedules/roster/import-journals', $different, $this->auth('alice-token'))
             ->assertConflict()->assertJsonPath('error.code', 'import_run_conflict');
+    }
+
+    public function test_legacy_plaintext_import_journal_remains_readable(): void
+    {
+        $this->signIn('alice-token');
+        $ownerId = DB::table('users')->where('google_subject', 'google-alice')->value('id');
+        $now = now();
+        DB::table('schedule_import_journals')->insert([
+            'owner_user_id' => $ownerId,
+            'schedule_id' => 'legacy-journal',
+            'import_run_id' => 'legacy-run-1',
+            'lifecycle' => 'committed',
+            'base_revision' => 'revision-1',
+            'source_fingerprint' => str_repeat('c', 64),
+            'accepted_schedule_fingerprint' => str_repeat('d', 64),
+            'provenance' => json_encode(['source' => 'legacy.xlsx']),
+            'schedule_payload' => json_encode($this->schedulePayload('legacy-journal', 'Legacy journal')),
+            'created_at' => $now,
+            'updated_at' => $now,
+        ]);
+
+        $this->getJson('/api/v1/schedules/legacy-journal/import-journals', $this->auth('alice-token'))
+            ->assertOk()
+            ->assertJsonPath('data.0.provenance.source', 'legacy.xlsx')
+            ->assertJsonPath('data.0.schedule.schedule.name', 'Legacy journal');
     }
 
     private function schedulePayload(string $id, string $name): array
