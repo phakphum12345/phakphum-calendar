@@ -47,7 +47,7 @@ PR #191 contains a transactional user-scoped outbox foundation. It does not prov
 ## E–K. Other work packages
 
 - Generation: exact input revision snapshots, immutable preview, approval invalidation and conditional commit/recovery are not yet accepted.
-- Shift Pay: three rule-source modes exist as foundations; confirmed assignment integration, monthly statements and immutable historical calculations remain open.
+- Shift Pay: three rule-source modes and profile persistence/calculation APIs exist. PR #201 adds Dart/backend equal-specificity conflict rejection with non-payable snapshots; exact-head CI is pending. Confirmed assignment linkage, client/UI, monthly statements and immutable historical calculation acceptance remain open.
 - History restore: read-only history exists; safe preview/diff/conditional restore and audit acceptance remain open.
 - Organization/security: authorization and tenant foundations exist; full negative endpoint tests and privacy/security review remain open.
 - Quality: CI foundations exist; reproducible benchmarks, fuzz/property tests, accessibility and real responsive acceptance remain open.
