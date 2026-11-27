@@ -17,3 +17,18 @@ second event.
 
 Remaining follow-up: cross-device concurrent-sync coordination, authorization
 refresh behavior, and durable cross-device history are separate concerns.
+
+## Historical roster restore — PR #204
+
+The new history restore workflow reads an existing Google Drive revision export and routes its snapshots through the same Grid review, provenance journal and conditional Schedule commit path used by live roster imports.
+
+- The source fingerprint binds the Drive revision ID, modified timestamp, worksheet metadata, rows and cell colors.
+- The restore path is read-only with respect to Drive and Google Sheets; it does not require or request Drive write scopes.
+- The caller must select the target Schedule, provide the employee/template directory, review assignments and supply explicit decisions.
+- The final Schedule write uses the existing revision-bound CAS workflow and journal recovery behavior.
+- A stale target revision is rejected by the underlying Grid import workflow; no silent overwrite is allowed.
+
+Acceptance remains open:
+- The workflow core is implemented on a stacked PR branch; a user-facing revision picker, before/after assignment diff and confirmation UI are not yet connected.
+- Real Drive revision export fixtures and a non-owner account acceptance run are not available in this execution.
+- The historical revision snapshot is locally read-only; this feature does not restore or mutate the original Drive file.
