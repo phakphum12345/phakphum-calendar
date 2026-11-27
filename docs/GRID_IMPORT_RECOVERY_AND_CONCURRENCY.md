@@ -155,7 +155,7 @@ The application now creates the existing Grid import workflow at the AppShell co
 
 ### Remaining acceptance boundary
 
-- Startup discovery is not yet a global edit lock. The banner surfaces pending IDs, but unrelated editing routes are not blocked until every journal is resolved.
+- The canonical AppShell roster editor and Grid re-import workflow now block the affected Schedule when its journal is `ready` or `conflict`; unrelated Schedule IDs remain usable. This is not yet a repository-wide lock across every legacy editor or every direct writer.
 - A conflicting journal is surfaced and cannot be replayed; a dedicated side-by-side conflict-resolution/merge UI is still required.
 - The local SharedPreferences journal remains process/isolate scoped and is not a cross-device transaction.
 - Backend multi-client recovery must still be accepted against the deployed production database engine.
