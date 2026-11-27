@@ -790,7 +790,6 @@ class _AppShellState extends State<AppShell> {
     RosterRevisionDocument revision,
   ) async {
     if (_historyRestoreBusy) return;
-    _historyRestoreBusy = true;
     final gridWorkflow = _gridRosterRecoveryWorkflow;
     if (gridWorkflow == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -800,6 +799,7 @@ class _AppShellState extends State<AppShell> {
       );
       return;
     }
+    _historyRestoreBusy = true;
 
     final employeeController = widget.employeeDirectoryControllerFactory(
       widget.controller.effectiveSchedule,
