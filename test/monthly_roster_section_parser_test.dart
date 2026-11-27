@@ -476,9 +476,9 @@ void main() {
           'วันที่',
           ...List<int>.generate(16, (index) => index + 1),
           30,
-          30,
+          ...List<int>.generate(13, (index) => index + 18),
         ]),
-        ..._row(6, ['X-OPD', ...List<String>.filled(18, 'นาย ข')]),
+        ..._row(6, ['X-OPD', ...List<String>.filled(30, 'นาย ข')]),
       ],
     );
 
@@ -503,6 +503,17 @@ void main() {
       contains('29/11/2026'),
     );
     expect(xopd.dateAnomalies, isNotEmpty);
+    expect(xopd.dateColumns, hasLength(30));
+    expect(xopd.assignments, hasLength(30));
+    expect(xopd.dateAnomalies.map((item) => item.code), contains('day_sequence_mismatch'));
+    expect(xopd.dateAnomalies.map((item) => item.code), contains('out_of_order'));
+    final missingMessage = xopd.dateAnomalies
+        .singleWhere((item) => item.code == 'missing_dates')
+        .message;
+    for (var day = 18; day <= 29; day++) {
+      expect(missingMessage, isNot(contains('/11/2026')));
+    }
+    expect(missingMessage, contains('17/11/2026'));
 
     final shifts = const MonthlyRosterShiftAdapter().parseForWorkers(
       report,
