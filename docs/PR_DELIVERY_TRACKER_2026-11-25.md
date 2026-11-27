@@ -2,6 +2,7 @@
 
 - Repository: `phakphum12345/phakphum-calendar`
 - Main SHA at snapshot: `aed2f1177bdfc85f6ff53bb200116812a51bd9e3`
+- **Historical snapshot only:** the SHA, PR states and `protected: false` observation below describe 2026-11-25 and are not current repository settings. See [live PR dependency map](project/PR_DEPENDENCY_MAP.md) and [completion master plan](project/PROJECT_COMPLETION_MASTER_PLAN.md) before making delivery decisions.
 - Merge method used: Squash
 - Main branch protection: `protected: false`; do not assume server-enforced checks.
 - This tracker distinguishes merged PR-head evidence from post-merge main evidence.
