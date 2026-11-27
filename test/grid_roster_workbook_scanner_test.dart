@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:excel/excel.dart';
@@ -10,6 +11,7 @@ import 'package:phakphum_calendar/features/excel_import/domain/import_file.dart'
 import 'package:phakphum_calendar/features/excel_import/domain/workbook_info.dart';
 import 'package:phakphum_calendar/features/excel_import/domain/worksheet_info.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/grid_roster_workbook_scanner.dart';
+import 'package:phakphum_calendar/services/local_roster_file_service.dart';
 import 'package:phakphum_calendar/features/shift_parser/domain/roster_grid_axis_mapping.dart';
 
 void main() {
@@ -147,6 +149,30 @@ void main() {
     expect(report.assignments, hasLength(7));
     expect(report.assignments.first.sourceCell, 'B3');
     expect(report.sourceFingerprint, startsWith('sha256:'));
+  });
+
+  test('scans CSV snapshots through the Grid parser with a byte fingerprint', () {
+    const csv = 'เวรประจำเดือน พฤศจิกายน พ.ศ. 2569\n'
+        'วันที่,1,2,3,4,5,6,7\n'
+        'เวรเช้า,ก,ก,ก,ก,ก,ก,ก\n';
+    final document = const LocalRosterFileService().readBytes(
+      name: 'roster.csv',
+      bytes: utf8.encode(csv),
+    );
+    final fingerprint = document.sourceFingerprint;
+    expect(fingerprint, startsWith('sha256:'));
+
+    final report = scanner.scanSnapshots(
+      snapshots: document.snapshots,
+      spreadsheetTitle: 'roster.csv',
+      sourceFingerprint: fingerprint!,
+    );
+
+    expect(report.sourceSheetCount, 1);
+    expect(report.sections, hasLength(1));
+    expect(report.assignments, hasLength(7));
+    expect(report.sourceFingerprint, fingerprint);
+    expect(report.sheetSummaries.single.title, 'ไฟล์ในเครื่อง');
   });
 
   test('source fingerprint is deterministic for the same workbook bytes', () {
