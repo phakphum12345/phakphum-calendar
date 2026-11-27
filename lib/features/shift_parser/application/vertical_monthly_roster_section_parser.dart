@@ -27,6 +27,10 @@ class VerticalMonthlyRosterSectionParser {
     final sections = <MonthlyRosterSection>[];
     final warnings = <String>[];
     final occupiedDateAxes = <String>{};
+    final dateAxisColumns = byColumn.entries
+        .where((entry) => entry.value.where((cell) => _day(cell) != null).length >= 7)
+        .map((entry) => entry.key)
+        .toSet();
 
     for (final entry in byColumn.entries) {
       final numericDates = entry.value
@@ -39,7 +43,15 @@ class VerticalMonthlyRosterSectionParser {
       final runs = <List<NormalizedCell>>[];
       var run = <NormalizedCell>[];
       for (final cell in numericDates) {
-        if (run.isNotEmpty && cell.rowIndex - run.last.rowIndex > 2) {
+        final hasPeriodHeadingBetween = run.isNotEmpty && input.cells.any(
+          (candidate) =>
+              candidate.rowIndex > run.last.rowIndex &&
+              candidate.rowIndex < cell.rowIndex &&
+              _isPeriodEvidence(candidate.text ?? ''),
+        );
+        if (run.isNotEmpty &&
+            (cell.rowIndex - run.last.rowIndex > 2 ||
+                hasPeriodHeadingBetween)) {
           if (run.length >= 7) runs.add(run);
           run = <NormalizedCell>[];
         }
@@ -55,6 +67,7 @@ class VerticalMonthlyRosterSectionParser {
           input: input,
           cells: input.cells,
           firstDateRow: firstRow,
+          dateColumn: entry.key,
         );
         final period = periodEvidence?.period;
         if (period == null) {
@@ -144,12 +157,38 @@ class VerticalMonthlyRosterSectionParser {
           firstDateRow: firstRow,
           dateColumn: entry.key,
         );
+        final nextDateAxis = dateAxisColumns
+            .where((column) => column > entry.key)
+            .fold<int?>(null, (current, column) =>
+                current == null || column < current ? column : current);
         final labelsByColumn = <int, String>{};
         for (final cell in input.cells.where((cell) => cell.rowIndex == headerRow)) {
-          if (cell.columnIndex == entry.key) continue;
+          if (cell.columnIndex <= entry.key ||
+              (nextDateAxis != null && cell.columnIndex >= nextDateAxis)) {
+            continue;
+          }
           final label = cell.text?.trim() ?? '';
           if (label.isNotEmpty && _day(cell) == null) {
-            labelsByColumn[cell.columnIndex] = label;
+            final hasData = dateCells.any((dateCell) {
+              final value = byCoordinate[(dateCell.rowIndex, cell.columnIndex)]?.text;
+              return value?.trim().isNotEmpty ?? false;
+            });
+            if (hasData) labelsByColumn[cell.columnIndex] = label;
+          }
+        }
+        // Some workbooks put the date axis at the right edge. Only use
+        // columns to its left when there is a single candidate date axis;
+        // otherwise a neighbouring table could be mistaken for this one.
+        if (labelsByColumn.isEmpty && dateAxisColumns.length == 1) {
+          for (final cell in input.cells.where((cell) => cell.rowIndex == headerRow)) {
+            if (cell.columnIndex >= entry.key) continue;
+            final label = cell.text?.trim() ?? '';
+            if (label.isEmpty || _day(cell) != null) continue;
+            final hasData = dateCells.any((dateCell) {
+              final value = byCoordinate[(dateCell.rowIndex, cell.columnIndex)]?.text;
+              return value?.trim().isNotEmpty ?? false;
+            });
+            if (hasData) labelsByColumn[cell.columnIndex] = label;
           }
         }
 
@@ -261,16 +300,18 @@ class VerticalMonthlyRosterSectionParser {
     required ShiftParserInput input,
     required List<NormalizedCell> cells,
     required int firstDateRow,
+    required int dateColumn,
   }) {
-    final candidates = <({String text, int row, int distance})>[];
+    final candidates = <({String text, int distance})>[];
     for (final cell in cells) {
       final text = cell.text?.trim() ?? '';
       if (text.isEmpty) continue;
-      final distance = (cell.rowIndex - firstDateRow).abs();
-      if (distance > 12 && cell.rowIndex != -1) continue;
-      candidates.add((text: text, row: cell.rowIndex, distance: distance));
+      final rowDistance = (cell.rowIndex - firstDateRow).abs();
+      if (rowDistance > 12) continue;
+      final distance = rowDistance * 100 + (cell.columnIndex - dateColumn).abs();
+      candidates.add((text: text, distance: distance));
     }
-    candidates.add((text: input.sheetTitle, row: -1, distance: 1000));
+    candidates.add((text: input.sheetTitle, distance: 100000));
     candidates.sort((a, b) => a.distance.compareTo(b.distance));
 
     for (final candidate in candidates) {
@@ -285,6 +326,16 @@ class VerticalMonthlyRosterSectionParser {
       }
     }
     return null;
+  }
+
+  bool _isPeriodEvidence(String text) {
+    if (text.trim().isEmpty) return false;
+    try {
+      periodParser.parse(text);
+      return true;
+    } on FormatException {
+      return _parseMonthOnly(text) != null;
+    }
   }
 
   ThaiRosterPeriod? _parseMonthOnly(String text) {
