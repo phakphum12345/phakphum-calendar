@@ -1,5 +1,23 @@
 # PR Delivery Tracker — 2026-11-25
 
+## Superseding current checkpoint — 2026-11-27
+
+This tracker originally recorded the 2026-11-25 delivery sequence. The following table is the current PR state; the older delivery history below is retained for audit purposes.
+
+| PR | Base | Head SHA | Latest exact-head CI | Review | State |
+|---|---|---|---|---|---|
+| #191 | main | `cf7eaa22eaf81e04b0b444acfc3aee2a8ca51e5e` | 13/13 pass | None | Draft; device acceptance pending |
+| #192 | main | `2f6f9043db8876ea5ed49d85961658fac95942ac` | Pending for latest head | None | Draft; original workbook acceptance pending |
+| #196 | main | `8e186790e447f9278eda8612a1bb1b6f7e7b77c9` | 13/13 pass | None | Draft; test calendar acceptance pending |
+| #201 | main | `d3f228dcdaea4f1a3771c271421226ab71ab00b5` | 12/12 pass | None | Draft; business acceptance pending |
+| #202 | #192 branch | `ca6ebd095ef6566fcce00e9bc49e9c820470b80d` | 12/12 pass | None | Draft; dependent on #192 |
+| #203 | #201 branch | `9ddcca51de57b71c721f60665f3c9f8cf0e7bbcb` | 11/11 pass; 716 tests | None | Draft; statement persistence/UI pending |
+| #204 | #192 branch | `ba73d30f4e332105c05c95d00f61517da1cd9689` | Pending for latest head | None | Draft; Drive revision acceptance pending |
+
+PR #199 was closed without merge because its orientation work was superseded by #192. No open PR has a submitted review or review thread. Main is `68ef85361c2d08e2970160a36475592010d908f7`; protection is disabled and no required status checks are enforced. No exact-main workflow evidence or production deployment is claimed.
+
+
+
 - Repository: `phakphum12345/phakphum-calendar`
 - Main SHA at snapshot: `aed2f1177bdfc85f6ff53bb200116812a51bd9e3`
 - Merge method used: Squash
