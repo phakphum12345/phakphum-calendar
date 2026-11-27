@@ -6,6 +6,7 @@ class ExcelCell {
     this.isMerged = false,
     this.mergedAnchorRowIndex,
     this.mergedAnchorColumnIndex,
+    this.backgroundColorValue,
   });
 
   final int rowIndex;
@@ -14,6 +15,7 @@ class ExcelCell {
   final bool isMerged;
   final int? mergedAnchorRowIndex;
   final int? mergedAnchorColumnIndex;
+  final int? backgroundColorValue;
 
   String get displayValue => value?.toString() ?? '';
 }
