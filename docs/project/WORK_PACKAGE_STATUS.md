@@ -31,7 +31,7 @@ These statuses are independent; do not infer one from another.
 
 ## Current blockers
 
-1. #208 prior exact-head failure: the alias widget test used a global Dropdown finder, but an opted-in assignment intentionally renders both employee and shift-template dropdowns. The test now targets the employee field by its semantic label in commit `b98a4e7f7911abe7b97d661bf62c121b1e66d716`. Windows, Linux, Android, Web, Dependency Security, Dart Format, Auto Detect and Cross-platform Runtime have since succeeded; iOS/macOS and the final PR Gate remain pending/in progress.
+1. #208 prior exact-head failure: the alias widget test used a global Dropdown finder, but an opted-in assignment intentionally renders both employee and shift-template dropdowns. The test now targets the employee field by its semantic label in commit `b98a4e7f7911abe7b97d661bf62c121b1e66d716`. Windows, Linux, Android, Web, Dependency Security, Dart Format, Auto Detect, Cross-platform Runtime and Pull Request Gate have succeeded; macOS is in progress, iOS is queued and iOS Advisory is in progress.
 2. #192 has a separate SQLite CAS spike workflow with a cancelled macOS job; determine whether this is advisory or required. Do not count cancelled as pass.
 3. Stacked Grid PRs are not yet reconciled against the latest #192 base.
 4. No independent review submissions were returned for #192, #207, #204, #196, #191 or #201 at audit time.
