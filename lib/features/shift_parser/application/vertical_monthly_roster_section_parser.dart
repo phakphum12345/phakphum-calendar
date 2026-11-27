@@ -440,7 +440,7 @@ class VerticalMonthlyRosterSectionParser {
   DateTime? _explicitDate(NormalizedCell cell) {
     final raw = cell.rawValue;
     if (raw is DateTime) {
-      return DateTime(raw.year, raw.month, raw.day);
+      return DateTime(_normalizeYear(raw.year), raw.month, raw.day);
     }
     final text = cell.text?.trim() ?? raw?.toString().trim() ?? '';
     if (text.isEmpty) return null;
@@ -448,7 +448,7 @@ class VerticalMonthlyRosterSectionParser {
     final iso = DateTime.tryParse(text);
     if (iso != null &&
         RegExp(r'^\d{4}-\d{1,2}-\d{1,2}').hasMatch(text)) {
-      return DateTime(iso.year, iso.month, iso.day);
+      return DateTime(_normalizeYear(iso.year), iso.month, iso.day);
     }
 
     final ymd = RegExp(
