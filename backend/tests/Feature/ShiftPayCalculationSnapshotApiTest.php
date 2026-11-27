@@ -262,6 +262,26 @@ class ShiftPayCalculationSnapshotApiTest extends TestCase
             ->assertJsonPath('data.result.amount', 1200);
     }
 
+    public function test_equal_specificity_rules_are_reported_as_configuration_conflicts(): void
+    {
+        $this->putJson('/api/v1/shift-pay/profile', [
+            'mode' => 'personal',
+            'personal_rules' => [
+                $this->rule('night-a', 700),
+                $this->rule('night-b', 900),
+            ],
+        ], $this->auth('owner-token'))->assertOk();
+
+        $this->postJson('/api/v1/shift-pay/calculations', $this->input(), $this->auth('owner-token') + [
+            'Idempotency-Key' => 'ambiguous-rule-001',
+        ])->assertCreated()
+            ->assertJsonPath('data.result.status', 'invalid_rule')
+            ->assertJsonPath('data.result.error_code', 'ambiguous_rule')
+            ->assertJsonPath('data.result.amount', null)
+            ->assertJsonPath('data.result.conflicting_rule_ids.0', 'night-a')
+            ->assertJsonPath('data.result.conflicting_rule_ids.1', 'night-b');
+    }
+
     private function input(): array
     {
         return [
