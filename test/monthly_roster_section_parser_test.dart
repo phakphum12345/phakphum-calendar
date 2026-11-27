@@ -153,6 +153,12 @@ void main() {
     expect(original.dateAnomalies, isNotEmpty);
     expect(original.assignments, hasLength(2));
     expect(original.sourceCells, isNotEmpty);
+    expect(original.startDate, DateTime(2026, 11, 1));
+    expect(original.endDate, DateTime(2026, 11, 7));
+    expect(
+      original.dateAnomalies.any((anomaly) => anomaly.columnIndex == 6),
+      isTrue,
+    );
 
     final corrected = parser.correctDateColumns(
       section: original,
