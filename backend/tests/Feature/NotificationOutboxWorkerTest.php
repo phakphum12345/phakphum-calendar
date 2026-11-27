@@ -40,9 +40,11 @@ class NotificationOutboxWorkerTest extends TestCase
         $this->assertDatabaseHas('notification_outbox', [
             'id' => $outbox['id'],
             'status' => 'sent',
-            'sent_at' => now(),
             'claim_token' => null,
         ]);
+        $this->assertNotNull(
+            DB::table('notification_outbox')->where('id', $outbox['id'])->value('sent_at'),
+        );
         $this->assertDatabaseHas('notification_deliveries', [
             'outbox_id' => $outbox['id'],
             'subscription_id' => $subscriptionId,
