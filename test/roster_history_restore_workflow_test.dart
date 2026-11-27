@@ -156,7 +156,7 @@ void main() {
     final conversionResult = workflow.convert(
       context: context,
       employees: [employee],
-      shiftTemplates: const [],
+      shiftTemplates: const [morningTemplate],
       decisions: decisions,
       importRunId: 'restore-drive-revision-17',
       parserVersion: 'history-restore/1',
