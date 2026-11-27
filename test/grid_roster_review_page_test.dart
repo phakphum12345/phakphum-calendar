@@ -292,11 +292,13 @@ void main() {
       scrollable: find.byType(Scrollable).first,
     );
     await tester.pumpAndSettle();
-    final correctionAction = find.text('กำหนดวันที่คอลัมน์นี้').first;
-    expect(find.text('กำหนดวันที่คอลัมน์นี้'), findsAtLeastNWidgets(1));
-    await tester.ensureVisible(correctionAction);
+    final firstCorrectionAction = find.byKey(
+      const ValueKey('grid-roster-correct-date-1-1-5'),
+    );
+    expect(firstCorrectionAction, findsOneWidget);
+    await tester.ensureVisible(firstCorrectionAction);
     await tester.pumpAndSettle();
-    await tester.tap(correctionAction);
+    await tester.tap(firstCorrectionAction);
     await tester.pumpAndSettle();
 
     await tester.tap(find.text('5').last);
@@ -305,12 +307,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('พบจุดผิดในหัวตารางวันที่'), findsOneWidget);
-    // Revalidation keeps the remaining source-backed anomalies visible;
-    // each anomaly has its own correction action, so multiple matches are
-    // expected until the final date column is corrected.
-    expect(find.text('กำหนดวันที่คอลัมน์นี้'), findsAtLeastNWidgets(1));
-
-    final secondCorrectionAction = find.text('กำหนดวันที่คอลัมน์นี้').first;
+    // The second duplicate belongs to source column 8 (zero-based 7).
+    // Target its stable source-coordinate key rather than relying on widget
+    // order among identical action labels.
+    final secondCorrectionAction = find.byKey(
+      const ValueKey('grid-roster-correct-date-1-1-7'),
+    );
+    expect(secondCorrectionAction, findsOneWidget);
     await tester.ensureVisible(secondCorrectionAction);
     await tester.pumpAndSettle();
     await tester.tap(secondCorrectionAction);
