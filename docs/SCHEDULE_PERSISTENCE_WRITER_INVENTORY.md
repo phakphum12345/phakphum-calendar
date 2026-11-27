@@ -201,3 +201,30 @@ This section supersedes the W-01 through F-01 backend-mode dispositions in secti
 - W-01 editor saves carry the revision captured when the exact Schedule snapshot was loaded. Two editors using the same base revision cannot both commit.
 
 **Boundary:** backend mode is safe-by-fail-closed for the inventoried writers, but not every legacy workflow is guaranteed to save until it has loaded/compared its exact base snapshot. Local-only SharedPreferences mode remains non-atomic across devices. Conditional deletion remains disabled.
+
+
+## 10.2 — 2026-11-27 exact-head source and CI reconciliation
+
+**Inspected implementation head:** `bde4107660ceaa6031b495ef7e8904f55f1d97b9`  
+**Exact-head CI:** 14/14 observed workflows succeeded, including root Flutter quality, Windows, Linux, Web, Android, native macOS/iOS unsigned builds, and the Schedule CAS Storage Spike on Ubuntu, Windows and macOS.
+
+The earlier PR conversation findings about shared revision-cache substitution and incomplete writer propagation were rechecked against the final source at this head. The subsequent implementation changes address the specific unsafe paths as follows:
+
+| Path | Current source evidence | Remaining boundary |
+|---|---|---|
+| W-01 ScheduleController | Captures the exact loaded snapshot/absent revision and calls `saveIfRevision`; it does not refresh a stale editor's token from a later read. | The local fallback is same-process/isolate only. |
+| W-02 AppController legacy writes | `_saveCanonicalSchedule(next, base)` reads the live canonical record, compares it with the controller's persisted base snapshot, obtains the revision attached to that exact base object (or an absent token), then calls `saveIfRevision`. The per-controller queue is only local ordering. | Legacy mutations that have no verified persisted base fail closed rather than silently adopting a newer token. |
+| W-03 canonical adoption | `adoptCanonicalSchedule` uses the previous persisted snapshot as the base and routes through the same conditional writer. | No production multi-device claim without configured backend. |
+| W-04/W-05 Grid commit/recovery | Review context obtains the repository's authoritative snapshot/absent revision; provenance carries it through commit and recovery; final writes use `saveIfRevision`. | Journal and canonical Schedule are separate durable requests; startup discovery/index remains open. |
+| F-01 tabular import | Backend mode is create-only: reads absence and uses the exact absent-state token. Existing records require reviewed Grid replacement. | A generic unreviewed overwrite is intentionally rejected. |
+| S-01 delete | Backend repository currently refuses unconditional delete. | Conditional delete/tombstone remains intentionally disabled. |
+
+Composition-root inspection confirms that normal production AppController, ScheduleController, imported Schedule controller and Grid workflow use the same configured `scheduleRepository` instance. When `ORGANIZATION_API_BASE_URL` is empty, the production graph selects SharedPreferences; that fallback does not provide cross-device CAS. The PR workflow's production-backend gate was skipped, so this run does not prove a deployed backend is configured or reachable.
+
+Relevant exact-head regression sources include:
+- `test/backend_schedule_repository_test.dart`: stale snapshot after a later read, A→B→A token preservation, caller-supplied revision, unobserved snapshot fail-closed and delete fail-closed.
+- `test/schedule_controller_revision_test.dart`: two editors sharing one base revision cannot both save.
+- `test/app_controller_runtime_gate_test.dart`: sequential canonical writes retain the latest persisted local snapshot.
+- `test/grid_roster_import_workflow_test.dart`: review/commit/recovery and stale-target conflict behavior.
+
+**Disposition:** the previous three review findings are addressed in the current source for the inventoried backend-mode paths; do not describe this as globally production-accepted until the backend is deployed and tested with independent authenticated clients against the actual production database. Local SharedPreferences remains single-process/isolate only. Conditional delete, generation-to-persistence approval, startup journal discovery, and atomicity across journal + Schedule stores remain open. No production Schedule data was changed.
