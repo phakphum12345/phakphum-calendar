@@ -43,7 +43,7 @@ See [PR Dependency Map](PR_DEPENDENCY_MAP.md) and [Work Package Status](WORK_PAC
 
 | PR | Head SHA at audit | Base | Exact-head CI observation | Disposition |
 |---|---|---|---|---|
-| #192 Grid import + persistence | `fb670c84d2ec521f7356342b0147777d6b4f0602` | main | 13 named workflows successful; separate SQLite CAS spike workflow had a cancelled macOS job while Windows/Linux contract jobs passed | Draft; reconcile spike and product acceptance |
+| #192 Grid import + persistence | `87181d550917625659e715b46014ae05fdfab3f3` | main | New exact-head matrix queued/in progress after documentation reconciliation; parent `fb670c84...` had 13 successful workflows and a separate failed/cancelled spike job | Draft; wait for new exact-head matrix, reconcile spike and product acceptance |
 | #205 reviewer orientation | `1cfceeeabd3af3f36421f9b06bd286966863b70b` | #192 feature branch | 12/12 listed workflows successful | Draft; rebase/reconcile and real workbook review |
 | #207 merged vertical headers | `7f6df4380ed60edf436402ca01264eb93dbd416b` | #192 feature branch | 12/12 listed workflows successful | Draft; GitHub reported mergeable=false at inspection; reconcile base |
 | #206 Schedule read-back | `997c249394bd02c4fd868f4532829e20df9f58fe` | #192 feature branch | 12/12 listed workflows successful | Draft; reconcile base and review writer coverage |
