@@ -965,6 +965,57 @@ void main() {
     expect(populated.warnings, isEmpty);
   });
 
+  test('discovers a short vertical roster when the worksheet has a local period heading', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 86,
+      sheetTitle: 'Roster tab',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, [null, 'เวรเช้า']),
+        ..._row(1, ['ประจำเดือน พฤศจิกายน พ.ศ. 2569']),
+        ..._row(2, [1, 'นาย ก']),
+        ..._row(3, [2, 'นาย ข']),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, hasLength(1));
+    expect(
+      report.sections.single.orientation,
+      RosterGridOrientation.datesDownRows,
+    );
+    expect(report.sections.single.dateColumns, hasLength(2));
+    expect(report.sections.single.dateColumns.first.date, DateTime(2026, 11, 1));
+    expect(report.sections.single.dateColumns.last.date, DateTime(2026, 11, 2));
+    expect(report.assignments, hasLength(2));
+    expect(report.assignments.first.sourceCell, 'B3');
+    expect(report.assignments.last.sourceCell, 'B4');
+    expect(report.warnings, isEmpty);
+  });
+
+  test('does not interpret a short numeric ID column as dates from the sheet title alone', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 87,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['รหัส', 'ชื่อบุคลากร']),
+        ..._row(1, [1, 'นาย ก']),
+        ..._row(2, [2, 'นาย ข']),
+      ],
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, isEmpty);
+    expect(report.assignments, isEmpty);
+  });
+
   test('keeps side-by-side vertical sections bound to their nearest header side', () {
     final input = ShiftParserInput(
       spreadsheetId: 'spreadsheet',
