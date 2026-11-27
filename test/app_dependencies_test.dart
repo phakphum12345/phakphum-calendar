@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phakphum_calendar/app.dart';
 import 'package:phakphum_calendar/core/di/app_dependencies.dart';
-import 'package:phakphum_calendar/core/result/result.dart';
-import 'package:phakphum_calendar/domain/entities/schedule.dart';
-import 'package:phakphum_calendar/domain/entities/schedule_month.dart';
-import 'package:phakphum_calendar/domain/repositories/schedule_repository.dart';
 import 'package:phakphum_calendar/features/excel_import/application/import_engine.dart';
+import 'support/in_memory_conditional_schedule_repository.dart';
 import 'package:phakphum_calendar/features/excel_import/data/excel_reader_service.dart';
 import 'package:phakphum_calendar/features/rule_engine/domain/default_schedule_rules.dart'
     as legacy;
@@ -231,6 +228,7 @@ void main() {
       final repository = _FakeScheduleRepository();
       final dependencies = AppDependencies(scheduleRepository: repository);
       final controller = dependencies.createDemoAppController();
+      repository.seed(controller.canonicalSchedule);
       addTearDown(controller.dispose);
 
       expect(controller.canonicalSchedule.id, 'legacy-runtime');
@@ -271,6 +269,7 @@ void main() {
     final repository = _FakeScheduleRepository();
     final dependencies = AppDependencies(scheduleRepository: repository);
     final controller = dependencies.createDemoAppController();
+    repository.seed(controller.canonicalSchedule);
     addTearDown(controller.dispose);
 
     controller.updateShift(0, excluded: true);
@@ -328,25 +327,4 @@ class _CountingLegacyRule implements legacy.ScheduleRule {
   }
 }
 
-class _FakeScheduleRepository implements ScheduleRepository {
-  final List<Schedule> saved = [];
-
-  @override
-  Future<Result<void>> delete(String id) async => const Success(null);
-
-  @override
-  Future<Result<Schedule?>> findById(String id) async =>
-      const Success<Schedule?>(null);
-
-  @override
-  Future<Result<ScheduleMonth?>> loadMonth(
-    String scheduleId,
-    DateTime month,
-  ) async => const Success<ScheduleMonth?>(null);
-
-  @override
-  Future<Result<Schedule>> save(Schedule schedule) async {
-    saved.add(schedule);
-    return Success(schedule);
-  }
-}
+class _FakeScheduleRepository extends InMemoryConditionalScheduleRepository {}
