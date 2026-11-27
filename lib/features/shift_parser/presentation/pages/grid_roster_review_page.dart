@@ -7,6 +7,7 @@ import '../../../../domain/entities/shift_template.dart';
 import '../../application/grid_roster_canonical_converter.dart';
 import '../../application/grid_roster_import_workflow.dart';
 import '../../application/grid_roster_review_session.dart';
+import '../../application/monthly_roster_section_parser.dart';
 import '../../domain/monthly_roster_section.dart';
 
 /// Human review screen for a parsed multi-sheet Grid workbook.
@@ -37,8 +38,15 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
   final Map<String, String?> _selectedEmployees = {};
   final Map<String, String?> _selectedTemplates = {};
   final Map<String, String> _dateAnomalyChoices = {};
+  late GridRosterImportReviewContext _reviewContext;
   bool _saving = false;
   String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _reviewContext = widget.contextSnapshot;
+  }
 
   @override
   void dispose() {
@@ -48,7 +56,7 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    final session = widget.contextSnapshot.session;
+    final session = _reviewContext.session;
     final assignmentCount = session.assignments.length;
     final includedCount = _included.values.where((value) => value).length;
 
@@ -284,6 +292,15 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
                 icon: const Icon(Icons.tune),
                 label: Text(choice == null ? 'เลือกวิธีจัดการ' : 'เปลี่ยนตัวเลือก'),
               ),
+              if (column != null &&
+                  section.sourceCells.isNotEmpty &&
+                  section.startDate != null &&
+                  section.endDate != null)
+                TextButton.icon(
+                  onPressed: () => _correctDateColumn(section, column),
+                  icon: const Icon(Icons.edit_calendar),
+                  label: const Text('กำหนดวันที่คอลัมน์นี้'),
+                ),
               if (choice != null)
                 Text(
                   choice == 'skip' ? 'เลือกข้าม Section' : 'เลือกแก้ต้นฉบับ',
@@ -294,6 +311,81 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
         ],
       ),
     );
+  }
+
+  Future<void> _correctDateColumn(
+    MonthlyRosterSection section,
+    int columnIndex,
+  ) async {
+    final start = section.startDate;
+    final end = section.endDate;
+    if (start == null || end == null || section.sourceCells.isEmpty) return;
+    var initialDate = DateTime(start.year, start.month, start.day);
+    for (final column in section.dateColumns) {
+      if (column.columnIndex == columnIndex) {
+        initialDate = column.date;
+        break;
+      }
+    }
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: initialDate,
+      firstDate: DateTime(start.year, start.month, start.day),
+      lastDate: DateTime(end.year, end.month, end.day),
+      helpText: 'เลือกวันที่จริงของคอลัมน์ ${columnIndex + 1}',
+      confirmText: 'ใช้วันที่นี้และตรวจตารางใหม่',
+    );
+    if (!mounted || selected == null) return;
+
+    try {
+      final parser = const MonthlyRosterSectionParser();
+      final corrected = parser.correctDateColumns(
+        section: section,
+        correctedDatesByColumn: {columnIndex: selected},
+      );
+      final sections = _reviewContext.session.sections
+          .map((review) {
+            final current = review.assessment.section;
+            if (current.headerRowIndex == section.headerRowIndex &&
+                current.sourceSheetId == section.sourceSheetId &&
+                current.sourceSheetTitle == section.sourceSheetTitle &&
+                current.title == section.title) {
+              return corrected;
+            }
+            return current;
+          })
+          .toList(growable: false);
+      final report = MonthlyRosterParseReport(
+        sections: sections,
+        warnings: _reviewContext.session.warnings,
+        sourceSheetCount: _reviewContext.session.sourceSheetCount,
+        sourceFingerprint: _reviewContext.session.sourceFingerprint,
+      );
+      final nextSession = widget.workflow.reviewSessionBuilder.build(
+        report: report,
+        employees: widget.employees,
+        shiftTemplates: widget.shiftTemplates,
+        sourceFingerprint: _reviewContext.session.sourceFingerprint,
+        targetScheduleId: _reviewContext.session.targetScheduleId,
+        targetScheduleRevision: _reviewContext.targetScheduleRevision,
+      );
+      setState(() {
+        _reviewContext = GridRosterImportReviewContext(
+          session: nextSession,
+          targetSchedule: _reviewContext.targetSchedule,
+          targetExisted: _reviewContext.targetExisted,
+        );
+        // A correction changes the anomaly set; prior per-anomaly decisions
+        // must not be carried over to the newly validated source grid.
+        _dateAnomalyChoices.clear();
+        _error = null;
+      });
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'แก้วันที่ไม่ได้: $error';
+      });
+    }
   }
 
   Future<void> _chooseDateAnomalyAction(
@@ -340,7 +432,7 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
   ) {
     final source = review.source;
     final sourceId = GridRosterCanonicalConverter.assignmentId(
-      widget.contextSnapshot.session.sourceFingerprint,
+      _reviewContext.session.sourceFingerprint,
       source,
     );
     final included = _included[sourceId] ?? false;
@@ -443,7 +535,7 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
       return;
     }
 
-    for (final section in widget.contextSnapshot.session.sections) {
+    for (final section in _reviewContext.session.sections) {
       final sourceSection = section.assessment.section;
       if (sourceSection.dateAnomalies.isEmpty) continue;
       final choices = sourceSection.dateAnomalies
@@ -464,9 +556,9 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
     final decisions = <String, GridRosterAssignmentDecision>{};
     final reviewedAt = DateTime.now().toUtc();
     var includedCount = 0;
-    for (final review in widget.contextSnapshot.session.assignments) {
+    for (final review in _reviewContext.session.assignments) {
       final sourceId = GridRosterCanonicalConverter.assignmentId(
-        widget.contextSnapshot.session.sourceFingerprint,
+        _reviewContext.session.sourceFingerprint,
         review.source,
       );
       final include = (_included[sourceId] ?? false) && !review.sectionBlocked;
@@ -504,7 +596,7 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
     });
 
     final conversion = widget.workflow.convert(
-      context: widget.contextSnapshot,
+      context: _reviewContext,
       employees: widget.employees,
       shiftTemplates: widget.shiftTemplates,
       decisions: decisions,
