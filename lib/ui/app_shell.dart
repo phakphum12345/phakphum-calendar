@@ -380,7 +380,7 @@ class _AppShellState extends State<AppShell> {
     );
     if (confirmed != true || !mounted) return;
 
-    final recovered = await workflow.recover(scheduleId);
+    final recovered = await workflow.recoverAssessment(assessment);
     if (!mounted) return;
     if (recovered case Success<Schedule?>()) {
       setState(() {
