@@ -171,7 +171,7 @@ void main() {
   });
 
   test('binds the history source fingerprint to the exact Drive revision', () {
-    const workflow = RosterHistoryRestoreWorkflow(
+    final workflow = RosterHistoryRestoreWorkflow(
       gridImportWorkflow: _UnusedGridWorkflow(),
     );
     final first = workflow.scanRevision(_revision('revision-a'));
@@ -192,7 +192,7 @@ RosterRevisionDocument _revision(String revisionId) => RosterRevisionDocument(
       rows: const [
         ['เวรประจำเดือน พฤศจิกายน พ.ศ. 2569'],
         ['วันที่', '1', '2', '3', '4', '5', '6', '7'],
-        ['เวรเช้า', 'A', 'A', 'A', 'A', 'A', 'A', 'A'],
+        ['เวรเช้า', 'Staff A', 'Staff A', 'Staff A', 'Staff A', 'Staff A', 'Staff A', 'Staff A'],
       ],
       backgroundColors: const [],
     ),
