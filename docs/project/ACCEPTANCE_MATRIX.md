@@ -39,7 +39,7 @@
 | J-01 | Shared backend contract and request correlation | Existing backend foundations | PARTIAL | Offline/online parity and runtime diagnostics |
 | K-01 | Flutter/Laravel/platform CI | Workflows exist; PR-specific results vary | PARTIAL | Required checks policy + exact-head complete green |
 | K-02 | Security/dependency review | Dependency Security workflow succeeds on most listed heads | PARTIAL | Alert/advisory inventory and remediation evidence |
-| L-01 | Docs agree with current source and main SHA | 182 Markdown files enumerated; stale status snapshots marked historical and linked to live project status | PARTIAL | Complete relative-link/command validation and paragraph-level reconciliation across all 182 files |
+| L-01 | Docs agree with current source and main SHA | 182 Markdown files enumerated; stale status snapshots marked historical; automated inline-relative-link scan found no missing local targets | PARTIAL | Validate command references, reference-style links, anchors and paragraph-level accuracy across all 182 files |
 | Z-01 | Post-merge main verification | No new PR merged in this audit | NOT DONE | Exact post-merge SHA and required CI |
 | Z-02 | Deployment SHA verified | No deployment evidence in this audit | UNKNOWN | Runtime reports exact deployed SHA |
 
