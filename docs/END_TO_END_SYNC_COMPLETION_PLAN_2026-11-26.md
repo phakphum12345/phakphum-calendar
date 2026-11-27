@@ -2,7 +2,7 @@
 
 **Prepared:** 2026-11-26  
 **Baseline:** `main@d18454680879a10c6efe9e44ffb37cd0695f25a6`
-**Status:** Execution plan; not a completion claim  
+**Status:** HISTORICAL SNAPSHOT (2026-11-26); not the current repository baseline. Use [the live project completion master plan](project/PROJECT_COMPLETION_MASTER_PLAN.md) and [PR dependency map](project/PR_DEPENDENCY_MAP.md) for current refs and status.  
 **Owner workflow:** inspect → specify → implement → test exact SHA → review → merge with authorization → verify main
 
 ## 1. Completion objective
