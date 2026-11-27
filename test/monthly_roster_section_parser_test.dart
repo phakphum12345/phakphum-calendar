@@ -133,6 +133,70 @@ void main() {
     expect(shifts.last.end, DateTime(2026, 12, 15, 8));
   });
 
+  test('rebuilds assignments and revalidates an explicit date correction', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'November 2026',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['GEN 1 พฤศจิกายน 2569 - 7 พฤศจิกายน 2569']),
+        ..._row(1, ['วันที่', 1, 2, 3, 4, 5, 5, 7]),
+        ..._row(2, ['GEN', 'ก', null, null, null, 'ข', null, 'ค']),
+      ],
+    );
+    const parser = MonthlyRosterSectionParser();
+    final parsed = parser.parse(input);
+    final original = parsed.sections.single;
+
+    expect(original.dateAnomalies, isNotEmpty);
+    expect(original.assignments, hasLength(2));
+    expect(original.sourceCells, isNotEmpty);
+
+    final corrected = parser.correctDateColumns(
+      section: original,
+      correctedDatesByColumn: {6: DateTime(2026, 11, 6)},
+    );
+
+    expect(corrected.dateAnomalies, isEmpty);
+    expect(corrected.dateColumns, hasLength(7));
+    expect(corrected.assignments, hasLength(3));
+    expect(
+      corrected.assignments.singleWhere((item) => item.workerName == 'ข').date,
+      DateTime(2026, 11, 6),
+    );
+    expect(
+      corrected.assignments.singleWhere((item) => item.workerName == 'ข').sourceCell,
+      'G3',
+    );
+  });
+
+  test('does not apply a date correction without a source header column', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'November 2026',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, ['GEN 1 พฤศจิกายน 2569 - 7 พฤศจิกายน 2569']),
+        ..._row(1, ['วันที่', 1, 2, 3, 4, 5, 5, 7]),
+        ..._row(2, ['GEN', 'ก', null, null, null, 'ข', null, 'ค']),
+      ],
+    );
+    const parser = MonthlyRosterSectionParser();
+    final section = parser.parse(input).sections.single;
+
+    expect(
+      () => parser.correctDateColumns(
+        section: section,
+        correctedDatesByColumn: {99: DateTime(2026, 11, 6)},
+      ),
+      throwsArgumentError,
+    );
+  });
+
   test('supports two departments across a six-month date block', () {
     final dates = List<DateTime>.generate(
       181,
