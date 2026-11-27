@@ -190,3 +190,137 @@ The following checks have now been executed against the parser changes:
 - Laravel Backend CI, including Pint formatting and Laravel tests: **PASS** at commit `772dea9bb0236ef251a4469fc93bbcea5432e568` ([workflow](https://github.com/phakphum12345/phakphum-calendar/actions/runs/45769999225)).
 
 The parser source and regression tests were unchanged between the Flutter-tested commit and the later PHP-only formatting commits. The latest exact-head cross-platform workflow and pull-request gate must still be checked before release. This evidence does not authorize merge, deployment or Calendar synchronization.
+
+
+## 12. Universal layout support — flexible input, strict interpretation
+
+This parser is **not bound to a named workbook, department, worksheet title, fixed month, fixed row number, fixed column count or one visual template**. The examples elsewhere in this document are regression cases, not accepted input templates. A new workbook must not require a code change merely because its department name, sheet name, number of columns or roster period differs.
+
+### 12.1 Supported input-shape principles
+
+The parser should discover a roster from workbook evidence and normalize it into the canonical section/assignment model. It must be designed to accommodate, where the source format exposes sufficient evidence:
+
+- Dates across columns with people across rows.
+- Dates down rows with people or shifts across columns.
+- Multiple independent roster tables on one worksheet.
+- Multiple worksheets, departments, units or schedule periods in one workbook.
+- One continuous period, cross-month/cross-year periods, partial months and schedules spanning six or more months.
+- One-row, multi-row and multi-level headers; repeated headers; title and period rows above or beside the table.
+- Variable numbers and ordering of columns, rows, staff, shifts and sections.
+- Blank spacer rows/columns, hidden rows/columns, merged cells and formula-derived values.
+- Date cells represented as native date values, Excel serials, supported text formats, or split day/month/year cells.
+- Localized Thai and Gregorian date labels, Buddhist Era and Gregorian years.
+- Optional metadata columns (for example department, role, shift type, note or status) without assuming their fixed positions.
+
+This is a capability target, not a claim that every arbitrary spreadsheet can be interpreted without review. Unsupported or insufficiently evidenced structures must produce a clear unresolved result rather than a guessed roster.
+
+### 12.2 Discovery and normalization pipeline
+
+Keep discovery separate from assignment interpretation. The logical pipeline is:
+
+1. **Read source faithfully** — retain workbook/sheet identity, cell values and types, formulas/cached values when available, merged ranges, hidden-state metadata and original row/column coordinates.
+2. **Discover candidate regions** — identify possible tables/sections from populated regions, whitespace boundaries, repeated header patterns, titles and date evidence. Do not use a fixed row/column address as the discovery rule.
+3. **Classify axes and headers** — evaluate row-oriented and column-oriented date/person/shift arrangements, including multi-level headers. Record competing candidates and evidence.
+4. **Resolve section boundaries and periods** — resolve each candidate independently. Never borrow a neighboring section's period merely because it is the only known period on the sheet.
+5. **Map source cells to semantic fields** — identify date, person, shift, status and metadata fields while preserving source coordinates and evidence.
+6. **Normalize assignments** — produce canonical records only after the section's structure and date mapping are sufficiently resolved.
+7. **Validate and score confidence** — check uniqueness, completeness, chronology, period consistency, person identity and assignment conflicts.
+8. **Review unresolved decisions** — present evidence and allow explicit user mapping/correction without changing the original source.
+9. **Revalidate from source** — every correction must rebuild affected normalized records and rerun all dependent validations.
+10. **Commit only approved, valid records** — blocked or unresolved sections cannot silently enter trusted Schedule persistence or Calendar synchronization.
+
+Implementations may combine internal stages for performance, but must preserve these boundaries and observable outcomes.
+
+### 12.3 Layout inference is evidence-based
+
+For every candidate layout, retain the evidence used to infer:
+
+- orientation (dates on rows or columns);
+- header row/column ranges and hierarchy;
+- date axis and its source cells;
+- person/name axis and identity evidence;
+- shift/value region;
+- section title and period source;
+- table bounds and blank/merged-cell interpretation;
+- optional field mappings;
+- confidence, alternatives and unresolved ambiguities.
+
+Do not make one heuristic (for example, “seven date cells means a header”) the sole definition of a valid table. Heuristics may nominate candidates; the combined evidence and validation determine whether a candidate is safe to normalize.
+
+### 12.4 Profiles are optional hints, never format locks
+
+A user-defined or previously learned layout profile may improve discovery, but:
+
+- A profile is optional. A workbook must still be importable through automatic discovery and review without one.
+- A profile is a hint, not proof. Current source evidence takes precedence when it conflicts with a profile.
+- Profile fields must not force fixed sheet names, row numbers, column counts, date ranges or staff positions unless the user explicitly chooses a strict mapping for that import.
+- A profile mismatch must be visible and reviewable; it must not silently discard source regions or coerce cells into the wrong fields.
+- Profiles must be versioned and scoped (for example, user/workspace/source family) without making the parser dependent on one organization or workbook.
+- User corrections may be offered as a candidate profile update only after explicit confirmation. Never silently rewrite a saved profile from one ambiguous workbook.
+
+### 12.5 Canonical output and provenance
+
+All supported input layouts must converge on one canonical representation. Each normalized assignment should retain, directly or through a stable provenance reference:
+
+- source document identity and source revision/fingerprint;
+- worksheet identity and section identity;
+- original cell/row/column coordinates for date, person, shift and status evidence;
+- raw source values and normalized values;
+- mapping method (automatic, profile-assisted or user-confirmed);
+- confidence and validation findings;
+- correction/review actor and decision metadata where available.
+
+The canonical model must not encode presentation assumptions such as “date is always a column” or “staff is always a row”. Layout-specific details belong in the source mapping/provenance layer.
+
+### 12.6 Ambiguity and safety rules
+
+- If both orientations are plausible, show the competing interpretations and request a mapping decision; do not pick one solely because it matches a familiar fixture.
+- If a section boundary cannot be established safely, block the ambiguous region rather than merge neighboring tables.
+- If date headers are incomplete, duplicated or out of order, preserve source positions and block only the affected section when isolation is reliable.
+- If person identity is uncertain or aliases collide, do not silently assign a shift to a different person.
+- Unknown cell values must remain visible as unmapped evidence; do not drop them merely because they are not in the current shift dictionary.
+- Empty cells are not equivalent to confirmed days off. A genuinely empty date/assignment may be acknowledged only through an explicit, auditable user decision.
+- A correction is valid only against the source revision from which the preview was built. If the source changes, invalidate stale review decisions and require re-evaluation.
+- No automatic correction may move an assignment to another date, person or shift without independent source evidence or explicit user confirmation.
+
+### 12.7 Parameterized layout test matrix
+
+Tests must be generated from layout dimensions and semantic variations, not copied from one workbook. At minimum, parameterize combinations of:
+
+| Dimension | Variations |
+|---|---|
+| Date axis | columns; rows |
+| Person axis | rows; columns; multi-column identity |
+| Header depth | one row/column; multiple levels; repeated headers |
+| Sections | one; multiple same-sheet; multiple worksheets |
+| Period | one month; cross-month; cross-year; six-plus months; partial range |
+| Date encoding | native date; Excel serial; localized text; split date components |
+| Cell geometry | contiguous; spacer rows/columns; merged headers; hidden rows/columns |
+| Metadata | absent; reordered; additional unknown columns |
+| Data quality | complete; blank; duplicate; missing; out-of-order; conflicting |
+| Profile | absent; matching hint; partial hint; stale/conflicting hint |
+| Review | no correction; one correction; repeated correction; source changed after preview |
+
+For each generated case, assert both the normalized semantic result and the original source-coordinate mapping. Include negative cases where the correct outcome is ambiguity/blocking rather than successful import. Add metamorphic checks: inserting harmless spacer rows/columns or renaming a sheet/department must not change the semantic assignments; permuting optional metadata columns must not change date/person/shift mapping when headers still identify them.
+
+### 12.8 Explicit non-goals and limitations
+
+- Do not promise support for every arbitrary spreadsheet, image, PDF or OCR layout. Each new source modality needs its own reader, evidence model and accuracy/consent tests.
+- Do not use AI/LLM guesses as authoritative date, person or shift assignments. AI may propose mappings with evidence for user review.
+- Do not make the X-OPD, PORTABLE, MRI, US, GEN or any other named example the canonical template.
+- Do not require users to preconfigure a profile before importing a new format.
+- Do not trade correctness for a green import status. An explicit blocked/unresolved result is preferable to a plausible but incorrect roster.
+
+### 12.9 Acceptance criteria for universal-format readiness
+
+Universal-format readiness is not established by passing one named workbook. It requires:
+
+1. Parameterized tests across the layout dimensions above, including both orientations and multiple independent sections.
+2. Metamorphic tests proving harmless sheet renames, department renames, spacer insertion and optional-column reordering do not change semantic output.
+3. Negative tests proving ambiguous layouts, missing dates, duplicate dates and uncertain identities are blocked with actionable findings.
+4. Correction tests proving source-revision checks, repeated corrections, full assignment reconstruction and revalidation.
+5. End-to-end import-preview-review-persistence tests showing provenance survives each boundary.
+6. A documented list of actual reader limitations (for example, unsupported formula caches or merged-cell semantics) rather than an unqualified “supports all formats” claim.
+7. Regression coverage for every reported real-world failure, while keeping those workbooks as examples rather than hard-coded templates.
+
+A release may claim only the layout families exercised by the current exact-head test evidence. “Flexible” means new layouts can be discovered and reviewed without hard-coded workbook identity; it does not mean unsafe or unsupported inputs are silently accepted.
