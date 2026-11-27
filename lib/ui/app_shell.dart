@@ -24,6 +24,7 @@ import '../features/shift_exchange/presentation/controllers/shift_exchange_contr
 import '../features/shift_exchange/infrastructure/shift_transaction_api_client.dart';
 import '../features/shift_exchange/application/shift_transaction_calendar_sync_preview.dart';
 import '../features/shift_parser/domain/monthly_roster_section.dart';
+import '../features/shift_parser/domain/roster_grid_axis_mapping.dart';
 import '../features/shift_parser/domain/monthly_roster_template.dart';
 import '../features/shift_templates/application/shift_template_controller.dart';
 import '../features/shift_templates/presentation/shift_templates_page.dart';
@@ -4038,17 +4039,14 @@ class _MonthlyRosterSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dates = section.assignments.map((item) => item.date).toSet().toList();
-    if (dates.isEmpty && section.startDate != null && section.endDate != null) {
-      for (
-        var date = section.startDate!;
-        !date.isAfter(section.endDate!);
-        date = date.add(const Duration(days: 1))
-      ) {
-        dates.add(date);
-      }
-    }
-    dates.sort();
+    final isVertical =
+        section.orientation == RosterGridOrientation.datesDownRows;
+    final dates = (section.dateColumns.isNotEmpty
+            ? section.dateColumns.map((item) => item.date)
+            : section.assignments.map((item) => item.date))
+        .toSet()
+        .toList()
+      ..sort();
     final rowIndexes =
         section.assignments.map((item) => item.rowIndex).toSet().toList()
           ..sort();
@@ -4063,6 +4061,11 @@ class _MonthlyRosterSectionCard extends StatelessWidget {
     final byPosition = <(int, DateTime), MonthlyRosterAssignment>{
       for (final assignment in section.assignments)
         (assignment.rowIndex, assignment.date): assignment,
+    };
+    final byVerticalPosition = <(DateTime, int), MonthlyRosterAssignment>{
+      for (final assignment in section.assignments)
+        if (assignment.columnIndex != null)
+          (assignment.date, assignment.columnIndex!): assignment,
     };
 
     return Card(
@@ -4086,8 +4089,12 @@ class _MonthlyRosterSectionCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${rowIndexes.length} แถว • '
-                        '${section.assignments.length} ช่อง',
+                        isVertical
+                            ? '${dates.length} วัน • '
+                                '${section.rosterRows.length} คอลัมน์เวร • '
+                                '${section.assignments.length} ช่อง'
+                            : '${rowIndexes.length} แถว • '
+                                '${section.assignments.length} ช่อง',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
@@ -4106,7 +4113,9 @@ class _MonthlyRosterSectionCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 14),
-            if (section.assignments.isEmpty && rowLabels.isEmpty)
+            if (section.assignments.isEmpty &&
+                rowLabels.isEmpty &&
+                section.rosterRows.isEmpty)
               const Text('บล็อกนี้ยังไม่มีรายชื่อผู้ปฏิบัติงาน')
             else
               Scrollbar(
@@ -4117,41 +4126,72 @@ class _MonthlyRosterSectionCard extends StatelessWidget {
                     headingRowHeight: 44,
                     dataRowMinHeight: 48,
                     dataRowMaxHeight: 64,
-                    columns: [
-                      const DataColumn(label: Text('เวร / สถานที่')),
-                      for (final date in dates)
-                        DataColumn(
-                          numeric: false,
-                          label: Text('${date.day}\n${_shortWeekday(date)}'),
-                        ),
-                    ],
-                    rows: [
-                      for (final rowIndex in rowIndexes)
-                        DataRow(
-                          cells: [
-                            DataCell(
-                              ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  minWidth: 110,
-                                  maxWidth: 180,
-                                ),
-                                child: Text(
-                                  rowLabels[rowIndex]!,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                    columns: isVertical
+                        ? [
+                            const DataColumn(label: Text('วันที่')),
+                            for (final rosterColumn in section.rosterRows)
+                              DataColumn(
+                                label: Text(rosterColumn.label),
                               ),
-                            ),
+                          ]
+                        : [
+                            const DataColumn(label: Text('เวร / สถานที่')),
                             for (final date in dates)
-                              DataCell(
-                                _MonthlyRosterCell(
-                                  assignment: byPosition[(rowIndex, date)],
+                              DataColumn(
+                                numeric: false,
+                                label: Text(
+                                  '${date.day}\\n${_shortWeekday(date)}',
                                 ),
                               ),
                           ],
-                        ),
-                    ],
+                    rows: isVertical
+                        ? [
+                            for (final date in dates)
+                              DataRow(
+                                cells: [
+                                  DataCell(
+                                    Text(
+                                      '${date.day} ${_shortWeekday(date)}',
+                                    ),
+                                  ),
+                                  for (final rosterColumn in section.rosterRows)
+                                    DataCell(
+                                      _MonthlyRosterCell(
+                                        assignment: byVerticalPosition[
+                                          (date, rosterColumn.columnIndex ?? -1)
+                                        ],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                          ]
+                        : [
+                            for (final rowIndex in rowIndexes)
+                              DataRow(
+                                cells: [
+                                  DataCell(
+                                    ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        minWidth: 110,
+                                        maxWidth: 180,
+                                      ),
+                                      child: Text(
+                                        rowLabels[rowIndex]!,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  for (final date in dates)
+                                    DataCell(
+                                      _MonthlyRosterCell(
+                                        assignment: byPosition[(rowIndex, date)],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                          ],
                   ),
                 ),
               ),
