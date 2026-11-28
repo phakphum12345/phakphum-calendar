@@ -155,6 +155,71 @@ void main() {
       );
     },
   );
+
+  test('rejects Calendar sync when the Schedule changes after preview', () async {
+    final scheduleRepository = InMemoryConditionalScheduleRepository();
+    final dependencies = AppDependencies(
+      syncHistoryRepository: InMemorySyncHistoryRepository(),
+      failedSyncRepository: _MemoryFailedSyncRepository(),
+      scheduleRepository: scheduleRepository,
+    );
+    final gateway = _MemoryCalendarSyncGateway();
+    final controller = AppController.demo(
+      auth: dependencies.googleAuthService,
+      settingsService: dependencies.legacySettingsService,
+      sheetsService: dependencies.legacySheetsService,
+      parser: dependencies.shiftParser,
+      alertService: dependencies.shiftAlertService,
+      calendarService: dependencies.legacyCalendarService,
+      archiveService: dependencies.driveArchiveService,
+      ownershipService: dependencies.driveOwnershipService,
+      localFileService: _FixtureLocalRosterSource(
+        LocalRosterDocument(
+          extension: 'xlsx',
+          snapshots: [_novemberDecemberSnapshot()],
+        ),
+      ),
+      scheduleRepository: dependencies.scheduleRepository,
+      shiftTemplateRepository: dependencies.shiftTemplateRepository,
+      legacyScheduleAdapter: dependencies.legacyScheduleAdapter,
+      calendarWorkflowControllerFactory: () async =>
+          dependencies.createShiftCalendarWorkflowController(gateway),
+    );
+    scheduleRepository.seed(controller.canonicalSchedule);
+    addTearDown(controller.dispose);
+
+    await controller.updateSettings(
+      AppSettings.defaults().copyWith(
+        targetName: 'นาย ทดสอบ',
+        periods: const [
+          RosterPeriod(year: 2026, month: 11),
+          RosterPeriod(year: 2026, month: 12),
+        ],
+      ),
+    );
+    await controller.importLocalRosterFile();
+    await controller.flushSchedulePersistence();
+
+    expect(controller.pendingAlertCount, 0);
+    await controller.prepareCalendarSync();
+    await controller.adoptCanonicalSchedule(
+      controller.canonicalSchedule.copyWith(name: 'Changed after preview'),
+      persist: false,
+    );
+
+    await expectLater(
+      controller.syncCalendar(userConfirmed: true),
+      throwsA(
+        isA<StateError>().having(
+          (error) => error.message,
+          'message',
+          contains('ตารางเวรเปลี่ยนหลัง Preview'),
+        ),
+      ),
+    );
+    expect(gateway.insertAttempts, 0);
+    expect(gateway.events, isEmpty);
+  });
 }
 
 class _MemoryFailedSyncRepository implements FailedSyncRepository {

@@ -1755,6 +1755,22 @@ class AppController extends ChangeNotifier implements ControllerState {
         'กรุณาตรวจแจ้งเตือนก่อนบันทึก Calendar',
       );
     }
+
+    // A preview is an approval of one exact Schedule snapshot. The source can
+    // change through imports, edits or transaction projection while the preview
+    // is open, so re-read the effective snapshot before any Drive or Calendar
+    // write and fail closed if it no longer matches.
+    final preparedSchedule = preparedWorkflow.schedule;
+    final currentSchedule = _scheduleForActivePeriods();
+    if (preparedSchedule == null ||
+        const ScheduleJsonCodec().encode(preparedSchedule) !=
+            const ScheduleJsonCodec().encode(currentSchedule)) {
+      cancelCalendarSyncPreparation();
+      throw StateError(
+        'ตารางเวรเปลี่ยนหลัง Preview กรุณาตรวจสอบและยืนยัน Preview ใหม่ก่อนซิงก์',
+      );
+    }
+
     await _run('สร้างสำเนาและบันทึกปฏิทิน', () async {
       final sourceUrl = localSourceLabel == null ? currentSourceUrl : '';
       if (sourceUrl.isEmpty && localSourceLabel == null) {
