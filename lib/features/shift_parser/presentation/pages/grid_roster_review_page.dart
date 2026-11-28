@@ -22,6 +22,7 @@ class GridRosterReviewPage extends StatefulWidget {
     required this.contextSnapshot,
     required this.employees,
     required this.shiftTemplates,
+    this.sourceLabel,
     super.key,
   });
 
@@ -29,6 +30,7 @@ class GridRosterReviewPage extends StatefulWidget {
   final GridRosterImportReviewContext contextSnapshot;
   final List<Employee> employees;
   final List<ShiftTemplate> shiftTemplates;
+  final String? sourceLabel;
 
   @override
   State<GridRosterReviewPage> createState() => _GridRosterReviewPageState();
@@ -63,7 +65,13 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
     final includedCount = _included.values.where((value) => value).length;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('ตรวจสอบตารางเวรแบบ Grid')),
+      appBar: AppBar(
+        title: Text(
+          widget.sourceLabel == null
+              ? 'ตรวจสอบตารางเวรแบบ Grid'
+              : 'ตรวจสอบและกู้คืนตารางเวร',
+        ),
+      ),
       body: SafeArea(
         child: Column(
           children: [
@@ -78,13 +86,20 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Workbook review',
+                            widget.sourceLabel ?? 'Workbook review',
                             style: Theme.of(context).textTheme.titleLarge,
                           ),
                           const SizedBox(height: 8),
                           Text('จำนวน Worksheet ที่สแกน: ${session.sourceSheetCount}'),
                           Text('จำนวน Section: ${session.sections.length}'),
-                          Text('จำนวนรายการ: $assignmentCount'),
+                          if (widget.sourceLabel != null) ...[
+                            Text(
+                              'ก่อนดำเนินการ: ${_assignmentCount(_reviewContext.targetSchedule)} '
+                              'รายการใน Schedule ปัจจุบัน',
+                            ),
+                            Text('จาก Revision: $assignmentCount รายการ'),
+                          ] else
+                            Text('จำนวนรายการ: $assignmentCount'),
                           Text(
                             'รายการที่เลือกนำเข้า: $includedCount',
                             style: const TextStyle(fontWeight: FontWeight.w600),
@@ -261,6 +276,14 @@ class _GridRosterReviewPageState extends State<GridRosterReviewPage> {
       ),
     );
   }
+
+  int _assignmentCount(Schedule schedule) => schedule.months.fold<int>(
+    0,
+    (total, month) => total + month.days.fold<int>(
+      0,
+      (monthTotal, day) => monthTotal + day.assignments.length,
+    ),
+  );
 
   String _dateAnomalyKey(
     MonthlyRosterSection section,
