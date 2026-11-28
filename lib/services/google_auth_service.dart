@@ -106,7 +106,7 @@ class GoogleAuthService extends ChangeNotifier implements GoogleAuthGateway {
     final clientId = value.trim();
     return clientId.length >= 30 &&
         RegExp(
-          r'^[0-9]+-[a-zA-Z0-9_-]+\\.apps\\.googleusercontent\\.com$',
+          r'^[0-9]+-[a-zA-Z0-9_-]+\.apps\.googleusercontent\.com$',
         ).hasMatch(clientId);
   }
 
