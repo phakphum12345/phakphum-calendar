@@ -852,9 +852,9 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
         throw StateError('Sign in to Google before loading a spreadsheet.');
       }
       final spreadsheetId = SheetsService.spreadsheetIdFromUrl(input);
-      pendingClient = await authService.clientFor(const [
-        GoogleScopes.spreadsheetsReadOnly,
-        GoogleScopes.driveMetadataReadOnly,
+      pendingClient = await authService.clientFor([
+        ...GoogleScopes.spreadsheetRead,
+        ...GoogleScopes.driveFileDiscovery,
       ]);
       final source =
           widget.googleSheetsImportDataSourceFactory?.call(pendingClient) ??
