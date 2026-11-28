@@ -78,11 +78,57 @@ jobs:
               -H 'Accept: application/vnd.github+json' \
               "/repos/${REPOSITORY}/actions/runs/${run_id}/jobs?per_page=100" \
               --jq '
-                [.jobs[] | select(.name == "Deploy GitHub Pages")]
-                | last // {}
-                | [(.status // "missing"), (.conclusion // ""), (.html_url // "")]
+                [
+                  .jobs[]
+                  | select(.name == "Deploy GitHub Pages")
+                  | . as $job
+                  | [
+                      ($job.status // "missing"),
+                      ($job.conclusion // ""),
+                      ($job.html_url // ""),
+                      ([$job.steps[]? | select(.name == "Require shared backend for production deployment") | .conclusion] | last // "missing"),
+                      ([$job.steps[]? | select(.name == "Deploy to GitHub Pages") | .conclusion] | last // "missing"),
+                      ([$job.steps[]? | select(.name == "Verify published site and deployed commit") | .conclusion] | last // "missing")
+                    ]
+                ]
+                | last // ["missing", "", "", "missing", "missing", "missing"]
                 | @tsv
               ' 2>/dev/null
+          }
+
+          get_artifact_state() {
+            local run_id="$1"
+            local job_name="$2"
+            local build_step="$3"
+            local verify_step="$4"
+            local package_step="$5"
+            local upload_step="$6"
+            gh api \
+              -H 'Accept: application/vnd.github+json' \
+              "/repos/${REPOSITORY}/actions/runs/${run_id}/jobs?per_page=100" \
+            | jq -r \
+                --arg job "$job_name" \
+                --arg build "$build_step" \
+                --arg verify "$verify_step" \
+                --arg package "$package_step" \
+                --arg upload "$upload_step" '
+                [
+                  .jobs[]
+                  | select(.name == $job)
+                  | . as $job
+                  | [
+                      ($job.status // "missing"),
+                      ($job.conclusion // "unknown"),
+                      ([$job.steps[]? | select(.name == "Require shared backend for production artifact") | (.conclusion // "unknown")] | last // "missing"),
+                      ([$job.steps[]? | select(.name == $build) | (.conclusion // "unknown")] | last // "missing"),
+                      (if $verify == "-" then "not_required" else ([$job.steps[]? | select(.name == $verify) | (.conclusion // "unknown")] | last // "missing") end),
+                      (if $package == "-" then "not_required" else ([$job.steps[]? | select(.name == $package) | (.conclusion // "unknown")] | last // "missing") end),
+                      ([$job.steps[]? | select(.name == $upload) | (.conclusion // "unknown")] | last // "missing")
+                    ]
+                ]
+                | last // ["missing", "unknown", "missing", "missing", "missing", "missing", "missing"]
+                | @tsv
+              '
           }
 
           # These protect the user-facing application and its primary release paths.
@@ -98,6 +144,7 @@ jobs:
             "Android:android.yml"
             "iOS:ios.yml"
             "Linux:linux.yml"
+            "macOS:macos.yml"
           )
 
           optional_grace_attempt=20
@@ -105,6 +152,12 @@ jobs:
             required_pending=0
             required_failed=0
             optional_pending=0
+            deployment_skipped=0
+            windows_artifact_state="PENDING"
+            android_artifact_state="PENDING"
+            ios_artifact_state="PENDING"
+            linux_artifact_state="PENDING"
+            macos_artifact_state="PENDING"
             echo ""
             echo "===== EVIDENCE CHECK ${attempt}/80 ====="
 
@@ -125,22 +178,51 @@ jobs:
                 if [[ "$conclusion" != "success" ]]; then
                   echo "REQUIRED FAILURE: $label concluded ${conclusion:-unknown} for $SHA."
                   required_failed=1
+                elif [[ "$label" == "Windows" ]]; then
+                  artifact_state="$(get_artifact_state "$run_id" "Windows x64 / Analyze / Test / Build" "Build Windows release" "Verify Windows executable" "Package Windows application" "Upload Windows artifact" || true)"
+                  IFS=$'\t' read -r artifact_job_status artifact_job_conclusion backend_gate build_step verify_step package_step upload_step <<< "$artifact_state"
+                  artifact_job_status="${artifact_job_status:-missing}"
+                  artifact_job_conclusion="${artifact_job_conclusion:-unknown}"
+                  backend_gate="${backend_gate:-missing}"
+                  build_step="${build_step:-missing}"
+                  verify_step="${verify_step:-missing}"
+                  package_step="${package_step:-missing}"
+                  upload_step="${upload_step:-missing}"
+                  if [[ "$artifact_job_status" == "completed" && "$artifact_job_conclusion" == "success" && "$build_step" == "success" && "$verify_step" == "success" && "$package_step" == "success" && "$upload_step" == "success" ]]; then
+                    windows_artifact_state="PASS"
+                    echo "REQUIRED Windows release artifact: PASS"
+                  elif [[ "$artifact_job_status" == "completed" && "$artifact_job_conclusion" == "success" && "$backend_gate" == "success" && "$build_step" == "skipped" && "$verify_step" == "skipped" && "$package_step" == "skipped" && "$upload_step" == "skipped" ]]; then
+                    windows_artifact_state="SKIPPED (backend guard)"
+                    echo "REQUIRED Windows release artifact: SKIPPED (backend guard; quality/tests passed, no release artifact)"
+                  else
+                    windows_artifact_state="FAIL"
+                    echo "REQUIRED FAILURE: Windows artifact evidence is incomplete or failed."
+                    required_failed=1
+                  fi
                 elif [[ "$label" == "Web" ]]; then
                   deploy_state="$(get_deploy_job_state "$run_id" || true)"
                   if [[ -z "$deploy_state" ]]; then
-                    deploy_status="missing"; deploy_conclusion=""; deploy_url=""
+                    deploy_status="missing"; deploy_conclusion="unknown"; deploy_url="no-url"
+                    backend_gate_conclusion="missing"; deploy_step_conclusion="missing"; verify_step_conclusion="missing"
                   else
-                    IFS=$'\t' read -r deploy_status deploy_conclusion deploy_url <<< "$deploy_state"
+                    IFS=$'\t' read -r deploy_status deploy_conclusion deploy_url backend_gate_conclusion deploy_step_conclusion verify_step_conclusion <<< "$deploy_state"
                     deploy_status="${deploy_status:-missing}"
-                    deploy_conclusion="${deploy_conclusion:-}"
-                    deploy_url="${deploy_url:-}"
+                    deploy_conclusion="${deploy_conclusion:-unknown}"
+                    deploy_url="${deploy_url:-no-url}"
+                    backend_gate_conclusion="${backend_gate_conclusion:-missing}"
+                    deploy_step_conclusion="${deploy_step_conclusion:-missing}"
+                    verify_step_conclusion="${verify_step_conclusion:-missing}"
                   fi
-                  echo "REQUIRED Web deployment: status=$deploy_status conclusion=${deploy_conclusion:-PENDING}"
-                  [[ -z "$deploy_url" ]] || echo "  $deploy_url"
-                  if [[ "$deploy_status" == "completed" && "$deploy_conclusion" == "success" ]]; then
-                    echo "REQUIRED Web deployment: PASS"
+                  echo "REQUIRED Web deployment job: status=$deploy_status conclusion=$deploy_conclusion"
+                  echo "  backend_guard=$backend_gate_conclusion deploy_step=$deploy_step_conclusion verify_step=$verify_step_conclusion"
+                  [[ "$deploy_url" == "no-url" ]] || echo "  $deploy_url"
+                  if [[ "$deploy_status" == "completed" && "$deploy_conclusion" == "success" && "$backend_gate_conclusion" == "success" && "$deploy_step_conclusion" == "success" && "$verify_step_conclusion" == "success" ]]; then
+                    echo "REQUIRED Web deployment: PASS (deploy and deployed-SHA verification both ran)"
+                  elif [[ "$deploy_status" == "completed" && "$deploy_conclusion" == "success" && "$backend_gate_conclusion" == "success" && "$deploy_step_conclusion" == "skipped" && "$verify_step_conclusion" == "skipped" ]]; then
+                    echo "REQUIRED Web deployment: SKIPPED (backend guard; no production deployment was made)"
+                    deployment_skipped=1
                   elif [[ "$deploy_status" == "completed" || "$deploy_status" == "missing" ]]; then
-                    echo "REQUIRED FAILURE: GitHub Pages deployment did not succeed for $SHA."
+                    echo "REQUIRED FAILURE: GitHub Pages deployment evidence is missing, failed, or inconsistent for $SHA."
                     required_failed=1
                   else
                     required_pending=1
@@ -163,14 +245,63 @@ jobs:
               fi
 
               if [[ "$status" == "completed" && "$conclusion" == "success" ]]; then
-                echo "OPTIONAL $label: PASS"
-                [[ -z "$url" ]] || echo "  $url"
+                case "$label" in
+                  Android)
+                    job_name="Android APK release build"
+                    build_name="Build Android release APK"
+                    verify_name="Verify Android APK"
+                    package_name="-"
+                    upload_name="Upload Android APK"
+                    ;;
+                  iOS)
+                    job_name="iOS / Xcode / Unsigned Release"
+                    build_name="Build unsigned iOS application"
+                    verify_name="Verify iOS application bundle"
+                    package_name="Package unsigned iOS artifact"
+                    upload_name="Upload unsigned iOS artifact"
+                    ;;
+                  Linux)
+                    job_name="Linux x64 release build"
+                    build_name="Build Linux release"
+                    verify_name="-"
+                    package_name="Package Linux application"
+                    upload_name="Upload Linux application"
+                    ;;
+                  macOS)
+                    job_name="macOS / Xcode / Unsigned Release"
+                    build_name="Build macOS application with the project ad-hoc signing identity"
+                    verify_name="Verify macOS application bundle"
+                    package_name="Package ad-hoc macOS application"
+                    upload_name="Upload macOS build artifacts"
+                    ;;
+                esac
+                artifact_state="$(get_artifact_state "$run_id" "$job_name" "$build_name" "$verify_name" "$package_name" "$upload_name" || true)"
+                IFS=$'\t' read -r artifact_job_status artifact_job_conclusion backend_gate build_step verify_step package_step upload_step <<< "$artifact_state"
+                artifact_job_status="${artifact_job_status:-missing}"
+                artifact_job_conclusion="${artifact_job_conclusion:-unknown}"
+                backend_gate="${backend_gate:-missing}"
+                build_step="${build_step:-missing}"
+                verify_step="${verify_step:-missing}"
+                package_step="${package_step:-missing}"
+                upload_step="${upload_step:-missing}"
+                if [[ "$artifact_job_status" == "completed" && "$artifact_job_conclusion" == "success" && "$build_step" == "success" && ( "$verify_step" == "success" || "$verify_step" == "not_required" ) && ( "$package_step" == "success" || "$package_step" == "not_required" ) && "$upload_step" == "success" ]]; then
+                  case "$label" in Android) android_artifact_state="PASS";; iOS) ios_artifact_state="PASS";; Linux) linux_artifact_state="PASS";; macOS) macos_artifact_state="PASS";; esac
+                  echo "OPTIONAL $label artifact: PASS"
+                  [[ -z "$url" ]] || echo "  $url"
+                elif [[ "$artifact_job_status" == "completed" && "$artifact_job_conclusion" == "success" && "$backend_gate" == "success" && "$build_step" == "skipped" && "$verify_step" =~ ^(skipped|not_required)$ && "$package_step" =~ ^(skipped|not_required)$ && "$upload_step" == "skipped" ]]; then
+                  case "$label" in Android) android_artifact_state="SKIPPED (backend guard)";; iOS) ios_artifact_state="SKIPPED (backend guard)";; Linux) linux_artifact_state="SKIPPED (backend guard)";; macOS) macos_artifact_state="SKIPPED (backend guard)";; esac
+                  echo "OPTIONAL $label artifact: SKIPPED (backend guard; no production artifact)"
+                else
+                  case "$label" in Android) android_artifact_state="SKIPPED (incomplete evidence)";; iOS) ios_artifact_state="SKIPPED (incomplete evidence)";; Linux) linux_artifact_state="SKIPPED (incomplete evidence)";; macOS) macos_artifact_state="SKIPPED (incomplete evidence)";; esac
+                  echo "OPTIONAL $label artifact: SKIPPED (artifact evidence incomplete; workflow result alone is not artifact PASS)"
+                fi
               elif [[ "$attempt" -lt "$optional_grace_attempt" && "$status" != "completed" ]]; then
-                echo "OPTIONAL $label: WAITING (status=$status)"
+                echo "OPTIONAL $label artifact: WAITING (workflow status=$status)"
                 optional_pending=1
               else
                 reason="${conclusion:-no successful run within grace period}"
-                echo "OPTIONAL $label: SKIPPED (status=$status; reason=$reason)"
+                case "$label" in Android) android_artifact_state="SKIPPED ($reason)";; iOS) ios_artifact_state="SKIPPED ($reason)";; Linux) linux_artifact_state="SKIPPED ($reason)";; macOS) macos_artifact_state="SKIPPED ($reason)";; esac
+                echo "OPTIONAL $label artifact: SKIPPED (workflow status=$status; reason=$reason)"
                 [[ -z "$url" ]] || echo "  $url"
               fi
             done
@@ -183,8 +314,37 @@ jobs:
 
             if [[ "$required_pending" -eq 0 && "$optional_pending" -eq 0 ]]; then
               echo ""
-              echo "Required evidence complete for $SHA."
-              echo "Android/iOS/Linux are best-effort; see per-target PASS/SKIPPED lines above."
+              if [[ "$deployment_skipped" -eq 1 ]]; then
+                echo "Core validation complete for $SHA; production Pages deployment is SKIPPED."
+                echo "This Final Gate success is not a production release or deployed-site PASS."
+                {
+                  echo "## Final Gate — $SHA"
+                  echo "- Auto Detect CI: PASS"
+                  echo "- Windows quality/test evidence: PASS"
+                  echo "- Windows release artifact: $windows_artifact_state"
+                  echo "- Web build evidence: PASS"
+                  echo "- GitHub Pages deployment: SKIPPED — backend guard prevented publication"
+                  echo "- Android release artifact: $android_artifact_state"
+                  echo "- iOS release artifact: $ios_artifact_state"
+                  echo "- Linux release artifact: $linux_artifact_state"
+                  echo "- macOS release artifact: $macos_artifact_state"
+                  echo "- Production release readiness: NOT ESTABLISHED"
+                } >> "$GITHUB_STEP_SUMMARY"
+              else
+                echo "Required evidence complete for $SHA; GitHub Pages deployment and deployed-SHA verification passed."
+                {
+                  echo "## Final Gate — $SHA"
+                  echo "- Auto Detect CI: PASS"
+                  echo "- Windows quality/test evidence: PASS"
+                  echo "- Windows release artifact: $windows_artifact_state"
+                  echo "- Web build evidence: PASS"
+                  echo "- GitHub Pages deployment and deployed-SHA verification: PASS"
+                  echo "- Android release artifact: $android_artifact_state"
+                  echo "- iOS release artifact: $ios_artifact_state"
+                  echo "- Linux release artifact: $linux_artifact_state"
+                  echo "- Production release readiness: NOT ESTABLISHED by CI evidence alone"
+                } >> "$GITHUB_STEP_SUMMARY"
+              fi
               exit 0
             fi
 
@@ -203,14 +363,16 @@ jobs:
           test -f pubspec.yaml
           test -d windows
           test -d web
+          test -d macos
           test -f .github/workflows/ci-auto-detect.yml
           test -f .github/workflows/windows.yml
           test -f .github/workflows/web.yml
+          test -f .github/workflows/macos.yml
           test -f .github/workflows/final-gate.yml
           test -f scripts/detect-ci-targets.sh
 
           echo "REQUIRED TARGETS: Windows + Web"
-          for target in android ios linux; do
+          for target in android ios linux macos; do
             if [[ -d "$target" && -f ".github/workflows/$target.yml" ]]; then
               echo "OPTIONAL TARGET $target: available; build evidence is best-effort"
             else
