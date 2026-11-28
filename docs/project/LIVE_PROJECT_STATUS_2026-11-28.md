@@ -5,16 +5,16 @@
 ## Latest execution checkpoint — current main
 
 - Repository: `phakphum12345/phakphum-calendar`
-- Main SHA after PR #227 merged: `5a4e83ac42b1b383768b96828a7a932db9bf3c15`.
-- PR #227 merged successfully. It corrects Final Gate's Web evidence mapping to the main-push `deploy-pages.yml` workflow and aligns the iOS advisory path filter with the iOS build trigger.
-- Open PRs at this checkpoint: #223 Google function acceptance matrix (new documentation evidence update; fresh CI required), #224 customizable navigation, #226 stale-preview write guard, and #228 this live-status reconciliation.
-- #224 exact head `c13e811ae16d05a91f1ae5443623e246e1246713`: all 12 observed exact-head workflows completed successfully.
-- #226 exact head `134e067d8870de4aea3ceb66698ef2754a93a4cb`: all 12 observed exact-head workflows completed successfully. Its regression test rejects stale Schedule previews before any provider/archive write; this is not full live Google acceptance.
-- #227 exact head `d95e57e5f336eeb6ef300c88c04b0ad14da20b27`: eight applicable exact-head workflows completed successfully (Windows, Linux, Android, Web, Cross-platform Runtime, Dependency Security, Auto Detect CI and Pull Request Gate). iOS/macOS workflows were not triggered by this workflow-only change; the iOS advisory path was deliberately aligned to the iOS build paths.
-- #223 previous head `cacea6aeda5aa89851c38f9767bc05979d94ccb5` passed its three documentation-focused workflows; a follow-up evidence correction changed the head, so those earlier runs do not certify the new head.
-- Post-merge workflows for main SHA `5a4e83ac42b1b383768b96828a7a932db9bf3c15` were in progress at last inspection: Build Linux and Dependency Security had succeeded; Final Gate, Windows, Android, Web, Cross-platform Runtime and Auto Detect CI were still running. Do not merge dependent feature PRs until the exact mainline Final Gate and required workflows complete successfully.
-- The Web build/deploy workflow was still running. No production backend URL, live Google provider acceptance, deployed site, or deployed SHA has been verified. A skipped deployment due to missing HTTPS backend configuration is not a deployment PASS.
-- No independent review approval was recorded for the owner-authored PRs at this checkpoint. Repository branch protection was observed disabled; this is recorded as governance context, not as CI evidence.
+- Current main SHA after PR #223 documentation matrix merged: `4141e2715a15a211cc42dce2525361cd6688990e`.
+- PR #227 merged at `5a4e83ac42b1b383768b96828a7a932db9bf3c15`; PR #223 merged at `4141e2715a15a211cc42dce2525361cd6688990e`.
+- Open PRs: #224 customizable navigation, #226 stale-preview write guard, and #228 this live-status reconciliation.
+- #223 exact head `6f67b968257a4e7f5867820d4a0159c272733041` passed all three documentation-focused workflows (Dependency Security, Auto Detect CI and Cross-platform Runtime) and merged.
+- #224 exact head `c13e811ae16d05a91f1ae5443623e246e1246713`: all 12 observed exact-head workflows completed successfully. Its current PR metadata briefly reported a stale `mergeable=false`; a fresh GitHub PR read reported `mergeable=true`, `mergeable_state=clean`. It is not merged yet.
+- #226 exact head `134e067d8870de4aea3ceb66698ef2754a93a4cb`: all 12 observed exact-head workflows completed successfully. Its stale-preview regression prevents provider/archive writes when the Schedule changed after preview. Full Calendar provider acceptance remains open. A fresh GitHub PR read reported `mergeable=true`, `mergeable_state=clean`; it is not merged yet.
+- #227 exact head `d95e57e5f336eeb6ef300c88c04b0ad14da20b27`: eight applicable exact-head workflows passed (Windows, Linux, Android, Web, Cross-platform Runtime, Dependency Security, Auto Detect CI and Pull Request Gate). iOS/macOS were not triggered by the workflow-only patch.
+- Post-merge workflows for SHA `5a4e83ac42b1b383768b96828a7a932db9bf3c15`: Build Windows, Linux, Android, Web build, Auto Detect CI, Dependency Security and Cross-platform Runtime completed successfully. Final Gate remained in progress at last inspection.
+- Web build and downloadable artifact succeeded. GitHub Pages deployment and published-site/deployed-SHA verification were skipped because `ORGANIZATION_API_BASE_URL` was not configured as HTTPS. This is not a production deployment PASS.
+- No live Google provider acceptance, configured HTTPS backend, deployed site, or deployed SHA is verified. No independent review approval was recorded for these owner-authored PRs; repository branch protection was observed disabled.
 - Continue to fetch exact-head checks after every commit. Pending, cancelled, skipped, missing and unknown are never PASS.
 
 ## Repository baseline (historical checkpoint)
