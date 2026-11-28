@@ -616,8 +616,14 @@ class AppDependencies {
   createAuthorizedCalendarWorkflowController() async {
     // The routing client requests read-only access for preview/list/get calls
     // and requests write access only when the user confirms a provider write.
-    final client = GoogleScopeRoutingClient(
+    final scopedClient = GoogleScopeRoutingClient(
       clientForScopes: googleAuthService.clientFor,
+    );
+    // Keep the established GoogleApiClient gateway contract while routing
+    // each provider request through the scope-specific authorized client.
+    final client = GoogleApiClient(
+      const <String, String>{},
+      scopedClient,
     );
     return createShiftCalendarWorkflowController(
       calendarSyncGatewayFactory(client),
