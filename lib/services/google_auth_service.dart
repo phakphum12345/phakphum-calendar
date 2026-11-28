@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:googleapis/drive/v3.dart' as drive;
 
+import '../core/google/google_scopes.dart';
 import 'google_api_client.dart';
 
 /// Authentication boundary required by the legacy application workflow.
@@ -35,14 +35,13 @@ abstract interface class GoogleAuthGateway implements Listenable {
 }
 
 class GoogleAuthService extends ChangeNotifier implements GoogleAuthGateway {
-  static const spreadsheetsReadOnlyScope =
-      'https://www.googleapis.com/auth/spreadsheets.readonly';
-
+  /// Backward-compatible aggregate for the legacy import/review entry point.
+  ///
+  /// New workflows should request [GoogleScopes.rosterRead] or
+  /// [GoogleScopes.calendarRead] at the point of use instead.
   static const readAccessScopes = <String>[
-    spreadsheetsReadOnlyScope,
-    'https://www.googleapis.com/auth/calendar.events.readonly',
-    drive.DriveApi.driveMetadataReadonlyScope,
-    drive.DriveApi.driveReadonlyScope,
+    ...GoogleScopes.rosterRead,
+    ...GoogleScopes.calendarRead,
   ];
 
   static const _webClientId = String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
@@ -107,7 +106,7 @@ class GoogleAuthService extends ChangeNotifier implements GoogleAuthGateway {
     final clientId = value.trim();
     return clientId.length >= 30 &&
         RegExp(
-          r'^[0-9]+-[a-zA-Z0-9_-]+\.apps\.googleusercontent\.com$',
+          r'^[0-9]+-[a-zA-Z0-9_-]+\\.apps\\.googleusercontent\\.com$',
         ).hasMatch(clientId);
   }
 
@@ -284,8 +283,12 @@ class GoogleAuthService extends ChangeNotifier implements GoogleAuthGateway {
     if (current == null) {
       throw StateError('กรุณาเข้าสู่ระบบ Google ก่อน');
     }
+    final normalizedScopes = scopes.map((scope) => scope.trim()).toSet();
+    if (normalizedScopes.isEmpty || normalizedScopes.any((scope) => scope.isEmpty)) {
+      throw ArgumentError.value(scopes, 'scopes', 'ต้องระบุ OAuth scopes ที่ถูกต้อง');
+    }
     final headers = await current.authorizationClient.authorizationHeaders(
-      scopes,
+      normalizedScopes.toList(growable: false),
       promptIfNecessary: promptIfNecessary,
     );
     if (headers == null) {
