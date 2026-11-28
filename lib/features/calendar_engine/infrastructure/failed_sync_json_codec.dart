@@ -17,6 +17,8 @@ class FailedSyncJsonCodec {
             'eventId': value.eventId,
             'calendarId': value.calendarId,
             'message': value.message,
+            'expectedEtag': value.expectedEtag,
+            'expectedSyncId': value.expectedSyncId,
             'command': value.command == null
                 ? null
                 : <String, Object?>{
@@ -69,6 +71,8 @@ class FailedSyncJsonCodec {
             eventId: json['eventId'] as String?,
             calendarId: json['calendarId'] as String? ?? 'primary',
             message: json['message'] as String?,
+            expectedEtag: json['expectedEtag'] as String?,
+            expectedSyncId: json['expectedSyncId'] as String?,
           );
         })
         .toList(growable: false);
