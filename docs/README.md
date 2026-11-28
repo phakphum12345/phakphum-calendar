@@ -25,6 +25,7 @@ Start with the [Master Documentation Index](DOCUMENTATION_MASTER_INDEX.md), whic
 - [Architecture decisions](adr/)
 - [CI operations](ci/SELF_HOSTED_WINDOWS_RUNNER.md)
 - [Flexible workforce](flexible-workforce/README.md)
+- [Google integration function acceptance matrix](google/GOOGLE_FUNCTION_ACCEPTANCE_MATRIX.md)
 - [Technical wiki](wiki/README.md)
 
 ## Delivery package
