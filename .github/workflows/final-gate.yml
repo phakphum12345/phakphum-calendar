@@ -135,7 +135,7 @@ jobs:
           required_workflows=(
             "Auto Detect CI:ci-auto-detect.yml"
             "Windows:windows.yml"
-            "Web:web.yml"
+            "Web:deploy-pages.yml"
           )
 
           # These are best-effort artifacts. Their queue/build failures must not
@@ -367,6 +367,8 @@ jobs:
           test -f .github/workflows/ci-auto-detect.yml
           test -f .github/workflows/windows.yml
           test -f .github/workflows/web.yml
+          test -f .github/workflows/deploy-pages.yml
+          grep -Fq '"Web:deploy-pages.yml"' .github/workflows/final-gate.yml
           test -f .github/workflows/macos.yml
           test -f .github/workflows/final-gate.yml
           test -f scripts/detect-ci-targets.sh
