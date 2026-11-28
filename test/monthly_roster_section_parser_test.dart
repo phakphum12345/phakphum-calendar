@@ -1040,6 +1040,190 @@ void main() {
     expect(report.assignments, isEmpty);
   });
 
+  test('propagates merged vertical header labels without changing source provenance', () {
+    final cells = <NormalizedCell>[
+      NormalizedCell(
+        sheetId: 1,
+        sheetTitle: 'X-OPD',
+        a1: 'B1',
+        rowIndex: 0,
+        columnIndex: 1,
+        text: 'เวรเช้า',
+        isMerged: true,
+        mergedAnchorA1: 'B1',
+      ),
+      NormalizedCell(
+        sheetId: 1,
+        sheetTitle: 'X-OPD',
+        a1: 'C1',
+        rowIndex: 0,
+        columnIndex: 2,
+        isMerged: true,
+        mergedAnchorA1: 'B1',
+      ),
+      NormalizedCell(
+        sheetId: 1,
+        sheetTitle: 'X-OPD',
+        a1: 'A2',
+        rowIndex: 1,
+        columnIndex: 0,
+        text: 'ประจำเดือน พฤศจิกายน พ.ศ. 2569',
+      ),
+      for (var day = 1; day <= 7; day++) ...[
+        NormalizedCell(
+          sheetId: 1,
+          sheetTitle: 'X-OPD',
+          a1: 'A${day + 2}',
+          rowIndex: day + 1,
+          columnIndex: 0,
+          rawValue: day,
+        ),
+        NormalizedCell(
+          sheetId: 1,
+          sheetTitle: 'X-OPD',
+          a1: 'B${day + 2}',
+          rowIndex: day + 1,
+          columnIndex: 1,
+          text: 'นาย A$day',
+        ),
+        NormalizedCell(
+          sheetId: 1,
+          sheetTitle: 'X-OPD',
+          a1: 'C${day + 2}',
+          rowIndex: day + 1,
+          columnIndex: 2,
+          text: 'นาย B$day',
+        ),
+      ],
+    ];
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'X-OPD',
+      timeZone: 'Asia/Bangkok',
+      cells: cells,
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, hasLength(1));
+    expect(report.assignments, hasLength(14));
+    expect(report.assignments.map((item) => item.rowLabel).toSet(), {'เวรเช้า'});
+    expect(report.assignments.first.sourceCell, 'B3');
+    expect(report.assignments[1].sourceCell, 'C3');
+    expect(report.sections.single.sourceCells, containsAll(cells));
+    expect(
+      report.sections.single.sourceCells
+          .singleWhere((cell) => cell.a1 == 'C1')
+          .text,
+      isNull,
+      reason: 'The parser must not mutate the original merged child cell.',
+    );
+  });
+
+  test('composes nested merged vertical headers and retains every source row', () {
+    final cells = <NormalizedCell>[
+      NormalizedCell(
+        sheetId: 1,
+        sheetTitle: 'X-OPD',
+        a1: 'B1',
+        rowIndex: 0,
+        columnIndex: 1,
+        text: 'หน่วยบริการ',
+        isMerged: true,
+        mergedAnchorA1: 'B1',
+      ),
+      NormalizedCell(
+        sheetId: 1,
+        sheetTitle: 'X-OPD',
+        a1: 'C1',
+        rowIndex: 0,
+        columnIndex: 2,
+        isMerged: true,
+        mergedAnchorA1: 'B1',
+      ),
+      NormalizedCell(
+        sheetId: 1,
+        sheetTitle: 'X-OPD',
+        a1: 'B2',
+        rowIndex: 1,
+        columnIndex: 1,
+        text: 'เช้า',
+      ),
+      NormalizedCell(
+        sheetId: 1,
+        sheetTitle: 'X-OPD',
+        a1: 'C2',
+        rowIndex: 1,
+        columnIndex: 2,
+        text: 'บ่าย',
+      ),
+      NormalizedCell(
+        sheetId: 1,
+        sheetTitle: 'X-OPD',
+        a1: 'A3',
+        rowIndex: 2,
+        columnIndex: 0,
+        text: 'ประจำเดือน พฤศจิกายน พ.ศ. 2569',
+      ),
+      for (var day = 1; day <= 7; day++) ...[
+        NormalizedCell(
+          sheetId: 1,
+          sheetTitle: 'X-OPD',
+          a1: 'A${day + 3}',
+          rowIndex: day + 2,
+          columnIndex: 0,
+          rawValue: day,
+        ),
+        NormalizedCell(
+          sheetId: 1,
+          sheetTitle: 'X-OPD',
+          a1: 'B${day + 3}',
+          rowIndex: day + 2,
+          columnIndex: 1,
+          text: 'บุคลากรเช้า $day',
+        ),
+        NormalizedCell(
+          sheetId: 1,
+          sheetTitle: 'X-OPD',
+          a1: 'C${day + 3}',
+          rowIndex: day + 2,
+          columnIndex: 2,
+          text: 'บุคลากรบ่าย $day',
+        ),
+      ],
+    ];
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 1,
+      sheetTitle: 'X-OPD',
+      timeZone: 'Asia/Bangkok',
+      cells: cells,
+    );
+
+    final report = const MonthlyRosterSectionParser().parse(input);
+
+    expect(report.sections, hasLength(1));
+    expect(report.assignments, hasLength(14));
+    expect(
+      report.assignments.map((item) => item.rowLabel).toSet(),
+      {'หน่วยบริการ / เช้า', 'หน่วยบริการ / บ่าย'},
+    );
+    expect(report.assignments.first.sourceCell, 'B4');
+    expect(report.assignments[1].sourceCell, 'C4');
+    expect(report.sections.single.sourceCells, containsAll(cells));
+    expect(
+      report.sections.single.sourceCells
+          .singleWhere((cell) => cell.a1 == 'C1')
+          .text,
+      isNull,
+      reason: 'Header composition must not rewrite merged source cells.',
+    );
+    expect(report.warnings, isEmpty);
+  });
+
   test('keeps side-by-side vertical sections bound to their nearest header side', () {
     final input = ShiftParserInput(
       spreadsheetId: 'spreadsheet',

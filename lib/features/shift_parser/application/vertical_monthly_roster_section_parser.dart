@@ -20,9 +20,11 @@ class VerticalMonthlyRosterSectionParser {
   }) {
     final byColumn = <int, List<NormalizedCell>>{};
     final byCoordinate = <(int, int), NormalizedCell>{};
+    final byA1 = <String, NormalizedCell>{};
     for (final cell in input.cells) {
       byColumn.putIfAbsent(cell.columnIndex, () => []).add(cell);
       byCoordinate[(cell.rowIndex, cell.columnIndex)] = cell;
+      if (cell.a1.trim().isNotEmpty) byA1[cell.a1] = cell;
     }
     for (final cells in byColumn.values) {
       cells.sort((a, b) => a.rowIndex.compareTo(b.rowIndex));
@@ -101,9 +103,9 @@ class VerticalMonthlyRosterSectionParser {
               (cell) =>
                   cell.rowIndex == headerRow &&
                   cell.columnIndex != entry.key &&
-                  (cell.text?.trim().isNotEmpty ?? false) &&
+                  (_headerText(cell, byA1)?.isNotEmpty ?? false) &&
                   !_isDateCell(cell) &&
-                  !_isPeriodEvidence(cell.text ?? ''),
+                  !_isPeriodEvidence(_headerText(cell, byA1) ?? ''),
             )
             .any(
               (headerCell) => axisCells.any((dateCell) {
@@ -307,7 +309,12 @@ class VerticalMonthlyRosterSectionParser {
         for (final cell in input.cells.where(
           (cell) => cell.rowIndex == headerRow,
         )) {
-          final label = cell.text?.trim() ?? '';
+          final label = _headerPathText(
+            cell: cell,
+            headerRow: headerRow,
+            cellsByCoordinate: byCoordinate,
+            cellsByA1: byA1,
+          ) ?? '';
           if (label.isEmpty ||
               _isDateCell(cell) ||
               _isPeriodEvidence(label)) {
@@ -359,11 +366,17 @@ class VerticalMonthlyRosterSectionParser {
           continue;
         }
 
+        final headerPathStartRow = _headerPathStartRow(
+          headerRow: headerRow,
+          assignmentColumns: labelsByColumn.keys,
+          cellsByCoordinate: byCoordinate,
+          cellsByA1: byA1,
+        );
         final sourceStartRow = periodEvidence != null &&
                 periodEvidence.rowIndex >= 0 &&
-                periodEvidence.rowIndex < headerRow
+                periodEvidence.rowIndex < headerPathStartRow
             ? periodEvidence.rowIndex
-            : headerRow;
+            : headerPathStartRow;
         final rosterRows = <MonthlyRosterRow>[
           for (final entry in labelsByColumn.entries)
             MonthlyRosterRow(
@@ -449,6 +462,84 @@ class VerticalMonthlyRosterSectionParser {
       sections: List.unmodifiable(sections),
       warnings: List.unmodifiable(warnings),
     );
+  }
+
+  /// Resolves a blank merged header cell to its original anchor label.
+  /// The source cell itself is never rewritten, so raw workbook provenance
+  /// remains available to review and correction workflows.
+  String? _headerText(
+    NormalizedCell cell,
+    Map<String, NormalizedCell> cellsByA1,
+  ) {
+    final direct = cell.text?.trim();
+    if (direct != null && direct.isNotEmpty) return direct;
+    final anchorA1 = cell.mergedAnchorA1;
+    if (anchorA1 == null || anchorA1.trim().isEmpty) return null;
+    final anchorText = cellsByA1[anchorA1]?.text?.trim();
+    return anchorText == null || anchorText.isEmpty ? null : anchorText;
+  }
+
+  /// Builds a label from contiguous merged header ancestors and the
+  /// selected leaf header. Ancestors are interpreted from top to bottom;
+  /// source cells remain unchanged for provenance and correction.
+  String? _headerPathText({
+    required NormalizedCell cell,
+    required int headerRow,
+    required Map<(int, int), NormalizedCell> cellsByCoordinate,
+    required Map<String, NormalizedCell> cellsByA1,
+  }) {
+    final ancestors = <String>[];
+    for (var row = headerRow - 1; row >= 0; row--) {
+      final ancestor = cellsByCoordinate[(row, cell.columnIndex)];
+      if (ancestor == null || !ancestor.isMerged) break;
+      final label = _headerText(ancestor, cellsByA1);
+      if (label == null ||
+          label.isEmpty ||
+          _isDateCell(ancestor) ||
+          _isPeriodEvidence(label)) {
+        break;
+      }
+      ancestors.add(label);
+    }
+
+    final parts = <String>[];
+    for (final label in ancestors.reversed) {
+      if (parts.isEmpty || parts.last != label) parts.add(label);
+    }
+    final leaf = _headerText(cell, cellsByA1);
+    if (leaf != null &&
+        leaf.isNotEmpty &&
+        !_isDateCell(cell) &&
+        !_isPeriodEvidence(leaf) &&
+        (parts.isEmpty || parts.last != leaf)) {
+      parts.add(leaf);
+    }
+    return parts.isEmpty ? null : parts.join(' / ');
+  }
+
+  /// Finds the earliest row in the contiguous merged-header stack so the
+  /// complete hierarchy remains in the retained source evidence.
+  int _headerPathStartRow({
+    required int headerRow,
+    required Iterable<int> assignmentColumns,
+    required Map<(int, int), NormalizedCell> cellsByCoordinate,
+    required Map<String, NormalizedCell> cellsByA1,
+  }) {
+    var startRow = headerRow;
+    for (var row = headerRow - 1; row >= 0; row--) {
+      final hasMergedAncestor = assignmentColumns.any((column) {
+        final cell = cellsByCoordinate[(row, column)];
+        if (cell == null || !cell.isMerged) return false;
+        final label = _headerText(cell, cellsByA1);
+        return label != null &&
+            label.isNotEmpty &&
+            !_isDateCell(cell) &&
+            !_isPeriodEvidence(label);
+      });
+      if (!hasMergedAncestor) break;
+      startRow = row;
+    }
+    return startRow;
   }
 
   String _cellReference(NormalizedCell cell) =>
