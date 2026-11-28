@@ -304,7 +304,7 @@ void main() {
 
     expect(find.text('Shift Tools'), findsOneWidget);
     expect(find.text('แหล่งข้อมูลเวร'), findsOneWidget);
-    expect(find.byType(NavigationRail), findsOneWidget);
+    expect(find.byTooltip('ปรับแต่งแท็บและแถบเมนู'), findsOneWidget);
     expect(find.text('Sync Google Account'), findsNothing);
     expect(find.text('รีเฟรช/อ่านใหม่ตอนนี้'), findsOneWidget);
     expect(find.text('ชื่อที่ต้องค้นหา'), findsOneWidget);
@@ -321,15 +321,40 @@ void main() {
 
     expect(find.text('แดชบอร์ด'), findsOneWidget);
     expect(find.text('ตารางเวร'), findsOneWidget);
-    expect(find.text('รายเดือน'), findsOneWidget);
-    expect(find.text('บุคลากร'), findsOneWidget);
-    expect(find.text('แลกเวร'), findsOneWidget);
-    expect(find.text('รายงาน'), findsOneWidget);
-    expect(find.text('Admin'), findsOneWidget);
-    expect(find.text('ตั้งค่า'), findsOneWidget);
+    // The monthly destination may be outside the horizontal tab viewport;
+    // it is verified and opened from the complete workspace menu below.
     expect(find.text('ลบเวรซ้ำ'), findsOneWidget);
 
-    await tester.tap(find.text('รายเดือน'));
+    // The horizontal tab strip is intentionally scrollable. The workspace
+    // list exposes destinations that are outside the current viewport.
+    await tester.tap(find.byTooltip('รายการหน้า'));
+    await tester.pumpAndSettle();
+    final workspaceSheet = find.byType(BottomSheet);
+    expect(
+      find.descendant(
+        of: workspaceSheet,
+        matching: find.text('บุคลากร'),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: workspaceSheet, matching: find.text('แลกเวร')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: workspaceSheet, matching: find.text('รายงาน')),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(of: workspaceSheet, matching: find.text('Admin')),
+      findsOneWidget,
+    );
+    final monthlyEntry = find.descendant(
+      of: workspaceSheet,
+      matching: find.text('รายเดือน'),
+    );
+    expect(monthlyEntry, findsOneWidget);
+    await tester.tap(monthlyEntry);
     await tester.pumpAndSettle();
     expect(find.text('ตารางเวรรายเดือน'), findsOneWidget);
     expect(find.text('Excel / CSV / ไฟล์'), findsOneWidget);
@@ -408,7 +433,23 @@ void main() {
 
     Navigator.of(tester.element(find.text('คลังเครื่องมือ'))).pop();
     await tester.pumpAndSettle();
-    await tester.tap(find.text('ตั้งค่า'));
+    // Settings is beyond the currently visible horizontal tab viewport at
+    // this desktop width. Open it through the always-visible workspace menu.
+    await tester.tap(find.byTooltip('รายการหน้า'));
+    await tester.pumpAndSettle();
+    final settingsEntry = find.descendant(
+      of: workspaceSheet,
+      matching: find.text('ตั้งค่า'),
+    );
+    await tester.scrollUntilVisible(
+      settingsEntry,
+      240,
+      scrollable: find.descendant(
+        of: workspaceSheet,
+        matching: find.byType(Scrollable),
+      ).first,
+    );
+    await tester.tap(settingsEntry);
     await tester.pumpAndSettle();
     expect(find.text('สร้างชีตเดือนล่วงหน้า'), findsOneWidget);
     expect(find.textContaining('Passkey'), findsNothing);
@@ -422,7 +463,8 @@ void main() {
     await tester.pumpWidget(ShiftToolsApp(controller: demoController()));
     await tester.pumpAndSettle();
 
-    expect(find.byType(NavigationBar), findsOneWidget);
+    expect(find.byTooltip('ปรับแต่งแท็บและแถบเมนู'), findsOneWidget);
+    expect(find.byTooltip('รายการหน้า'), findsOneWidget);
     expect(find.text('Auto refresh'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
