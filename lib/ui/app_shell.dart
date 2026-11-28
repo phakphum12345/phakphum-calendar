@@ -5755,9 +5755,6 @@ class _AuditPage extends StatelessWidget {
             );
           },
         ),
-        const SizedBox(height: 20),
-        SyncHistoryPanel(controllerFactory: syncHistoryControllerFactory),
-        const SizedBox(height: 20),
         Text('ประวัติการทำงาน', style: Theme.of(context).textTheme.titleLarge),
         const SizedBox(height: 8),
         if (controller.auditEntries.isEmpty)
@@ -5789,6 +5786,8 @@ class _AuditPage extends StatelessWidget {
                 ),
               ),
             ),
+        const SizedBox(height: 20),
+        SyncHistoryPanel(controllerFactory: syncHistoryControllerFactory),
       ],
     );
   }
