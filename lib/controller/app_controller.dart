@@ -1775,7 +1775,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       _pendingCalendarWorkflow = null;
       try {
         if (settings.archiveOriginal && sourceUrl.isNotEmpty) {
-          final driveClient = await auth.clientFor([GoogleScopes.driveArchive]);
+          final driveClient = await auth.clientFor([GoogleScopes.driveFullAccess]);
           try {
             for (final period in periods) {
               final archive = await _archiveService.copyMonthlyOriginal(
