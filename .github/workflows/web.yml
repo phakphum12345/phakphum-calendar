@@ -1,4 +1,4 @@
-name: Build and Deploy Web
+name: Build Flutter web
 
 on:
   workflow_dispatch:
@@ -18,25 +18,7 @@ on:
       - "DISKPATH.json"
       - "DISKPATH.md"
       - ".github/workflows/**"
-  push:
-    branches: [main]
-    paths:
-      - "lib/**"
-      - "assets/**"
-      - "android/**"
-      - "ios/**"
-      - "linux/**"
-      - "windows/**"
-      - "web/**"
-      - "test/**"
-      - "integration_test/**"
-      - "pubspec.yaml"
-      - "pubspec.lock"
-      - "DISKPATH.json"
-      - "DISKPATH.md"
-      - ".github/workflows/**"
-
-# Read-only by default. The deploy job grants only the permissions Pages needs.
+# Read-only permissions for pull-request web build verification.
 permissions:
   contents: read
 
@@ -106,66 +88,3 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-      - name: Upload GitHub Pages artifact
-        uses: actions/upload-pages-artifact@v4
-        with:
-          path: build/web
-
-  deploy-pages:
-    name: Deploy GitHub Pages
-    if: github.ref == 'refs/heads/main'
-    needs: build-web
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-
-    steps:
-      - name: Require shared backend for production deployment
-        id: backend_gate
-        env:
-          ORGANIZATION_API_BASE_URL: ${{ vars.ORGANIZATION_API_BASE_URL }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ -z "${ORGANIZATION_API_BASE_URL//[[:space:]]/}" || "$ORGANIZATION_API_BASE_URL" != https://* ]]; then
-            echo "::notice::Skipping GitHub Pages deployment because ORGANIZATION_API_BASE_URL is not configured as HTTPS."
-            echo "available=false" >> "$GITHUB_OUTPUT"
-            {
-              echo "## GitHub Pages deployment skipped"
-              echo "No valid HTTPS ORGANIZATION_API_BASE_URL is configured. The web build artifact is available, but the production site was not published."
-            } >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "available=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Deploy to GitHub Pages
-        if: steps.backend_gate.outputs.available == 'true'
-        id: deployment
-        uses: actions/deploy-pages@v4
-
-      - name: Verify published site and deployed commit
-        if: steps.backend_gate.outputs.available == 'true'
-        env:
-          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
-          EXPECTED_SHA: ${{ github.sha }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -n "$PAGE_URL"
-          BASE_URL="${PAGE_URL%/}"
-          curl --fail --silent --show-error --location \
-            --retry 10 --retry-delay 5 --retry-all-errors \
-            "$BASE_URL/" -o /tmp/phakphum-calendar-index.html
-          curl --fail --silent --show-error --location \
-            --retry 10 --retry-delay 5 --retry-all-errors \
-            "$BASE_URL/deployment.json" -o /tmp/phakphum-calendar-deployment.json
-          grep -Fq "\"commit_sha\":\"$EXPECTED_SHA\"" \
-            /tmp/phakphum-calendar-deployment.json
-          echo "PAGES HTTP SMOKE TEST: PASS"
-          echo "DEPLOYED COMMIT SHA: $EXPECTED_SHA"
