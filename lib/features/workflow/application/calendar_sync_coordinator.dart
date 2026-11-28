@@ -115,6 +115,7 @@ class CalendarSyncCoordinator {
       diff: diff,
       existingEvents: adopted,
       calendarId: calendarId,
+      scheduleId: schedule.id,
     );
     return CalendarSyncPreparation(
       diff: diff,
@@ -140,6 +141,7 @@ class CalendarSyncCoordinator {
     required DateTime timeMin,
     required DateTime timeMax,
     String calendarId = 'primary',
+    required String scheduleId,
   }) async {
     final existing = await _gateway.listManagedEvents(
       timeMin: timeMin,
@@ -150,6 +152,7 @@ class CalendarSyncCoordinator {
       diff: diff,
       existingEvents: existing,
       calendarId: calendarId,
+      scheduleId: scheduleId,
     );
     return _executor.execute(plan);
   }
@@ -254,6 +257,8 @@ class CalendarSyncCoordinator {
             end: duplicate.end,
             description: duplicate.description,
             colorId: duplicate.colorId,
+            etag: duplicate.etag,
+            providerSyncId: duplicate.providerSyncId,
           ),
         );
       }
@@ -315,6 +320,8 @@ class CalendarSyncCoordinator {
           end: event.end,
           description: event.description,
           colorId: event.colorId,
+          etag: event.etag,
+          providerSyncId: event.providerSyncId,
         ),
       );
     }
