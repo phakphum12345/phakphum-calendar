@@ -25,6 +25,31 @@ This document describes the current routes. Request validation and service autho
 - Browser CORS permits the `X-Request-ID` header and exposes it to clients; membership `PATCH` and `DELETE` preflights are allowed but remain subject to Google bearer authentication.
 - Request IDs are diagnostic metadata, not authentication credentials or authorization claims.
 
+## Cross-device Calendar sync coordination
+
+These routes use the existing `google.account` middleware and the 120 requests/minute account throttle. Every record is scoped to the authenticated Google account. They coordinate client-side Google Calendar writes; the backend does not write to Google Calendar.
+
+| Method | Path | Purpose |
+|---|---|---|
+| POST | `/calendar-sync/leases` | Acquire one active lease for an owner and Calendar |
+| PUT | `/calendar-sync/leases/{runId}` | Renew a lease heartbeat |
+| DELETE | `/calendar-sync/leases/{runId}` | Finish a run and release its lease |
+| POST | `/calendar-sync/leases/{runId}/operations` | Record an idempotent operation intent |
+| PATCH | `/calendar-sync/leases/{runId}/operations/{operationKey}` | Update operation status and provider result |
+| GET | `/calendar-sync/runs` | Read the caller's durable run history |
+| GET | `/calendar-sync/runs/{runId}` | Read one owner-scoped durable synchronization run |
+| GET | `/calendar-sync/runs/{runId}/operations` | Read operation records for one owned run |
+
+The run-list endpoint accepts optional `calendar_id` and `limit` query parameters (1–100; default 50). Run summaries include aggregate `operation_count`, successful insert/update/delete counts, failed count, and pending count. The list does not return encrypted event payloads; clients should fetch operation details only for an explicitly selected recovery action.
+
+Lease acquisition requires `run_id` (UUID), `calendar_id`, `schedule_id`, and `client_instance_id`; `ttl_seconds` is optional and bounded to 15–300 seconds (default 60). The database enforces one active lease per authenticated owner and Calendar ID. A competing active run receives HTTP 409. An expired lease may be reclaimed; a previous lease token cannot renew or release the new owner's run.
+
+Each operation intent requires `lease_token`, `operation_key` (1–128 characters), `operation_type` (`insert`, `update`, `delete`), a lowercase SHA-256 `payload_hash`, and the matching `operation_payload` object. The server canonicalizes the payload, verifies the hash, and encrypts it with Laravel `Crypt` before storing it in `payload_ciphertext`. Owner-scoped operation reads decrypt the payload for explicit recovery. The encrypted payload contains only fields needed to reconcile/replay that exact Calendar operation (including title/time and optional description); it is encrypted at rest, not end-to-end encrypted. Protect and back up `APP_KEY`; losing it makes stored recovery payloads undecryptable. Define a retention/cleanup policy before production rollout. Payloads must never contain access tokens, ID tokens, OAuth credentials or other secrets. Replaying the same key and payload returns the existing record; reusing the key with a different type or hash returns HTTP 409. Operation updates require status (`prepared`, `running`, `succeeded`, `failed`) and monotonic `attempt_count`; successful operations cannot be downgraded. Provider event ID is optional. `last_error` is an allowlisted short error code only; clients must never send raw provider exception text.
+
+Run terminal status is `success`, `partial_success`, `failed`, `cancelled` or `expired` (set when another client reclaims an elapsed lease). Run and operation history remain after the lease is released. History reads are owner-scoped and return 404 for another account's run. Clients must not put access tokens, ID tokens, OAuth credentials or full roster/workbook contents in the ledger. The encrypted operation payload contains only the event fields required for recovery; deployments must apply least-privilege database access, protect `APP_KEY`, and define retention before production use.
+
+The Flutter executor uses these routes only when `ORGANIZATION_API_BASE_URL` is configured and a Google ID token and stable Schedule ID are available. Without a backend origin, the app remains in local-only mode; device-local SharedPreferences history does not provide cross-device serialization. The current UI/resume flow does not yet load server history to recover an interrupted run, so durable shared recovery remains incomplete.
+
 ## Route inventory
 
 | Method | Path | Purpose |

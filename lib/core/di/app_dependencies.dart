@@ -29,11 +29,14 @@ import '../../features/employees/infrastructure/shared_preferences_employee_repo
 import '../../features/calendar_engine/application/calendar_sync_plan_builder.dart';
 import '../../features/calendar_engine/application/resilient_calendar_sync_executor.dart';
 import '../../features/calendar_engine/application/resume_sync_service.dart';
+import '../../features/calendar_engine/domain/calendar_sync_coordination_gateway.dart';
+import '../../features/calendar_engine/infrastructure/backend_calendar_sync_coordination_gateway.dart';
 import '../../features/calendar_engine/domain/calendar_sync_gateway.dart';
 import '../../features/calendar_engine/domain/failed_sync_repository.dart';
 import '../../features/calendar_engine/infrastructure/google_calendar_sync_gateway.dart';
 import '../../features/calendar_engine/infrastructure/shared_preferences_failed_sync_repository.dart';
 import '../../features/history/domain/sync_history_repository.dart';
+import '../../features/history/application/sync_history_controller.dart';
 import '../../features/history/infrastructure/shared_preferences_sync_history_repository.dart';
 import '../../features/rule_engine/application/rule_engine.dart'
     as legacy_rules;
@@ -226,6 +229,16 @@ class AppDependencies {
   final EmployeeRepository employeeRepository;
   final ShiftTemplateRepository shiftTemplateRepository;
   final ScheduleRepository? _providedScheduleRepository;
+
+  /// Server-side coordination is enabled only when an authenticated backend is configured.
+  late final CalendarSyncCoordinationGateway? calendarSyncCoordinationGateway = () {
+    const baseUrl = String.fromEnvironment('ORGANIZATION_API_BASE_URL');
+    if (baseUrl.trim().isEmpty) return null;
+    return BackendCalendarSyncCoordinationGateway(
+      baseUrl: baseUrl,
+      idTokenProvider: () async => googleAuthService.account?.authentication.idToken,
+    );
+  }();
 
   /// Uses the same configured backend for every production Schedule writer.
   /// If the backend is not configured, local storage uses process-scoped
@@ -457,6 +470,33 @@ class AppDependencies {
     return ScheduleValidationService(engine: createRuleEngine());
   }
 
+  /// Creates the explicit durable-history recovery controller.
+  SyncHistoryController createSyncHistoryController() {
+    return SyncHistoryController(
+      syncHistoryRepository,
+      recoverHistory: (historyId) async {
+        final coordination = calendarSyncCoordinationGateway;
+        if (coordination == null) {
+          throw StateError('History recovery requires a configured shared backend.');
+        }
+        final client = await googleAuthService.clientFor([
+          calendar.CalendarApi.calendarEventsScope,
+        ]);
+        try {
+          final service = ResumeSyncService(
+            gateway: calendarSyncGatewayFactory(client),
+            historyRepository: syncHistoryRepository,
+            failedRepository: failedSyncRepository,
+            coordinationGateway: coordination,
+          );
+          await service.recoverHistory(historyId);
+        } finally {
+          client.close();
+        }
+      },
+    );
+  }
+
   /// Creates the resilient executor used for one authorized sync session.
   ResilientCalendarSyncExecutor createResilientCalendarSyncExecutor(
     CalendarSyncGateway gateway,
@@ -465,6 +505,7 @@ class AppDependencies {
       gateway: gateway,
       historyRepository: syncHistoryRepository,
       failedRepository: failedSyncRepository,
+      coordinationGateway: calendarSyncCoordinationGateway,
     );
   }
 
@@ -493,6 +534,7 @@ class AppDependencies {
         gateway: gateway,
         historyRepository: syncHistoryRepository,
         failedRepository: failedSyncRepository,
+        coordinationGateway: calendarSyncCoordinationGateway,
       ),
       onDispose: onDispose,
       messageProvider: messageProvider ?? workflowMessageProvider,

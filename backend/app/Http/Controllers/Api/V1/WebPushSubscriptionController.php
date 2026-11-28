@@ -47,6 +47,7 @@ class WebPushSubscriptionController
                 'p256dh_key' => $validated['keys']['p256dh'],
                 'auth_token_encrypted' => Crypt::encryptString($validated['keys']['auth']),
                 'content_encoding' => $validated['contentEncoding'] ?? 'aes128gcm',
+                'expired_at' => null,
                 'user_agent' => mb_substr((string) $request->userAgent(), 0, 512),
                 'updated_at' => $now,
                 'created_at' => $createdAt,

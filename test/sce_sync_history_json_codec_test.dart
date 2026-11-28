@@ -14,10 +14,21 @@ void main() {
         updated: 2,
         deleted: 3,
         failed: 1,
+        pending: 2,
       ),
     ];
     final decoded = codec.decodeList(codec.encodeList(source));
     expect(decoded.single.id, 'h1');
     expect(decoded.single.failed, 1);
+    expect(decoded.single.pending, 2);
+  });
+
+  test('older history records without pending count decode as zero', () {
+    const codec = SyncHistoryJsonCodec();
+    final decoded = codec.decodeList(
+      '[{"id":"legacy","startedAt":"2026-07-22T00:00:00.000",'
+      '"status":"success","inserted":1,"updated":0,"deleted":0,"failed":0}]',
+    );
+    expect(decoded.single.pending, 0);
   });
 }

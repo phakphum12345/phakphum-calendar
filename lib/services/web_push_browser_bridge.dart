@@ -2,6 +2,7 @@ abstract interface class WebPushBrowserBridge {
   bool get isSupported;
   String get permission;
 
+  Future<Map<String, dynamic>?> currentSubscription();
   Future<Map<String, dynamic>?> subscribe(String publicKey);
   Future<Map<String, dynamic>?> unsubscribe();
 }
@@ -14,6 +15,9 @@ class UnsupportedWebPushBrowserBridge implements WebPushBrowserBridge {
 
   @override
   String get permission => 'unsupported';
+
+  @override
+  Future<Map<String, dynamic>?> currentSubscription() async => null;
 
   @override
   Future<Map<String, dynamic>?> subscribe(String publicKey) async => null;

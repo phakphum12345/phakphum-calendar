@@ -53,8 +53,85 @@ Resume performs the same lookup before inserting and again after an ambiguous
 insert failure. Deterministic provider IDs make concurrent inserts for the same
 sync identity duplicate-resistant, but Google documents that globally
 distributed ID collisions are not guaranteed to be detected at creation time.
-Concurrent update/delete coordination across independent clients remains a
-separate concern.
+Calendar update/delete plans now carry the provider ETag and the provider-side
+managed Sync ID observed during preview. The Google gateway re-reads the exact
+event, verifies its identity, and sends the mutation with `If-Match`. A stale
+ETag or changed managed identity fails closed. Conditional updates preserve
+provider-owned Calendar fields and the existing `--- Timeline ---` audit section.
+An ambiguous update is reconciled by reading the event and comparing its managed
+identity and normalized desired content; an ambiguous delete is reconciled by
+checking whether the event still exists.
+
+This protects individual provider mutations from stale concurrent writes.
+Whole sync runs are serialized through the owner-and-Calendar lease described
+below. Local history remains available offline, while server run summaries are
+also discoverable across devices when the authenticated backend is configured.
+
+## Backend coordination foundation (2026-11-26)
+
+PR #196 adds authenticated Laravel coordination primitives:
+
+- one active lease per authenticated owner and Calendar ID;
+- lease expiry, heartbeat, and explicit release;
+- durable sync-run records with owner, schedule, Calendar, client instance,
+  start, heartbeat, finish, and terminal status;
+- a durable per-run operation ledger keyed by an idempotent operation key;
+- payload-hash conflict detection, attempt-count monotonicity, and guarded
+  operation status transitions;
+- owner-scoped read APIs for run history and operation details.
+
+The production `ResilientCalendarSyncExecutor` and `ResumeSyncService`
+are wired to this API when `ORGANIZATION_API_BASE_URL` is configured. The
+executor acquires a lease before provider mutations, heartbeats between
+operations, records a stable operation key and payload hash, updates the
+operation outcome/provider event ID, and releases the lease with the final run
+status. Lease uniqueness is scoped to the authenticated owner plus Calendar ID,
+so it serializes devices using the same Google account. It is not an
+organization-wide lock for two different Google accounts that share one
+Calendar; that requires an explicit tenant-level ownership/authorization model.
+Coordination HTTP calls have a 15-second timeout. The server ledger stores
+only safe diagnostic codes (for example `provider_timeout` or
+`stale_precondition`), never raw provider exception text or event content. The reviewed Schedule ID is carried into the immutable sync plan and
+persisted with local history. Resume acquires the same Calendar lease and
+records each resumed operation using that original Schedule ID. Legacy history
+entries without a Schedule ID fail closed in server-coordinated mode.
+
+Durable operation records now include the exact replay payload required for
+insert/update/delete reconciliation. The backend canonicalizes and verifies
+the payload hash, encrypts the payload with the Laravel application key, and
+returns it only through owner-scoped run/operation reads. The explicit
+`ResumeSyncService.recoverHistory(historyId)` path follows the server run ID
+stored with local history, loads the owner-scoped run and encrypted operations,
+rebuilds unfinished work, and resumes it under a newly acquired Calendar lease.
+`recoverRun(runId)` is available when the server run ID is already known.
+
+The History panel now queries the owner-scoped `GET /calendar-sync/runs`
+summary endpoint and merges server records with local history by server run ID.
+The summary contains operation counts and status only; it does not download
+encrypted event payloads. A run that exists only on the server can be selected
+for recovery by its exact server run ID. Recovery remains an explicit,
+confirmation-gated action; opening the History panel never replays operations.
+If server history cannot be loaded, the UI retains local records and shows the
+server retrieval error rather than treating the failed request as an empty
+history. Local history JSON remains backward-compatible with records that do
+not contain the new pending-operation count.
+
+Inserts reconcile by stable Sync ID; updates first compare the current
+provider event with the desired command before enforcing the original ETag;
+deletes treat an already-missing event as complete and reject changed events.
+
+A rejected lease acquisition is recorded as a failed local history entry before the error is returned; no provider operation is started. Unexpected execution errors persist the confirmed counts and leave the server ledger available for explicit reconciliation. Lease release is best-effort and an expired lease cannot be released by its former owner.
+
+Recovery is explicit and is not automatically replayed at application startup.
+The History utility now displays local sync-history entries and exposes a
+confirmation-gated **กู้คืน** action only for failed, partial or interrupted
+entries that carry a server Run ID. The action follows that Run ID and reads the
+owner-scoped encrypted ledger before resuming. Local-only history without a
+server Run ID is explicitly shown as not recoverable from the History utility;
+this avoids replaying an unscoped local queue after an account switch. The
+history list and failed-operation queue remain local SharedPreferences views;
+the server ledger is the durable cross-device recovery source. No production
+Calendar write is authorized by these backend endpoints alone.
 
 ## Partial success
 
@@ -88,3 +165,21 @@ Insert retries and resume re-check existing managed events by deterministic Sync
 ID before another insert. If verification fails or finds duplicate IDs, the
 operation remains failed for review rather than risking another provider write.
 This does not serialize simultaneous syncs from independent devices.
+
+
+## 2026-11-27 — Exact-head implementation and documentation reconciliation
+
+This section supersedes earlier broad statements in this document that whole-run serialization and the durable operation ledger were not yet present. PR #196 at head `22d648ee1ef522f3b9e06c1c0b82e39b52f51fc1` wires the server coordination gateway into the production sync executor and explicit recovery service when `ORGANIZATION_API_BASE_URL` is configured.
+
+Verified source behavior:
+- The executor acquires an owner + Calendar ID lease before provider mutations, records each operation with a stable key and canonical payload hash, heartbeats between operations, updates terminal outcomes, and best-effort releases the lease.
+- The server stores run and operation records; operation replay payloads are encrypted with Laravel `APP_KEY`, and read APIs are owner-scoped.
+- Explicit history recovery follows the saved server Run ID, rebuilds unfinished work from the server ledger, and obtains a new lease before replay. It is not an automatic startup replay.
+- Provider updates/deletes require the preview ETag and managed Sync ID; ambiguous inserts are reconciled by stable Sync ID before another insert is attempted.
+- Lease scope is one authenticated Google owner + Calendar ID. It is not tenant-wide serialization for two different Google accounts sharing the same Calendar.
+
+Exact-head CI for #196 completed 13/13 observed workflows successfully, including native macOS and unsigned iOS builds with uploaded artifacts. This is code/build evidence, not deployment or live-provider acceptance.
+
+**Still local:** the History list and failed-operation UI read local SharedPreferences history/queue projections. The server run/operation ledger is the durable cross-device recovery source when configured; the local UI history itself is not a replicated server-side history list.
+
+**Operational acceptance still open:** no evidence in this CI run establishes that a production HTTPS backend is deployed/reachable, the production database provides the expected row-lock/unique-constraint semantics under contention, Laravel `APP_KEY` is durably backed up and recoverable, or a controlled Google test Calendar has passed multi-device contention, lease expiry/reclaim, ambiguous provider outcome, ETag conflict and explicit recovery scenarios. The production-backend workflow gate was skipped on pull_request. No production Calendar mutation, migration or deployment was performed.

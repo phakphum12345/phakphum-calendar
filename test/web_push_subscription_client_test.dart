@@ -30,6 +30,9 @@ class FakeWebPushBrowserBridge implements WebPushBrowserBridge {
   String get permission => currentPermission;
 
   @override
+  Future<Map<String, dynamic>?> currentSubscription() async => subscription;
+
+  @override
   Future<Map<String, dynamic>?> subscribe(String publicKey) async {
     subscribeCalls++;
     return subscription;
@@ -94,6 +97,38 @@ void main() {
 
       expect(await client.unsubscribe(), isTrue);
       expect(bridge.unsubscribeCalls, 1);
+    });
+
+    test('keeps the browser subscription when server unsubscribe fails', () async {
+      final bridge = FakeWebPushBrowserBridge();
+      final client = WebPushSubscriptionClient(
+        baseUrl: 'https://api.example.test',
+        idTokenProvider: () async => 'google-id-token',
+        vapidPublicKey: 'public-vapid-key',
+        browserBridge: bridge,
+        httpClient: MockClient((request) async => http.Response('', 503)),
+      );
+
+      await expectLater(client.unsubscribe(), throwsA(isA<WebPushApiException>()));
+      expect(bridge.unsubscribeCalls, 0);
+    });
+
+    test('reports whether a browser subscription is already registered', () async {
+      final active = WebPushSubscriptionClient(
+        baseUrl: 'https://api.example.test',
+        idTokenProvider: () async => 'google-id-token',
+        vapidPublicKey: 'public-vapid-key',
+        browserBridge: FakeWebPushBrowserBridge(),
+      );
+      final inactive = WebPushSubscriptionClient(
+        baseUrl: 'https://api.example.test',
+        idTokenProvider: () async => 'google-id-token',
+        vapidPublicKey: 'public-vapid-key',
+        browserBridge: FakeWebPushBrowserBridge(subscription: null),
+      );
+
+      expect(await active.isSubscribed, isTrue);
+      expect(await inactive.isSubscribed, isFalse);
     });
 
     test('does not call the API when no browser subscription exists', () async {

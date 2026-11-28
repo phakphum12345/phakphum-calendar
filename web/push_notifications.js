@@ -26,6 +26,15 @@
   window.shiftToolsPush = Object.freeze({
     isSupported: () => supported(),
     permission: () => supported() ? Notification.permission : 'unsupported',
+    async currentSubscription() {
+      if (!supported()) return null;
+      const registration = await navigator.serviceWorker.getRegistration(
+        new URL('push-scope/', document.baseURI).pathname,
+      );
+      if (!registration) return null;
+      const subscription = await registration.pushManager.getSubscription();
+      return subscription ? JSON.stringify(serialize(subscription)) : null;
+    },
     async subscribe(publicKey) {
       if (!supported()) throw new Error('Web Push is not supported by this browser.');
       if (!publicKey) throw new Error('Web Push is not configured.');
