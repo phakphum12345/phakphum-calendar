@@ -13,6 +13,8 @@ void main() {
         type: CalendarSyncOperationType.insert,
         referenceId: 'sync-1',
         attempts: 2,
+        expectedEtag: 'etag-123',
+        expectedSyncId: 'sync-1',
         command: CalendarSyncCommand(
           syncId: 'sync-1',
           title: 'ER เช้า',
@@ -24,5 +26,7 @@ void main() {
     final decoded = codec.decode(codec.encode(values));
     expect(decoded.single.command!.title, 'ER เช้า');
     expect(decoded.single.attempts, 2);
+    expect(decoded.single.expectedEtag, 'etag-123');
+    expect(decoded.single.expectedSyncId, 'sync-1');
   });
 }
