@@ -6,16 +6,12 @@ on:
     paths:
       - "lib/**"
       - "assets/**"
-      - "android/**"
       - "ios/**"
-      - "linux/**"
-      - "windows/**"
-      - "web/**"
       - "test/**"
       - "integration_test/**"
       - "pubspec.yaml"
       - "pubspec.lock"
-      - ".github/workflows/**"
+      - ".github/workflows/ios.yml"
 
 permissions:
   contents: read
