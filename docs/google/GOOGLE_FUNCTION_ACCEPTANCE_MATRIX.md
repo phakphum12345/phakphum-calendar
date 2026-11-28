@@ -1,6 +1,6 @@
 # Google Integration — Function-Level Acceptance Matrix
 
-- Baseline: `main` at `9aed0905e731efdf0c02b07bddffcd04f2f056b0` (2026-11-28).
+- Initial audit baseline: `9aed0905e731efdf0c02b07bddffcd04f2f056b0` (2026-11-28); latest verified main checkpoint when this update was prepared: `5a4e83ac42b1b383768b96828a7a932db9bf3c15`.
 - Scope: Google identity, incremental authorization, Calendar, Drive, Sheets, Contacts, employee-directory storage and backend identity handoff.
 - Purpose: track every user-visible operation independently. A gateway class, successful compile, unit test, or green CI does not prove that a user journey works against Google.
 - Status vocabulary:
@@ -191,7 +191,7 @@ The following functions have moved from an unaudited state into active implement
 | SCOPE-02 | PR #225 merged as `953e5d00b85d281566ed8bc98453727cc9112ec3`; its exact-head tests and all 12 workflows passed. `test/google_scope_routing_client_test.dart` covers preview reads and denied write consent. | IN_PROGRESS |
 | SCOPE-03 | PR #225 requests the Calendar write scope only for POST/PUT/PATCH/DELETE after the caller's explicit confirmation flow. Denied authorization fails before the mutation request is sent; exact-head tests and all 12 workflows passed. | IN_PROGRESS |
 | TOKEN-05 | PR #225 caches account-bound clients by scope set and closes owned clients; retry-after-denial and close tests passed on the exact merged head. | IN_PROGRESS |
-| CAL-04 / CAL-05 | PR #226 compares the prepared Calendar preview Schedule snapshot with the current effective Schedule immediately before archive/provider writes. Its regression test asserts that a stale preview produces zero Calendar inserts. Remaining exact-head platform checks are still running. | IN_PROGRESS |
+| CAL-04 / CAL-05 | PR #226 compares the prepared Calendar preview Schedule snapshot with the current effective Schedule immediately before archive/provider writes. Its regression test asserts that a stale preview produces zero Calendar inserts. All 12 observed exact-head workflows for `134e067d8870de4aea3ceb66698ef2754a93a4cb` completed successfully (Linux, Windows, Android, iOS, macOS, Web, Cross-platform Runtime, Auto Detect CI, Dependency Security, Dart Format Baseline Audit, iOS Advisory Evidence and Pull Request Gate). This closes the exact-head CI gap only; CAL-04/CAL-05 remain IN_PROGRESS because the full preview/create/update/delete/recovery journey and controlled live-provider acceptance are not yet complete. | IN_PROGRESS |
 
 Related work:
 - [#225 — incremental Calendar authorization](https://github.com/phakphum12345/phakphum-calendar/pull/225) — merged
