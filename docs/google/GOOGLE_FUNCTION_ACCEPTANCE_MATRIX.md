@@ -182,7 +182,7 @@ No function is marked `PASS_LIVE`: the repository run did not authenticate again
 
 ## 13. Current implementation evidence — 2026-11-28
 
-Main baseline observed after PR #225 merge: `953e5d00b85d281566ed8bc98453727cc9112ec3`.
+Main baseline observed after PR #219 and #225 merges: `4aea651968b5429a2df0e9487bbf200998096561`.
 
 The following functions have moved from an unaudited state into active implementation and code-level verification. These are not PASS claims:
 
