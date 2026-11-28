@@ -1,5 +1,5 @@
 import 'package:googleapis/drive/v3.dart' as drive;
-import 'package:googleapis_auth/googleapis_auth.dart' as auth;
+import 'package:http/http.dart' as http;
 
 import '../domain/drive_gateway.dart';
 import '../domain/roster_file.dart';
@@ -10,7 +10,7 @@ class GoogleDriveGateway implements DriveGateway {
   static const String spreadsheetMimeType =
       'application/vnd.google-apps.spreadsheet';
 
-  final auth.AuthClient _client;
+  final http.Client _client;
 
   @override
   Future<List<RosterFile>> listSpreadsheets({

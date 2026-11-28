@@ -75,6 +75,24 @@ void main() {
     expect(inner.received?.headers['Authorization'], 'Bearer test-token');
   });
 
+  test('refreshes authorization headers for each request', () async {
+    final inner = _ImmediateClient();
+    var tokenVersion = 0;
+    final client = GoogleApiClient.withHeaderProvider(
+      () async => <String, String>{
+        'Authorization': 'Bearer token-${++tokenVersion}',
+      },
+      inner: inner,
+    );
+
+    await client.get(Uri.parse('https://example.test/first'));
+    expect(inner.received?.headers['Authorization'], 'Bearer token-1');
+
+    await client.get(Uri.parse('https://example.test/second'));
+    expect(inner.received?.headers['Authorization'], 'Bearer token-2');
+    expect(tokenVersion, 2);
+  });
+
   test('bounds a hanging request', () async {
     final inner = _HangingClient();
     final client = GoogleApiClient(

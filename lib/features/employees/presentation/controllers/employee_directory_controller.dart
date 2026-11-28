@@ -167,7 +167,7 @@ class EmployeeDirectoryController extends ChangeNotifier {
     _setLoading(true);
     GoogleApiClient? client;
     try {
-      client = await auth.clientFor(const [GoogleScopes.driveAppData]);
+      client = await auth.clientFor(GoogleScopes.employeeDirectory);
       final localResult = await repository.findAll(activeOnly: false);
       if (localResult case Failure<List<Employee>>()) {
         throw StateError(localResult.message);
@@ -229,7 +229,7 @@ class EmployeeDirectoryController extends ChangeNotifier {
     _setLoading(true);
     GoogleApiClient? client;
     try {
-      client = await auth.clientFor(const [GoogleScopes.contacts]);
+      client = await auth.clientFor(GoogleScopes.contactTransfer);
       return await GoogleContactsService(client).importableEmployees();
     } catch (error) {
       _error = 'อ่าน Google Contacts ไม่สำเร็จ: $error';
@@ -295,7 +295,7 @@ class EmployeeDirectoryController extends ChangeNotifier {
     _setLoading(true);
     GoogleApiClient? client;
     try {
-      client = await auth.clientFor(const [GoogleScopes.contacts]);
+      client = await auth.clientFor(GoogleScopes.contactTransfer);
       return await GoogleContactsService(client).exportEmployees(candidates);
     } catch (error) {
       _error = 'ส่งออก Google Contacts ไม่สำเร็จ: $error';

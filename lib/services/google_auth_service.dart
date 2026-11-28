@@ -9,6 +9,7 @@ import 'google_api_client.dart';
 /// Authentication boundary required by the legacy application workflow.
 abstract interface class GoogleAuthGateway implements Listenable {
   GoogleSignInAccount? get account;
+  String? get idToken;
   bool get isSignedIn;
   bool get initialized;
   bool get signInReady;
@@ -27,6 +28,7 @@ abstract interface class GoogleAuthGateway implements Listenable {
   Future<void> signIn();
   Future<void> requestReadAccess();
   Future<void> signOut();
+  Future<void> disconnect();
   Future<GoogleApiClient> clientFor(
     List<String> scopes, {
     bool promptIfNecessary = true,
@@ -70,6 +72,8 @@ class GoogleAuthService extends ChangeNotifier implements GoogleAuthGateway {
 
   @override
   GoogleSignInAccount? get account => _account;
+  @override
+  String? get idToken => _account?.authentication.idToken;
   @override
   bool get isSignedIn => _account != null;
   @override
@@ -239,6 +243,15 @@ class GoogleAuthService extends ChangeNotifier implements GoogleAuthGateway {
   }
 
   @override
+  Future<void> disconnect() async {
+    await GoogleSignIn.instance.disconnect();
+    _account = null;
+    _checkingReadAccess = false;
+    _readAccessGranted = false;
+    notifyListeners();
+  }
+
+  @override
   Future<void> requestReadAccess() async {
     final current = _account;
     if (current == null) {
@@ -300,7 +313,29 @@ class GoogleAuthService extends ChangeNotifier implements GoogleAuthGateway {
     if (headers == null) {
       throw StateError('ยังไม่ได้อนุญาตสิทธิ์ที่จำเป็น');
     }
-    return GoogleApiClient(headers);
+    final accountId = current.id;
+    return GoogleApiClient.withHeaderProvider(() async {
+      final activeAccount = _account;
+      if (activeAccount == null || activeAccount.id != accountId) {
+        throw StateError(
+          'บัญชี Google เปลี่ยนหรือถูกตัดการเชื่อมต่อ กรุณาเชื่อมต่อใหม่',
+        );
+      }
+      final refreshedHeaders = await activeAccount.authorizationClient
+          .authorizationHeaders(
+            normalizedScopes.toList(growable: false),
+            promptIfNecessary: false,
+          );
+      if (refreshedHeaders == null) {
+        throw StateError(
+          'สิทธิ์ Google หมดอายุหรือถูกเพิกถอน กรุณาเชื่อมต่อบัญชีและอนุญาตใหม่',
+        );
+      }
+      if (_account?.id != accountId) {
+        throw StateError('บัญชี Google เปลี่ยนระหว่างส่งคำขอ กรุณาลองใหม่');
+      }
+      return refreshedHeaders;
+    });
   }
 
   String _friendlyError(Object error) {

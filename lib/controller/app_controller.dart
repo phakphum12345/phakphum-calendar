@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:googleapis/calendar/v3.dart' as calendar;
-import 'package:googleapis/drive/v3.dart' as drive;
-import 'package:googleapis/sheets/v4.dart' as sheets;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/app_settings.dart';
@@ -24,6 +22,7 @@ import '../domain/repositories/conditional_schedule_writer.dart';
 import '../domain/repositories/schedule_revision_source.dart';
 import '../domain/repositories/shift_template_repository.dart';
 import '../core/result/result.dart';
+import '../core/google/google_scopes.dart';
 import '../features/schedule/data/legacy_schedule_adapter.dart';
 import '../features/schedule/data/schedule_json_codec.dart';
 import '../features/shift_parser/application/monthly_roster_workbook_scanner.dart';
@@ -698,9 +697,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     }
 
     await _run('กำลังค้นหา Google Sheets จาก Google Drive', () async {
-      final client = await auth.clientFor([
-        drive.DriveApi.driveMetadataReadonlyScope,
-      ]);
+      final client = await auth.clientFor(GoogleScopes.driveFileDiscovery);
       try {
         recentOwnedSheets = await _ownershipService.listOwnedSpreadsheets(
           client,
@@ -743,8 +740,8 @@ class AppController extends ChangeNotifier implements ControllerState {
 
     await _run('ตรวจและเพิ่ม Google Sheets ที่เลือก', () async {
       final client = await auth.clientFor([
-        sheets.SheetsApi.spreadsheetsReadonlyScope,
-        drive.DriveApi.driveMetadataReadonlyScope,
+        ...GoogleScopes.spreadsheetRead,
+        ...GoogleScopes.driveFileDiscovery,
       ]);
 
       try {
@@ -793,8 +790,8 @@ class AppController extends ChangeNotifier implements ControllerState {
     final spreadsheetId = _sheetsService.parseSpreadsheetId(normalizedUrl);
     await _run('ตรวจและเลือกไฟล์ชีตหลักของบัญชีนี้', () async {
       final client = await auth.clientFor([
-        sheets.SheetsApi.spreadsheetsReadonlyScope,
-        drive.DriveApi.driveMetadataReadonlyScope,
+        ...GoogleScopes.spreadsheetRead,
+        ...GoogleScopes.driveFileDiscovery,
       ]);
       try {
         await _ownershipService.requireOwnedSpreadsheet(client, spreadsheetId);
@@ -939,9 +936,9 @@ class AppController extends ChangeNotifier implements ControllerState {
         );
       }
       final client = await auth.clientFor([
-        sheets.SheetsApi.spreadsheetsReadonlyScope,
-        drive.DriveApi.driveMetadataReadonlyScope,
-        drive.DriveApi.driveReadonlyScope,
+        ...GoogleScopes.spreadsheetRead,
+        ...GoogleScopes.driveFileDiscovery,
+        GoogleScopes.driveReadOnly,
       ], promptIfNecessary: !background);
       try {
         final spreadsheetId = _sheetsService.parseSpreadsheetId(sourceUrl);
@@ -1091,9 +1088,9 @@ class AppController extends ChangeNotifier implements ControllerState {
     GoogleApiClient? client;
     try {
       client = await auth.clientFor([
-        sheets.SheetsApi.spreadsheetsReadonlyScope,
-        drive.DriveApi.driveMetadataReadonlyScope,
-        drive.DriveApi.driveReadonlyScope,
+        ...GoogleScopes.spreadsheetRead,
+        ...GoogleScopes.driveFileDiscovery,
+        GoogleScopes.driveReadOnly,
       ], promptIfNecessary: false);
       if (generation != _timelineLoadGeneration) return;
     final currentRevision = RosterRevisionDocument(
@@ -1424,8 +1421,8 @@ class AppController extends ChangeNotifier implements ControllerState {
     }
     await _run('อ่านตารางเวรรายเดือน', () async {
       final client = await auth.clientFor([
-        sheets.SheetsApi.spreadsheetsReadonlyScope,
-        drive.DriveApi.driveMetadataReadonlyScope,
+        ...GoogleScopes.spreadsheetRead,
+        ...GoogleScopes.driveFileDiscovery,
       ]);
       try {
         final spreadsheetId = _sheetsService.parseSpreadsheetId(sourceUrl);
@@ -1645,9 +1642,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     if (effectiveShifts.isEmpty) throw StateError('กรุณาอ่านตารางเวรก่อน');
     await _run('เปรียบเทียบ Google Calendar', () async {
       final periods = _activeRosterPeriods();
-      final client = await auth.clientFor([
-        calendar.CalendarApi.calendarEventsReadonlyScope,
-      ]);
+      final client = await auth.clientFor(GoogleScopes.calendarRead);
       try {
         final snapshot = await _readCalendarPeriods(client, periods);
         existingKeys = snapshot.sourceKeys;
@@ -1675,9 +1670,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       throw StateError('กรุณาเชื่อมต่อบัญชี Google ก่อนตรวจเวรซ้ำ');
     }
     await _run('ตรวจหาเวรซ้ำใน Google Calendar', () async {
-      final client = await auth.clientFor([
-        calendar.CalendarApi.calendarEventsReadonlyScope,
-      ]);
+      final client = await auth.clientFor(GoogleScopes.calendarRead);
       try {
         final duplicateIds = <String>{};
         for (final period in _activeRosterPeriods()) {
@@ -1720,9 +1713,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       throw StateError('กรุณากดตรวจหาเวรซ้ำก่อนลบ');
     }
     await _run('ลบเวรซ้ำจาก Google Calendar', () async {
-      final client = await auth.clientFor([
-        calendar.CalendarApi.calendarEventsScope,
-      ]);
+      final client = await auth.clientFor(GoogleScopes.calendarWrite);
       var deleted = 0;
       try {
         for (final eventId in ids) {
@@ -1774,7 +1765,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       _pendingCalendarWorkflow = null;
       try {
         if (settings.archiveOriginal && sourceUrl.isNotEmpty) {
-          final driveClient = await auth.clientFor([drive.DriveApi.driveScope]);
+          final driveClient = await auth.clientFor(GoogleScopes.driveArchive);
           try {
             for (final period in periods) {
               final archive = await _archiveService.copyMonthlyOriginal(
@@ -2163,8 +2154,8 @@ class AppController extends ChangeNotifier implements ControllerState {
     }
     await _run('สร้างชีตเดือนล่วงหน้า', () async {
       final client = await auth.clientFor([
-        sheets.SheetsApi.spreadsheetsScope,
-        drive.DriveApi.driveMetadataReadonlyScope,
+        ...GoogleScopes.spreadsheetWrite,
+        ...GoogleScopes.driveFileDiscovery,
       ]);
       try {
         final spreadsheetId = _sheetsService.parseSpreadsheetId(sourceUrl);
@@ -2332,9 +2323,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       throw StateError('ไม่พบรหัสกิจกรรม Google Calendar ที่ต้องการลบ');
     }
     await _run('ลบกิจกรรมที่เลือกจาก Google Calendar', () async {
-      final client = await auth.clientFor([
-        calendar.CalendarApi.calendarEventsScope,
-      ]);
+      final client = await auth.clientFor(GoogleScopes.calendarWrite);
       try {
         await _calendarService.deleteEvent(client, eventId: eventId);
         calendarPeriods.removeWhere((period) => period.id == eventId);
@@ -2540,9 +2529,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     final record =
         '[$action] ${timestamp.toIso8601String()} | ผู้แก้ไข: $actor\n$details';
     var sourceEventStatus = '';
-    final client = await auth.clientFor([
-      calendar.CalendarApi.calendarEventsScope,
-    ]);
+    final client = await auth.clientFor(GoogleScopes.calendarWrite);
     try {
       final api = calendar.CalendarApi(client);
       if (shift != null) {

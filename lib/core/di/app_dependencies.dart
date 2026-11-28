@@ -1,5 +1,3 @@
-import 'package:googleapis_auth/googleapis_auth.dart' as auth;
-import 'package:googleapis/calendar/v3.dart' as calendar;
 
 import '../../controller/app_controller.dart';
 import '../../domain/repositories/employee_repository.dart';
@@ -24,6 +22,11 @@ import '../../features/excel_import/presentation/controllers/column_mapping_cont
 import '../../features/excel_import/presentation/controllers/excel_import_controller.dart';
 import '../../features/excel_import/domain/shift_record.dart';
 import '../../features/google_sheets/infrastructure/google_sheets_gateway.dart';
+import '../../core/google/authorized_google_gateway_session.dart';
+import '../../core/google/google_scopes.dart';
+import '../../features/calendar_engine/infrastructure/google_calendar_gateway.dart';
+import '../../features/employees/infrastructure/google_employee_sync_service.dart';
+import '../../features/google_drive/infrastructure/google_drive_gateway.dart';
 import '../../features/employees/presentation/controllers/employee_directory_controller.dart';
 import '../../features/employees/infrastructure/shared_preferences_employee_repository.dart';
 import '../../features/calendar_engine/application/calendar_sync_plan_builder.dart';
@@ -77,7 +80,6 @@ import '../../services/settings_service.dart';
 import '../../services/sheets_service.dart';
 import '../../services/shift_alert_service.dart';
 import '../../services/shift_parser.dart';
-import '../google/authorized_google_client_factory.dart';
 import '../../l10n/l10n.dart';
 import '../../l10n/app_localizations_th.dart';
 import '../result/result.dart';
@@ -103,8 +105,7 @@ class AppDependencies {
     ImportedScheduleAdapter? importedScheduleAdapter,
     DashboardSummaryService? dashboardSummaryService,
     LegacyScheduleAdapter? legacyScheduleAdapter,
-    AuthorizedGoogleClientFactory? authorizedGoogleClientFactory,
-    GoogleSheetsImportDataSource Function(auth.AuthClient)?
+    GoogleSheetsImportDataSource Function(GoogleApiClient)?
     googleSheetsImportDataSourceFactory,
     Iterable<Rule>? scheduleRules,
     Iterable<legacy_rules.ScheduleRule>? legacyScheduleRules,
@@ -144,9 +145,6 @@ class AppDependencies {
            dashboardSummaryService ?? const DashboardSummaryService(),
        legacyScheduleAdapter =
            legacyScheduleAdapter ?? const LegacyScheduleAdapter(),
-       authorizedGoogleClientFactory =
-           authorizedGoogleClientFactory ??
-           const AuthorizedGoogleClientFactory(),
        googleSheetsImportDataSourceFactory =
            googleSheetsImportDataSourceFactory ??
            ((client) => GoogleSheetsImportDataSource(
@@ -208,8 +206,7 @@ class AppDependencies {
   final ImportedScheduleAdapter importedScheduleAdapter;
   final DashboardSummaryService dashboardSummaryService;
   final LegacyScheduleAdapter legacyScheduleAdapter;
-  final AuthorizedGoogleClientFactory authorizedGoogleClientFactory;
-  final GoogleSheetsImportDataSource Function(auth.AuthClient)
+  final GoogleSheetsImportDataSource Function(GoogleApiClient)
   googleSheetsImportDataSourceFactory;
   final List<Rule> scheduleRules;
   final List<legacy_rules.ScheduleRule> legacyScheduleRules;
@@ -236,7 +233,7 @@ class AppDependencies {
     if (baseUrl.trim().isEmpty) return null;
     return BackendCalendarSyncCoordinationGateway(
       baseUrl: baseUrl,
-      idTokenProvider: () async => googleAuthService.account?.authentication.idToken,
+      idTokenProvider: () async => googleAuthService.idToken,
     );
   }();
 
@@ -251,7 +248,7 @@ class AppDependencies {
     if (baseUrl.trim().isEmpty) return SharedPreferencesScheduleRepository();
     return BackendScheduleRepository(
       baseUrl: baseUrl,
-      idTokenProvider: () async => googleAuthService.account?.authentication.idToken,
+      idTokenProvider: () async => googleAuthService.idToken,
     );
   }
 
@@ -266,7 +263,7 @@ class AppDependencies {
     return BackendGridRosterImportJournalGateway(
       baseUrl: baseUrl,
       idTokenProvider: () async =>
-          googleAuthService.account?.authentication.idToken,
+          googleAuthService.idToken,
     );
   }();
 
@@ -452,6 +449,80 @@ class AppDependencies {
     );
   }
 
+  /// Creates one short-lived authorized client for a single Google account.
+  ///
+  /// The account is checked again after authorization so a concurrent account
+  /// switch cannot attach a client created for the previous account to a new
+  /// feature session.
+  Future<AuthorizedGoogleGatewaySession<T>> _createGoogleGatewaySession<T>({
+    required List<String> scopes,
+    required T Function(GoogleApiClient client) createGateway,
+  }) async {
+    final account = googleAuthService.account;
+    if (account == null) {
+      throw StateError('กรุณาเชื่อมต่อบัญชี Google ก่อนใช้งาน');
+    }
+
+    final client = await googleAuthService.clientFor(scopes);
+    if (googleAuthService.account?.id != account.id) {
+      client.close();
+      throw StateError(
+        'บัญชี Google เปลี่ยนระหว่างกำลังขอสิทธิ์ กรุณาลองใหม่อีกครั้ง',
+      );
+    }
+
+    return AuthorizedGoogleGatewaySession<T>(
+      gateway: createGateway(client),
+      client: client,
+      accountId: account.id,
+    );
+  }
+
+  /// Calendar metadata verification uses calendar.readonly, not write access.
+  Future<AuthorizedGoogleGatewaySession<GoogleCalendarGateway>>
+  createGoogleCalendarGateway() {
+    return _createGoogleGatewaySession(
+      scopes: GoogleScopes.calendarMetadataRead,
+      createGateway: GoogleCalendarGateway.new,
+    );
+  }
+
+  /// Lists spreadsheets visible to this account using metadata-only access.
+  Future<AuthorizedGoogleGatewaySession<GoogleDriveGateway>>
+  createGoogleDriveGateway() {
+    return _createGoogleGatewaySession(
+      scopes: GoogleScopes.driveFileDiscovery,
+      createGateway: GoogleDriveGateway.new,
+    );
+  }
+
+  /// Reads spreadsheet cells with the least-privilege Sheets scope.
+  Future<AuthorizedGoogleGatewaySession<GoogleSheetsGateway>>
+  createGoogleSheetsGateway() {
+    return _createGoogleGatewaySession(
+      scopes: GoogleScopes.spreadsheetRead,
+      createGateway: GoogleSheetsGateway.new,
+    );
+  }
+
+  /// Employee directory sync is isolated to the account's Drive appDataFolder.
+  Future<AuthorizedGoogleGatewaySession<GoogleEmployeeSyncService>>
+  createGoogleEmployeeSyncService() {
+    return _createGoogleGatewaySession(
+      scopes: GoogleScopes.employeeDirectory,
+      createGateway: GoogleEmployeeSyncService.new,
+    );
+  }
+
+  /// Contacts transfer is optional and requests permission only when invoked.
+  Future<AuthorizedGoogleGatewaySession<GoogleContactsService>>
+  createGoogleContactsService() {
+    return _createGoogleGatewaySession(
+      scopes: GoogleScopes.contactTransfer,
+      createGateway: GoogleContactsService.new,
+    );
+  }
+
   /// Creates a rule engine from the rules registered at the composition root.
   RuleEngine createRuleEngine() {
     return RuleEngine(rules: scheduleRules, evaluator: const RuleEvaluator());
@@ -479,9 +550,7 @@ class AppDependencies {
         if (coordination == null) {
           throw StateError('History recovery requires a configured shared backend.');
         }
-        final client = await googleAuthService.clientFor([
-          calendar.CalendarApi.calendarEventsScope,
-        ]);
+        final client = await googleAuthService.clientFor(GoogleScopes.calendarWrite);
         try {
           final service = ResumeSyncService(
             gateway: calendarSyncGatewayFactory(client),
@@ -544,9 +613,7 @@ class AppDependencies {
   /// Requests Calendar authorization and owns the client for the controller.
   Future<ShiftCalendarWorkflowController>
   createAuthorizedCalendarWorkflowController() async {
-    final client = await googleAuthService.clientFor([
-      calendar.CalendarApi.calendarEventsScope,
-    ]);
+    final client = await googleAuthService.clientFor(GoogleScopes.calendarWrite);
     return createShiftCalendarWorkflowController(
       calendarSyncGatewayFactory(client),
       onDispose: client.close,
