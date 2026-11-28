@@ -233,7 +233,7 @@ class AppDependencies {
     if (baseUrl.trim().isEmpty) return null;
     return BackendCalendarSyncCoordinationGateway(
       baseUrl: baseUrl,
-      idTokenProvider: () async => googleAuthService.account?.authentication.idToken,
+      idTokenProvider: () async => googleAuthService.idToken,
     );
   }();
 
@@ -248,7 +248,7 @@ class AppDependencies {
     if (baseUrl.trim().isEmpty) return SharedPreferencesScheduleRepository();
     return BackendScheduleRepository(
       baseUrl: baseUrl,
-      idTokenProvider: () async => googleAuthService.account?.authentication.idToken,
+      idTokenProvider: () async => googleAuthService.idToken,
     );
   }
 
@@ -263,7 +263,7 @@ class AppDependencies {
     return BackendGridRosterImportJournalGateway(
       baseUrl: baseUrl,
       idTokenProvider: () async =>
-          googleAuthService.account?.authentication.idToken,
+          googleAuthService.idToken,
     );
   }();
 
