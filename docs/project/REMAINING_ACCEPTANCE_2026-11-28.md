@@ -1,6 +1,17 @@
 # Remaining Acceptance — 2026-11-28
 
-This document turns the current project checkpoint into verifiable work packages. It distinguishes code/CI evidence from operational acceptance.\n\n## Latest execution checkpoint — 2026-11-28\n\n- Current main after PR #219 and #225: `4aea651968b5429a2df0e9487bbf200998096561`. Earlier `953e5d00...`, `9aed0905...` and `f7499d76...` checks below remain historical evidence only.\n- Open work: #223 Google function matrix, #224 navigation layout, #226 stale-preview guard, #227 Final Gate Web evidence source, #228 live-status reconciliation. PR #219 roadmap and PR #225 incremental authorization are merged.\n- #224 head moved after a page-state preservation fix; re-run CI on `c13e811ae16d05a91f1ae5443623e246e1246713`. Earlier checks on `8c1ce4f4e631a1b3db4105122a6d54247ff59e17` do not certify it.\n- #225 merged as `953e5d00b85d281566ed8bc98453727cc9112ec3` after all 12 exact-head workflows succeeded, including all platform builds, security, format, runtime, and Pull Request Gate. Its Google provider behavior remains unverified live.\n- #226 exact head `134e067d8870de4aea3ceb66698ef2754a93a4cb`: Linux/Web/security/format passed; remaining platform and PR-gate checks were pending/in progress.\n- #227 exact head `861536cd1528e9016d17a3336111e0352b9c090c`: exact-head checks had just started.\n- PRs #219 and #225 are merged. The other listed PRs remain open; no independent review approval was recorded at this checkpoint. Post-merge main workflows for `953e5d00b85d281566ed8bc98453727cc9112ec3` were queued/in progress at last inspection. No live Google provider, backend, or production deployment acceptance is claimed.\n- Re-fetch all checks by exact head SHA before merge; pending/cancelled/skipped/missing/unknown remain non-passing.\n
+This document turns the current project checkpoint into verifiable work packages. It distinguishes code/CI evidence from operational acceptance.\n\n## Latest execution checkpoint — 2026-11-28
+
+- Current main after PR #227: `5a4e83ac42b1b383768b96828a7a932db9bf3c15`; prior SHA checks remain historical.
+- PR #219 and #225 are merged; PR #227 has now merged as `5a4e83ac42b1b383768b96828a7a932db9bf3c15`.
+- Open PRs: #223, #224, #226 and #228. #223 and #228 have new documentation edits pending fresh exact-head CI.
+- #224 exact head `c13e811ae16d05a91f1ae5443623e246e1246713`: all 12 observed workflows passed.
+- #226 exact head `134e067d8870de4aea3ceb66698ef2754a93a4cb`: all 12 observed workflows passed; stale Schedule preview regression test prevents provider/archive writes. Full Calendar provider acceptance remains open.
+- #227 exact head `d95e57e5f336eeb6ef300c88c04b0ad14da20b27`: all eight applicable exact-head workflows passed. iOS/macOS were not triggered for the workflow-only patch; iOS advisory now follows the iOS build paths.
+- Main post-merge CI on `5a4e83ac42b1b383768b96828a7a932db9bf3c15`: Build Linux and Dependency Security passed; Final Gate, Windows, Android, Web, Cross-platform Runtime and Auto Detect CI were in progress at last inspection. Do not merge #224/#226 until required mainline checks and Final Gate finish successfully.
+- No live Google provider, configured HTTPS backend, production deployment or deployed-SHA acceptance is claimed. Skipped release/deployment evidence is not PASS.
+- Re-fetch exact-head checks after every update; pending/cancelled/skipped/missing/unknown remain non-passing.
+
 
 ## 1. Post-merge CI after PR #215
 
