@@ -9,6 +9,9 @@ use Throwable;
 
 final class WebPushSender implements WebPushTransport
 {
+    private readonly WebPushPayloadEncryptor $encryptor;
+    private readonly VapidTokenGenerator $vapid;
+
     private const ALLOWED_HOSTS = [
         'fcm.googleapis.com',
         'push.services.mozilla.com',
@@ -16,9 +19,13 @@ final class WebPushSender implements WebPushTransport
     ];
 
     public function __construct(
-        private readonly WebPushPayloadEncryptor $encryptor,
-        private readonly VapidTokenGenerator $vapid,
-    ) {}
+        WebPushPayloadEncryptor $encryptor,
+        VapidTokenGenerator $vapid,
+    )
+    {
+        $this->encryptor = $encryptor;
+        $this->vapid = $vapid;
+    }
 
     public function send(object $subscription, array $payload): array
     {
@@ -84,10 +91,9 @@ final class WebPushSender implements WebPushTransport
             || isset($parts['pass'])
             || (isset($parts['port']) && (int) $parts['port'] !== 443)
             || filter_var($host, FILTER_VALIDATE_IP) !== false
-            || ! $allowed
+            || $allowed === false
         ) {
             throw new \RuntimeException('Unsupported Web Push endpoint.');
         }
     }
 }
-

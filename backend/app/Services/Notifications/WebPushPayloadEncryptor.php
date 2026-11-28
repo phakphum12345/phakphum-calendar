@@ -37,8 +37,8 @@ final class WebPushPayloadEncryptor
         $details = openssl_pkey_get_details($serverPrivateKey);
         $ec = $details['ec'] ?? null;
         if (
-            ! is_array($ec)
-            || ! isset($ec['x'], $ec['y'])
+            is_array($ec) === false
+            || isset($ec['x'], $ec['y']) === false
             || strlen($ec['x']) !== 32
             || strlen($ec['y']) !== 32
         ) {
@@ -145,4 +145,3 @@ final class WebPushPayloadEncryptor
         return substr($output, 0, $length);
     }
 }
-

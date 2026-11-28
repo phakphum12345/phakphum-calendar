@@ -93,11 +93,10 @@ class NotificationOutboxService
             }
         }
 
-        if (! array_is_list($value)) {
+        if (array_is_list($value) === false) {
             ksort($value);
         }
 
         return $value;
     }
 }
-

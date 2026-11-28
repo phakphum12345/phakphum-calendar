@@ -93,4 +93,3 @@ class WebPushSenderTest extends TestCase
         ];
     }
 }
-

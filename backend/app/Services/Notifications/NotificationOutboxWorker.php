@@ -8,7 +8,12 @@ use Throwable;
 
 final class NotificationOutboxWorker
 {
-    public function __construct(private readonly WebPushTransport $transport) {}
+    private readonly WebPushTransport $transport;
+
+    public function __construct(WebPushTransport $transport)
+    {
+        $this->transport = $transport;
+    }
 
     /**
      * @return array{claimed: int, sent: int, retried: int, dead_lettered: int, no_subscriptions: int}
@@ -354,4 +359,3 @@ final class NotificationOutboxWorker
             ]);
     }
 }
-

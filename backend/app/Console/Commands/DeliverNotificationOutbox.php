@@ -21,4 +21,3 @@ final class DeliverNotificationOutbox extends Command
         return self::SUCCESS;
     }
 }
-
