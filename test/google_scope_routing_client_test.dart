@@ -90,6 +90,37 @@ void main() {
     client.close();
   });
 
+  test('denied write consent prevents the Calendar mutation request', () async {
+    final readClient = _RecordingClient();
+    final requestedScopes = <List<String>>[];
+    final client = GoogleScopeRoutingClient(
+      clientForScopes: (scopes) async {
+        requestedScopes.add(List<String>.of(scopes));
+        if (scopes.contains(GoogleScopes.calendarEvents)) {
+          throw StateError('write consent was denied');
+        }
+        return readClient;
+      },
+    );
+
+    final preview = await client.get(Uri.parse('https://example.test/calendar'));
+    expect(preview.statusCode, 200);
+    await expectLater(
+      client.post(
+        Uri.parse('https://example.test/calendar/events'),
+        body: '{}',
+      ),
+      throwsStateError,
+    );
+
+    expect(requestedScopes, [GoogleScopes.calendarRead, GoogleScopes.calendarWrite]);
+    expect(readClient.methods, ['GET']);
+
+    client.close();
+    await Future<void>.delayed(Duration.zero);
+    expect(readClient.closeCalls, 1);
+  });
+
   test('failed scope authorization can be retried', () async {
     var factoryCalls = 0;
     final created = _RecordingClient();
