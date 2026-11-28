@@ -1,0 +1,155 @@
+name: Build and Deploy Web
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "lib/**"
+      - "assets/**"
+      - "android/**"
+      - "ios/**"
+      - "linux/**"
+      - "windows/**"
+      - "web/**"
+      - "test/**"
+      - "integration_test/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+      - "DISKPATH.json"
+      - "DISKPATH.md"
+      - ".github/workflows/**"
+
+# Read-only by default. The deploy job grants only the permissions Pages needs.
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-web:
+    name: Build Flutter web
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: 3.47.2
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build web release
+        env:
+          # Web OAuth Client IDs are public identifiers, not client secrets.
+          # Prefer the repository secret when configured; otherwise use the
+          # owner's existing Google Web OAuth client for GitHub Pages.
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID || '667656026445-pffm0rtkaiunhfujgfv52dlfb6pbtnm2.apps.googleusercontent.com' }}
+          GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
+          ORGANIZATION_API_BASE_URL: ${{ vars.ORGANIZATION_API_BASE_URL }}
+          WEB_PUSH_VAPID_PUBLIC_KEY: ${{ vars.WEB_PUSH_VAPID_PUBLIC_KEY }}
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY#*/}"
+          flutter build web --release --base-href "/$REPO_NAME/" \
+            --dart-define=GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID" \
+            --dart-define=GOOGLE_SERVER_CLIENT_ID="$GOOGLE_SERVER_CLIENT_ID" \
+            --dart-define=ORGANIZATION_API_BASE_URL="$ORGANIZATION_API_BASE_URL" \
+            --dart-define=WEB_PUSH_VAPID_PUBLIC_KEY="$WEB_PUSH_VAPID_PUBLIC_KEY"
+
+      - name: Verify web output
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f build/web/index.html
+          test -d build/web/assets
+          echo "WEB BUILD PASS"
+
+      - name: Write exact deployment metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '{"repository":"%s","commit_sha":"%s"}\n' \
+            "$GITHUB_REPOSITORY" "$GITHUB_SHA" > build/web/deployment.json
+
+      - name: Upload downloadable web build
+        uses: actions/upload-artifact@v7
+        with:
+          name: phakphum-calendar-web
+          path: build/web
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: build/web
+
+  deploy-pages:
+    name: Deploy GitHub Pages
+    if: github.ref == 'refs/heads/main'
+    needs: build-web
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Require shared backend for production deployment
+        id: backend_gate
+        env:
+          ORGANIZATION_API_BASE_URL: ${{ vars.ORGANIZATION_API_BASE_URL }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${ORGANIZATION_API_BASE_URL//[[:space:]]/}" || "$ORGANIZATION_API_BASE_URL" != https://* ]]; then
+            echo "::notice::Skipping GitHub Pages deployment because ORGANIZATION_API_BASE_URL is not configured as HTTPS."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "## GitHub Pages deployment skipped"
+              echo "No valid HTTPS ORGANIZATION_API_BASE_URL is configured. The web build artifact is available, but the production site was not published."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy to GitHub Pages
+        if: steps.backend_gate.outputs.available == 'true'
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Verify published site and deployed commit
+        if: steps.backend_gate.outputs.available == 'true'
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+          EXPECTED_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$PAGE_URL"
+          BASE_URL="${PAGE_URL%/}"
+          curl --fail --silent --show-error --location \
+            --retry 10 --retry-delay 5 --retry-all-errors \
+            "$BASE_URL/" -o /tmp/phakphum-calendar-index.html
+          curl --fail --silent --show-error --location \
+            --retry 10 --retry-delay 5 --retry-all-errors \
+            "$BASE_URL/deployment.json" -o /tmp/phakphum-calendar-deployment.json
+          grep -Fq "\"commit_sha\":\"$EXPECTED_SHA\"" \
+            /tmp/phakphum-calendar-deployment.json
+          echo "PAGES HTTP SMOKE TEST: PASS"
+          echo "DEPLOYED COMMIT SHA: $EXPECTED_SHA"
