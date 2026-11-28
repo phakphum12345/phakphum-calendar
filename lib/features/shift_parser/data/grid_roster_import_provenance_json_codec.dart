@@ -29,6 +29,7 @@ class GridRosterImportProvenanceJsonCodec {
       'targetScheduleRevision': value.targetScheduleRevision,
       'lifecycle': value.lifecycle.name,
       'acceptedScheduleFingerprint': value.acceptedScheduleFingerprint,
+      'sourceRevisionId': value.sourceRevisionId,
       'sections': [
         for (final section in value.sections)
           {
@@ -162,6 +163,11 @@ class GridRosterImportProvenanceJsonCodec {
       acceptedScheduleFingerprint: _optionalString(
         json,
         'acceptedScheduleFingerprint',
+        r'$.provenance',
+      ),
+      sourceRevisionId: _optionalString(
+        json,
+        'sourceRevisionId',
         r'$.provenance',
       ),
       sections: sections,
