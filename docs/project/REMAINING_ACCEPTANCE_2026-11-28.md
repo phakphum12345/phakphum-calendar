@@ -4,14 +4,14 @@ This document turns the current project checkpoint into verifiable work packages
 
 ## 1. Post-merge CI after PR #215
 
-**Baseline:** \`f7499d76a2d5111a7d37801462a4b837e5791ff9\`.
+**Baseline:** `f7499d76a2d5111a7d37801462a4b837e5791ff9`.
 
-- [ ] Fetch all workflow runs attached to this exact SHA.
-- [ ] Inspect each run and job, including the Final Gate's required and optional classifications.
-- [ ] Verify build/test jobs pass and that missing backend configuration produces explicit SKIPPED release/deployment evidence.
-- [ ] Confirm GitHub Pages was not deployed without a valid HTTPS backend URL.
-- [ ] If any workflow fails, retrieve its job logs, fix the owning workflow or source, and repeat on a new exact head.
-- [ ] Update the live status with run IDs and final conclusions.
+- [x] Fetch all workflow runs attached to this exact SHA: all 10 runs completed.
+- [x] Inspect each run and job, including the Final Gate's required and optional classifications.
+- [x] Verify build/test jobs pass and that missing backend configuration produces explicit SKIPPED release/deployment evidence.
+- [x] Confirm GitHub Pages deployment and published-site verification were skipped without a valid HTTPS backend URL.
+- [x] No failing workflow remained on this main SHA; the earlier #212 failures were traced to the missing backend URL and resolved by #215's explicit skip behavior.
+- [x] Update the live status with run IDs and final conclusions.
 
 ## 2. Shared Laravel backend
 
@@ -19,7 +19,7 @@ This document turns the current project checkpoint into verifiable work packages
 - [ ] Configure database, transaction/locking support, secrets, VAPID key custody, rate limits, backups and health checks.
 - [ ] Run migrations in a controlled staging environment; verify rollback and restore.
 - [ ] Exercise authenticated owner/tenant authorization and negative cross-tenant tests.
-- [ ] Configure \`ORGANIZATION_API_BASE_URL\` only after health and security acceptance.
+- [ ] Configure `ORGANIZATION_API_BASE_URL` only after health and security acceptance.
 - [ ] Confirm production artifacts/deployment are enabled only after the valid backend origin is configured.
 
 ## 3. Calendar Sync

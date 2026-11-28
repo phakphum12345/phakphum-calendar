@@ -4,10 +4,10 @@
 
 ## Repository baseline
 
-- Repository: \`phakphum12345/phakphum-calendar\`
-- Branch: \`main\`
-- Baseline SHA when this checkpoint was prepared: \`f7499d76a2d5111a7d37801462a4b837e5791ff9\`
-- This checkpoint supersedes the earlier same-date snapshot at \`1f2aba7b50b59cd44a6754a7a5ea8f16ba94cef0\`.
+- Repository: `phakphum12345/phakphum-calendar`
+- Branch: `main`
+- Baseline SHA when this checkpoint was prepared: `f7499d76a2d5111a7d37801462a4b837e5791ff9`
+- This checkpoint supersedes the earlier same-date snapshot at `1f2aba7b50b59cd44a6754a7a5ea8f16ba94cef0`.
 
 ## Integrated delivery
 
@@ -16,22 +16,23 @@
 | #211 | Merged | Durable roster history / Drive revision restore through reviewed Grid import and conditional Schedule commit; reviewer-selected date-axis orientation |
 | #212 | Merged | Calendar Sync coordination and durable operation ledger; ETag/managed Sync ID preconditions and confirmation-gated recovery; browser Web Push subscription/outbox, encrypted payload transport, retry and dead-letter foundations |
 | #214 | Merged | Restored missing Laravel Calendar Sync coordination API feature coverage from the prior #196 implementation |
-| #215 | Merged | Backend configuration gates: PR builds remain available; main/manual production artifacts and Pages deployment are skipped with explicit evidence when \`ORGANIZATION_API_BASE_URL\` is not a valid HTTPS URL |
+| #215 | Merged | Backend configuration gates: PR builds remain available; main/manual production artifacts and Pages deployment are skipped with explicit evidence when `ORGANIZATION_API_BASE_URL` is not a valid HTTPS URL |
 | #213 | Merged | Earlier live-status documentation snapshot; superseded by this reconciliation |
 
 PR #191 was closed as superseded after verifying its 35 changed paths were integrated by #212. PR #196 was closed as superseded after verifying the implementation paths were present and restoring its missing Laravel feature test in #214. Their closed branches are historical references, not active delivery branches.
 
 ## Current post-merge verification
 
-- PR #214 post-merge main workflows completed successfully: Cross-platform Runtime, Laravel Backend CI, Auto Detect CI and Dependency Security.
-- PR #215 exact-head pull-request evidence completed successfully across the observed platform and gate workflows before merge.
-- PR #215 merged as \`f7499d76a2d5111a7d37801462a4b837e5791ff9\`.
-- Post-merge workflows for \`f7499d76...\` were still running when this checkpoint was prepared. Their final conclusions must be recorded separately; do not infer success from the PR checks.
-- The previous #212 post-merge run showed the missing/invalid HTTPS shared-backend configuration caused production artifact/deployment guards to fail. #215 changes those guards to report explicit SKIPPED outcomes while continuing safe non-production CI. This does not configure or deploy the backend.
+- Exact post-merge main SHA: `f7499d76a2d5111a7d37801462a4b837e5791ff9`.
+- All 10 workflows attached to this SHA completed with conclusion SUCCESS: Build macOS (Xcode) run `46104697338`; Build Android `46104697396`; Build Windows `46104697441`; Build iOS `46104697437`; Build Linux `46104697462`; Build and Deploy Web `46104697509`; Cross-platform Runtime `46104697456`; Auto Detect CI `46104697429`; Dependency Security `46104697646`; Final Gate `46104697404`.
+- Final Gate confirmed required quality/core evidence succeeded. The non-production web build artifact was created and uploaded; GitHub Pages deployment and published-site verification were SKIPPED because no valid HTTPS backend URL was configured.
+- Windows, iOS, macOS, Android and Linux analysis/test/toolchain evidence passed; their production build/package/upload steps were SKIPPED because the shared backend URL was not configured. This is not a platform release.
+- PR #214's post-merge Laravel Backend CI, Cross-platform Runtime, Auto Detect CI and Dependency Security workflows all completed successfully. Laravel feature/API tests are included in run `46103367270`.
+- PR #215's workflow change is verified on the merged main SHA: missing backend configuration no longer fails the whole CI, while production artifact and Pages deployment remain blocked. No backend was deployed or configured.
 
 ## Remaining work — highest priority
 
-1. **Verify post-merge #215 behavior:** inspect all workflows on exact main SHA \`f7499d76...\`; confirm build/test evidence remains successful, release artifacts are explicitly skipped when backend config is absent, and Pages deployment is not performed. A skipped artifact is not a production release.
+1. **Verify post-merge #215 behavior:** inspect all workflows on exact main SHA `f7499d76...`; confirm build/test evidence remains successful, release artifacts are explicitly skipped when backend config is absent, and Pages deployment is not performed. A skipped artifact is not a production release.
 2. **Shared backend operational readiness:** provision/configure the intended self-hosted Laravel backend, HTTPS origin, database/locking, secrets and backup/restore; run migrations and health checks. No deployment or live backend acceptance is claimed here.
 3. **Calendar Sync live acceptance:** use a controlled Google test calendar and two clients to test concurrent leases, heartbeat, expiry/reclaim, stale-token fencing, ETag-protected update/delete, ambiguous insert outcomes and restart recovery.
 4. **Web Push live acceptance:** configure VAPID keys and scheduler/worker; test permission, subscribe/unsubscribe, delivery, expiration, retries and recovery on a registered supported browser/device. Browser Web Push is not native iOS/Android push.
