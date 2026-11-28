@@ -73,6 +73,7 @@ jobs:
         run: flutter test
 
       - name: Require shared backend for production artifact
+        id: backend_gate
         if: github.event_name != 'pull_request'
         env:
           ORGANIZATION_API_BASE_URL: ${{ vars.ORGANIZATION_API_BASE_URL }}
@@ -80,10 +81,16 @@ jobs:
         run: |
           if ([string]::IsNullOrWhiteSpace($env:ORGANIZATION_API_BASE_URL) -or
               -not $env:ORGANIZATION_API_BASE_URL.StartsWith('https://')) {
-            throw 'Production artifacts require an HTTPS ORGANIZATION_API_BASE_URL.'
+            Write-Host '::notice::Skipping Windows production artifact because ORGANIZATION_API_BASE_URL is not configured as HTTPS.'
+            Add-Content -Path $env:GITHUB_OUTPUT -Value 'available=false'
+            Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value '## Production artifact skipped'
+            Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value 'No valid HTTPS ORGANIZATION_API_BASE_URL is configured. Build and upload steps were skipped; this is not a production release.'
+          } else {
+            Add-Content -Path $env:GITHUB_OUTPUT -Value 'available=true'
           }
 
       - name: Build Windows release
+        if: github.event_name == 'pull_request' || steps.backend_gate.outputs.available == 'true'
         env:
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
           ORGANIZATION_API_BASE_URL: ${{ vars.ORGANIZATION_API_BASE_URL }}
@@ -93,6 +100,7 @@ jobs:
           --dart-define=ORGANIZATION_API_BASE_URL="$env:ORGANIZATION_API_BASE_URL"
 
       - name: Verify Windows executable
+        if: github.event_name == 'pull_request' || steps.backend_gate.outputs.available == 'true'
         shell: pwsh
         run: |
           $exe = "build/windows/x64/runner/Release/phakphum_calendar.exe"
@@ -105,6 +113,7 @@ jobs:
           Write-Host "Size: $($item.Length) bytes"
 
       - name: Package Windows application
+        if: github.event_name == 'pull_request' || steps.backend_gate.outputs.available == 'true'
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Path dist/windows -Force | Out-Null
@@ -113,18 +122,31 @@ jobs:
           "$hash  phakphum-calendar-windows.zip" | Set-Content dist/windows/SHA256SUMS.txt -Encoding ascii
 
       - name: Publish Windows gate summary
+        env:
+          BACKEND_AVAILABLE: ${{ steps.backend_gate.outputs.available }}
         shell: pwsh
         run: |
-          @"
-          ## Windows Final Gate
-          - Flutter analyze: PASS
-          - Flutter tests: PASS
-          - Windows release build: PASS
-          - Windows executable: PASS
-          - Windows package: PASS
-          "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+          if ($env:GITHUB_EVENT_NAME -eq 'pull_request' -or $env:BACKEND_AVAILABLE -eq 'true') {
+            $summaryLines = @(
+              '## Windows Final Gate'
+              '- Flutter analyze: PASS'
+              '- Flutter tests: PASS'
+              '- Windows release build: PASS'
+              '- Windows executable: PASS'
+              '- Windows package: PASS'
+            )
+          } else {
+            $summaryLines = @(
+              '## Windows Final Gate'
+              '- Flutter analyze: PASS'
+              '- Flutter tests: PASS'
+              '- Production release artifact: SKIPPED — no HTTPS ORGANIZATION_API_BASE_URL configured'
+            )
+          }
+          $summaryLines | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
 
       - name: Upload Windows artifact
+        if: github.event_name == 'pull_request' || steps.backend_gate.outputs.available == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: phakphum-calendar-windows-x64

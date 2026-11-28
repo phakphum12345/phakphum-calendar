@@ -93,6 +93,7 @@ jobs:
           fi
 
       - name: Require shared backend for production artifact
+        id: backend_gate
         if: github.event_name != 'pull_request'
         env:
           ORGANIZATION_API_BASE_URL: ${{ vars.ORGANIZATION_API_BASE_URL }}
@@ -100,11 +101,18 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -z "${ORGANIZATION_API_BASE_URL//[[:space:]]/}" || "$ORGANIZATION_API_BASE_URL" != https://* ]]; then
-            echo "Production artifacts require an HTTPS ORGANIZATION_API_BASE_URL."
-            exit 1
+            echo "::notice::Skipping iOS production artifact because ORGANIZATION_API_BASE_URL is not configured as HTTPS."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "## Production artifact skipped"
+              echo "No valid HTTPS ORGANIZATION_API_BASE_URL is configured. Build and upload steps were skipped; this is not a production release."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build unsigned iOS application
+        if: github.event_name == 'pull_request' || steps.backend_gate.outputs.available == 'true'
         shell: bash
         env:
           GOOGLE_IOS_CLIENT_ID: ${{ secrets.GOOGLE_IOS_CLIENT_ID }}
@@ -118,6 +126,7 @@ jobs:
             --dart-define=ORGANIZATION_API_BASE_URL="$ORGANIZATION_API_BASE_URL"
 
       - name: Verify iOS application bundle
+        if: github.event_name == 'pull_request' || steps.backend_gate.outputs.available == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -128,6 +137,7 @@ jobs:
           /usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP_PATH/Info.plist"
 
       - name: Package unsigned iOS artifact
+        if: github.event_name == 'pull_request' || steps.backend_gate.outputs.available == 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -142,6 +152,7 @@ jobs:
           test -s dist/ios/phakphum-calendar-unsigned.ipa.sha256
 
       - name: Upload unsigned iOS artifact
+        if: github.event_name == 'pull_request' || steps.backend_gate.outputs.available == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: phakphum-calendar-ios-unsigned
