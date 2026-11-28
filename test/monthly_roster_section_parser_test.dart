@@ -1393,6 +1393,42 @@ void main() {
     }
   });
 
+  test('reparses a section using an explicit reviewer-selected orientation', () {
+    final input = ShiftParserInput(
+      spreadsheetId: 'spreadsheet',
+      spreadsheetTitle: 'Roster',
+      sheetId: 84,
+      sheetTitle: 'พฤศจิกายน 2569',
+      timeZone: 'Asia/Bangkok',
+      cells: [
+        ..._row(0, [null, 'เวรเช้า', 'เวรบ่าย']),
+        ..._row(1, ['ประจำเดือน พฤศจิกายน พ.ศ. 2569']),
+        for (var day = 1; day <= 7; day++)
+          ..._row(day + 1, [day, 'นาย A$day', 'นาย B$day']),
+      ],
+    );
+    const parser = MonthlyRosterSectionParser();
+
+    final vertical = parser.parseWithOrientation(
+      input,
+      RosterGridOrientation.datesDownRows,
+    );
+    final horizontal = parser.parseWithOrientation(
+      input,
+      RosterGridOrientation.datesAcrossColumns,
+    );
+
+    expect(vertical.sections, hasLength(1));
+    expect(
+      vertical.sections.single.orientation,
+      RosterGridOrientation.datesDownRows,
+    );
+    expect(vertical.assignments, hasLength(14));
+    expect(horizontal.sections, isEmpty);
+    expect(horizontal.warnings, isNotEmpty);
+  });
+
+
   test('does not guess when vertical assignment headers are equally near on both sides', () {
     final input = ShiftParserInput(
       spreadsheetId: 'spreadsheet',
