@@ -8,13 +8,13 @@ import 'package:http/http.dart' as http;
 class AuthorizedGoogleGatewaySession<T> {
   AuthorizedGoogleGatewaySession({
     required this.gateway,
-    required http.Client client,
+    required this.client,
     required this.accountId,
-  }) : _client = client;
+  });
 
   final T gateway;
   final String accountId;
-  final http.Client _client;
+  final http.Client client;
   bool _closed = false;
 
   bool get isClosed => _closed;
@@ -22,6 +22,6 @@ class AuthorizedGoogleGatewaySession<T> {
   void close() {
     if (_closed) return;
     _closed = true;
-    _client.close();
+    client.close();
   }
 }
