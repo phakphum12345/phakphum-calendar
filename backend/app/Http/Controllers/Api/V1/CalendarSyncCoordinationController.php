@@ -506,3 +506,4 @@ class CalendarSyncCoordinationController extends Controller
         ];
     }
 }
+

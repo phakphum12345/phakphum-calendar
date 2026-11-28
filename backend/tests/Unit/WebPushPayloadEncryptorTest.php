@@ -98,3 +98,4 @@ class WebPushPayloadEncryptorTest extends TestCase
         return substr($output, 0, $length);
     }
 }
+

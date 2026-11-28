@@ -277,3 +277,4 @@ final class FakeWebPushTransport implements WebPushTransport
         ];
     }
 }
+

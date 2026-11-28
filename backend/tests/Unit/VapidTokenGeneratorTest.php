@@ -84,3 +84,4 @@ class VapidTokenGeneratorTest extends TestCase
         return "\x30".chr(strlen($body)).$body;
     }
 }
+

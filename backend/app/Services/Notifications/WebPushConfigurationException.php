@@ -4,6 +4,5 @@ namespace App\Services\Notifications;
 
 use RuntimeException;
 
-final class WebPushConfigurationException extends RuntimeException
-{
-}
+final class WebPushConfigurationException extends RuntimeException {}
+

@@ -165,3 +165,4 @@ class NotificationOutboxServiceTest extends TestCase
         ]);
     }
 }
+
