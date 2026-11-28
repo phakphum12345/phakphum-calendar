@@ -1,90 +1,47 @@
 import 'package:google_sign_in/google_sign_in.dart';
 
-import '../../../core/google/google_scopes.dart';
+import '../../../services/google_auth_service.dart';
 import '../domain/authentication_service.dart';
 import '../domain/google_user.dart';
 
+/// Compatibility adapter for authentication presentation flows.
+///
+/// All Google Sign-In, session, and authorization behavior is delegated to
+/// the application's single [GoogleAuthGateway]. This adapter never creates
+/// a second GoogleSignIn instance or requests data scopes during sign-in.
 class GoogleAuthenticationService implements AuthenticationService {
-  GoogleAuthenticationService({
-    GoogleSignIn? googleSignIn,
-    this.clientId,
-    this.serverClientId,
-  }) : _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
+  GoogleAuthenticationService(this._gateway);
 
-  final GoogleSignIn _googleSignIn;
-  final String? clientId;
-  final String? serverClientId;
-
-  bool _initialized = false;
-
-  GoogleSignInAccount? _currentAccount;
-
-  GoogleSignInAccount? get currentAccount => _currentAccount;
+  final GoogleAuthGateway _gateway;
 
   @override
-  Future<void> initialize() async {
-    if (_initialized) {
-      return;
-    }
-
-    await _googleSignIn.initialize(
-      clientId: clientId,
-      serverClientId: serverClientId,
-    );
-    _initialized = true;
-  }
+  Future<void> initialize() => _gateway.initialize();
 
   @override
   Future<GoogleUser?> restoreSession() async {
     await initialize();
-
-    final future = _googleSignIn.attemptLightweightAuthentication(
-      reportAllExceptions: false,
-    );
-
-    if (future == null) {
-      return null;
-    }
-
-    final account = await future;
-    _currentAccount = account;
+    final account = _gateway.account;
     return account == null ? null : _toDomain(account);
   }
 
   @override
   Future<GoogleUser> signIn() async {
     await initialize();
-
-    if (!_googleSignIn.supportsAuthenticate()) {
-      throw UnsupportedError(
-        'Interactive Google Sign-In is not available through this flow '
-        'on the current platform.',
+    await _gateway.signIn();
+    final account = _gateway.account;
+    if (account == null) {
+      throw StateError(
+        'Google Sign-In completed without an authenticated account.',
       );
     }
-
-    final account = await _googleSignIn.authenticate(
-      scopeHint: GoogleScopes.required,
-    );
-
-    await account.authorizationClient.authorizeScopes(GoogleScopes.required);
-
-    _currentAccount = account;
     return _toDomain(account);
   }
 
   @override
-  Future<void> signOut() async {
-    await initialize();
-    await _googleSignIn.signOut();
-    _currentAccount = null;
-  }
+  Future<void> signOut() => _gateway.signOut();
 
   @override
-  Future<void> disconnect() async {
-    await initialize();
-    await _googleSignIn.disconnect();
-    _currentAccount = null;
-  }
+  Future<void> disconnect() => _gateway.disconnect();
 
   GoogleUser _toDomain(GoogleSignInAccount account) {
     return GoogleUser(
