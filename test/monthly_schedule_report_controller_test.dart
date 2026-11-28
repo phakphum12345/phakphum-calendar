@@ -136,7 +136,10 @@ void main() {
       ShiftToolsApp(controller: appController, dependencies: dependencies),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('รายงาน'));
+    // Reports may be outside the visible horizontal tab viewport.
+    await tester.tap(find.byTooltip('รายการหน้า'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('รายงาน').last);
     await tester.pumpAndSettle();
 
     expect(find.byType(MonthlyScheduleReportPage), findsOneWidget);

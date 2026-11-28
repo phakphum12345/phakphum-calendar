@@ -49,6 +49,8 @@ import '../services/roster_revision_service.dart';
 import '../services/shift_color_service.dart';
 import '../services/web_push_subscription_client.dart';
 import 'app_shell_navigation.dart';
+import 'app_shell_navigation_view.dart';
+import 'navigation_layout_preferences.dart';
 import 'empty_roster_sync_diagnostic.dart';
 import 'first_login_setup_dialog.dart';
 import 'google_sign_in_button.dart';
@@ -100,7 +102,11 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  int selectedIndex = 0;
+  AppShellDestination selectedDestination = AppShellDestination.dashboard;
+  NavigationLayoutPreferences _navigationLayout =
+      const NavigationLayoutPreferences();
+  final NavigationLayoutPreferencesStore _navigationLayoutStore =
+      NavigationLayoutPreferencesStore();
   final editionRepository = AppEditionRepository();
   AppEdition? edition;
   bool editionLoading = true;
@@ -175,6 +181,7 @@ class _AppShellState extends State<AppShell> {
     super.initState();
     widget.controller.addListener(_handleControllerChanged);
     unawaited(_loadEdition());
+    unawaited(_loadNavigationLayout());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted && widget.controller.initialized) {
         _startGridRecoveryDiscovery();
@@ -226,6 +233,31 @@ class _AppShellState extends State<AppShell> {
   }
 
   Future<void> _openSetupFromSettings() => _showFirstLoginSetupDialog(widget.controller.auth.account?.email ?? '');
+
+  Future<void> _loadNavigationLayout() async {
+    try {
+      final saved = await _navigationLayoutStore.load();
+      if (!mounted) return;
+      setState(() => _navigationLayout = saved);
+    } on Object {
+      // A corrupt or unavailable preference store must not block app startup.
+    }
+  }
+
+  Future<void> _saveNavigationLayout(
+    NavigationLayoutPreferences value,
+  ) async {
+    if (!mounted) return;
+    setState(() => _navigationLayout = value);
+    try {
+      await _navigationLayoutStore.save(value);
+    } on Object catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('บันทึกการจัดวางเมนูไม่สำเร็จ: $error')),
+      );
+    }
+  }
 
   Future<void> _loadEdition() async {
     final loaded = await editionRepository.load();
@@ -429,7 +461,7 @@ class _AppShellState extends State<AppShell> {
     if (mounted) {
       setState(() {
         edition = value;
-        selectedIndex = 0;
+        selectedDestination = AppShellDestination.dashboard;
       });
     }
   }
@@ -450,16 +482,20 @@ class _AppShellState extends State<AppShell> {
       }
       return LayoutBuilder(
         builder: (context, constraints) {
-          final wide = constraints.maxWidth >= 900;
           final currentEdition = edition!;
-          final navigation = AppShellNavigation.forEdition(
-            currentEdition,
-          );
-          final destinations = [
-            for (final destination in navigation.destinations)
-              _destination(context, destination),
-          ];
-          final pages = <Widget>[
+          final navigation = AppShellNavigation.forEdition(currentEdition);
+          final availableIds = navigation.destinations
+              .map((destination) => destination.name)
+              .toList(growable: false);
+          final orderedIds = _navigationLayout.orderedIds(availableIds);
+          final orderedDestinations = orderedIds
+              .map(
+                (id) => AppShellDestination.values.firstWhere(
+                  (destination) => destination.name == id,
+                ),
+              )
+              .toList(growable: false);
+          final canonicalPages = <Widget>[
             _DashboardPage(
               controller: controller,
               perform: _perform,
@@ -518,35 +554,99 @@ class _AppShellState extends State<AppShell> {
             ),
           ];
           assert(
-            pages.length == navigation.destinations.length,
+            canonicalPages.length == navigation.destinations.length,
             'Navigation destinations and page routes must stay aligned.',
           );
-          final content = IndexedStack(index: selectedIndex, children: pages);
-          final mainContent = wide
-              ? Row(
+          final pagesByDestination = Map<AppShellDestination, Widget>.fromIterables(
+            navigation.destinations,
+            canonicalPages,
+          );
+          final pages = [
+            for (final destination in orderedDestinations)
+              pagesByDestination[destination]!,
+          ];
+          final destinations = [
+            for (final destination in orderedDestinations)
+              _destination(context, destination),
+          ];
+          final activeIndex = orderedDestinations.indexOf(selectedDestination);
+          final content = IndexedStack(
+            index: activeIndex < 0 ? 0 : activeIndex,
+            children: pages,
+          );
+          final navigationItems = [
+            for (var index = 0; index < orderedDestinations.length; index++)
+              AppShellNavigationItem(
+                id: orderedDestinations[index].name,
+                label: destinations[index].label,
+                icon: destinations[index].icon,
+              ),
+          ];
+          final navigationView = AppShellNavigationView(
+            items: navigationItems,
+            selectedId: selectedDestination.name,
+            preferences: _navigationLayout,
+            onSelected: (id) {
+              final destination = AppShellDestination.values.firstWhere(
+                (item) => item.name == id,
+              );
+              setState(() => selectedDestination = destination);
+            },
+            onReorder: (oldIndex, newIndex) {
+              final next = _navigationLayout.reorder(
+                availableIds,
+                oldIndex,
+                newIndex,
+              );
+              unawaited(_saveNavigationLayout(next));
+            },
+            onResizeTab: (id, width) {
+              unawaited(
+                _saveNavigationLayout(_navigationLayout.resizeTab(id, width)),
+              );
+            },
+            onResizeSidebar: (width) {
+              unawaited(
+                _saveNavigationLayout(_navigationLayout.resizeSidebar(width)),
+              );
+            },
+            onToggleCollapsed: () {
+              unawaited(
+                _saveNavigationLayout(
+                  _navigationLayout.copyWith(
+                    sidebarCollapsed: !_navigationLayout.sidebarCollapsed,
+                  ),
+                ),
+              );
+            },
+            onOrientationChanged: (orientation) {
+              unawaited(
+                _saveNavigationLayout(
+                  _navigationLayout.copyWith(orientation: orientation),
+                ),
+              );
+            },
+            onReset: () {
+              unawaited(
+                _saveNavigationLayout(const NavigationLayoutPreferences()),
+              );
+            },
+          );
+          final mainContent =
+              _navigationLayout.orientation == NavigationLayoutOrientation.horizontal
+              ? Column(
                   children: [
-                    NavigationRail(
-                      selectedIndex: selectedIndex,
-                      onDestinationSelected: (index) =>
-                          setState(() => selectedIndex = index),
-                      labelType: NavigationRailLabelType.all,
-                      leading: const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: CircleAvatar(child: Icon(Icons.calendar_month)),
-                      ),
-                      destinations: [
-                        for (final destination in destinations)
-                          NavigationRailDestination(
-                            icon: destination.icon,
-                            label: Text(destination.label),
-                          ),
-                      ],
-                    ),
-                    const VerticalDivider(width: 1),
+                    navigationView,
                     Expanded(child: content),
                   ],
                 )
-              : content;
+              : Row(
+                  children: [
+                    navigationView,
+                    const VerticalDivider(width: 1),
+                    Expanded(child: content),
+                  ],
+                );
           return Scaffold(
             appBar: AppBar(
               titleSpacing: 16,
@@ -581,6 +681,13 @@ class _AppShellState extends State<AppShell> {
                 ],
               ),
               actions: [
+                IconButton(
+                  tooltip: 'รายการหน้า',
+                  icon: const Icon(Icons.menu_open_rounded),
+                  onPressed: () => unawaited(
+                    _openMobileWorkspaceMenu(context, orderedDestinations),
+                  ),
+                ),
                 IconButton(tooltip: 'AI Support', icon: const Icon(Icons.support_agent_outlined), onPressed: _openAiSupport),
                 IconButton(tooltip: 'Timeline ย้อนหลัง', icon: const Icon(Icons.history_toggle_off_outlined), onPressed: () => unawaited(_openUtilityPage(_UtilityPage.history))),
                 IconButton(
@@ -674,46 +781,7 @@ class _AppShellState extends State<AppShell> {
                 Expanded(child: mainContent),
               ],
             ),
-            bottomNavigationBar: wide
-                ? null
-                : Builder(
-                    builder: (navigationContext) {
-                      final primaryIndexes = navigation.primaryIndexes;
-                      final selectedPrimaryIndex =
-                          primaryIndexes.indexOf(selectedIndex);
-                      return NavigationBar(
-                        selectedIndex: selectedPrimaryIndex >= 0
-                            ? selectedPrimaryIndex
-                            : primaryIndexes.length,
-                        labelBehavior:
-                            NavigationDestinationLabelBehavior.onlyShowSelected,
-                        onDestinationSelected: (index) {
-                          if (index < primaryIndexes.length) {
-                            setState(
-                              () => selectedIndex = primaryIndexes[index],
-                            );
-                          } else {
-                            unawaited(
-                              _openMobileWorkspaceMenu(
-                                navigationContext,
-                                destinations,
-                                navigation.secondaryIndexes,
-                              ),
-                            );
-                          }
-                        },
-                        destinations: [
-                          for (final index in primaryIndexes)
-                            destinations[index],
-                          NavigationDestination(
-                            icon: const Icon(Icons.menu_rounded),
-                            selectedIcon: const Icon(Icons.menu_open_rounded),
-                            label: context.l10n.more,
-                          ),
-                        ],
-                      );
-                    },
-                  ),
+            bottomNavigationBar: null,
           );
         },
       );
@@ -722,8 +790,7 @@ class _AppShellState extends State<AppShell> {
 
   Future<void> _openMobileWorkspaceMenu(
     BuildContext context,
-    List<NavigationDestination> destinations,
-    List<int> secondaryIndexes,
+    List<AppShellDestination> destinations,
   ) async {
     await showModalBottomSheet<void>(
       context: context,
@@ -744,16 +811,18 @@ class _AppShellState extends State<AppShell> {
                   style: Theme.of(sheetContext).textTheme.titleMedium,
                 ),
               ),
-              for (final index in secondaryIndexes)
+              for (final destination in destinations)
                 ListTile(
-                  leading: destinations[index].icon,
-                  title: Text(destinations[index].label),
-                  trailing: selectedIndex == index
+                  leading: _destination(sheetContext, destination).icon,
+                  title: Text(_destination(sheetContext, destination).label),
+                  trailing: selectedDestination == destination
                       ? const Icon(Icons.check_rounded)
                       : null,
                   onTap: () {
                     Navigator.pop(sheetContext);
-                    if (mounted) setState(() => selectedIndex = index);
+                    if (mounted) {
+                      setState(() => selectedDestination = destination);
+                    }
                   },
                 ),
               const Divider(height: 1),
