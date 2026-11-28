@@ -10,6 +10,7 @@ import 'package:phakphum_calendar/domain/repositories/schedule_repository.dart';
 import 'package:phakphum_calendar/domain/repositories/schedule_revision_source.dart';
 import 'package:phakphum_calendar/domain/repositories/conditional_schedule_writer.dart';
 import 'package:phakphum_calendar/features/schedule/data/shared_preferences_schedule_repository.dart';
+import 'package:phakphum_calendar/features/schedule/data/schedule_json_codec.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/grid_roster_canonical_converter.dart';
 import 'package:phakphum_calendar/features/shift_parser/application/grid_roster_import_workflow.dart';
 import 'package:phakphum_calendar/features/shift_parser/data/backend_grid_roster_import_journal_gateway.dart';
@@ -47,6 +48,8 @@ class _MemoryScheduleRepository implements ScheduleRepository, ScheduleRevisionS
   int _generation = 0;
   bool failNextSave = false;
   bool changeBeforeConditionalSave = false;
+  bool returnWrongReadbackAfterSave = false;
+  bool _hasSaved = false;
 
   Schedule? get value => _value;
   set value(Schedule? next) { _value = next; _generation++; }
@@ -63,7 +66,14 @@ class _MemoryScheduleRepository implements ScheduleRepository, ScheduleRevisionS
       _value == null ? 'absent:$scheduleId' : null;
 
   @override
-  Future<Result<Schedule?>> findById(String id) async => Success(_value);
+  Future<Result<Schedule?>> findById(String id) async {
+    if (returnWrongReadbackAfterSave && _hasSaved && _value != null) {
+      return Success(
+        Schedule(id: _value!.id, name: 'Incorrect persisted read-back'),
+      );
+    }
+    return Success(_value);
+  }
 
   @override
   Future<Result<Schedule>> saveIfRevision(
@@ -91,6 +101,7 @@ class _MemoryScheduleRepository implements ScheduleRepository, ScheduleRevisionS
       return const PersistenceFailure('simulated schedule repository failure');
     }
     value = schedule;
+    _hasSaved = true;
     return Success(schedule);
   }
 
@@ -345,6 +356,29 @@ void main() {
     expect(await workflow.recover('schedule-1'), isA<Success<Schedule?>>());
   });
 
+  test('commit verifies the exact persisted Schedule before reporting success', () async {
+    final context = await prepareContext();
+    final conversion = convertContext(context);
+    repository.returnWrongReadbackAfterSave = true;
+
+    final result = await workflow.commit(
+      context: context,
+      conversion: conversion,
+    );
+
+    expect(result, isA<PersistenceFailure<Schedule>>());
+    // Compare the canonical aggregate, not object identity after conversion.
+    expect(
+      const ScheduleJsonCodec().encode(repository.value!),
+      const ScheduleJsonCodec().encode(conversion.schedule),
+    );
+    expect(
+      await GridRosterBundleJournal(store: store).recover('schedule-1'),
+      isNotNull,
+      reason: 'The committed journal must remain available for recovery.',
+    );
+  });
+
   test('recovery replays committed journal after canonical save failure', () async {
     final context = await prepareContext();
     final conversion = convertContext(context);
@@ -372,6 +406,32 @@ void main() {
           .day(DateTime(2026, 11, 1))!
           .assignments,
       hasLength(1),
+    );
+  });
+
+  test('recovery verifies the exact persisted Schedule before reporting success', () async {
+    final context = await prepareContext();
+    final conversion = convertContext(context);
+    repository.failNextSave = true;
+    final commit = await workflow.commit(
+      context: context,
+      conversion: conversion,
+    );
+    expect(commit, isA<PersistenceFailure<Schedule>>());
+
+    final inspection = await workflow.inspectRecovery('schedule-1');
+    expect(inspection, isA<Success<GridRosterRecoveryAssessment>>());
+    final assessment =
+        (inspection as Success<GridRosterRecoveryAssessment>).value;
+    expect(assessment.disposition, GridRosterRecoveryDisposition.ready);
+    repository.returnWrongReadbackAfterSave = true;
+
+    final recovered = await workflow.recoverAssessment(assessment);
+
+    expect(recovered, isA<PersistenceFailure<Schedule?>>());
+    expect(
+      const ScheduleJsonCodec().encode(repository.value!),
+      const ScheduleJsonCodec().encode(conversion.schedule),
     );
   });
 
@@ -506,7 +566,10 @@ void main() {
     final recovered = await remoteWorkflow.recoverAssessment(assessment);
     expect(recovered, isA<Success<Schedule?>>());
     expect(repository.value?.id, 'schedule-1');
-    expect(repository.value, conversion.schedule);
+    expect(
+      const ScheduleJsonCodec().encode(repository.value!),
+      const ScheduleJsonCodec().encode(conversion.schedule),
+    );
   });
 
   test('review fails closed when repository cannot provide an authoritative revision', () async {
