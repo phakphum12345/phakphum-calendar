@@ -6,6 +6,22 @@
 
 This roadmap consolidates the remaining work into seven independently verifiable work packages. It is an execution index, not a second implementation specification. Existing domain documents and source code remain canonical; update those documents rather than duplicating their details.
 
+## Product principle — flexible input, precise roster outcomes
+
+The product must adapt to the user's real roster and work practices. It must not force users to reshape their spreadsheets, departments, shift vocabulary, employment rules, or workflows to match a fixed application template.
+
+- **Discover, do not prescribe:** infer structure and semantics from source evidence and user context; do not require fixed sheet names, row/column positions, department names, shift enums, month boundaries, or one canonical workbook layout.
+- **Normalize, do not flatten:** translate varied inputs into a stable canonical domain model while retaining source provenance, relationships, revisions, and user-defined metadata.
+- **Evidence before inference:** distinguish observed facts, profile hints, inferred mappings, and user-confirmed decisions. Keep confidence and competing interpretations visible.
+- **Uncertainty is a first-class result:** ask for clarification or block only the unresolved scope when evidence is insufficient. Never silently guess a date, person, shift, department, status, or transaction.
+- **Local correction, full revalidation:** users should correct the smallest ambiguous mapping; rebuild affected semantic records and rerun dependent validation without forcing unrelated re-entry.
+- **Preserve meaning across boundaries:** import, persistence, shift transactions, pay, calendar sync, notifications, AI assistance, exports, and audit history must refer to the same canonical roster facts and revisions.
+- **Extensible vocabularies and rules:** departments, roles, shift types, status labels, employment arrangements, pay rules, and metadata must be configurable/extendable. Examples are not exhaustive enums or universal policy.
+- **No format-specific business logic:** workbook coordinates and reader quirks belong in adapters/provenance, never in core shift, pay, or calendar business rules.
+- **Correctness outranks apparent success:** an unresolved or partially imported result is preferable to a plausible but incorrect roster.
+
+The existing [Universal Roster Intelligence master plan](UNIVERSAL_ROSTER_INTELLIGENCE_MASTER_PLAN.md) and [Roster Parser Reliability Specification](ROSTER_PARSER_RELIABILITY_SPEC.md) are the canonical detailed design references. Their flexible-layout discovery, evidence, review, provenance, and parameterized-testing requirements take precedence over examples in this roadmap.
+
 ## 1. Evidence, CI/CD, repository health, and documentation
 
 **Purpose:** ensure every engineering and release claim is tied to the exact commit and actual executed steps.
@@ -31,6 +47,7 @@ Current evidence boundary: main was observed at the base SHA above. The open PR 
 
 Scope:
 - Verify Laravel API, migrations, authentication/authorization, request correlation, and error contracts against Flutter and any Python integration boundary.
+- Keep the canonical data model extensible: do not encode one hospital, department, workbook layout, shift vocabulary, employment type, or pay policy as a closed universal enum. Preserve unknown user-defined metadata and versioned domain extensions safely.
 - Inventory every schedule writer and ensure the intended compare-and-swap (CAS), revision, and conflict policy is consistently applied; do not infer global atomicity from one protected writer.
 - Verify global sync serialization, durable operation ledger, idempotency, retry/recovery, and audit history for operations that span multiple records or providers.
 - Verify schema migration ordering, rollback/recovery, backup/restore, and behavior during interrupted writes.
@@ -53,7 +70,8 @@ Scope:
 - Trace the full roster/transaction lifecycle through preview, explicit confirmation, provider write, provider acknowledgement, reconciliation, and fulfillment.
 - Verify OAuth scopes, token expiry/revocation, create/update/delete behavior, event identity, ETag/version handling, duplicate prevention, and ambiguous-timeout recovery.
 - Verify sync lease/serialization, heartbeat/expiry, durable attempts, retry/resume, and history.
-- Preserve user-managed events, unselected months, roster overrides, and given/received/canceled state during re-sync.
+- Preserve user-managed events, unselected periods, roster overrides, and given/received/canceled state during re-sync.
+- Map provider events to stable canonical assignment/transaction identities; provider-specific fields must not become the source of truth for roster semantics.
 - Verify Web Push subscription lifecycle, permission/opt-in, VAPID secret handling, outbox/worker, retry/backoff, expired endpoint cleanup, and delivery observability.
 
 Acceptance:
@@ -67,32 +85,35 @@ Current evidence boundary: Calendar Sync/Web Push foundations and coordination A
 
 ## 4. Universal Roster and workbook import
 
-**Purpose:** accept real-world roster layouts without locking the product to one spreadsheet template.
+**Purpose:** understand each user's roster source and work semantics without requiring a fixed spreadsheet template or predefined organization vocabulary.
 
 Scope:
-- Exercise vertical, horizontal, multi-section, multi-sheet, multi-department, and long-range (six months or more) layouts.
-- Resolve all date headers/rows and calendar systems (including Thai Buddhist Era) before assigning people or interpreting shift cells.
-- Detect duplicate, missing, out-of-order, merged, ambiguous, and conflicting dates; report exact source coordinates and provenance.
-- Support editable column/row/section mapping and staged corrections before commit.
-- Preserve source provenance and reconcile re-imports without overwriting user-confirmed edits, overrides, given/received/canceled transactions, or unrelated schedule ranges.
-- Verify employee alias matching never silently preselects an uncertain person.
+- Discover candidate regions, section boundaries, orientations, headers, date axes, people, shifts, statuses, and optional metadata from evidence; do not require fixed row/column positions or known sheet names.
+- Resolve date systems and periods independently for each section before assigning people or interpreting shift cells; accommodate localized calendars and source-specific date representations through reader adapters.
+- Support new and evolving structures through reusable discovery/interpreter components and optional, versioned user profiles. Profiles are hints, never format locks; current source evidence takes precedence.
+- Detect incomplete, duplicate, out-of-order, ambiguous, and conflicting facts; report source coordinates, evidence, alternatives, and affected scope.
+- Allow user-defined departments, roles, people identifiers, shift vocabularies, statuses, and metadata without requiring code changes for each new value.
+- Support focused corrections and staged review; every correction rebuilds affected canonical records and reruns dependent validations before commit.
+- Preserve source provenance and reconcile revisions without overwriting user-confirmed edits, overrides, given/received/canceled transactions, or unrelated schedule ranges.
+- Verify identity matching never silently assigns an uncertain person; unknown values remain visible and reviewable.
 
 Acceptance:
-- No fixed workbook template or hardcoded row/column layout is required.
-- Ambiguous mappings are presented for user review; no unsafe auto-commit occurs.
-- A real workbook is imported with a reproducible preview, correction trail, and read-back verification.
-- Re-importing the same source is idempotent and does not erase accepted user changes.
-- Original acceptance workbooks are used when available; synthetic fixtures are supplementary, not substitutes.
+- A previously unseen layout or renamed/reordered organizational vocabulary can be discovered and reviewed without adding a format-specific branch to core business logic.
+- Ambiguous mappings are presented with evidence and alternatives; only the affected unresolved scope is blocked when it can be isolated safely.
+- A real source is imported with a reproducible preview, focused correction trail, provenance, and read-back verification.
+- Re-importing the same source is idempotent; changed source revisions produce a reconciled change set and never erase accepted user changes.
+- Parameterized and metamorphic tests demonstrate that harmless layout changes do not alter semantic assignments; negative tests prove uncertainty is not silently accepted.
+- Representative user workbooks, including X-OPD November 2569, 16 Nov–15 Dec 2569, and US Clinic ภปร.4 when available, are valuable regression evidence but are examples—not required templates or the complete universe of formats.
 
-External test data needed: original X-OPD November 2569, 16 Nov–15 Dec 2569 sample, and US Clinic ภปร.4 workbooks. Until those files are supplied and tested, their specific acceptance remains **BLOCKED / NOT VERIFIED**.
+External workbooks are useful for validating real-world behavior. Their absence blocks acceptance of those particular examples, not the architectural goal of flexible roster discovery. The detailed test dimensions and safety rules are defined in the canonical parser reliability specification.
 
 ## 5. Shift Pay and workforce rules
 
 **Purpose:** calculate pay transparently from confirmed work and effective policy.
 
 Scope:
-- Verify Personal, Organization, and Hybrid rule-source resolution and explicit precedence.
-- Cover fixed-per-shift, hourly, multiplier, salary-included, and compensatory-time conditions where supported by the product requirements.
+- Verify Personal, Organization, and Hybrid rule-source resolution and explicit, configurable precedence.
+- Model pay arrangements and compensation rules as extensible, versioned policy data; fixed-per-shift, hourly, multiplier, salary-included, compensatory-time, and future user-defined conditions are examples, not a closed list.
 - Verify organization policy authorization, effective dates, rule revisions, decimal precision, rounding, and conflict behavior.
 - Connect calculation only to confirmed/fulfilled roster assignments; distinguish estimated, pending, approved, and payable amounts.
 - Provide auditable monthly statements and immutable historical snapshots.
@@ -113,7 +134,8 @@ Scope:
 - Test public Google sign-in for supported platforms, token refresh/expiry, logout/revocation, account linking, first-login onboarding, and recovery from OAuth misconfiguration.
 - Verify organization membership, owner/admin/staff roles, join requests, approval/rejection, role changes, and removal/reactivation with server-side authorization.
 - Verify no privileged action relies solely on client/local-storage role flags.
-- Define AI assistant capabilities against actual available data: schedule lookup, roster/person search, summaries, anomaly detection, shift-pay explanation, and history questions.
+- Define AI assistant capabilities against actual available data and permissions: schedule lookup, roster/person search, summaries, anomaly detection, shift-pay explanation, and history questions are examples, not a fixed capability ceiling.
+- AI may suggest new mappings or explain unfamiliar roster vocabulary, but must cite source evidence, expose uncertainty, and request confirmation before any domain mutation.
 - Require preview and explicit confirmation for every mutating action; record actor, intent, affected records, and result.
 
 Acceptance:
@@ -129,7 +151,7 @@ Dependency: live public OAuth acceptance requires valid owner-controlled OAuth c
 **Purpose:** make a release decision from complete evidence rather than a green workflow wrapper.
 
 Scope:
-- Run critical journeys across Web and supported Windows/Android/iOS/Linux/macOS targets, distinguishing build support from signed/distributable release support.
+- Run critical journeys across platforms and environments actually supported by the current product, distinguishing source availability, buildability, runtime support, and signed/distributable release support without treating a fixed platform list as a product boundary.
 - Run integration tests with the configured backend, real Google Calendar test account, real browser push endpoint, and representative real roster workbooks.
 - Test concurrency, retries, offline recovery, data migration, backup/restore, access control, secret handling, and dependency security.
 - Verify production API health/readiness, frontend deployment URL, artifact checksums/signatures where applicable, and deployed SHA.
@@ -160,6 +182,8 @@ A package may be marked **DONE** only when its acceptance criteria have linked s
 - Do not merge failing, pending, skipped-required, or unverifiable checks.
 - Do not duplicate an implementation already merged; extend its canonical source and tests.
 - Do not weaken tests, remove business rules, hardcode one roster template, or replace real integration evidence with mocks.
+- Do not turn representative examples, current departments, shift labels, pay modes, platform targets, or test fixtures into exhaustive product constraints.
+- Keep adapters and profiles extensible; put roster semantics in the canonical domain model and preserve unknown-but-valid source data for review.
 - Preserve user data, API contracts, schema compatibility, and existing workflows.
 - Prefer zero-cost/local-first solutions; add hosted services only with explicit owner-controlled configuration and operational justification.
 
@@ -172,7 +196,7 @@ Update this table only with evidence observed for the specific SHA or controlled
 | 1. Evidence, CI/CD, docs | IN PROGRESS | Main base SHA recorded above; PR #216 and #217 require fresh exact-head inspection | Inspect PR heads/checks, reconcile docs, merge only when all required checks pass |
 | 2. Shared backend/data integrity | NOT VERIFIED | Existing Laravel/API foundations; full writer/CAS/ledger/restore acceptance not established by this plan | Audit canonical implementation and tests |
 | 3. Calendar Sync/Web Push | PARTIAL / NOT VERIFIED | Foundations merged; real provider and browser delivery acceptance not established | Run controlled provider and push integration tests |
-| 4. Universal Roster | PARTIAL / BLOCKED | Parser/review foundations exist; named original workbooks unavailable in this execution context | Audit parser coverage and request/locate source fixtures |
+| 4. Universal Roster | PARTIAL / NOT VERIFIED | Flexible discovery/review foundations and canonical design exist; exact-head implementation coverage still needs audit | Audit implementation against the canonical flexible-layout spec; expand semantic/metamorphic tests and use real workbooks as examples, not templates |
 | 5. Shift Pay | PARTIAL / NOT VERIFIED | Rule and calculation snapshot foundations merged; assignment-level end-to-end acceptance open | Trace confirmed roster assignment to immutable statement |
 | 6. Auth and AI | PARTIAL / NOT VERIFIED | Google/organization foundations exist; public OAuth and permission-aware AI acceptance open | Audit current flows and controlled credentials/configuration |
 | 7. E2E and production | BLOCKED | Valid HTTPS shared backend configuration and real integration evidence required | Configure owner-controlled services, then run release matrix |
