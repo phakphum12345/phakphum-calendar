@@ -7,6 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../controller/app_controller.dart';
+import '../core/result/result.dart';
+import '../features/shift_parser/application/grid_roster_import_workflow.dart';
 import '../features/google_drive/application/multi_sheet_picker_selection.dart';
 import '../domain/entities/schedule.dart';
 import '../features/reports/presentation/controllers/monthly_schedule_report_controller.dart';
@@ -24,6 +26,7 @@ import '../features/shift_exchange/presentation/controllers/shift_exchange_contr
 import '../features/shift_exchange/infrastructure/shift_transaction_api_client.dart';
 import '../features/shift_exchange/application/shift_transaction_calendar_sync_preview.dart';
 import '../features/shift_parser/domain/monthly_roster_section.dart';
+import '../features/shift_parser/domain/roster_grid_axis_mapping.dart';
 import '../features/shift_parser/domain/monthly_roster_template.dart';
 import '../features/shift_templates/application/shift_template_controller.dart';
 import '../features/shift_templates/presentation/shift_templates_page.dart';
@@ -69,6 +72,7 @@ class AppShell extends StatefulWidget {
     required this.dashboardSummaryService,
     required this.shiftTemplateControllerFactory,
     required this.scheduleControllerFactory,
+    this.gridRosterImportWorkflowFactory,
   });
 
   final AppController controller;
@@ -82,6 +86,7 @@ class AppShell extends StatefulWidget {
   final DashboardSummaryService dashboardSummaryService;
   final ShiftTemplateController Function() shiftTemplateControllerFactory;
   final Future<ScheduleController> Function(Schedule) scheduleControllerFactory;
+  final GridRosterImportWorkflow Function()? gridRosterImportWorkflowFactory;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -102,6 +107,12 @@ class _AppShellState extends State<AppShell> {
       );
   bool _setupDialogOpen = false;
   String? _setupDialogShownForEmail;
+  late final GridRosterImportWorkflow? _gridRosterRecoveryWorkflow =
+      widget.gridRosterImportWorkflowFactory?.call();
+  bool _gridRecoveryDiscoveryStarted = false;
+  bool _gridRecoveryLoading = false;
+  List<String> _gridRecoveryScheduleIds = [];
+  String? _gridRecoveryError;
 
   NavigationDestination _destination(
     BuildContext context,
@@ -150,6 +161,11 @@ class _AppShellState extends State<AppShell> {
     super.initState();
     widget.controller.addListener(_handleControllerChanged);
     unawaited(_loadEdition());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && widget.controller.initialized) {
+        _startGridRecoveryDiscovery();
+      }
+    });
   }
 
   @override
@@ -160,6 +176,7 @@ class _AppShellState extends State<AppShell> {
   }
 
   void _handleControllerChanged() {
+    if (widget.controller.initialized) _startGridRecoveryDiscovery();
     final auth = widget.controller.auth;
     final account = auth.account;
     if (account == null) {
@@ -205,6 +222,188 @@ class _AppShellState extends State<AppShell> {
         editionLoading = false;
       });
     }
+  }
+
+  void _startGridRecoveryDiscovery() {
+    if (_gridRecoveryDiscoveryStarted || _gridRosterRecoveryWorkflow == null) {
+      return;
+    }
+    _gridRecoveryDiscoveryStarted = true;
+    unawaited(_discoverGridRecovery());
+  }
+
+  Future<void> _discoverGridRecovery() async {
+    final workflow = _gridRosterRecoveryWorkflow;
+    if (workflow == null || _gridRecoveryLoading) return;
+    setState(() {
+      _gridRecoveryLoading = true;
+      _gridRecoveryError = null;
+    });
+    try {
+      final localIds = await workflow.discoverLocalRecoveryScheduleIds();
+      if (!mounted) return;
+      setState(() {
+        _gridRecoveryScheduleIds = localIds;
+      });
+      try {
+        final remoteIds = await workflow.discoverRemoteRecoveryScheduleIds();
+        if (!mounted) return;
+        setState(() {
+          _gridRecoveryScheduleIds = {...localIds, ...remoteIds}.toList()..sort();
+          _gridRecoveryError = null;
+        });
+      } on Object catch (error) {
+        if (!mounted) return;
+        setState(() {
+          _gridRecoveryError =
+              'ตรวจสอบ journal จาก backend ไม่สำเร็จ: $error';
+        });
+      }
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _gridRecoveryError = 'ตรวจสอบ journal ในเครื่องไม่สำเร็จ: $error';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _gridRecoveryLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _openGridRecoveryList() async {
+    if (_gridRecoveryScheduleIds.isEmpty || !mounted) return;
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('รายการนำเข้าที่ต้องตรวจสอบ'),
+        content: SizedBox(
+          width: 480,
+          height: 320,
+          child: ListView.builder(
+            itemCount: _gridRecoveryScheduleIds.length,
+            itemBuilder: (context, index) {
+              final scheduleId = _gridRecoveryScheduleIds[index];
+              return ListTile(
+                title: Text(scheduleId),
+                subtitle: const Text('ตรวจสอบ journal ก่อนกู้คืน'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.of(dialogContext).pop();
+                  unawaited(_reviewGridRecovery(scheduleId));
+                },
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('ปิด'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _reviewGridRecovery(String scheduleId) async {
+    final workflow = _gridRosterRecoveryWorkflow;
+    if (workflow == null || !mounted) return;
+    final inspected = await workflow.inspectRecovery(scheduleId);
+    if (!mounted) return;
+    if (inspected case Failure<GridRosterRecoveryAssessment>()) {
+      final failure = inspected;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('ตรวจสอบการกู้คืนไม่สำเร็จ'),
+          content: Text(failure.message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('ปิด'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    final assessment =
+        (inspected as Success<GridRosterRecoveryAssessment>).value;
+    final dispositionLabel = switch (assessment.disposition) {
+      GridRosterRecoveryDisposition.noCommittedBundle =>
+        'ไม่พบรายการที่ commit แล้ว',
+      GridRosterRecoveryDisposition.ready => 'พบข้อมูลที่พร้อมกู้คืน',
+      GridRosterRecoveryDisposition.alreadyApplied =>
+        'ข้อมูลที่ยอมรับถูกบันทึกแล้ว',
+      GridRosterRecoveryDisposition.conflict =>
+        'พบข้อมูลเปลี่ยนแปลงหลังบันทึก journal',
+    };
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('ตรวจสอบข้อมูลก่อนกู้คืน'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Schedule: $scheduleId'),
+            const SizedBox(height: 8),
+            Text('สถานะ: $dispositionLabel'),
+            if (assessment.currentSchedule != null)
+              Text('ข้อมูลปัจจุบัน: ${assessment.currentSchedule!.name}'),
+            if (assessment.candidateSchedule != null)
+              Text('ข้อมูลจาก journal: ${assessment.candidateSchedule!.name}'),
+            if (assessment.importRunId != null)
+              Text('Import Run: ${assessment.importRunId}'),
+            if (assessment.message != null) ...[
+              const SizedBox(height: 8),
+              Text(assessment.message!),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('ปิด'),
+          ),
+          if (assessment.canRecover)
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('ยืนยันกู้คืน'),
+            ),
+        ],
+      ),
+    );
+    if (!assessment.canRecover &&
+        (assessment.disposition == GridRosterRecoveryDisposition.noCommittedBundle ||
+            assessment.disposition == GridRosterRecoveryDisposition.alreadyApplied)) {
+      if (mounted) {
+        setState(() {
+          _gridRecoveryScheduleIds.remove(scheduleId);
+        });
+      }
+    }
+    if (confirmed != true || !mounted) return;
+
+    final recovered = await workflow.recoverAssessment(assessment);
+    if (!mounted) return;
+    if (recovered case Success<Schedule?>()) {
+      setState(() {
+        _gridRecoveryScheduleIds.remove(scheduleId);
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('กู้คืน Schedule และตรวจสอบผลสำเร็จ')),
+      );
+      return;
+    }
+    final failure = recovered as Failure<Schedule?>;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('กู้คืนไม่สำเร็จ: ${failure.message}')),
+    );
   }
 
   Future<void> _selectEdition(AppEdition value) async {
@@ -435,6 +634,29 @@ class _AppShellState extends State<AppShell> {
                       unawaited(_openUtilityPage(_UtilityPage.tools)),
                 ),
                 const Divider(height: 1),
+                if (_gridRecoveryError != null ||
+                    _gridRecoveryScheduleIds.isNotEmpty)
+                  MaterialBanner(
+                    content: Text(
+                      _gridRecoveryError ??
+                          'พบ journal ของการนำเข้าตารางเวร ${_gridRecoveryScheduleIds.length} รายการ กรุณาตรวจสอบก่อนกู้คืน',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: _gridRecoveryLoading
+                            ? null
+                            : () => unawaited(_discoverGridRecovery()),
+                        child: Text(_gridRecoveryLoading ? 'กำลังตรวจสอบ...' : 'ตรวจอีกครั้ง'),
+                      ),
+                      if (_gridRecoveryScheduleIds.isNotEmpty)
+                        TextButton(
+                          onPressed: _gridRecoveryLoading
+                              ? null
+                              : () => unawaited(_openGridRecoveryList()),
+                          child: const Text('ดูรายการ'),
+                        ),
+                    ],
+                  ),
                 Expanded(child: mainContent),
               ],
             ),
@@ -603,14 +825,55 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
-  Future<void> _openRosterEditor() {
-    return Navigator.of(context).push<void>(
+  Future<void> _openRosterEditor() async {
+    final schedule = widget.controller.canonicalSchedule;
+    final workflow = _gridRosterRecoveryWorkflow;
+    if (workflow != null) {
+      final inspected = await workflow.inspectRecovery(schedule.id);
+      if (!mounted) return;
+      if (inspected case Failure<GridRosterRecoveryAssessment>()) {
+        final failure = inspected;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('ตรวจสอบข้อมูลกู้คืนก่อนแก้ไขไม่สำเร็จ: ${failure.message}')),
+        );
+        return;
+      }
+      final assessment =
+          (inspected as Success<GridRosterRecoveryAssessment>).value;
+      if (assessment.disposition == GridRosterRecoveryDisposition.ready ||
+          assessment.disposition == GridRosterRecoveryDisposition.conflict) {
+        await _reviewGridRecovery(schedule.id);
+        if (!mounted) return;
+        final rechecked = await workflow.inspectRecovery(schedule.id);
+        if (!mounted) return;
+        if (rechecked case Failure<GridRosterRecoveryAssessment>()) {
+          final failure = rechecked;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('ยังตรวจสอบสถานะกู้คืนไม่ได้: ${failure.message}')),
+          );
+          return;
+        }
+        final latest =
+            (rechecked as Success<GridRosterRecoveryAssessment>).value;
+        if (latest.disposition == GridRosterRecoveryDisposition.ready ||
+            latest.disposition == GridRosterRecoveryDisposition.conflict) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('ยังแก้ไข Schedule นี้ไม่ได้จนกว่าจะจัดการรายการกู้คืนที่ค้างอยู่'),
+            ),
+          );
+          return;
+        }
+      }
+    }
+
+    await Navigator.of(context).push<void>(
       MaterialPageRoute(
         builder: (context) => _OwnedScheduleEditorRoute(
-          schedule: widget.controller.canonicalSchedule,
+          schedule: schedule,
           controllerFactory: widget.scheduleControllerFactory,
-          onCommitted: (schedule) => widget.controller.adoptCanonicalSchedule(
-            schedule,
+          onCommitted: (updated) => widget.controller.adoptCanonicalSchedule(
+            updated,
             persist: false,
           ),
         ),
@@ -4038,17 +4301,14 @@ class _MonthlyRosterSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dates = section.assignments.map((item) => item.date).toSet().toList();
-    if (dates.isEmpty && section.startDate != null && section.endDate != null) {
-      for (
-        var date = section.startDate!;
-        !date.isAfter(section.endDate!);
-        date = date.add(const Duration(days: 1))
-      ) {
-        dates.add(date);
-      }
-    }
-    dates.sort();
+    final isVertical =
+        section.orientation == RosterGridOrientation.datesDownRows;
+    final dates = (section.dateColumns.isNotEmpty
+            ? section.dateColumns.map((item) => item.date)
+            : section.assignments.map((item) => item.date))
+        .toSet()
+        .toList()
+      ..sort();
     final rowIndexes =
         section.assignments.map((item) => item.rowIndex).toSet().toList()
           ..sort();
@@ -4063,6 +4323,11 @@ class _MonthlyRosterSectionCard extends StatelessWidget {
     final byPosition = <(int, DateTime), MonthlyRosterAssignment>{
       for (final assignment in section.assignments)
         (assignment.rowIndex, assignment.date): assignment,
+    };
+    final byVerticalPosition = <(DateTime, int), MonthlyRosterAssignment>{
+      for (final assignment in section.assignments)
+        if (assignment.columnIndex != null)
+          (assignment.date, assignment.columnIndex!): assignment,
     };
 
     return Card(
@@ -4086,8 +4351,12 @@ class _MonthlyRosterSectionCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${rowIndexes.length} แถว • '
-                        '${section.assignments.length} ช่อง',
+                        isVertical
+                            ? '${dates.length} วัน • '
+                                '${section.rosterRows.length} คอลัมน์เวร • '
+                                '${section.assignments.length} ช่อง'
+                            : '${rowIndexes.length} แถว • '
+                                '${section.assignments.length} ช่อง',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ],
@@ -4106,7 +4375,9 @@ class _MonthlyRosterSectionCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 14),
-            if (section.assignments.isEmpty && rowLabels.isEmpty)
+            if (section.assignments.isEmpty &&
+                rowLabels.isEmpty &&
+                section.rosterRows.isEmpty)
               const Text('บล็อกนี้ยังไม่มีรายชื่อผู้ปฏิบัติงาน')
             else
               Scrollbar(
@@ -4117,41 +4388,72 @@ class _MonthlyRosterSectionCard extends StatelessWidget {
                     headingRowHeight: 44,
                     dataRowMinHeight: 48,
                     dataRowMaxHeight: 64,
-                    columns: [
-                      const DataColumn(label: Text('เวร / สถานที่')),
-                      for (final date in dates)
-                        DataColumn(
-                          numeric: false,
-                          label: Text('${date.day}\n${_shortWeekday(date)}'),
-                        ),
-                    ],
-                    rows: [
-                      for (final rowIndex in rowIndexes)
-                        DataRow(
-                          cells: [
-                            DataCell(
-                              ConstrainedBox(
-                                constraints: const BoxConstraints(
-                                  minWidth: 110,
-                                  maxWidth: 180,
-                                ),
-                                child: Text(
-                                  rowLabels[rowIndex]!,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
+                    columns: isVertical
+                        ? [
+                            const DataColumn(label: Text('วันที่')),
+                            for (final rosterColumn in section.rosterRows)
+                              DataColumn(
+                                label: Text(rosterColumn.label),
                               ),
-                            ),
+                          ]
+                        : [
+                            const DataColumn(label: Text('เวร / สถานที่')),
                             for (final date in dates)
-                              DataCell(
-                                _MonthlyRosterCell(
-                                  assignment: byPosition[(rowIndex, date)],
+                              DataColumn(
+                                numeric: false,
+                                label: Text(
+                                  '${date.day}\n${_shortWeekday(date)}',
                                 ),
                               ),
                           ],
-                        ),
-                    ],
+                    rows: isVertical
+                        ? [
+                            for (final date in dates)
+                              DataRow(
+                                cells: [
+                                  DataCell(
+                                    Text(
+                                      '${date.day} ${_shortWeekday(date)}',
+                                    ),
+                                  ),
+                                  for (final rosterColumn in section.rosterRows)
+                                    DataCell(
+                                      _MonthlyRosterCell(
+                                        assignment: byVerticalPosition[
+                                          (date, rosterColumn.columnIndex ?? -1)
+                                        ],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                          ]
+                        : [
+                            for (final rowIndex in rowIndexes)
+                              DataRow(
+                                cells: [
+                                  DataCell(
+                                    ConstrainedBox(
+                                      constraints: const BoxConstraints(
+                                        minWidth: 110,
+                                        maxWidth: 180,
+                                      ),
+                                      child: Text(
+                                        rowLabels[rowIndex]!,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  for (final date in dates)
+                                    DataCell(
+                                      _MonthlyRosterCell(
+                                        assignment: byPosition[(rowIndex, date)],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                          ],
                   ),
                 ),
               ),

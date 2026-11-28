@@ -34,7 +34,11 @@ of exact frontend origins (scheme and host, without a path). The Flutter web
 build reads `ORGANIZATION_API_BASE_URL` at build time; set it to the HTTPS
 origin of this API. In GitHub Actions, configure it as the repository variable
 of the same name. An empty value deliberately leaves organization membership
-controls unavailable in the web app.
+controls unavailable in the web app and leaves Schedule persistence in local-only
+SharedPreferences mode. Local development may use that fallback, but production
+release artifacts are now blocked unless this variable contains an HTTPS backend
+origin. The Android, iOS, macOS, Windows, Linux and GitHub Pages release workflows
+all enforce this boundary.
 
 Existing password-based user records are not silently linked to Google accounts
 by matching email. An account collision returns `409 account_link_required`
@@ -131,4 +135,4 @@ Validation: `composer validate --strict`, `vendor/bin/pint --test app config dat
 
 ## Continuous integration
 
-The Laravel GitHub Actions workflow creates an empty `.env` file in its isolated test workspace. All test configuration is supplied through the workflow environment; developer and production secrets are not copied into CI. The workflow validates Composer, installs the locked dependencies, checks PHP formatting and bootstrap syntax, and runs the Laravel test suite. Dependency vulnerability auditing is tracked separately and is not yet a passing gate.
+The Laravel GitHub Actions workflow creates an empty `.env` file in its isolated test workspace. All test configuration is supplied through the workflow environment; developer and production secrets are not copied into CI. The workflow validates Composer, installs the locked dependencies, runs `composer audit --locked`, checks PHP formatting and bootstrap syntax, and runs the Laravel test suite. A successful Composer audit is evidence for the locked PHP dependency graph on that exact commit; it does not certify Flutter/Dart package advisories or later commits.

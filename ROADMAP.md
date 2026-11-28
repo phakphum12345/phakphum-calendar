@@ -99,3 +99,19 @@ This roadmap is evidence-driven. A phase is complete only when implementation, t
 4. Confirm the PR is not empty, stale, superseded or dependent on an unmerged branch.
 5. Merge only after the owner authorizes the merge; verify merge commit and post-merge main evidence.
 6. Never directly commit to `main`, reset shared branches, delete user data or expand OAuth scopes without explicit approval.
+
+## Universal Roster Intelligence expansion
+
+| Phase | Milestone | Scope | Completion evidence |
+|---|---|---|---|
+| 0 | Repository baseline | Exact SHA/PR/CI audit, source inventory, documentation reconciliation and preservation of local work | Capability matrix and evidence-backed baseline |
+| 1 | Parser reliability | Section-local parsing, Thai/BE/Gregorian date ranges, column integrity and malformed-header diagnostics | Golden fixtures and parser regression tests |
+| 2 | Universal structure | Provider/reader contracts, multi-section detection, layout profiles and source coordinates | Multiple independent layouts pass structure tests |
+| 3 | Canonical roster model | People, shifts, assignments, availability, relationships and provenance | Mapping/round-trip tests without data loss |
+| 4 | Reconciliation | Source fingerprints, revisions, duplicate detection and proposed change sets | Re-import and conflict tests prove non-destructive behavior |
+| 5 | Review and recovery | Evidence, confidence, partial import, approvals, audit and safe recovery | Invalid/ambiguous records cannot bypass review |
+| 6 | Template and generator | Reusable profiles, mapping rules, preview, document/calendar export | Generated output matches approved records |
+| 7 | Calendar integration | Idempotent writes, retry, resume, ambiguous-outcome reconciliation and history | Authorized test-account E2E |
+| 8 | UX and platform quality | Responsive review/import/sync flows, accessibility and platform capability checks | Target-width and platform test matrix passes |
+| 9 | Security and scale | Privacy, tenant isolation, large-file performance and operational resilience | Security and reproducible benchmark evidence |
+| 10 | System acceptance | Full end-to-end acceptance and release verification | All required checks pass on the exact release SHA |

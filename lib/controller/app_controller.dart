@@ -20,9 +20,12 @@ import '../domain/entities/schedule.dart';
 import '../domain/entities/schedule_month.dart';
 import '../domain/entities/shift_template.dart';
 import '../domain/repositories/schedule_repository.dart';
+import '../domain/repositories/conditional_schedule_writer.dart';
+import '../domain/repositories/schedule_revision_source.dart';
 import '../domain/repositories/shift_template_repository.dart';
 import '../core/result/result.dart';
 import '../features/schedule/data/legacy_schedule_adapter.dart';
+import '../features/schedule/data/schedule_json_codec.dart';
 import '../features/shift_parser/application/monthly_roster_workbook_scanner.dart';
 import '../features/shift_parser/application/monthly_roster_section_parser.dart';
 import '../features/shift_exchange/application/shift_transaction_schedule_projector.dart';
@@ -214,6 +217,8 @@ class AppController extends ChangeNotifier implements ControllerState {
         name: _runtimeScheduleName,
       );
   Future<void> _pendingScheduleWrite = Future.value();
+  Schedule? _lastPersistedSchedule;
+  bool _isDisposed = false;
 
   /// Canonical runtime schedule used by all legacy schedule orchestration.
   Schedule get canonicalSchedule => _legacySchedule.schedule;
@@ -441,6 +446,9 @@ class AppController extends ChangeNotifier implements ControllerState {
     }
     auth.addListener(_onAuthChanged);
     await auth.initialize(webClientId: settings.googleWebClientId);
+    if (auth.account != null) {
+      await _loadCanonicalRuntimeSchedule();
+    }
     initialized = true;
     notifyListeners();
   }
@@ -450,6 +458,9 @@ class AppController extends ChangeNotifier implements ControllerState {
   Future<void> authorizeReadAccess() async {
     await _run('ขอสิทธิ์อ่าน Google Sheets, Drive และ Calendar', () async {
       await auth.requestReadAccess();
+      if (_scheduleRepository is ConditionalScheduleWriter) {
+        await _loadCanonicalRuntimeSchedule();
+      }
       status = 'อนุญาตสิทธิ์อ่าน Google Sheets, Drive และ Calendar สำเร็จ';
       await _addAudit('auth.read', status!, true);
     });
@@ -460,7 +471,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     timelineLoading = false;
     await auth.signOut();
     _autoRefreshTimer?.cancel();
-    _replaceLegacyShifts(const []);
+    _replaceLegacyShifts(const [], persist: false);
     _shiftTransactions = const [];
     alerts = [];
     calendarPeriods = [];
@@ -644,7 +655,7 @@ class AppController extends ChangeNotifier implements ControllerState {
 
       localSourceLabel = null;
       _autoRefreshTimer?.cancel();
-      _replaceLegacyShifts(const []);
+      _replaceLegacyShifts(const [], persist: false);
       alerts = [];
       calendarPeriods = [];
       existingKeys = {};
@@ -795,7 +806,7 @@ class AppController extends ChangeNotifier implements ControllerState {
           sections: [],
           warnings: [],
         );
-        _replaceLegacyShifts(const []);
+        _replaceLegacyShifts(const [], persist: false);
         localSourceLabel = null;
         status = 'เลือก “${saved.displayTitle}” เป็นไฟล์หลักของบัญชีนี้แล้ว';
         await _addAudit(
@@ -847,7 +858,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       );
       await _settingsService.saveSavedSheets(savedSheets);
       if (wasCurrent) {
-        _replaceLegacyShifts(const []);
+        _replaceLegacyShifts(const [], persist: false);
         alerts = [];
         calendarPeriods = [];
         existingKeys = {};
@@ -2650,7 +2661,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       _shiftTransactions = const [];
       settings = settings.clearRosterSelection();
       _autoRefreshTimer?.cancel();
-      _replaceLegacyShifts(const []);
+      _replaceLegacyShifts(const [], persist: false);
       alerts = [];
       calendarPeriods = [];
       existingKeys = {};
@@ -2679,6 +2690,9 @@ class AppController extends ChangeNotifier implements ControllerState {
       _shiftOverrides.clear();
       recentSheetHistoryLoaded = false;
       lastRefresh = null;
+      if (accountId != null && _scheduleRepository is ConditionalScheduleWriter) {
+        unawaited(_loadCanonicalRuntimeSchedule());
+      }
     }
     notifyListeners();
   }
@@ -3079,6 +3093,7 @@ class AppController extends ChangeNotifier implements ControllerState {
 
   void _replaceLegacyShifts(List<Shift> next, {bool persist = true}) {
     cancelShiftTransactionCalendarSyncPreview();
+    final previousSchedule = _legacySchedule.schedule;
     final conversion = _legacyScheduleAdapter.toCanonical(
       next,
       id: _runtimeScheduleId,
@@ -3086,10 +3101,105 @@ class AppController extends ChangeNotifier implements ControllerState {
     );
     _legacySchedule = conversion;
     if (persist) {
-      _pendingScheduleWrite = _pendingScheduleWrite.then((_) async {
-        await _scheduleRepository.save(conversion.schedule);
-      });
+      _pendingScheduleWrite = _pendingScheduleWrite
+          .catchError((_) {})
+          .then((_) async {
+            final result = await _saveCanonicalSchedule(
+              next: conversion.schedule,
+              base: _lastPersistedSchedule ?? previousSchedule,
+            );
+            if (_isDisposed) return;
+            if (result case Failure<Schedule>()) {
+              error = 'บันทึกตารางไม่สำเร็จ: ${result.message}';
+              notifyListeners();
+              throw StateError(result.message);
+            }
+            error = null;
+            notifyListeners();
+          });
     }
+  }
+
+  Future<void> _loadCanonicalRuntimeSchedule() async {
+    if (_scheduleRepository is! ConditionalScheduleWriter) return;
+    final result = await _scheduleRepository.findById(_runtimeScheduleId);
+    switch (result) {
+      case Success<Schedule?>(value: final schedule):
+        _lastPersistedSchedule = schedule;
+        // An absent local record must not erase an in-memory roster that
+        // has already been imported in this session. The initial controller
+        // state is already an empty canonical Schedule when no roster exists.
+        if (schedule != null) {
+          _legacySchedule = _legacyScheduleAdapter.wrapCanonical(schedule);
+        }
+        _rebuildAlerts();
+      case Failure<Schedule?>():
+        error ??= 'โหลดตารางหลักจาก Backend ไม่สำเร็จ: ${result.message}';
+    }
+    notifyListeners();
+  }
+
+  Future<Result<Schedule>> _saveCanonicalSchedule({
+    required Schedule next,
+    required Schedule base,
+  }) async {
+    final repository = _scheduleRepository;
+    if (repository is! ConditionalScheduleWriter ||
+        repository is! ScheduleRevisionSource) {
+      return const PersistenceFailure(
+        'The configured Schedule repository does not support atomic conditional writes. '
+        'Reload with a revision-aware repository before saving.',
+      );
+    }
+
+    if (base.id != next.id) {
+      return const PersistenceFailure(
+        'The Schedule identity changed during the edit. Reload before saving.',
+      );
+    }
+    final currentResult = await repository.findById(next.id);
+    if (currentResult case Failure<Schedule?>()) {
+      return PersistenceFailure<Schedule>(
+        currentResult.message,
+        cause: currentResult,
+      );
+    }
+    final current = (currentResult as Success<Schedule?>).value;
+    const codec = ScheduleJsonCodec();
+    if (current == null) {
+      if (base.months.isNotEmpty) {
+        return const PersistenceFailure(
+          'The persisted Schedule is absent but the editor has a non-empty base snapshot. Reload before saving.',
+        );
+      }
+    } else if (codec.encode(current) != codec.encode(base)) {
+      return const PersistenceFailure(
+        'The Schedule changed on another device. Reload and review before saving.',
+      );
+    }
+
+    final revisionSource = repository as ScheduleRevisionSource;
+    final conditionalWriter = repository as ConditionalScheduleWriter;
+    final expectedRevision = current == null
+        ? revisionSource.revisionForAbsentSchedule(next.id)
+        : revisionSource.revisionForSnapshot(base);
+    if (expectedRevision == null || expectedRevision.trim().isEmpty) {
+      return const PersistenceFailure(
+        'The Schedule repository did not provide a caller-owned revision.',
+      );
+    }
+    final saved = await conditionalWriter.saveIfRevision(
+      next,
+      expectedRevision,
+    );
+    if (saved case Success<Schedule>(value: final value)) {
+      _lastPersistedSchedule = value;
+      if (const ScheduleJsonCodec().encode(_legacySchedule.schedule) ==
+          const ScheduleJsonCodec().encode(next)) {
+        _legacySchedule = _legacySchedule.withSchedule(value);
+      }
+    }
+    return saved;
   }
 
   /// Waits until canonical schedule mutations queued by synchronous legacy
@@ -3104,17 +3214,29 @@ class AppController extends ChangeNotifier implements ControllerState {
     Schedule schedule, {
     bool persist = true,
   }) async {
+    await flushSchedulePersistence();
     cancelShiftTransactionCalendarSyncPreview();
+    final previousSchedule = _lastPersistedSchedule ?? _legacySchedule.schedule;
     _legacySchedule = _legacyScheduleAdapter.wrapCanonical(schedule);
     _rebuildAlerts();
     if (persist) {
-      await _scheduleRepository.save(schedule);
+      final result = await _saveCanonicalSchedule(
+        next: schedule,
+        base: previousSchedule,
+      );
+      if (result case Failure<Schedule>()) {
+        error = 'บันทึกตารางไม่สำเร็จ: ${result.message}';
+        notifyListeners();
+        throw StateError(result.message);
+      }
+      error = null;
     }
     notifyListeners();
   }
 
   @override
   void dispose() {
+    _isDisposed = true;
     _autoRefreshTimer?.cancel();
     _pendingCalendarWorkflow?.dispose();
     cancelShiftTransactionCalendarSyncPreview();

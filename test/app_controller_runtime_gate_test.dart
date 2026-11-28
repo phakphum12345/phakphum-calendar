@@ -1,13 +1,41 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:phakphum_calendar/core/di/app_dependencies.dart';
+import 'package:phakphum_calendar/core/result/result.dart';
 import 'package:phakphum_calendar/domain/entities/schedule.dart';
+import 'package:phakphum_calendar/features/schedule/data/shared_preferences_schedule_repository.dart';
 import 'package:phakphum_calendar/features/shift_parser/domain/monthly_roster_section.dart';
+
+import 'support/in_memory_schedule_store.dart';
 import 'package:phakphum_calendar/models/roster_period.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   SharedPreferences.setMockInitialValues({});
+
+  test('sequential canonical edits retain the latest local CAS snapshot', () async {
+    final repository = SharedPreferencesScheduleRepository(
+      store: InMemoryScheduleKeyValueStore(),
+    );
+    final controller = AppDependencies(
+      scheduleRepository: repository,
+    ).createAppController();
+    addTearDown(controller.dispose);
+    final scheduleId = controller.canonicalSchedule.id;
+
+    await controller.adoptCanonicalSchedule(
+      Schedule(id: scheduleId, name: 'First roster'),
+    );
+    await controller.adoptCanonicalSchedule(
+      Schedule(id: scheduleId, name: 'Second roster'),
+    );
+    await controller.adoptCanonicalSchedule(
+      Schedule(id: scheduleId, name: 'Third roster'),
+    );
+
+    final loaded = await repository.findById(scheduleId);
+    expect((loaded as Success<Schedule?>).value!.name, 'Third roster');
+  });
 
   test('Calendar writes require explicit confirmation and a prepared preview', () async {
     final controller = AppDependencies.production().createDemoAppController();

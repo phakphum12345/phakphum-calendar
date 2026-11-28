@@ -122,3 +122,54 @@ Specific:
 - Every advertised platform passes install, auth, chat, and failure-state tests.
 - Evidence records app version, environment, and exact deployed SHA.
 - Core calendar/roster workflows remain usable without a paid AI provider.
+
+
+## 9. Universal roster import
+
+- Detect date orientation independently for every table section; horizontal, vertical and mixed sections coexist.
+- Preserve zero-based source coordinates, date-axis coordinates, assignment-axis coordinates and A1 provenance.
+- Support multiple tables and departments per worksheet, partial/cross-month periods and Thai Buddhist Era/Gregorian date evidence.
+- Never guess missing dates or silently choose between ambiguous orientations.
+- Duplicate, missing, conflicting, unresolved and out-of-order dates block the affected section with source coordinates.
+- Preview is read-only; date correction rebuilds from the retained source grid and revalidates the section.
+- XLSX bytes pass through the actual Excel reader and Grid scanner; CSV/TSV/TXT and Google Sheets paths remain supported.
+- Actual X-OPD November 2569, 16 Nov–15 Dec 2569 and US Clinic ภปร.4 workbooks pass without template-specific row/column constants.
+
+## 10. Persistence and recovery
+
+- Every production writer uses snapshot-bound atomic compare-and-set.
+- Two writers with the same revision yield exactly one successful write.
+- Journal startup discovery, idempotent recovery, corrupt-journal reporting and conditional delete/tombstone are verified.
+- Stale clients cannot recreate a deleted schedule.
+- Cross-device backend contention and local fallback semantics are tested separately.
+
+## 11. Calendar Sync and shift transactions
+
+- Durable scoped lease/ledger, expiry/reclaim and stale-token fencing pass multi-client tests.
+- Insert/update/delete use stable identities and ETags; ambiguous provider outcomes reconcile before retry.
+- Controlled Google test calendar verifies insert, update, delete and recovery.
+- Approved canonical schedule and read-back verification precede external writes.
+- ยกเวร / รับเวร / แลกเวร have durable transaction state, audit and idempotency.
+
+## 12. Notifications
+
+- Outbox worker claim/fencing, retry/backoff, dead-letter and delivery history are implemented.
+- VAPID sender and RFC 8291 payload encryption are verified.
+- Subscription ownership, opt-in/out, expiry cleanup and safe logging are tested.
+- Successful delivery reaches a registered test device/browser.
+
+## 13. Generation, Shift Pay and history restore
+
+- Generation preview binds exact schedule, employee/catalog, rules and policy revisions; stale approval is invalidated.
+- Commit reloads and validates exact revisions, uses conditional persistence and records provenance.
+- Shift Pay uses confirmed assignments, one resolved rule source, exact decimal/rounding policy and immutable historical statements.
+- History restore previews a diff, checks source revision, requires confirmation and commits conditionally with audit/recovery.
+
+## 14. Organization, quality and release
+
+- Backend authorization and tenant isolation pass cross-tenant negative tests.
+- Responsive, keyboard, screen-reader and accessibility flows pass on supported devices and widths.
+- Large-workbook, event-volume and history benchmarks record reproducible measurements.
+- Fuzz/property tests cover malformed XLSX/API payloads and migration/backup/restore.
+- Release evidence identifies exact deployment SHA, health/readiness, artifacts, rollback and restore drills.
+

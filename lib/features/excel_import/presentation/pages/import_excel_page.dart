@@ -5,10 +5,12 @@ import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 import '../../../../core/google/authorized_google_client_factory.dart';
 import '../../../../core/result/result.dart';
 import '../../../../core/utils/excel_column_name.dart';
+import '../../../../domain/entities/employee.dart';
 import '../../../../domain/entities/schedule.dart';
 import '../../../../domain/repositories/employee_repository.dart';
 import '../../../../l10n/l10n.dart';
 import '../../../../services/google_auth_service.dart';
+import '../../../../services/local_roster_file_service.dart';
 import '../../../../services/drive_ownership_service.dart';
 import '../../../../services/sheets_service.dart';
 import '../../../google_sheets/infrastructure/google_sheets_gateway.dart';
@@ -27,6 +29,8 @@ import '../controllers/column_mapping_controller.dart';
 import '../controllers/excel_import_controller.dart';
 import 'column_mapping_page.dart';
 import 'import_summary_page.dart';
+import '../../../shift_parser/application/grid_roster_import_workflow.dart';
+import '../../../shift_parser/presentation/pages/grid_roster_review_page.dart';
 import '../widgets/empty_import_view.dart';
 import '../widgets/excel_import_button.dart';
 import '../widgets/excel_preview_table.dart';
@@ -52,6 +56,8 @@ class ImportExcelPage extends StatefulWidget {
     this.existingScheduleLoader,
     this.employeeRepository,
     this.shiftTemplateControllerFactory,
+    this.gridRosterWorkflow,
+    this.delimitedRosterSource,
     super.key,
   });
 
@@ -74,6 +80,8 @@ class ImportExcelPage extends StatefulWidget {
   final Future<Result<Schedule?>> Function()? existingScheduleLoader;
   final EmployeeRepository? employeeRepository;
   final ShiftTemplateController Function()? shiftTemplateControllerFactory;
+  final GridRosterImportWorkflow? gridRosterWorkflow;
+  final LocalDelimitedRosterSource? delimitedRosterSource;
 
   @override
   State<ImportExcelPage> createState() => _ImportExcelPageState();
@@ -96,6 +104,186 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
   auth.AuthClient? googleSheetsClient;
   bool loadingGoogleSheets = false;
   String? googleSheetsError;
+  bool loadingGridRoster = false;
+  late final LocalDelimitedRosterSource delimitedRosterSource =
+      widget.delimitedRosterSource ?? const LocalRosterFileService();
+  bool _loadingRecovery = false;
+  List<String> _recoveryScheduleIds = const [];
+  String? _recoveryError;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.gridRosterWorkflow != null) {
+      _refreshRecoveryScheduleIds();
+    }
+  }
+
+  Future<void> _refreshRecoveryScheduleIds() async {
+    final workflow = widget.gridRosterWorkflow;
+    if (workflow == null || _loadingRecovery) return;
+    setState(() {
+      _loadingRecovery = true;
+      _recoveryError = null;
+    });
+    try {
+      final ids = await workflow.discoverRecoveryScheduleIds();
+      if (!mounted) return;
+      setState(() => _recoveryScheduleIds = ids);
+    } on Object catch (error) {
+      if (!mounted) return;
+      setState(() => _recoveryError = error.toString());
+    } finally {
+      if (mounted) setState(() => _loadingRecovery = false);
+    }
+  }
+
+  Future<void> _confirmRecovery(String scheduleId) async {
+    final workflow = widget.gridRosterWorkflow;
+    if (workflow == null) return;
+    try {
+      final inspection = await workflow.inspectRecovery(scheduleId);
+      if (!mounted) return;
+      if (inspection case Failure<GridRosterRecoveryAssessment>()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(inspection.message)),
+        );
+        return;
+      }
+      final assessment =
+          (inspection as Success<GridRosterRecoveryAssessment>).value;
+      final currentKeys = _assignmentKeys(assessment.currentSchedule);
+      final candidateKeys = _assignmentKeys(assessment.candidateSchedule);
+      final added = candidateKeys.difference(currentKeys).length;
+      final removed = currentKeys.difference(candidateKeys).length;
+      final unchanged = currentKeys.intersection(candidateKeys).length;
+
+      switch (assessment.disposition) {
+        case GridRosterRecoveryDisposition.noCommittedBundle:
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(assessment.message ?? 'ไม่พบข้อมูลกู้คืน')),
+          );
+          return;
+        case GridRosterRecoveryDisposition.alreadyApplied:
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(assessment.message ?? 'ข้อมูลถูกกู้คืนแล้ว')),
+          );
+          await _refreshRecoveryScheduleIds();
+          return;
+        case GridRosterRecoveryDisposition.conflict:
+          await showDialog<void>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('พบความขัดแย้งของข้อมูล'),
+              content: Text(
+                '${assessment.message ?? 'Schedule เปลี่ยนหลังสร้าง Journal'}\n'
+                'รายการปัจจุบัน: ${currentKeys.length}\n'
+                'รายการใน Journal: ${candidateKeys.length}\n'
+                'ไม่มีการเขียนทับข้อมูล',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('ปิด'),
+                ),
+              ],
+            ),
+          );
+          return;
+        case GridRosterRecoveryDisposition.ready:
+          break;
+      }
+
+      if (!mounted) return;
+      final approved = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('ตรวจสอบการกู้คืนตารางเวร'),
+          content: Text(
+            'Schedule: $scheduleId\n'
+            'Import Run: ${assessment.importRunId}\n'
+            'Revision ฐาน: ${assessment.expectedRevision}\n'
+            'รายการเดิม: ${currentKeys.length}\n'
+            'รายการใหม่: ${candidateKeys.length}\n'
+            'เพิ่ม: $added • ลบ/เปลี่ยน: $removed • คงเดิม: $unchanged\n'
+            'Fingerprint: ${assessment.acceptedScheduleFingerprint}\n\n'
+            'ระบบจะตรวจซ้ำว่า Journal และ revision ยังตรงกับ Preview นี้ '
+            'ก่อนบันทึก หากมีการเปลี่ยนแปลง ระบบจะปฏิเสธการกู้คืน',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('ยกเลิก'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('ยืนยันกู้คืนรายการนี้'),
+            ),
+          ],
+        ),
+      );
+      if (approved != true || !mounted) return;
+      final result = await workflow.recoverAssessment(assessment);
+      if (!mounted) return;
+      final message = switch (result) {
+        Success<Schedule?>(value: final schedule) => schedule == null
+            ? 'ไม่พบ Schedule สำหรับกู้คืน: $scheduleId'
+            : 'กู้คืน Schedule $scheduleId สำเร็จ',
+        Failure<Schedule?>() => result.message,
+      };
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message)),
+      );
+      await _refreshRecoveryScheduleIds();
+    } on Object catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('กู้คืนไม่สำเร็จ: $error')),
+      );
+    }
+  }
+
+  Future<bool> _ensureNoPendingRecovery(
+    GridRosterImportWorkflow workflow,
+  ) async {
+    final result = await workflow.inspectRecovery('imported');
+    if (!mounted) return false;
+    if (result case Failure<GridRosterRecoveryAssessment>()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.message)),
+      );
+      return false;
+    }
+    final assessment =
+        (result as Success<GridRosterRecoveryAssessment>).value;
+    if (assessment.disposition == GridRosterRecoveryDisposition.ready ||
+        assessment.disposition == GridRosterRecoveryDisposition.conflict) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'มี Journal ที่ต้องตรวจสอบหรือแก้ความขัดแย้งก่อนนำเข้าใหม่ '
+            'กรุณาใช้รายการกู้คืนและยืนยัน Preview ก่อน',
+          ),
+        ),
+      );
+      return false;
+    }
+    return true;
+  }
+
+  Set<String> _assignmentKeys(Schedule? schedule) {
+    if (schedule == null) return const {};
+    return {
+      for (final month in schedule.months)
+        for (final day in month.days)
+          for (final assignment in day.assignments)
+            '${day.date.year}-${day.date.month.toString().padLeft(2, '0')}-'
+                '${day.date.day.toString().padLeft(2, '0')}|'
+                '${assignment.employee.id}|'
+                '${assignment.shift.id}|'
+                '${assignment.location ?? ''}',
+    };
+  }
 
   @override
   void dispose() {
@@ -133,6 +321,61 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
                         style: Theme.of(context).textTheme.bodyLarge,
                       ),
                       const SizedBox(height: 24),
+                      if (widget.gridRosterWorkflow != null)
+                        Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Expanded(
+                                      child: Text(
+                                        'รายการนำเข้าเวรที่ค้นพบเพื่อกู้คืน',
+                                        style: TextStyle(fontWeight: FontWeight.w700),
+                                      ),
+                                    ),
+                                    IconButton(
+                                      tooltip: 'ค้นหารายการอีกครั้ง',
+                                      onPressed: _loadingRecovery
+                                          ? null
+                                          : _refreshRecoveryScheduleIds,
+                                      icon: _loadingRecovery
+                                          ? const SizedBox.square(
+                                              dimension: 18,
+                                              child: CircularProgressIndicator(strokeWidth: 2),
+                                            )
+                                          : const Icon(Icons.refresh),
+                                    ),
+                                  ],
+                                ),
+                                if (_recoveryError != null)
+                                  Text(
+                                    'ค้นหารายการกู้คืนไม่สำเร็จ: $_recoveryError',
+                                    style: TextStyle(color: Theme.of(context).colorScheme.error),
+                                  )
+                                else if (_loadingRecovery && _recoveryScheduleIds.isEmpty)
+                                  const LinearProgressIndicator()
+                                else if (_recoveryScheduleIds.isEmpty)
+                                  const Text('ไม่พบรายการ Journal ใน Local หรือ Backend'),
+                                for (final scheduleId in _recoveryScheduleIds)
+                                  ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    leading: const Icon(Icons.history),
+                                    title: Text(scheduleId),
+                                    subtitle: const Text(
+                                      'ต้องตรวจสอบ revision ก่อนนำข้อมูลกลับมาใช้',
+                                    ),
+                                    trailing: TextButton(
+                                      onPressed: () => _confirmRecovery(scheduleId),
+                                      child: const Text('ตรวจสอบ'),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
                       if (controller.selectedFile == null &&
                           googleSheetsInfo == null)
                         const EmptyImportView()
@@ -194,6 +437,26 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
                                 : context.l10n.nextColumnMapping,
                           ),
                         ),
+                        if (controller.workbook != null &&
+                            widget.gridRosterWorkflow != null &&
+                            widget.employeeRepository != null &&
+                            widget.shiftTemplateControllerFactory != null) ...[
+                          const SizedBox(height: 8),
+                          OutlinedButton.icon(
+                            onPressed: loadingGridRoster
+                                ? null
+                                : _openGridRosterReview,
+                            icon: loadingGridRoster
+                                ? const SizedBox.square(
+                                    dimension: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.grid_on),
+                            label: const Text('วิเคราะห์ตารางแบบ Grid ทุก Worksheet'),
+                          ),
+                        ],
                       ],
                       if (controller.error != null) ...[
                         const SizedBox(height: 16),
@@ -216,6 +479,17 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
                                 ? null
                                 : _pickExcelFile,
                           ),
+                          if (widget.gridRosterWorkflow != null &&
+                              widget.employeeRepository != null &&
+                              widget.shiftTemplateControllerFactory != null)
+                            ExcelImportButton(
+                              label: 'นำเข้า CSV / TSV / TXT แบบ Grid',
+                              icon: Icons.table_rows,
+                              loading: loadingGridRoster,
+                              onPressed: loadingGridRoster
+                                  ? null
+                                  : _openDelimitedGridRosterReview,
+                            ),
                           ExcelImportButton(
                             label: context.l10n.cancel,
                             icon: Icons.close,
@@ -315,6 +589,191 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
     mappingController.applySuggestedMapping(controller.suggestMapping());
     if (mappingController.isValid) {
       await controller.importRows(mappingController.mapping);
+    }
+  }
+
+  Future<void> _openGridRosterReview() async {
+    final workbook = controller.workbook;
+    final workflow = widget.gridRosterWorkflow;
+    final employeeRepository = widget.employeeRepository;
+    final templateFactory = widget.shiftTemplateControllerFactory;
+    if (workbook == null ||
+        workflow == null ||
+        employeeRepository == null ||
+        templateFactory == null ||
+        loadingGridRoster) {
+      return;
+    }
+
+    setState(() => loadingGridRoster = true);
+    ShiftTemplateController? templateController;
+    try {
+      if (!await _ensureNoPendingRecovery(workflow) || !mounted) return;
+
+      final report = workflow.scanWorkbook(
+        workbook: workbook,
+        readWorksheet: controller.readAllRows,
+      );
+
+      final employeeResult = await employeeRepository.findAll(
+        activeOnly: true,
+      );
+      if (!mounted) return;
+      if (employeeResult case Failure<List<Employee>>()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(employeeResult.message)),
+        );
+        return;
+      }
+      final employees =
+          (employeeResult as Success<List<Employee>>).value;
+
+      templateController = templateFactory();
+      await templateController.load();
+      if (!mounted) return;
+      if (templateController.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(templateController.error!)),
+        );
+        return;
+      }
+      final templates = templateController.templates
+          .where((template) => template.active)
+          .toList(growable: false);
+
+      final contextResult = await workflow.prepareReview(
+        report: report,
+        targetScheduleId: 'imported',
+        targetScheduleName: 'Imported Roster',
+        employees: employees,
+        shiftTemplates: templates,
+      );
+      if (!mounted) return;
+      if (contextResult case Failure<GridRosterImportReviewContext>()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(contextResult.message)),
+        );
+        return;
+      }
+      final reviewContext =
+          (contextResult as Success<GridRosterImportReviewContext>).value;
+      final saved = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (context) => GridRosterReviewPage(
+            workflow: workflow,
+            contextSnapshot: reviewContext,
+            employees: employees,
+            shiftTemplates: templates,
+          ),
+        ),
+      );
+      if (!mounted) return;
+      if (saved == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('บันทึกตารางเวรจาก Grid แล้ว')),
+        );
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('ไม่สามารถวิเคราะห์ Grid ได้: $error')),
+        );
+      }
+    } finally {
+      templateController?.dispose();
+      if (mounted) setState(() => loadingGridRoster = false);
+    }
+  }
+
+  Future<void> _openDelimitedGridRosterReview() async {
+    final workflow = widget.gridRosterWorkflow;
+    final employeeRepository = widget.employeeRepository;
+    final templateFactory = widget.shiftTemplateControllerFactory;
+    if (workflow == null ||
+        employeeRepository == null ||
+        templateFactory == null ||
+        loadingGridRoster) {
+      return;
+    }
+
+    setState(() => loadingGridRoster = true);
+    ShiftTemplateController? templateController;
+    try {
+      final document = await delimitedRosterSource.pickAndReadDelimited();
+      if (!mounted || document == null) return;
+      final report = workflow.scanDelimitedDocument(
+        document: document,
+        fileName: document.sourceFileName ?? 'local.${document.extension}',
+      );
+
+      if (!await _ensureNoPendingRecovery(workflow) || !mounted) return;
+
+      final employeeResult = await employeeRepository.findAll(
+        activeOnly: true,
+      );
+      if (!mounted) return;
+      if (employeeResult case Failure<List<Employee>>()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(employeeResult.message)),
+        );
+        return;
+      }
+      final employees = (employeeResult as Success<List<Employee>>).value;
+
+      templateController = templateFactory();
+      await templateController.load();
+      if (!mounted) return;
+      if (templateController.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(templateController.error!)),
+        );
+        return;
+      }
+      final templates = templateController.templates
+          .where((template) => template.active)
+          .toList(growable: false);
+
+      final contextResult = await workflow.prepareReview(
+        report: report,
+        targetScheduleId: 'imported',
+        targetScheduleName: 'Imported Roster',
+        employees: employees,
+        shiftTemplates: templates,
+      );
+      if (!mounted) return;
+      if (contextResult case Failure<GridRosterImportReviewContext>()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(contextResult.message)),
+        );
+        return;
+      }
+      final reviewContext =
+          (contextResult as Success<GridRosterImportReviewContext>).value;
+      final saved = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (context) => GridRosterReviewPage(
+            workflow: workflow,
+            contextSnapshot: reviewContext,
+            employees: employees,
+            shiftTemplates: templates,
+          ),
+        ),
+      );
+      if (!mounted) return;
+      if (saved == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('บันทึกตารางเวรจาก Grid แล้ว')),
+        );
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('ไม่สามารถวิเคราะห์ไฟล์ข้อความแบบ Grid ได้: $error')),
+        );
+      }
+    } finally {
+      templateController?.dispose();
+      if (mounted) setState(() => loadingGridRoster = false);
     }
   }
 

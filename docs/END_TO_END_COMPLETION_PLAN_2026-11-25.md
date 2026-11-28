@@ -1,10 +1,21 @@
 # Phakphum Calendar — End-to-End Completion Plan
 
-- Audit date: 2026-11-25
+- Audit date: 2026-11-27
 - Repository: `phakphum12345/phakphum-calendar`
-- Main SHA: `aed2f1177bdfc85f6ff53bb200116812a51bd9e3`
+- Main SHA: `68ef85361c2d08e2970160a36475592010d908f7`
 - Status: current engineering plan; not a release-readiness declaration
 
+
+## Live execution checkpoint — 2026-11-27
+
+- Audited main SHA: `68ef85361c2d08e2970160a36475592010d908f7`.
+- PR #192 is the integration branch for universal roster work: horizontal/vertical parser, XLSX scanner, source provenance, review and row correction are being kept in one workflow.
+- PR #200 is superseded by the integrated implementation in #192; do not merge both parser branches.
+- PR #199 orientation primitives and tests are being consolidated into #192; do not merge a duplicate foundation.
+- PR #191 and #196 remain independent notification and Calendar Sync foundations.
+- Exact-head CI on the current #192 branch must be re-fetched after the latest commit; previous green results do not apply to a moved head.
+- Original X-OPD November 2569, 16 Nov–15 Dec 2569 and US Clinic ภปร.4 workbooks are not available for actual-file acceptance.
+- See `COMPLETION_STATUS.md` and `IMPLEMENTATION_EVIDENCE.md` for live status and evidence boundaries.
 ## Mission
 
 Deliver a dependable calendar and shift-management application with configurable Personal, Organization and Hybrid shift-pay modes, secure organization boundaries, reliable Calendar synchronization, traceable calculations and installable supported clients.

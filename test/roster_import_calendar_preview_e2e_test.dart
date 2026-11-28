@@ -106,12 +106,22 @@ void main() {
       );
       final store = InMemoryScheduleKeyValueStore();
       final repository = SharedPreferencesScheduleRepository(store: store);
-      expect((await repository.save(original)).isSuccess, isTrue);
+      final absent = await repository.findById(original.id);
+      expect(absent, isA<Success<Schedule?>>());
+      expect((absent as Success<Schedule?>).value, isNull);
+      final absentRevision = repository.revisionForAbsentSchedule(original.id);
+      expect(absentRevision, isNotNull);
+      expect(
+        await repository.saveIfRevision(original, absentRevision!),
+        isA<Success<Schedule>>(),
+      );
 
       const planner = ImportStagingPlanner();
       const applier = ImportStagingApplier();
       final beforeSave = await repository.findById(original.id);
       final snapshot = (beforeSave as Success<Schedule?>).value!;
+      final snapshotRevision = repository.revisionForSnapshot(snapshot);
+      expect(snapshotRevision, isNotNull);
       final plan = planner.plan(existingSchedule: snapshot, records: records);
       expect(
         plan.entries.map((entry) => entry.action),
@@ -124,7 +134,10 @@ void main() {
         plan: plan,
         includedRowNumbers: selectedRows,
       );
-      expect((await repository.save(staged)).isSuccess, isTrue);
+      expect(
+        await repository.saveIfRevision(staged, snapshotRevision!),
+        isA<Success<Schedule>>(),
+      );
 
       final afterSave = await repository.findById(original.id);
       final persisted = (afterSave as Success<Schedule?>).value!;

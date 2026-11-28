@@ -4,6 +4,8 @@ use App\Http\Controllers\Api\V1\ClientErrorController;
 use App\Http\Controllers\Api\V1\GoogleAccountController;
 use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\OrganizationController;
+use App\Http\Controllers\Api\V1\ScheduleController;
+use App\Http\Controllers\Api\V1\ScheduleImportJournalController;
 use App\Http\Controllers\Api\V1\ShiftPayCalculationController;
 use App\Http\Controllers\Api\V1\ShiftPayProfileController;
 use App\Http\Controllers\Api\V1\ShiftTransactionController;
@@ -20,6 +22,23 @@ Route::prefix('v1')->group(function (): void {
         ->name('api.v1.diagnostics.client-errors');
 
     Route::middleware(['throttle:120,1', 'google.account'])->group(function (): void {
+        Route::get('/schedules/import-journals', [ScheduleImportJournalController::class, 'discover'])
+            ->name('api.v1.schedules.import-journals.discover');
+        Route::get('/schedules/{scheduleId}', [ScheduleController::class, 'show'])
+            ->where('scheduleId', '[A-Za-z0-9._:-]{1,128}')
+            ->name('api.v1.schedules.show');
+        Route::put('/schedules/{scheduleId}', [ScheduleController::class, 'store'])
+            ->where('scheduleId', '[A-Za-z0-9._:-]{1,128}')
+            ->name('api.v1.schedules.store');
+        Route::delete('/schedules/{scheduleId}', [ScheduleController::class, 'destroy'])
+            ->where('scheduleId', '[A-Za-z0-9._:-]{1,128}')
+            ->name('api.v1.schedules.destroy');
+        Route::get('/schedules/{scheduleId}/import-journals', [ScheduleImportJournalController::class, 'index'])
+            ->where('scheduleId', '[A-Za-z0-9._:-]{1,128}')
+            ->name('api.v1.schedules.import-journals.index');
+        Route::post('/schedules/{scheduleId}/import-journals', [ScheduleImportJournalController::class, 'store'])
+            ->where('scheduleId', '[A-Za-z0-9._:-]{1,128}')
+            ->name('api.v1.schedules.import-journals.store');
         Route::get('/me', [GoogleAccountController::class, 'show'])
             ->name('api.v1.me');
         Route::post('/shift-pay/calculations', [ShiftPayCalculationController::class, 'store'])

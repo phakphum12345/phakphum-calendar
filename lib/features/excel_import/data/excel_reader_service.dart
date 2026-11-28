@@ -82,15 +82,34 @@ class ExcelReaderService {
 
     return [
       for (final entry in workbook.tables.entries)
-        WorksheetInfo(
-          name: entry.key,
-          rowCount: entry.value.rows.length,
-          columnCount: entry.value.rows.fold<int>(
-            0,
-            (maximum, row) => row.length > maximum ? row.length : maximum,
-          ),
-        ),
+        _worksheetInfo(entry.key, entry.value),
     ];
+  }
+
+  WorksheetInfo _worksheetInfo(String name, excel.Sheet sheet) {
+    final mergedCells = _mergedCellAnchors(sheet).keys;
+    final mergedRowCount = mergedCells.fold<int>(
+      0,
+      (maximum, coordinate) =>
+          coordinate.$1 + 1 > maximum ? coordinate.$1 + 1 : maximum,
+    );
+    final mergedColumnCount = mergedCells.fold<int>(
+      0,
+      (maximum, coordinate) =>
+          coordinate.$2 + 1 > maximum ? coordinate.$2 + 1 : maximum,
+    );
+    final rowCount = sheet.rows.length > mergedRowCount
+        ? sheet.rows.length
+        : mergedRowCount;
+    final columnCount = sheet.rows.fold<int>(
+      mergedColumnCount,
+      (maximum, row) => row.length > maximum ? row.length : maximum,
+    );
+    return WorksheetInfo(
+      name: name,
+      rowCount: rowCount,
+      columnCount: columnCount,
+    );
   }
 
   List<ExcelRow> readWorksheet(WorksheetInfo worksheet) {
@@ -114,8 +133,18 @@ class ExcelReaderService {
     }
 
     try {
-      final rowCount = limit == null || sheet.rows.length < limit
-          ? sheet.rows.length
+      final mergedAnchors = _mergedCellAnchors(sheet);
+      final mergedColumnsByRow = <int, int>{};
+      for (final coordinate in mergedAnchors.keys) {
+        final requiredColumnCount = coordinate.$2 + 1;
+        final current = mergedColumnsByRow[coordinate.$1] ?? 0;
+        if (requiredColumnCount > current) {
+          mergedColumnsByRow[coordinate.$1] = requiredColumnCount;
+        }
+      }
+      final availableRowCount = worksheet.rowCount;
+      final rowCount = limit == null || availableRowCount < limit
+          ? availableRowCount
           : limit;
       return [
         for (var rowIndex = 0; rowIndex < rowCount; rowIndex++)
@@ -123,14 +152,30 @@ class ExcelReaderService {
             index: rowIndex,
             cells: [
               for (
-                var columnIndex = 0;
-                columnIndex < sheet.rows[rowIndex].length;
+                var columnIndex = 0,
+                rowCells = rowIndex < sheet.rows.length
+                    ? sheet.rows[rowIndex]
+                    : <dynamic>[];
+                columnIndex <
+                    (rowCells.length > (mergedColumnsByRow[rowIndex] ?? 0)
+                        ? rowCells.length
+                        : (mergedColumnsByRow[rowIndex] ?? 0));
                 columnIndex++
               )
                 ExcelCell(
                   rowIndex: rowIndex,
                   columnIndex: columnIndex,
-                  value: _cellValue(sheet.rows[rowIndex][columnIndex]?.value),
+                  value: columnIndex < rowCells.length
+                      ? _cellValue(rowCells[columnIndex]?.value)
+                      : null,
+                  backgroundColorValue: columnIndex < rowCells.length
+                      ? _backgroundColor(rowCells[columnIndex])
+                      : null,
+                  isMerged: mergedAnchors.containsKey((rowIndex, columnIndex)),
+                  mergedAnchorRowIndex:
+                      mergedAnchors[(rowIndex, columnIndex)]?.$1,
+                  mergedAnchorColumnIndex:
+                      mergedAnchors[(rowIndex, columnIndex)]?.$2,
                 ),
             ],
           ),
@@ -143,6 +188,44 @@ class ExcelReaderService {
         ),
       );
     }
+  }
+
+  Map<(int, int), (int, int)> _mergedCellAnchors(excel.Sheet sheet) {
+    final anchors = <(int, int), (int, int)>{};
+    for (final range in sheet.spannedItems) {
+      final endpoints = range.toUpperCase().split(':');
+      if (endpoints.length != 2) continue;
+      final start = _parseCellAddress(endpoints[0]);
+      final end = _parseCellAddress(endpoints[1]);
+      if (start == null || end == null) continue;
+      final (startRow, startColumn) = start;
+      final (endRow, endColumn) = end;
+      if (endRow < startRow || endColumn < startColumn) continue;
+      for (var row = startRow; row <= endRow; row++) {
+        for (var column = startColumn; column <= endColumn; column++) {
+          anchors[(row, column)] = (startRow, startColumn);
+        }
+      }
+    }
+    return anchors;
+  }
+
+  (int, int)? _parseCellAddress(String address) {
+    final match = RegExp(r'^([A-Z]+)([0-9]+)').firstMatch(address);
+    if (match == null || match.group(0) != address) return null;
+    final row = int.tryParse(match.group(2) ?? '');
+    final column = _columnIndex(match.group(1) ?? '');
+    if (row == null || row < 1 || column < 0) return null;
+    return (row - 1, column);
+  }
+
+  int _columnIndex(String letters) {
+    var value = 0;
+    for (final code in letters.codeUnits) {
+      if (code < 65 || code > 90) return -1;
+      value = value * 26 + code - 64;
+    }
+    return value - 1;
   }
 
   ImportError? _validate(ImportFile file) {
@@ -165,6 +248,12 @@ class ExcelReaderService {
       );
     }
     return null;
+  }
+
+  int? _backgroundColor(dynamic cell) {
+    final color = cell?.cellStyle?.backgroundColor;
+    if (color == null || color.colorHex == 'none') return null;
+    return 0xFF000000 | (color.colorInt & 0xFFFFFF);
   }
 
   Object? _cellValue(excel.CellValue? value) => switch (value) {

@@ -9,7 +9,7 @@ This document describes the current routes. Request validation and service autho
 
 - Public health routes: `GET /api/v1/health`, `GET /api/v1/ready`.
 - Public client diagnostics: `POST /api/v1/diagnostics/client-errors`, throttled at 30 requests per minute.
-- All account, organization and shift-transaction routes use the `google.account` middleware and are throttled at 120 requests per minute.
+- All account, organization, Schedule, import-journal and shift-transaction routes use the `google.account` middleware and are throttled at 120 requests per minute.
 - Send a Google **ID token** as `Authorization: Bearer <google-id-token>`. The backend verifies the Google identity token; do not send an OAuth client secret or refresh token.
 - The middleware resolves or updates the account by verified Google subject and rejects conflicting email identities.
 
@@ -32,7 +32,7 @@ This document describes the current routes. Request validation and service autho
 | GET | `/health` | Liveness |
 | GET | `/ready` | Readiness |
 | POST | `/diagnostics/client-errors` | Accept bounded client diagnostics |
-| GET | `/me` | Current authenticated account |
+| GET | `/me` | Current authenticated account |\n| GET / PUT / DELETE | `/schedules/{scheduleId}` | Read / conditional-save / tombstone-delete personal Schedule |\n| GET / POST | `/schedules/{scheduleId}/import-journals` | Discover append-only import journal records / append PREPARED or COMMITTED stage |
 | GET / POST | `/organizations` | List memberships / create organization |
 | GET | `/organization-join-requests` | Current user's join requests |
 | POST | `/organization-join-requests` | Request membership by organization slug |
@@ -56,6 +56,59 @@ This document describes the current routes. Request validation and service autho
 | POST | `/shift-transactions/{transactionId}/fulfill` | Fulfill a transfer |
 
 The full URL shape is `{APP_URL}/api/v1/{path}`; paths in the table are relative to `/api/v1`.
+
+## Schedule persistence and Grid import journal
+
+All Schedule endpoints require a verified Google ID token and are scoped to the authenticated account. They do not expose another account's records and do not trigger Calendar synchronization.
+
+### Read a Schedule
+
+`GET /api/v1/schedules/{scheduleId}`
+
+Returns the canonical JSON payload, a revision token and state (`live`, `deleted`, or `absent`). An absent Schedule returns HTTP 200 with `data: null` and an account- and Schedule-ID-scoped absent revision token.
+
+### Conditional save
+
+`PUT /api/v1/schedules/{scheduleId}`
+
+Request:
+
+```json
+{
+  "expected_revision": "absent:<sha256-of-account-id-and-schedule-id>",
+  "schedule": {
+    "format": "shift-tools.canonical-schedule",
+    "version": 1,
+    "schedule": {
+      "id": "roster-2026-11",
+      "name": "November",
+      "departments": [],
+      "employees": [],
+      "shiftTypes": [],
+      "months": []
+    }
+  }
+}
+```
+
+A first create using the absent token returns HTTP 201 and revision `v1:<sha256>`. A subsequent save must send the exact current revision. The database update matches account, Schedule ID, generation and fingerprint in one conditional statement; stale writers receive HTTP 409 with `schedule_revision_conflict` and the current revision. A revision mismatch never overwrites the current payload.
+
+### Conditional delete
+
+`DELETE /api/v1/schedules/{scheduleId}` with JSON body `{"expected_revision":"vN:<sha256>"}` advances the generation and leaves a tombstone. It does not physically remove the record. A stale revision cannot recreate a tombstoned Schedule. The client must refresh and make an explicit decision before any future restore flow.
+
+### Import journal
+
+- `GET /api/v1/schedules/{scheduleId}/import-journals` lists the authenticated account's append-only journal stages.
+- `POST /api/v1/schedules/{scheduleId}/import-journals` appends one `prepared` or `committed` stage, keyed by import run ID and lifecycle.
+- A `committed` stage requires a matching prior `prepared` stage with the same Schedule ID, base revision and source fingerprint, and includes the accepted Schedule and fingerprint.
+- Replaying the exact same stage is idempotent. Reusing the same import run/lifecycle with different content returns HTTP 409.
+- `import_run_id` is a bounded identifier (1–128 characters; letters, digits, `.`, `_`, `:`, and `-`) so existing Grid clients using `grid-<microseconds>` remain compatible; it is not UUID-only.
+- Fingerprint columns use lowercase 64-character SHA-256 hex. The provenance envelope may retain the `sha256:` prefix; clients normalize only the API fingerprint fields.
+- When `ORGANIZATION_API_BASE_URL` is configured, the Flutter Grid workflow appends PREPARED remotely, verifies its local journal commit, appends COMMITTED remotely, then performs the conditional canonical Schedule save. A failed remote journal stage prevents the canonical save.
+- Journal writes do not automatically replay or overwrite the canonical Schedule. Recovery and user-visible conflict resolution remain explicit client responsibilities.
+
+**Current boundary:** this first backend slice stores personal Schedule records per authenticated account. Organization-shared roster ownership/permissions and Flutter client wiring are separate follow-up work; no existing SharedPreferences data is migrated or deleted by these endpoints. Production deployment and live-provider integration are not implied by source changes or CI alone.
 
 ## Create a shift transaction
 

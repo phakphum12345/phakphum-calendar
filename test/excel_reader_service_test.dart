@@ -85,6 +85,34 @@ void main() {
     expect(previewRows[1].cells[1].value, isNull);
   });
 
+  test('preserves merged range anchor coordinates for every covered cell', () {
+    final workbook = Excel.createExcel();
+    workbook.rename('Sheet1', 'Roster');
+    final sheet = workbook['Roster'];
+    sheet.appendRow([TextCellValue('Period'), TextCellValue('')]);
+    sheet.merge(
+      CellIndex.indexByString('A1'),
+      CellIndex.indexByString('B1'),
+      customValue: TextCellValue('Period'),
+    );
+    final service = ExcelReaderService();
+    final file = ImportFile(
+      name: 'merged-roster.xlsx',
+      bytes: Uint8List.fromList(workbook.encode()!),
+    );
+
+    final workbookInfo = service.openWorkbook(file);
+    final worksheet = workbookInfo.worksheets.single;
+    final rows = service.readWorksheetForImport(worksheet);
+
+    expect(rows.first.cells, hasLength(2));
+    for (final cell in rows.first.cells) {
+      expect(cell.isMerged, isTrue);
+      expect(cell.mergedAnchorRowIndex, 0);
+      expect(cell.mergedAnchorColumnIndex, 0);
+    }
+  });
+
   test('reads every worksheet row for import', () {
     final workbook = Excel.createExcel();
     workbook.rename('Sheet1', 'Roster');

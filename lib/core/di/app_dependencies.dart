@@ -5,6 +5,8 @@ import '../../controller/app_controller.dart';
 import '../../domain/repositories/employee_repository.dart';
 import '../../domain/repositories/import_repository.dart';
 import '../../domain/repositories/schedule_repository.dart';
+import '../../domain/repositories/conditional_schedule_writer.dart';
+import '../../domain/repositories/schedule_revision_source.dart';
 import '../../domain/repositories/settings_repository.dart';
 import '../../domain/repositories/shift_template_repository.dart';
 import '../../domain/entities/schedule.dart';
@@ -48,12 +50,16 @@ import '../../features/reports/infrastructure/monthly_schedule_pdf_service.dart'
 import '../../features/reports/infrastructure/printing_report_output_gateway.dart';
 import '../../features/reports/presentation/controllers/monthly_schedule_report_controller.dart';
 import '../../features/schedule/data/imported_schedule_adapter.dart';
+import '../../features/schedule/data/backend_schedule_repository.dart';
 import '../../features/schedule/data/legacy_schedule_adapter.dart';
 import '../../features/schedule/data/schedule_service.dart';
 import '../../features/schedule/data/shared_preferences_schedule_repository.dart';
 import '../../features/schedule/presentation/controllers/schedule_controller.dart';
 import '../../features/shift_exchange/presentation/controllers/shift_exchange_controller.dart';
 import '../../features/shift_templates/application/shift_template_controller.dart';
+import '../../features/shift_parser/application/grid_roster_import_workflow.dart';
+import '../../features/shift_parser/data/backend_grid_roster_import_journal_gateway.dart';
+import '../../features/shift_parser/data/grid_roster_bundle_journal.dart';
 import '../../features/shift_templates/infrastructure/shared_preferences_shift_template_repository.dart';
 import '../../features/workflow/application/calendar_sync_coordinator.dart';
 import '../../features/workflow/application/shift_calendar_workflow_controller.dart';
@@ -174,8 +180,7 @@ class AppDependencies {
        shiftTemplateRepository =
            shiftTemplateRepository ??
            SharedPreferencesShiftTemplateRepository(),
-       scheduleRepository =
-           scheduleRepository ?? SharedPreferencesScheduleRepository(),
+       _providedScheduleRepository = scheduleRepository,
        workflowMessageProvider =
            workflowMessageProviderOverride ??
            ((key) => workflowMessageFor(AppLocalizationsTh(), key));
@@ -220,7 +225,38 @@ class AppDependencies {
 
   final EmployeeRepository employeeRepository;
   final ShiftTemplateRepository shiftTemplateRepository;
-  final ScheduleRepository scheduleRepository;
+  final ScheduleRepository? _providedScheduleRepository;
+
+  /// Uses the same configured backend for every production Schedule writer.
+  /// If the backend is not configured, local storage uses process-scoped
+  /// revision-aware CAS. Shared multi-device writes require the backend CAS.
+  late final ScheduleRepository scheduleRepository =
+      _providedScheduleRepository ?? _createDefaultScheduleRepository();
+
+  ScheduleRepository _createDefaultScheduleRepository() {
+    const baseUrl = String.fromEnvironment('ORGANIZATION_API_BASE_URL');
+    if (baseUrl.trim().isEmpty) return SharedPreferencesScheduleRepository();
+    return BackendScheduleRepository(
+      baseUrl: baseUrl,
+      idTokenProvider: () async => googleAuthService.account?.authentication.idToken,
+    );
+  }
+
+  /// Grid imports share the same repository instance and snapshot revision cache.
+  late final ScheduleRepository gridScheduleRepository = scheduleRepository;
+  /// Uses the same configured backend origin as Schedule persistence.
+  /// When no backend origin is configured, the existing local journal remains
+  /// the only journal and all legacy local workflows continue unchanged.
+  late final GridRosterImportJournalGateway? gridRosterImportJournalGateway = () {
+    const baseUrl = String.fromEnvironment('ORGANIZATION_API_BASE_URL');
+    if (baseUrl.trim().isEmpty) return null;
+    return BackendGridRosterImportJournalGateway(
+      baseUrl: baseUrl,
+      idTokenProvider: () async =>
+          googleAuthService.account?.authentication.idToken,
+    );
+  }();
+
   final ImportRepository? importRepository;
   final SettingsRepository? settingsRepository;
   final ImportService? importService;
@@ -261,7 +297,8 @@ class AppDependencies {
       archiveService: driveArchiveService,
       ownershipService: driveOwnershipService,
       localFileService: localRosterFileService,
-      scheduleRepository: scheduleRepository,
+      scheduleRepository:
+          _providedScheduleRepository ?? SharedPreferencesScheduleRepository(),
       shiftTemplateRepository: shiftTemplateRepository,
       legacyScheduleAdapter: legacyScheduleAdapter,
       calendarWorkflowControllerFactory:
@@ -300,6 +337,17 @@ class AppDependencies {
       ),
       repository: scheduleRepository,
       validationService: createScheduleValidationService(),
+    );
+  }
+
+  /// Creates the repository-backed Grid workbook import workflow.
+  GridRosterImportWorkflow createGridRosterImportWorkflow() {
+    return GridRosterImportWorkflow(
+      scheduleRepository: gridScheduleRepository,
+      journal: GridRosterBundleJournal(
+        store: SharedPreferencesScheduleKeyValueStore(),
+      ),
+      remoteJournalGateway: gridRosterImportJournalGateway,
     );
   }
 
@@ -347,19 +395,48 @@ class AppDependencies {
     return ScheduleController(
       service: ScheduleService(schedule: schedule),
       validationService: createScheduleValidationService(),
-      repository: scheduleRepository,
+      repository: gridScheduleRepository,
       initialMonth: schedule.months.firstOrNull?.month,
     );
   }
 
   /// Loads the current canonical imported schedule without mutating it.
   Future<Result<Schedule?>> loadImportedSchedule() {
-    return scheduleRepository.findById('imported');
+    return gridScheduleRepository.findById('imported');
   }
 
-  /// Persists a successfully converted canonical import aggregate.
-  Future<Result<Schedule>> saveImportedSchedule(Schedule schedule) {
-    return scheduleRepository.save(schedule);
+  /// Creates a new imported Schedule. Replacing an existing backend
+  /// Schedule must go through the reviewed Grid import workflow and its
+  /// caller-owned revision token.
+  Future<Result<Schedule>> saveImportedSchedule(Schedule schedule) async {
+    final repository = gridScheduleRepository;
+    if (repository is ConditionalScheduleWriter &&
+        repository is ScheduleRevisionSource) {
+      final conditionalWriter = repository as ConditionalScheduleWriter;
+      final revisionSource = repository as ScheduleRevisionSource;
+      final current = await repository.findById(schedule.id);
+      if (current case Failure<Schedule?>()) {
+        return PersistenceFailure<Schedule>(
+          current.message,
+          cause: current,
+        );
+      }
+      if ((current as Success<Schedule?>).value != null) {
+        return const PersistenceFailure(
+          'An existing Schedule can only be replaced through the reviewed Grid import workflow.',
+        );
+      }
+      final revision = revisionSource.revisionForAbsentSchedule(schedule.id);
+      if (revision == null || revision.trim().isEmpty) {
+        return const PersistenceFailure(
+          'The Schedule repository did not provide an absent-Schedule revision.',
+        );
+      }
+      return conditionalWriter.saveIfRevision(schedule, revision);
+    }
+    return const PersistenceFailure(
+      'The configured Schedule repository does not support atomic conditional writes.',
+    );
   }
 
   /// Creates a rule engine from the rules registered at the composition root.

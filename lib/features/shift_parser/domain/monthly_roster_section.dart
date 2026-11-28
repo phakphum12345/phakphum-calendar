@@ -1,4 +1,6 @@
 import '../../../models/shift.dart';
+import 'normalized_cell.dart';
+import 'roster_grid_axis_mapping.dart';
 
 /// A resolved calendar date attached to its original spreadsheet column.
 class MonthlyRosterDateColumn {
@@ -6,11 +8,13 @@ class MonthlyRosterDateColumn {
     required this.columnIndex,
     required this.displayedDay,
     required this.date,
+    this.rowIndex,
   });
 
   final int columnIndex;
   final int displayedDay;
   final DateTime date;
+  final int? rowIndex;
 }
 
 /// A blocking date-grid issue that must be reviewed before calendar sync.
@@ -20,19 +24,26 @@ class MonthlyRosterDateAnomaly {
     required this.message,
     this.columnIndex,
     this.displayedDay,
+    this.rowIndex,
   });
 
   final String code;
   final String message;
   final int? columnIndex;
   final int? displayedDay;
+  final int? rowIndex;
 }
 
 /// A shift row discovered independently of the worker names in its cells.
 class MonthlyRosterRow {
-  const MonthlyRosterRow({required this.rowIndex, required this.label});
+  const MonthlyRosterRow({
+    required this.rowIndex,
+    required this.label,
+    this.columnIndex,
+  });
 
   final int rowIndex;
+  final int? columnIndex;
   final String label;
 }
 
@@ -47,6 +58,11 @@ class MonthlyRosterSection {
     this.startDate,
     this.endDate,
     this.dateAnomalies = const [],
+    this.sourceSpreadsheetId,
+    this.sourceSheetId,
+    this.sourceSheetTitle,
+    this.sourceCells = const [],
+    this.orientation = RosterGridOrientation.datesAcrossColumns,
   });
 
   final String title;
@@ -58,6 +74,12 @@ class MonthlyRosterSection {
   final DateTime? startDate;
   final DateTime? endDate;
   final List<MonthlyRosterDateAnomaly> dateAnomalies;
+  final String? sourceSpreadsheetId;
+  final int? sourceSheetId;
+  final String? sourceSheetTitle;
+  /// Original normalized worksheet cells retained for source-bound correction.
+  final List<NormalizedCell> sourceCells;
+  final RosterGridOrientation orientation;
 
   bool get hasBlockingDateAnomalies => dateAnomalies.isNotEmpty;
 }
@@ -74,11 +96,13 @@ class MonthlyRosterAssignment {
     this.spreadsheetId,
     this.sheetId,
     this.sheetTitle,
+    this.columnIndex,
   });
 
   final String sectionTitle;
   final String rowLabel;
   final int rowIndex;
+  final int? columnIndex;
   final String workerName;
   final DateTime date;
   final String sourceCell;
@@ -129,12 +153,14 @@ class MonthlyRosterParseReport {
     required this.warnings,
     this.sourceSheetCount = 0,
     this.sheetSummaries = const [],
+    this.sourceFingerprint,
   });
 
   final List<MonthlyRosterSection> sections;
   final List<String> warnings;
   final int sourceSheetCount;
   final List<MonthlyRosterSheetScanSummary> sheetSummaries;
+  final String? sourceFingerprint;
 
   List<MonthlyRosterDateAnomaly> get blockingDateAnomalies => [
     for (final section in sections) ...section.dateAnomalies,
@@ -195,6 +221,9 @@ class MonthlyRosterParseReport {
           rosterRows: const [],
           startDate: assignments.first.date,
           endDate: assignments.last.date,
+          sourceSpreadsheetId: assignments.first.spreadsheetId,
+          sourceSheetId: assignments.first.sheetId,
+          sourceSheetTitle: assignments.first.sheetTitle,
         ),
       );
     }
@@ -209,6 +238,7 @@ class MonthlyRosterParseReport {
     return MonthlyRosterParseReport(
       sections: List.unmodifiable([...sections, ...imported.sections]),
       warnings: warnings,
+      sourceFingerprint: sourceFingerprint,
     );
   }
 
@@ -291,6 +321,7 @@ class MonthlyRosterParseReport {
         MonthlyRosterSection(
           title: section.title,
           headerRowIndex: section.headerRowIndex,
+          orientation: section.orientation,
           assignments: List.unmodifiable(filteredAssignments),
           rowLabels: section.rowLabels,
           dateColumns: section.dateColumns,
@@ -298,6 +329,10 @@ class MonthlyRosterParseReport {
           startDate: section.startDate,
           endDate: section.endDate,
           dateAnomalies: section.dateAnomalies,
+          sourceSpreadsheetId: section.sourceSpreadsheetId,
+          sourceSheetId: section.sourceSheetId,
+          sourceSheetTitle: section.sourceSheetTitle,
+          sourceCells: section.sourceCells,
         ),
       );
     }
@@ -307,6 +342,7 @@ class MonthlyRosterParseReport {
       warnings: warnings,
       sourceSheetCount: sourceSheetCount,
       sheetSummaries: sheetSummaries,
+      sourceFingerprint: sourceFingerprint,
     );
   }
 }

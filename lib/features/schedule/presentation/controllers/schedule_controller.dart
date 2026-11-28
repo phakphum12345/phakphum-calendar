@@ -4,9 +4,12 @@ import '../../../../core/state/controller_state.dart';
 import '../../../../core/result/result.dart';
 import '../../../../domain/entities/schedule.dart';
 import '../../../../domain/repositories/schedule_repository.dart';
+import '../../../../domain/repositories/conditional_schedule_writer.dart';
+import '../../../../domain/repositories/schedule_revision_source.dart';
 import '../../../rules/application/schedule_validation_service.dart';
 import '../../../rules/domain/rule_result.dart';
 import '../../data/schedule_service.dart';
+import '../../data/schedule_json_codec.dart';
 import '../../domain/department.dart';
 import '../../domain/employee.dart';
 import '../../domain/schedule_day.dart';
@@ -23,18 +26,26 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
     DateTime? initialMonth,
   }) : _service = service ?? ScheduleService(),
        _currentMonth = _normalizeMonth(initialMonth ?? DateTime.now()) {
+    _initialScheduleSnapshot = _service.schedule;
+    final source = repository;
+    if (source is ScheduleRevisionSource) {
+      _expectedRevision = (source as ScheduleRevisionSource)
+          .revisionForSnapshot(_service.schedule);
+    }
     loadMonth(_currentMonth);
   }
 
   final ScheduleService _service;
   final ScheduleValidationService? validationService;
   final ScheduleRepository? repository;
+  late final Schedule _initialScheduleSnapshot;
   DateTime _currentMonth;
   late ScheduleMonth _schedule;
   RuleResult? _validationResult;
   bool _loading = false;
   Object? _error;
   String? _message;
+  String? _expectedRevision;
   String _staffNameQuery = '';
   String _positionQuery = '';
   String? _employeeId;
@@ -210,7 +221,47 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
     _error = null;
     _message = null;
     notifyListeners();
-    final result = await scheduleRepository.save(canonicalSchedule);
+    final scheduleRepositoryForCas = scheduleRepository;
+    final Result<Schedule> result;
+    if (scheduleRepositoryForCas is ConditionalScheduleWriter &&
+        scheduleRepositoryForCas is ScheduleRevisionSource) {
+      final conditionalWriter = scheduleRepositoryForCas as ConditionalScheduleWriter;
+      final revisionSource = scheduleRepositoryForCas as ScheduleRevisionSource;
+      var expectedRevision = _expectedRevision;
+      if (expectedRevision == null || expectedRevision.trim().isEmpty) {
+        final revisionFailure = await _captureExpectedRevision(revisionSource);
+        if (revisionFailure != null) {
+          _loading = false;
+          _error = revisionFailure;
+          _message = revisionFailure.message;
+          notifyListeners();
+          return revisionFailure;
+        }
+        expectedRevision = _expectedRevision;
+      }
+      if (expectedRevision == null || expectedRevision.trim().isEmpty) {
+        const failure = PersistenceFailure<Schedule>(
+          'Could not capture an exact Schedule revision before saving.',
+        );
+        _loading = false;
+        _error = failure;
+        _message = failure.message;
+        notifyListeners();
+        return failure;
+      }
+      result = await conditionalWriter.saveIfRevision(
+        canonicalSchedule,
+        expectedRevision,
+      );
+      if (result case Success<Schedule>(value: final saved)) {
+        _expectedRevision = revisionSource.revisionForSnapshot(saved);
+      }
+    } else {
+      result = const PersistenceFailure(
+        'The configured Schedule repository does not support atomic conditional writes. '
+        'Configure a revision-aware repository before saving.',
+      );
+    }
     switch (result) {
       case Success<Schedule>():
         _message = 'Schedule saved.';
@@ -221,6 +272,51 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
     _loading = false;
     notifyListeners();
     return result;
+  }
+
+  Future<Failure<Schedule>?> _captureExpectedRevision(
+    ScheduleRevisionSource revisionSource,
+  ) async {
+    final scheduleRepository = repository;
+    if (scheduleRepository == null) {
+      return const PersistenceFailure(
+        'Schedule persistence is not configured.',
+      );
+    }
+    final loaded = await scheduleRepository.findById(canonicalSchedule.id);
+    if (loaded case Failure<Schedule?>()) {
+      return PersistenceFailure(
+        'Could not verify the current Schedule before saving.',
+        cause: loaded,
+      );
+    }
+    final current = (loaded as Success<Schedule?>).value;
+    if (current == null) {
+      final absentRevision = revisionSource.revisionForAbsentSchedule(
+        canonicalSchedule.id,
+      );
+      if (absentRevision == null || absentRevision.trim().isEmpty) {
+        return const PersistenceFailure(
+          'The repository did not provide an exact absent-Schedule revision.',
+        );
+      }
+      _expectedRevision = absentRevision;
+      return null;
+    }
+    if (const ScheduleJsonCodec().encode(current) !=
+        const ScheduleJsonCodec().encode(_initialScheduleSnapshot)) {
+      return const ValidationFailure(
+        'The editor does not contain the exact persisted Schedule snapshot. Reload it before saving.',
+      );
+    }
+    final revision = revisionSource.revisionForSnapshot(current);
+    if (revision == null || revision.trim().isEmpty) {
+      return const PersistenceFailure(
+        'The repository did not provide a revision for the loaded Schedule snapshot.',
+      );
+    }
+    _expectedRevision = revision;
+    return null;
   }
 
   /// Loads a persisted canonical aggregate by stable schedule identity.
@@ -241,11 +337,26 @@ class ScheduleController extends ChangeNotifier implements ControllerState {
     switch (result) {
       case Success<Schedule?>(value: final schedule):
         if (schedule != null) {
+          final source = scheduleRepository;
+          _expectedRevision = source is ScheduleRevisionSource
+              ? (source as ScheduleRevisionSource).revisionForSnapshot(schedule)
+              : null;
           _service.replaceSchedule(schedule);
           _validationResult = null;
           loadMonth(schedule.months.firstOrNull?.month ?? _currentMonth);
           _message = 'Schedule loaded.';
         } else {
+          final source = scheduleRepository;
+          _expectedRevision = source is ScheduleRevisionSource
+              ? (source as ScheduleRevisionSource).revisionForAbsentSchedule(scheduleId)
+              : null;
+          _service.replaceSchedule(
+            Schedule(
+              id: scheduleId,
+              name: _service.schedule.name,
+              months: _service.schedule.months,
+            ),
+          );
           _message = 'No saved schedule was found.';
         }
       case Failure<Schedule?>():
