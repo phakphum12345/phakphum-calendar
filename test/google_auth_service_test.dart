@@ -28,4 +28,13 @@ void main() {
       );
     });
   });
+
+  group('Google OAuth configuration ownership', () {
+    test('does not expose end-user Web OAuth configuration', () {
+      final service = GoogleAuthService();
+      addTearDown(service.dispose);
+
+      expect(service.canConfigureWebOAuth, isFalse);
+    });
+  });
 }

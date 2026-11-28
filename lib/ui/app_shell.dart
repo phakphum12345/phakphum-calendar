@@ -45,7 +45,6 @@ import '../models/tool_definition.dart';
 import '../services/calendar_service.dart';
 import '../services/calendar_color_service.dart';
 import '../services/drive_ownership_service.dart';
-import '../services/google_auth_service.dart';
 import '../services/roster_revision_service.dart';
 import '../services/shift_color_service.dart';
 import '../services/web_push_subscription_client.dart';
@@ -469,7 +468,6 @@ class _AppShellState extends State<AppShell> {
               sync: _sync,
               openAlerts: () =>
                   unawaited(_openUtilityPage(_UtilityPage.notifications)),
-              configureGoogleOAuth: _configureGoogleOAuth,
               syncGoogleAccount: _startGoogleSync,
               dashboardSummaryService: widget.dashboardSummaryService,
             ),
@@ -1339,94 +1337,10 @@ class _AppShellState extends State<AppShell> {
       await _perform(() => widget.controller.signIn());
       return;
     }
-    if (auth.canConfigureWebOAuth) {
-      await _configureGoogleOAuth();
-      // Continue directly into Google sign-in after successful setup. If the
-      // dialog was cancelled or initialization failed, leave the user in place.
-      final configured = widget.controller.auth.oauthConfigured &&
-          widget.controller.auth.signInReady;
-      if (configured) {
-        await _perform(() => widget.controller.signIn());
-      }
-      return;
-    }
     final message = auth.oauthUnavailableMessage ?? 'Google OAuth ยังไม่พร้อมใช้งาน';
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
-    );
-  }
-
-  Future<void> _configureGoogleOAuth() async {
-    final value = TextEditingController(
-      text: widget.controller.auth.webClientId,
-    );
-    String? validationError;
-    final clientId = await showDialog<String>(
-      context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('ตั้งค่า Google OAuth สำหรับ Web'),
-          content: SizedBox(
-            width: 520,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'ใส่ Web OAuth Client ID จาก Google Cloud เท่านั้น '
-                  '(รหัสลงท้ายด้วย .apps.googleusercontent.com) ไม่ใช่ URL ของเว็บไซต์ '
-                  'และไม่ใช่ Client Secret. หลังบันทึก แอปจะจำ Client ID นี้ไว้ในเบราว์เซอร์ '
-                  'จากนั้นกด Sync Google Account เพื่อเข้าสู่ระบบและอนุญาตสิทธิ์ '
-                  'Token จะถูกจัดการโดยแอปอัตโนมัติ ไม่ต้องคัดลอก Token',
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: value,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    labelText: 'Web OAuth Client ID',
-                    hintText: '123456789-abc.apps.googleusercontent.com',
-                    errorText: validationError,
-                    prefixIcon: const Icon(Icons.key_outlined),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Authorized JavaScript origin สำหรับหน้านี้ต้องมี '
-                  '${Uri.base.origin}',
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('ยกเลิก'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final text = value.text.trim();
-                if (!GoogleAuthService.isValidWebClientId(text)) {
-                  setDialogState(
-                    () => validationError =
-                        'ใส่ Client ID จาก Google Cloud ที่ลงท้ายด้วย .apps.googleusercontent.com — อย่าใส่ URL origin หรือ Client Secret',
-                  );
-                  return;
-                }
-                Navigator.pop(context, text);
-              },
-              child: const Text('บันทึกและเปิด Google Login'),
-            ),
-          ],
-        ),
-      ),
-    );
-    value.dispose();
-    if (clientId == null) return;
-    await _perform(
-      () => widget.controller.configureGoogleWebClientId(clientId),
     );
   }
 
@@ -1807,7 +1721,6 @@ class _DashboardPage extends StatefulWidget {
     required this.deleteDuplicateCalendarEvents,
     required this.sync,
     required this.openAlerts,
-    required this.configureGoogleOAuth,
     required this.syncGoogleAccount,
     required this.dashboardSummaryService,
   });
@@ -1818,7 +1731,6 @@ class _DashboardPage extends StatefulWidget {
   final Future<void> Function() deleteDuplicateCalendarEvents;
   final Future<void> Function() sync;
   final VoidCallback openAlerts;
-  final Future<void> Function() configureGoogleOAuth;
   final Future<void> Function() syncGoogleAccount;
   final DashboardSummaryService dashboardSummaryService;
 
@@ -2269,7 +2181,6 @@ class _DashboardPageState extends State<_DashboardPage> {
               _GoogleAccountCard(
                 controller: controller,
                 perform: widget.perform,
-                configureGoogleOAuth: widget.configureGoogleOAuth,
               ),
               const SizedBox(height: 16),
               Card(
@@ -3161,12 +3072,10 @@ class _GoogleAccountCard extends StatelessWidget {
   const _GoogleAccountCard({
     required this.controller,
     required this.perform,
-    required this.configureGoogleOAuth,
   });
 
   final AppController controller;
   final Future<void> Function(Future<void> Function()) perform;
-  final Future<void> Function() configureGoogleOAuth;
 
   @override
   Widget build(BuildContext context) {
@@ -3228,12 +3137,6 @@ class _GoogleAccountCard extends StatelessWidget {
                             controller.auth.signInReady && !controller.busy,
                         onPressed: () => perform(controller.signIn),
                       )
-                  else if (controller.auth.canConfigureWebOAuth)
-                    OutlinedButton.icon(
-                      onPressed: controller.busy ? null : configureGoogleOAuth,
-                      icon: const Icon(Icons.settings_outlined),
-                      label: const Text('ตั้งค่า Google OAuth'),
-                    )
                   else
                     Tooltip(
                       message: controller.auth.oauthUnavailableMessage ?? '',

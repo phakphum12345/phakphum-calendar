@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="คู่มือตั้งค่า Google Workspace และ OAuth สำหรับ Phakphum Calendar">
+  <meta name="description" content="คู่มือตั้งค่า Google Workspace และ OAuth สำหรับเจ้าของแอป Phakphum Calendar">
   <title>ตั้งค่า Google Workspace — Phakphum Calendar</title>
   <style>
     :root { color-scheme: light dark; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
@@ -19,55 +19,72 @@
   <header>
     <p><a href="../README.md">← กลับไปคู่มือหลัก</a></p>
     <h1>ตั้งค่า Google Workspace และ OAuth</h1>
-    <p>คู่มือสำหรับเชื่อมต่อ Phakphum Calendar กับ Google Sheets, Google Drive และ Google Calendar</p>
+    <p>คู่มือสำหรับเจ้าของแอปในการเตรียม Google Cloud ให้ผู้ใช้เชื่อมต่อบัญชีของตนเองกับ Google Sheets, Google Drive และ Google Calendar</p>
   </header>
 
   <main>
+    <p class="note"><strong>รูปแบบการใช้งาน:</strong> เจ้าของแอปตั้งค่า OAuth Client และใส่ Client ID ในระบบ build/deployment เพียงครั้งเดียว ผู้ใช้ทั่วไปกด “เชื่อมต่อ Google” เลือกบัญชีของตน และอนุญาตสิทธิ์ได้ทันที ผู้ใช้ไม่ต้องสร้าง คัดลอก หรือกรอก Client ID และไม่ต้องใช้บัญชี Google ของเจ้าของแอปร่วมกัน</p>
+
     <section>
-      <h2>1. เตรียม Google Cloud project</h2>
+      <h2>1. เตรียม Google Cloud project (เจ้าของแอป)</h2>
       <ol>
-        <li>เปิด <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer">Google Cloud Console</a> แล้วเลือกหรือสร้างโปรเจกต์ที่คุณควบคุม</li>
-        <li>เปิดใช้งาน Google Drive API, Google Sheets API และ Google Calendar API</li>
-        <li>เปิด Google People API เฉพาะเมื่อจะใช้การนำเข้าหรือส่งออกรายชื่อผู้ติดต่อ</li>
-        <li>ตั้งค่า OAuth consent screen และเพิ่มบัญชีทดสอบ หากแอปยังอยู่ในสถานะ Testing</li>
+        <li>เปิด <a href="https://console.cloud.google.com/" target="_blank" rel="noopener noreferrer">Google Cloud Console</a> แล้วเลือกหรือสร้างโปรเจกต์ที่เจ้าของแอปควบคุม</li>
+        <li>เปิด Google Calendar API, Google Sheets API และ Google Drive API เฉพาะบริการที่แอปเปิดให้ใช้</li>
+        <li>เปิด Google People API เฉพาะเมื่อมีฟีเจอร์โอนย้ายรายชื่อผู้ติดต่อ</li>
+        <li>ตั้งค่า OAuth consent screen: ชื่อแอป อีเมลสนับสนุน โดเมนที่ได้รับอนุญาต นโยบายความเป็นส่วนตัว เงื่อนไขการใช้งาน และผู้ติดต่อสำหรับนักพัฒนา</li>
       </ol>
     </section>
 
     <section>
-      <h2>2. สร้าง OAuth Client สำหรับเว็บ</h2>
+      <h2>2. สร้าง OAuth Client แยกตามแพลตฟอร์ม</h2>
       <ol>
-        <li>ไปที่ <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">APIs &amp; Services → Credentials</a></li>
-        <li>เลือก Create Credentials → OAuth client ID แล้วเลือกชนิด Web application</li>
-        <li>เพิ่ม Authorized JavaScript origins สำหรับที่อยู่ที่ใช้งานจริง ตัวอย่างเช่น <code>https://phakphum12345.github.io</code></li>
-        <li>หากรันเว็บในเครื่อง ให้เพิ่ม origin ที่ตรงกับพอร์ตจริง เช่น <code>http://localhost:8080</code></li>
-        <li>คัดลอกค่า Client ID ที่ลงท้ายด้วย <code>.apps.googleusercontent.com</code> ไปตั้งค่าในขั้นตอน build/configuration ของแอป</li>
+        <li>ไปที่ <a href="https://console.cloud.google.com/apis/credentials" target="_blank" rel="noopener noreferrer">APIs &amp; Services → Credentials</a> แล้วสร้าง OAuth Client ตามชนิดแพลตฟอร์มที่แอปรองรับ</li>
+        <li><strong>Web:</strong> เพิ่ม Authorized JavaScript origins ให้ตรงกับโดเมน production และ development จริง รวมถึง protocol และ port</li>
+        <li><strong>Android:</strong> กำหนด package name และ SHA certificate fingerprints ของ signing key ที่ใช้จริง</li>
+        <li><strong>iOS:</strong> กำหนด bundle identifier, iOS Client ID และ reversed-client-ID URL scheme ให้ตรงกับแอป</li>
+        <li><strong>macOS:</strong> กำหนด bundle identifier และ redirect configuration ตามวิธีที่แพ็กเกจรองรับ</li>
+        <li><strong>Windows/Linux:</strong> อย่าเปิดปุ่ม Google Sign-In จนกว่าจะมี native OAuth flow ที่รองรับและทดสอบ PKCE/state, redirect handling และ secure token storage ครบถ้วน</li>
       </ol>
-      <p class="note"><strong>สำคัญ:</strong> ใช้ Client ID เท่านั้น ห้ามใส่ Client Secret, access token, refresh token หรือ private key ลงในหน้าเว็บ, source control หรือข้อความสาธารณะ</p>
+      <p>ใส่ public Client ID ผ่าน build/deployment configuration ของเจ้าของแอป เช่น Web ใช้ <code>GOOGLE_WEB_CLIENT_ID</code> และค่าที่เกี่ยวข้องตามแพลตฟอร์ม ห้ามให้ผู้ใช้ปลายทางกรอกค่าเหล่านี้</p>
+      <p class="note"><strong>ข้อควรระวัง:</strong> Client ID เป็น public identifier แต่ Client Secret, access token, refresh token, service-account key และ private key เป็นข้อมูลลับ ห้ามฝังข้อมูลลับเหล่านี้ใน Flutter Web/mobile, source control หรือ artifact ที่เผยแพร่สู่ผู้ใช้</p>
     </section>
 
     <section>
-      <h2>3. ตรวจสอบก่อนเชื่อมต่อ</h2>
+      <h2>3. กำหนดสิทธิ์และการเผยแพร่ OAuth</h2>
       <ul>
-        <li>ตรวจว่า origin ในเบราว์เซอร์ตรงกับ Authorized JavaScript origins ทุกตัวอักษร รวมถึง protocol และ port</li>
-        <li>ตรวจว่า OAuth consent screen อนุญาตบัญชี Google ที่ใช้ทดสอบ</li>
-        <li>อนุญาตเฉพาะสิทธิ์ที่แอปแสดงและจำเป็นต่อการทำงาน</li>
-        <li>ก่อนบันทึกหรือซิงก์ตารางเวร ให้ตรวจตัวอย่างข้อมูลและยืนยันรายการที่ต้องการเสมอ</li>
+        <li>ขอ scopes แบบ incremental เมื่อผู้ใช้เริ่มใช้ฟีเจอร์ที่ต้องการสิทธิ์นั้น ไม่ขอสิทธิ์ทั้งหมดตั้งแต่การเข้าสู่ระบบพื้นฐาน</li>
+        <li>อธิบายให้ชัดว่าการอนุญาตแต่ละ scope ใช้ทำอะไร และใช้สิทธิ์เท่าที่จำเป็น</li>
+        <li>OAuth consent screen ที่อยู่ในสถานะ Testing จำกัดการใช้งานไว้กับ test users ที่กำหนด ไม่ถือว่าพร้อมให้ผู้ใช้ทั่วไป</li>
+        <li>เจ้าของโปรเจกต์ต้อง Publish audience และดำเนินการ verification กับ Google สำหรับ sensitive/restricted scopes เมื่อมีข้อกำหนด</li>
       </ul>
     </section>
 
     <section>
-      <h2>4. แก้ปัญหาเบื้องต้น</h2>
+      <h2>4. ประสบการณ์ของผู้ใช้และการแยกบัญชี</h2>
       <ul>
-        <li><strong>origin_mismatch:</strong> เพิ่ม origin ที่ตรงกับ URL จริงใน OAuth client แล้วบันทึกการตั้งค่า</li>
-        <li><strong>หน้าต่างเข้าสู่ระบบปิดทันที:</strong> ตรวจ Console ของเบราว์เซอร์, Client ID, consent screen และการตั้งค่า OAuth ของ build ที่ deploy อยู่</li>
-        <li><strong>ยังซิงก์ไม่ได้:</strong> ตรวจ API ที่เปิดใช้และสิทธิ์ที่อนุญาต แล้วลองเชื่อมต่อใหม่</li>
+        <li>ผู้ใช้เห็นปุ่ม “เชื่อมต่อ Google” และสถานะบัญชีที่เชื่อมต่อ ไม่เห็นหน้ากรอก OAuth Client ID</li>
+        <li>ผู้ใช้แต่ละคนเลือกบัญชี Google ของตนเองและให้ consent ด้วยตนเอง</li>
+        <li>ทุกคำขอ Google API ต้องใช้ authorization ของบัญชีที่ผู้ใช้คนนั้นเลือก ห้ามใช้บัญชีเจ้าของแอปเป็นบัญชีกลาง</li>
+        <li>รองรับการปฏิเสธ consent, token/grant หมดอายุหรือถูก revoke, disconnect, sign-out และ reconnect</li>
+        <li>ไม่บันทึก token, credential หรือเนื้อหาตารางเวรส่วนบุคคลลง log</li>
+        <li>ทดสอบ account isolation และการซิงก์จริงด้วยบัญชีที่ไม่ใช่เจ้าของโปรเจกต์ ก่อนประกาศว่าพร้อมใช้งานสาธารณะ</li>
       </ul>
-      <p>ดูรายละเอียดเพิ่มเติมได้ที่ <a href="GOOGLE_SETUP.md">Google Cloud and OAuth Setup</a> และ <a href="INSTALLATION_AND_USER_GUIDE.md">คู่มือติดตั้งและใช้งาน</a></p>
+    </section>
+
+    <section>
+      <h2>5. ตรวจสอบและแก้ปัญหา</h2>
+      <ul>
+        <li><strong>origin_mismatch:</strong> ตรวจ Authorized JavaScript origins ให้ตรงกับ URL จริงทุกตัวอักษร รวม protocol และ port</li>
+        <li><strong>บัญชีเข้าสู่ระบบไม่ได้:</strong> ตรวจ Client ID ของแพลตฟอร์ม, package/bundle identifier, signing fingerprint, redirect configuration และ consent screen</li>
+        <li><strong>ยังซิงก์ไม่ได้:</strong> ตรวจว่า API เปิดใช้งานและผู้ใช้อนุญาต scope ที่ฟีเจอร์นั้นต้องใช้แล้ว</li>
+        <li><strong>บัญชีหนึ่งเห็นข้อมูลของอีกบัญชี:</strong> ให้หยุดการซิงก์ทันทีและตรวจ session/account binding ก่อนเปิดใช้งานต่อ</li>
+      </ul>
+      <p>ดูรายละเอียดเชิงเทคนิคเพิ่มเติมได้ที่ <a href="GOOGLE_SETUP.md">Google Cloud and OAuth Setup</a> และ <a href="INSTALLATION_AND_USER_GUIDE.md">คู่มือติดตั้งและใช้งาน</a></p>
     </section>
   </main>
 
   <footer>
-    <p><small>คู่มือนี้ให้แนวทางการตั้งค่าเท่านั้น ไม่ได้ยืนยันว่า OAuth หรือการซิงก์ของบัญชีใดทำงานสำเร็จแล้ว</small></p>
+    <p><small>คู่มือนี้เป็นแนวทางการตั้งค่า ไม่ใช่หลักฐานว่า OAuth credentials, consent verification หรือการซิงก์ของบัญชีใดผ่านการทดสอบแล้ว การเปิดใช้งานจริงยังต้องผ่านการตรวจสอบตามแพลตฟอร์มและบัญชีผู้ใช้จริง</small></p>
   </footer>
 </body>
 </html>

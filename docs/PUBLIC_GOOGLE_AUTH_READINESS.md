@@ -15,9 +15,9 @@ A user should not need to grant every optional data scope merely to sign in. Req
 
 ## 2. Current repository observations
 
-- The setup guide still says to keep the OAuth consent screen in Testing and add approved testers. This does not satisfy general public-user access.
+- The user-facing OAuth Client ID entry flow has been removed from the app. The app expects application-owner build/deployment configuration; a missing client ID is an owner-side release configuration issue, not a task for ordinary users.
 - The inspected iOS `Info.plist` contains placeholder OAuth client identifiers.
-- The repository has two Google authentication service entry points that need consolidation behind the accepted shared gateway contract.
+- The repository still contains two Google authentication service entry points (`GoogleAuthService` and `GoogleAuthenticationService`). Consolidation behind the accepted shared gateway contract remains required; this change does not claim that migration is complete.
 - Windows/Linux native sign-in is not established in the current implementation.
 - The accepted ADR requires platform adapters, one app-facing session model, incremental scopes, secure token storage, and no plugin-specific account types leaking into application services.
 - A successful compile or a sign-in test using the project owner/tester account is insufficient evidence for public-user readiness.
@@ -31,6 +31,7 @@ A user should not need to grant every optional data scope merely to sign in. Req
 - Keep tokens and secrets out of logs, repository files, build artifacts, and insecure preferences.
 - Use secure platform storage for long-lived credentials; fail safely if secure storage is unavailable.
 - Configure and test each platform independently. Do not label an unsupported platform as Google-auth capable.
+- Keep OAuth client configuration in application-owner build/deployment configuration. Do not expose a Client ID text field or browser-local Client ID persistence to end users.
 - Maintain privacy disclosures and explain what data each optional permission enables.
 
 ## 4. Platform acceptance
