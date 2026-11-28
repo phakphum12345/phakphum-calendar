@@ -3,6 +3,7 @@ import '../../../domain/entities/employee.dart';
 enum EmployeeIdentityMatchKind {
   employeeCode,
   fullName,
+  alias,
   displayName,
   nickname,
   containsText,
@@ -75,6 +76,8 @@ class GridRosterEmployeeIdentityResolver {
       final fields = <(String, EmployeeIdentityMatchKind)>[
         (employee.employeeCode, EmployeeIdentityMatchKind.employeeCode),
         (employee.fullName, EmployeeIdentityMatchKind.fullName),
+        for (final alias in employee.aliases)
+          (alias, EmployeeIdentityMatchKind.alias),
         (employee.displayName, EmployeeIdentityMatchKind.displayName),
         (employee.nickname, EmployeeIdentityMatchKind.nickname),
       ];
@@ -104,17 +107,16 @@ class GridRosterEmployeeIdentityResolver {
     }
 
     if (exact.isNotEmpty) {
+      // Keep every exact identity candidate, even when evidence kinds differ.
+      // Ranking orders the review list; it must not hide an alias collision
+      // behind a canonical-name or employee-code match.
       final ranked = exact.values.toList()..sort(_compareCandidates);
-      final bestRank = _rank(ranked.first.matchKind);
-      final bestCandidates = ranked
-          .where((candidate) => _rank(candidate.matchKind) == bestRank)
-          .toList(growable: false);
       return EmployeeIdentityResolution(
         sourceName: sourceName,
-        status: bestCandidates.length == 1
+        status: ranked.length == 1
             ? EmployeeIdentityResolutionStatus.exactUniqueCandidate
             : EmployeeIdentityResolutionStatus.ambiguousExactCandidates,
-        candidates: bestCandidates,
+        candidates: ranked,
       );
     }
 
@@ -154,9 +156,10 @@ class GridRosterEmployeeIdentityResolver {
   int _rank(EmployeeIdentityMatchKind kind) => switch (kind) {
     EmployeeIdentityMatchKind.employeeCode => 0,
     EmployeeIdentityMatchKind.fullName => 1,
-    EmployeeIdentityMatchKind.displayName => 2,
-    EmployeeIdentityMatchKind.nickname => 3,
-    EmployeeIdentityMatchKind.containsText => 4,
+    EmployeeIdentityMatchKind.alias => 2,
+    EmployeeIdentityMatchKind.displayName => 3,
+    EmployeeIdentityMatchKind.nickname => 4,
+    EmployeeIdentityMatchKind.containsText => 5,
   };
 
   String _normalize(String value) =>

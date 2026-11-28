@@ -19,6 +19,7 @@ void main() {
     nickname: 'ชาย',
     department: department,
     position: 'นักรังสี',
+    alternateNames: 'ชื่อเดิม, Old Name',
   );
 
   test('employee codec preserves canonical employee fields', () {
@@ -28,6 +29,20 @@ void main() {
 
     expect(decoded, employee);
     expect(decoded.department, department);
+    expect(decoded.aliases, ['ชื่อเดิม', 'Old Name']);
+  });
+
+  test('employee codec reads legacy records without alternate names', () {
+    const codec = EmployeeJsonCodec();
+    final decoded = codec.decode(
+      '{"formatVersion":1,"employees":[{"id":"legacy","employeeCode":"E9",'
+      '"firstName":"สมชาย","lastName":"ใจดี","nickname":"ชาย",'
+      '"position":"Staff","active":true,"department":{"id":"d1",'
+      '"code":"D1","name":"Department"}}]}',
+    ).single;
+
+    expect(decoded.alternateNames, isEmpty);
+    expect(decoded.aliases, isEmpty);
   });
 
   test('employee codec rejects malformed and unsupported data', () {
@@ -56,6 +71,10 @@ void main() {
       );
       expect(
         (await repository.search('ใจดี') as Success<List<Employee>>).value,
+        [employee],
+      );
+      expect(
+        (await repository.search('Old Name') as Success<List<Employee>>).value,
         [employee],
       );
 

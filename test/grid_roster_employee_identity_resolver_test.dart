@@ -33,6 +33,83 @@ void main() {
     expect(result.canCommit, isFalse);
   });
 
+  test('uses user-managed alternate names as exact identity evidence', () {
+    final result = resolver.resolve(
+      sourceName: 'ชื่อเดิม',
+      employees: [
+        _employee(
+          'e1',
+          firstName: 'สมชาย',
+          lastName: 'ใจดี',
+          nickname: 'ชาย',
+          alternateNames: 'ชื่อเดิม, Old Name',
+        ),
+      ],
+    );
+
+    expect(
+      result.status,
+      EmployeeIdentityResolutionStatus.exactUniqueCandidate,
+    );
+    expect(result.candidates.single.employee.id, 'e1');
+    expect(result.candidates.single.matchKind, EmployeeIdentityMatchKind.alias);
+    expect(result.requiresHumanConfirmation, isTrue);
+    expect(result.selectedEmployeeId, isNull);
+    expect(result.canCommit, isFalse);
+  });
+
+  test('keeps a shared alternate name ambiguous across employees', () {
+    final result = resolver.resolve(
+      sourceName: 'ชื่อเดิม',
+      employees: [
+        _employee('e1', alternateNames: 'ชื่อเดิม'),
+        _employee('e2', alternateNames: 'ชื่อเดิม'),
+      ],
+    );
+
+    expect(
+      result.status,
+      EmployeeIdentityResolutionStatus.ambiguousExactCandidates,
+    );
+    expect(result.candidates.map((candidate) => candidate.employee.id), [
+      'e1',
+      'e2',
+    ]);
+  });
+
+  test('keeps canonical-name and alternate-name collisions ambiguous', () {
+    final result = resolver.resolve(
+      sourceName: 'สมชาย ใจดี',
+      employees: [
+        _employee(
+          'e1',
+          firstName: 'สมชาย',
+          lastName: 'ใจดี',
+          nickname: 'ชาย',
+        ),
+        _employee(
+          'e2',
+          firstName: 'มาลี',
+          lastName: 'รักดี',
+          nickname: 'ไหม',
+          alternateNames: 'สมชาย ใจดี',
+        ),
+      ],
+    );
+
+    expect(
+      result.status,
+      EmployeeIdentityResolutionStatus.ambiguousExactCandidates,
+    );
+    expect(result.candidates.map((item) => item.employee.id), ['e1', 'e2']);
+    expect(
+      result.candidates.map((item) => item.matchKind),
+      [EmployeeIdentityMatchKind.fullName, EmployeeIdentityMatchKind.alias],
+    );
+    expect(result.selectedEmployeeId, isNull);
+    expect(result.canCommit, isFalse);
+  });
+
   test('keeps duplicate exact names ambiguous', () {
     final result = resolver.resolve(
       sourceName: 'สมชาย ใจดี',
@@ -62,7 +139,7 @@ void main() {
     expect(result.selectedEmployeeId, isNull);
   });
 
-  test('uses exact employee code as stronger evidence than a nickname', () {
+  test('ranks an exact employee code first but keeps nickname collisions for review', () {
     final result = resolver.resolve(
       sourceName: '002',
       employees: [
@@ -85,13 +162,18 @@ void main() {
 
     expect(
       result.status,
-      EmployeeIdentityResolutionStatus.exactUniqueCandidate,
+      EmployeeIdentityResolutionStatus.ambiguousExactCandidates,
     );
-    expect(result.candidates.single.employee.id, 'e2');
+    expect(result.candidates.map((item) => item.employee.id), ['e2', 'e1']);
     expect(
-      result.candidates.single.matchKind,
-      EmployeeIdentityMatchKind.employeeCode,
+      result.candidates.map((item) => item.matchKind),
+      [
+        EmployeeIdentityMatchKind.employeeCode,
+        EmployeeIdentityMatchKind.nickname,
+      ],
     );
+    expect(result.selectedEmployeeId, isNull);
+    expect(result.canCommit, isFalse);
   });
 
   test('returns substring matches as suggestions only', () {
@@ -168,6 +250,7 @@ Employee _employee(
   String lastName = 'One',
   String nickname = 'One',
   String code = '001',
+  String alternateNames = '',
   bool active = true,
 }) {
   return Employee(
@@ -178,6 +261,7 @@ Employee _employee(
     nickname: nickname,
     department: _department,
     position: 'Staff',
+    alternateNames: alternateNames,
     active: active,
   );
 }

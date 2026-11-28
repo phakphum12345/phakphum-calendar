@@ -113,6 +113,110 @@ void main() {
     );
   });
 
+  testWidgets('alias suggestions never preselect an employee', (tester) async {
+    final aliasEmployee = _employee.copyWith(
+      alternateNames: 'Former Name',
+    );
+    final report = MonthlyRosterParseReport(
+      sections: [
+        MonthlyRosterSection(
+          title: 'GEN November 2026',
+          headerRowIndex: 1,
+          startDate: DateTime(2026, 11, 1),
+          endDate: DateTime(2026, 11, 30),
+          assignments: [
+            MonthlyRosterAssignment(
+              sectionTitle: 'GEN November 2026',
+              rowLabel: 'GEN',
+              rowIndex: 2,
+              workerName: 'Former Name',
+              date: DateTime(2026, 11, 1),
+              sourceCell: 'B3',
+            ),
+          ],
+        ),
+      ],
+      warnings: const [],
+      sourceSheetCount: 1,
+      sourceFingerprint: 'sha256:source-alias-ui',
+    );
+    final session = const GridRosterReviewSessionBuilder().build(
+      report: report,
+      employees: [aliasEmployee],
+      shiftTemplates: const [],
+      sourceFingerprint: 'sha256:source-alias-ui',
+      targetScheduleId: 'schedule-1',
+      targetScheduleRevision: 'absent:schedule-1',
+    );
+    final workflow = GridRosterImportWorkflow(
+      scheduleRepository: _UnusedScheduleRepository(),
+      journal: GridRosterBundleJournal(store: _MemoryStore()),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GridRosterReviewPage(
+          workflow: workflow,
+          contextSnapshot: GridRosterImportReviewContext(
+            session: session,
+            targetSchedule: Schedule(
+              id: 'schedule-1',
+              name: 'November roster',
+            ),
+            targetExisted: false,
+          ),
+          employees: [aliasEmployee],
+          shiftTemplates: const [],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('ชื่อจากต้นฉบับ: Former Name'), findsOneWidget);
+    expect(
+      find.text('คำแนะนำพนักงาน: ${aliasEmployee.displayName}'),
+      findsOneWidget,
+    );
+    final checkboxFinder = find.byType(CheckboxListTile).first;
+    // The fixed commit bar occupies the bottom of the test viewport. Bring
+    // the assignment control fully into the ListView's visible area before
+    // tapping; otherwise the tap can land on the commit bar underneath it.
+    await tester.ensureVisible(checkboxFinder);
+    await tester.pumpAndSettle();
+
+    final checkbox = tester.widget<CheckboxListTile>(checkboxFinder);
+    expect(checkbox.value, isFalse);
+    expect(checkbox.onChanged, isNotNull);
+    expect(find.byType(DropdownButtonFormField<String>), findsNothing);
+
+    await tester.tap(checkboxFinder);
+    await tester.pumpAndSettle();
+
+    // Each opted-in assignment has two independent controls: employee
+    // resolution and shift-template resolution. Scope this assertion to the
+    // employee field instead of assuming the card contains only one dropdown.
+    final employeeDropdownFinder = find.byWidgetPredicate(
+      (widget) =>
+          widget is DropdownButtonFormField<String> &&
+          widget.decoration.labelText == 'ยืนยันพนักงาน',
+    );
+    expect(employeeDropdownFinder, findsOneWidget);
+    var dropdown = tester.widget<DropdownButtonFormField<String>>(
+      employeeDropdownFinder,
+    );
+    expect(dropdown.initialValue, isNull);
+
+    await tester.tap(employeeDropdownFinder);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(aliasEmployee.displayName).last);
+    await tester.pumpAndSettle();
+
+    dropdown = tester.widget<DropdownButtonFormField<String>>(
+      employeeDropdownFinder,
+    );
+    expect(dropdown.initialValue, aliasEmployee.id);
+  });
+
   testWidgets('date anomaly choices are isolated by source worksheet', (
     tester,
   ) async {

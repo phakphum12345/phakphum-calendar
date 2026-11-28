@@ -481,6 +481,9 @@ class _EmployeeDialogState extends State<_EmployeeDialog> {
   late final nickname = TextEditingController(
     text: widget.employee?.nickname ?? '',
   );
+  late final alternateNames = TextEditingController(
+    text: widget.employee?.alternateNames ?? '',
+  );
   late final position = TextEditingController(
     text: widget.employee?.position ?? '',
   );
@@ -497,6 +500,7 @@ class _EmployeeDialogState extends State<_EmployeeDialog> {
     firstName.dispose();
     lastName.dispose();
     nickname.dispose();
+    alternateNames.dispose();
     position.dispose();
     departmentCode.dispose();
     departmentName.dispose();
@@ -529,6 +533,16 @@ class _EmployeeDialogState extends State<_EmployeeDialog> {
               TextFormField(
                 controller: nickname,
                 decoration: InputDecoration(labelText: context.l10n.nickname),
+              ),
+              const SizedBox(height: 12),
+              TextFormField(
+                controller: alternateNames,
+                minLines: 2,
+                maxLines: 4,
+                decoration: const InputDecoration(
+                  labelText: 'ชื่ออื่น / ชื่อเดิม / ชื่อที่พบในตารางเวร',
+                  helperText: 'คั่นแต่ละชื่อด้วยเครื่องหมายจุลภาคหรือขึ้นบรรทัดใหม่',
+                ),
               ),
               const SizedBox(height: 12),
               TextFormField(
@@ -588,6 +602,7 @@ class _EmployeeDialogState extends State<_EmployeeDialog> {
         firstName: firstName.text.trim(),
         lastName: lastName.text.trim(),
         nickname: nickname.text.trim(),
+        alternateNames: alternateNames.text.trim(),
         position: position.text.trim(),
         active: widget.employee?.active ?? true,
         department: Department(
