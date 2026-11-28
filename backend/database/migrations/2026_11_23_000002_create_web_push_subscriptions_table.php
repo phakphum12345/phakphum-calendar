@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('content_encoding', 32)->default('aes128gcm');
             $table->string('user_agent', 512)->nullable();
             $table->timestamp('last_used_at')->nullable();
+            $table->timestamp('expired_at')->nullable()->index();
             $table->timestamps();
             $table->index(['user_id', 'id']);
         });
