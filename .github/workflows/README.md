@@ -133,7 +133,18 @@ on `main`.
 
 The Web workflow installs dependencies, builds the release site, uploads the
 build as a downloadable artifact, and deploys the same build to GitHub Pages
-from `main`.
+from `main`. Production Pages deployment requires the HTTPS
+`ORGANIZATION_API_BASE_URL` repository variable; it refuses to publish an
+artifact that would silently fall back to local-only Schedule storage.
+
+### Shared backend and dependency security
+
+Non-PR release builds for Android, iOS, macOS, Windows and Linux require the
+same HTTPS `ORGANIZATION_API_BASE_URL`. Pull-request builds remain available for
+compile/test evidence without requiring production configuration. The
+`dependency-security.yml` workflow scans both `pubspec.lock` and nested PHP
+`composer.lock` files with OSV-Scanner on pull requests, main pushes and weekly
+scheduled runs. Laravel CI separately runs `composer audit --locked`.
 
 ### Final
 

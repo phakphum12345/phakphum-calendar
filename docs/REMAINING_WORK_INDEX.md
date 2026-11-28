@@ -1,6 +1,19 @@
-# Remaining Work Index — 2026-11-24
+# Remaining Work Index — 2026-11-27
 
 This is the concise execution checklist. The detailed design and test criteria are in the linked documents.
+
+## Live execution checkpoint — 2026-11-27
+
+- Audited main SHA: `68ef85361c2d08e2970160a36475592010d908f7`.
+- PR #192 is the integration branch for universal roster work: horizontal/vertical parser, XLSX scanner, source provenance, review and row correction are being kept in one workflow.
+- PR #200 is superseded by the integrated implementation in #192; do not merge both parser branches.
+- PR #199 orientation primitives and tests are being consolidated into #192; do not merge a duplicate foundation.
+- PR #191 and #196 remain independent notification and Calendar Sync foundations.
+- PR #201 adds deterministic equal-specificity Shift Pay rule conflict handling; it remains Draft until exact-head Dart/backend CI and review pass.
+- Exact-head CI on the current #192 branch must be re-fetched after the latest commit; previous green results do not apply to a moved head.
+- Original X-OPD November 2569, 16 Nov–15 Dec 2569 and US Clinic ภปร.4 workbooks are not available for actual-file acceptance.
+- See `COMPLETION_STATUS.md` and `IMPLEMENTATION_EVIDENCE.md` for live status and evidence boundaries.
+
 
 ## P0 — Required for the requested feature
 

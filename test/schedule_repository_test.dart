@@ -1,6 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:phakphum_calendar/core/result/result.dart';
 import 'package:phakphum_calendar/domain/entities/schedule.dart';
+import 'package:phakphum_calendar/domain/repositories/conditional_schedule_writer.dart';
+import 'package:phakphum_calendar/domain/repositories/conditional_schedule_deleter.dart';
+import 'package:phakphum_calendar/domain/repositories/schedule_revision_source.dart';
 import 'package:phakphum_calendar/features/schedule/data/shared_preferences_schedule_repository.dart';
 
 import 'support/canonical_schedule_fixture.dart';
@@ -15,7 +18,7 @@ void main() {
       );
       final schedule = canonicalScheduleFixture();
 
-      final saved = await repository.save(schedule);
+      final saved = await _saveCurrentSnapshot(repository, schedule);
       final loaded = await repository.findById(schedule.id);
       final july = await repository.loadMonth(schedule.id, DateTime(2026, 7));
 
@@ -33,6 +36,18 @@ void main() {
     },
   );
 
+  test('legacy save fails closed without the exact caller snapshot revision', () async {
+    final repository = SharedPreferencesScheduleRepository(
+      store: InMemoryScheduleKeyValueStore(),
+    );
+
+    final result = await repository.save(canonicalScheduleFixture());
+    final loaded = await repository.findById('schedule-1');
+
+    expect(result, isA<PersistenceFailure<Schedule>>());
+    expect((loaded as Success<Schedule?>).value, isNull);
+  });
+
   test('missing stored data is a successful not-found result', () async {
     final repository = SharedPreferencesScheduleRepository(
       store: InMemoryScheduleKeyValueStore(),
@@ -48,7 +63,7 @@ void main() {
     final store = InMemoryScheduleKeyValueStore();
     final repository = SharedPreferencesScheduleRepository(store: store);
     final schedule = canonicalScheduleFixture();
-    await repository.save(schedule);
+    await _saveCurrentSnapshot(repository, schedule);
     final keys = store.values.keys;
     final activeKey = keys.singleWhere((key) => key.endsWith('.active'));
     final activeSlot = store.values[activeKey];
@@ -68,10 +83,11 @@ void main() {
       final store = InMemoryScheduleKeyValueStore();
       final repository = SharedPreferencesScheduleRepository(store: store);
       final original = canonicalScheduleFixture(name: 'Original');
-      expect(await repository.save(original), isA<Success<Schedule>>());
+      expect(await _saveCurrentSnapshot(repository, original), isA<Success<Schedule>>());
       store.failActivePointerWrites = true;
 
-      final failed = await repository.save(
+      final failed = await _saveCurrentSnapshot(
+        repository,
         canonicalScheduleFixture(name: 'Replacement'),
       );
       final loaded = await repository.findById(original.id);
@@ -87,9 +103,13 @@ void main() {
       final repository = SharedPreferencesScheduleRepository(
         store: InMemoryScheduleKeyValueStore(),
       );
-      await repository.save(canonicalScheduleFixture(name: 'First'));
+      await _saveCurrentSnapshot(
+        repository,
+        canonicalScheduleFixture(name: 'First'),
+      );
 
-      final second = await repository.save(
+      final second = await _saveCurrentSnapshot(
+        repository,
         canonicalScheduleFixture(name: 'Second'),
       );
       final loaded = await repository.findById('schedule-1');
@@ -99,11 +119,217 @@ void main() {
     },
   );
 
+  test('conditional writes reject stale revisions after a newer local save', () async {
+    final repository = SharedPreferencesScheduleRepository(
+      store: InMemoryScheduleKeyValueStore(),
+    );
+    final ScheduleRevisionSource revisionSource = repository;
+    final ConditionalScheduleWriter writer = repository;
+    await repository.findById('schedule-1');
+    final absentRevision = revisionSource.revisionForAbsentSchedule('schedule-1')!;
+
+    final created = await writer.saveIfRevision(
+      canonicalScheduleFixture(name: 'First'),
+      absentRevision,
+    );
+    expect(created, isA<Success<Schedule>>());
+
+    final loaded = await repository.findById('schedule-1');
+    final snapshot = (loaded as Success<Schedule?>).value!;
+    final revision = revisionSource.revisionForSnapshot(snapshot)!;
+    final updated = await writer.saveIfRevision(
+      canonicalScheduleFixture(name: 'Second'),
+      revision,
+    );
+    final stale = await writer.saveIfRevision(
+      canonicalScheduleFixture(name: 'Stale overwrite'),
+      revision,
+    );
+
+    expect(updated, isA<Success<Schedule>>());
+    expect(stale, isA<ValidationFailure<Schedule>>());
+    final latest = await repository.findById('schedule-1');
+    expect((latest as Success<Schedule?>).value!.name, 'Second');
+  });
+
+  test('concurrent writers using one absent revision cannot both create', () async {
+    final store = InMemoryScheduleKeyValueStore();
+    final firstRepository = SharedPreferencesScheduleRepository(store: store);
+    final secondRepository = SharedPreferencesScheduleRepository(store: store);
+    final ConditionalScheduleWriter firstWriter = firstRepository;
+    final ConditionalScheduleWriter secondWriter = secondRepository;
+    final ScheduleRevisionSource revisionSource = firstRepository;
+    await firstRepository.findById('schedule-1');
+    final absentRevision = revisionSource.revisionForAbsentSchedule('schedule-1')!;
+
+    final results = await Future.wait([
+      firstWriter.saveIfRevision(
+        canonicalScheduleFixture(name: 'Writer A'),
+        absentRevision,
+      ),
+      secondWriter.saveIfRevision(
+        canonicalScheduleFixture(name: 'Writer B'),
+        absentRevision,
+      ),
+    ]);
+
+    expect(results.whereType<Success<Schedule>>(), hasLength(1));
+    expect(results.whereType<ValidationFailure<Schedule>>(), hasLength(1));
+    final latest = await firstRepository.findById('schedule-1');
+    expect(
+      ['Writer A', 'Writer B'],
+      contains((latest as Success<Schedule?>).value!.name),
+    );
+  });
+
+  test('conditional tombstones make delete retries idempotent and block stale recreation', () async {
+    final repository = SharedPreferencesScheduleRepository(
+      store: InMemoryScheduleKeyValueStore(),
+    );
+    final ConditionalScheduleWriter writer = repository;
+    final ConditionalScheduleDeleter deleter = repository;
+    final ScheduleRevisionSource revisionSource = repository;
+    await repository.findById('schedule-1');
+    final originalAbsent = revisionSource.revisionForAbsentSchedule('schedule-1')!;
+
+    final saved = await writer.saveIfRevision(
+      canonicalScheduleFixture(name: 'Original'),
+      originalAbsent,
+    );
+    expect(saved, isA<Success<Schedule>>());
+    final savedSchedule = (saved as Success<Schedule>).value;
+    final liveRevision = revisionSource.revisionForSnapshot(savedSchedule)!;
+
+    expect(
+      await deleter.deleteIfRevision('schedule-1', liveRevision),
+      isA<Success<void>>(),
+    );
+    expect(
+      await deleter.deleteIfRevision('schedule-1', liveRevision),
+      isA<Success<void>>(),
+    );
+    expect(revisionSource.revisionForAbsentSchedule('schedule-1'), isNull);
+
+    expect(
+      await writer.saveIfRevision(
+        canonicalScheduleFixture(name: 'Stale recreate'),
+        liveRevision,
+      ),
+      isA<ValidationFailure<Schedule>>(),
+    );
+    expect(
+      (await repository.findById('schedule-1') as Success<Schedule?>).value,
+      isNull,
+    );
+  });
+
+  test('deleting an absent identity creates a tombstone that rejects stale creates', () async {
+    final repository = SharedPreferencesScheduleRepository(
+      store: InMemoryScheduleKeyValueStore(),
+    );
+    final ConditionalScheduleWriter writer = repository;
+    final ConditionalScheduleDeleter deleter = repository;
+    final ScheduleRevisionSource revisionSource = repository;
+
+    await repository.findById('schedule-absent');
+    final absentRevision =
+        revisionSource.revisionForAbsentSchedule('schedule-absent')!;
+
+    expect(
+      await deleter.deleteIfRevision('schedule-absent', absentRevision),
+      isA<Success<void>>(),
+    );
+    expect(
+      await deleter.deleteIfRevision('schedule-absent', absentRevision),
+      isA<Success<void>>(),
+    );
+    expect(revisionSource.revisionForAbsentSchedule('schedule-absent'), isNull);
+    expect(
+      await writer.saveIfRevision(
+        canonicalScheduleFixture(id: 'schedule-absent', name: 'Stale create'),
+        absentRevision,
+      ),
+      isA<ValidationFailure<Schedule>>(),
+    );
+  });
+
+  test('conditional delete rejects a revision older than the current Schedule', () async {
+    final repository = SharedPreferencesScheduleRepository(
+      store: InMemoryScheduleKeyValueStore(),
+    );
+    final writer = repository as ConditionalScheduleWriter;
+    final deleter = repository as ConditionalScheduleDeleter;
+    final revisions = repository as ScheduleRevisionSource;
+
+    await repository.findById('schedule-1');
+    final absent = revisions.revisionForAbsentSchedule('schedule-1')!;
+    final created = await writer.saveIfRevision(
+      canonicalScheduleFixture(name: 'Original'),
+      absent,
+    );
+    final original = (created as Success<Schedule>).value;
+    final staleRevision = revisions.revisionForSnapshot(original)!;
+
+    final loaded = await repository.findById('schedule-1');
+    final current = (loaded as Success<Schedule?>).value!;
+    final currentRevision = revisions.revisionForSnapshot(current)!;
+    await writer.saveIfRevision(
+      canonicalScheduleFixture(name: 'Updated'),
+      currentRevision,
+    );
+
+    expect(
+      await deleter.deleteIfRevision('schedule-1', staleRevision),
+      isA<ValidationFailure<void>>(),
+    );
+    expect(
+      ((await repository.findById('schedule-1')) as Success<Schedule?>)
+          .value!
+          .name,
+      'Updated',
+    );
+  });
+
+  test('failed pointer switch advances the revision and rejects stale writers', () async {
+    final store = InMemoryScheduleKeyValueStore();
+    final repository = SharedPreferencesScheduleRepository(store: store);
+    final ConditionalScheduleWriter writer = repository;
+    final ScheduleRevisionSource revisionSource = repository;
+    final original = canonicalScheduleFixture(name: 'Original');
+    await _saveCurrentSnapshot(repository, original);
+    final loaded = await repository.findById(original.id);
+    final snapshot = (loaded as Success<Schedule?>).value!;
+    final staleRevision = revisionSource.revisionForSnapshot(snapshot)!;
+
+    store.failActivePointerWrites = true;
+    final failed = await writer.saveIfRevision(
+      canonicalScheduleFixture(name: 'Replacement'),
+      staleRevision,
+    );
+    store.failActivePointerWrites = false;
+
+    expect(failed, isA<PersistenceFailure<Schedule>>());
+    final stillActive = await repository.findById(original.id);
+    final stillActiveSchedule = (stillActive as Success<Schedule?>).value!;
+    expect(stillActiveSchedule.name, 'Original');
+    final latestRevision = revisionSource.revisionForSnapshot(
+      stillActiveSchedule,
+    )!;
+    expect(latestRevision, isNot(staleRevision));
+    expect(
+      await writer.saveIfRevision(
+        canonicalScheduleFixture(name: 'Stale overwrite'),
+        staleRevision,
+      ),
+      isA<ValidationFailure<Schedule>>(),
+    );
+  });
+
   test('repository keys use a dedicated non-legacy prefix', () async {
     final store = InMemoryScheduleKeyValueStore();
     final repository = SharedPreferencesScheduleRepository(store: store);
 
-    await repository.save(canonicalScheduleFixture());
+    await _saveCurrentSnapshot(repository, canonicalScheduleFixture());
     final keys = store.values.keys;
 
     expect(keys, isNotEmpty);
@@ -118,4 +344,25 @@ void main() {
     expect(keys.any((key) => key == 'source_url'), isFalse);
     expect(keys.any((key) => key == 'saved_sheets'), isFalse);
   });
+}
+
+Future<Result<Schedule>> _saveCurrentSnapshot(
+  SharedPreferencesScheduleRepository repository,
+  Schedule schedule,
+) async {
+  final loaded = await repository.findById(schedule.id) as Success<Schedule?>;
+  final revisions = repository as ScheduleRevisionSource;
+  final expectedRevision = loaded.value == null
+      ? revisions.revisionForAbsentSchedule(schedule.id)
+      : revisions.revisionForSnapshot(loaded.value!);
+  if (expectedRevision == null) {
+    return const PersistenceFailure(
+      'The test could not capture a caller-owned Schedule revision.',
+    );
+  }
+
+  return (repository as ConditionalScheduleWriter).saveIfRevision(
+    schedule,
+    expectedRevision,
+  );
 }

@@ -34,7 +34,11 @@ of exact frontend origins (scheme and host, without a path). The Flutter web
 build reads `ORGANIZATION_API_BASE_URL` at build time; set it to the HTTPS
 origin of this API. In GitHub Actions, configure it as the repository variable
 of the same name. An empty value deliberately leaves organization membership
-controls unavailable in the web app.
+controls unavailable in the web app and leaves Schedule persistence in local-only
+SharedPreferences mode. Local development may use that fallback, but production
+release artifacts are now blocked unless this variable contains an HTTPS backend
+origin. The Android, iOS, macOS, Windows, Linux and GitHub Pages release workflows
+all enforce this boundary.
 
 Existing password-based user records are not silently linked to Google accounts
 by matching email. An account collision returns `409 account_link_required`

@@ -170,6 +170,22 @@ class LegacyScheduleConversion {
 
   final List<_LegacyAssignmentMetadata> _metadata;
 
+  /// Rebinds this conversion to the repository's saved snapshot while
+  /// retaining the source metadata needed for a lossless legacy projection.
+  LegacyScheduleConversion withSchedule(Schedule schedule) {
+    if (schedule.id != this.schedule.id) {
+      throw ArgumentError.value(
+        schedule.id,
+        'schedule.id',
+        'A conversion cannot be rebound to a different Schedule identity.',
+      );
+    }
+    return LegacyScheduleConversion._(
+      schedule: schedule,
+      metadata: _metadata,
+    );
+  }
+
   /// Reconstructs legacy shifts from the canonical assignments.
   List<legacy.Shift> toLegacyShifts({Schedule? schedule}) {
     final source = schedule ?? this.schedule;

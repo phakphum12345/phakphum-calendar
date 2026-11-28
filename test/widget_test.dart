@@ -6,6 +6,7 @@ import 'package:phakphum_calendar/controller/app_controller.dart';
 import 'package:phakphum_calendar/core/di/app_dependencies.dart';
 import 'package:phakphum_calendar/features/excel_import/presentation/pages/import_excel_page.dart';
 import 'package:phakphum_calendar/features/edition/domain/app_edition.dart';
+import 'support/in_memory_conditional_schedule_repository.dart';
 import 'package:phakphum_calendar/models/shift.dart';
 import 'package:phakphum_calendar/models/shift_alert.dart';
 import 'package:phakphum_calendar/ui/app_shell.dart';
@@ -19,8 +20,14 @@ void main() {
     }),
   );
 
-  AppController demoController() =>
-      AppDependencies.production().createDemoAppController();
+  AppController demoController() {
+    final repository = InMemoryConditionalScheduleRepository();
+    final controller = AppDependencies(
+      scheduleRepository: repository,
+    ).createDemoAppController();
+    repository.seed(controller.canonicalSchedule);
+    return controller;
+  }
 
   testWidgets('first launch asks for personal or organization edition', (
     tester,

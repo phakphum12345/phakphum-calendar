@@ -1,0 +1,354 @@
+import 'dart:convert';
+
+import 'package:http/http.dart' as http;
+
+import '../../../core/result/result.dart';
+import '../../../domain/entities/schedule.dart';
+import '../../../domain/entities/schedule_month.dart';
+import '../../../domain/repositories/schedule_repository.dart';
+import '../../../domain/repositories/conditional_schedule_writer.dart';
+import '../../../domain/repositories/conditional_schedule_deleter.dart';
+import '../../../domain/repositories/schedule_revision_source.dart';
+import 'schedule_json_codec.dart';
+
+/// Authenticated Laravel Schedule persistence using server-enforced revisions.
+///
+/// Revision tokens are bound to the exact canonical snapshot that was read.
+/// A later read of the same Schedule cannot silently replace an older editor's
+/// token. Unknown snapshots fail closed, and deletes require an explicit
+/// caller-owned revision before they can be enabled.
+class BackendScheduleRepository implements ScheduleRepository, ScheduleRevisionSource, ConditionalScheduleWriter, ConditionalScheduleDeleter {
+  BackendScheduleRepository({
+    required String baseUrl,
+    required this.idTokenProvider,
+    http.Client? httpClient,
+    this.codec = const ScheduleJsonCodec(),
+  }) : _baseUri = _normalizeBaseUri(baseUrl),
+       _http = httpClient ?? http.Client(),
+       _ownsHttpClient = httpClient == null;
+
+  final Uri _baseUri;
+  final Future<String?> Function() idTokenProvider;
+  final http.Client _http;
+  final bool _ownsHttpClient;
+  final ScheduleJsonCodec codec;
+  final Map<String, String> _revisions = {};
+  final Map<Schedule, String> _snapshotRevisions = Map<Schedule, String>.identity();
+  final Map<String, String> _absentRevisions = {};
+
+  @override
+  String? currentRevisionFor(String scheduleId) => _revisions[scheduleId];
+
+  @override
+  String? revisionForSnapshot(Schedule schedule) =>
+      _snapshotRevisions[schedule];
+
+  @override
+  String? revisionForAbsentSchedule(String scheduleId) =>
+      _absentRevisions[scheduleId];
+
+  static Uri _normalizeBaseUri(String value) {
+    final parsed = Uri.tryParse(value.trim());
+    if (parsed == null || !parsed.hasScheme || parsed.host.isEmpty) {
+      throw ArgumentError.value(value, 'baseUrl', 'An absolute HTTP(S) URL is required.');
+    }
+    final localHttp = parsed.scheme == 'http' &&
+        {'localhost', '127.0.0.1', '::1'}.contains(parsed.host);
+    if (parsed.scheme != 'https' && !localHttp) {
+      throw ArgumentError.value(value, 'baseUrl', 'HTTPS is required outside loopback.');
+    }
+    return parsed.replace(
+      path: parsed.path.endsWith('/') ? parsed.path : '${parsed.path}/',
+    );
+  }
+
+  @override
+  Future<Result<Schedule?>> findById(String id) async {
+    try {
+      final response = await _request('GET', _schedulePath(id));
+      final revision = response['revision'];
+      final state = response['state'];
+      if (revision is! String || state is! String) {
+        throw const FormatException('Schedule response is missing its revision or state.');
+      }
+      _revisions[id] = revision;
+      if (state == 'absent') {
+        _absentRevisions[id] = revision;
+        return const Success(null);
+      }
+      _absentRevisions.remove(id);
+      if (state == 'deleted') return const Success(null);
+      if (state != 'live' || response['data'] is! Map) {
+        throw const FormatException('The backend returned an invalid Schedule state.');
+      }
+      final schedule = codec.decode(jsonEncode(response['data']));
+      if (schedule.id != id) {
+        throw const FormatException('The backend returned a different Schedule identity.');
+      }
+      _rememberSnapshotRevision(schedule, revision);
+      return Success(schedule);
+    } on BackendScheduleApiException catch (error, stackTrace) {
+      return NetworkFailure(
+        error.message,
+        statusCode: error.statusCode,
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    } on FormatException catch (error, stackTrace) {
+      return ValidationFailure(
+        error.message,
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    } on Object catch (error, stackTrace) {
+      return NetworkFailure(
+        'Could not load Schedule "$id" from the backend.',
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  @override
+  Future<Result<ScheduleMonth?>> loadMonth(String scheduleId, DateTime month) async {
+    final result = await findById(scheduleId);
+    return switch (result) {
+      Success<Schedule?>(value: final schedule) => Success(schedule?.month(month)),
+      Failure<Schedule?>() => _copyFailure<Schedule?, ScheduleMonth?>(result),
+    };
+  }
+
+  @override
+  Future<Result<Schedule>> saveIfRevision(
+    Schedule schedule,
+    String expectedRevision,
+  ) async {
+    try {
+      if (expectedRevision.trim().isEmpty) {
+        return const PersistenceFailure('An expected Schedule revision is required.');
+      }
+      final response = await _request(
+        'PUT',
+        _schedulePath(schedule.id),
+        body: {
+          'expected_revision': expectedRevision,
+          'schedule': jsonDecode(codec.encode(schedule)),
+        },
+      );
+      return _decodeSavedSchedule(response, schedule.id);
+    } on BackendScheduleApiException catch (error, stackTrace) {
+      return NetworkFailure(
+        error.message,
+        statusCode: error.statusCode,
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    } on ScheduleCodecException catch (error, stackTrace) {
+      return ValidationFailure(
+        error.message,
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    } on Object catch (error, stackTrace) {
+      return NetworkFailure(
+        'Could not conditionally save Schedule "${schedule.id}" to the backend.',
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  @override
+  Future<Result<Schedule>> save(Schedule schedule) async {
+    final expectedRevision = _snapshotRevisions[schedule];
+    if (expectedRevision == null) {
+      return const PersistenceFailure(
+        'Cannot save a Schedule snapshot without the revision captured when it was loaded.',
+      );
+    }
+    return saveIfRevision(schedule, expectedRevision);
+  }
+
+  @override
+  Future<Result<void>> delete(String id) async {
+    return PersistenceFailure(
+      'Schedule deletion is disabled until an explicit caller-owned revision is supplied. No data was deleted.',
+    );
+  }
+
+  @override
+  Future<Result<void>> deleteIfRevision(
+    String id,
+    String expectedRevision,
+  ) async {
+    if (expectedRevision.trim().isEmpty) {
+      return const PersistenceFailure(
+        'An expected Schedule revision is required for deletion.',
+      );
+    }
+    try {
+      final response = await _request(
+        'DELETE',
+        _schedulePath(id),
+        body: {'expected_revision': expectedRevision},
+      );
+      final revision = response['revision'];
+      final state = response['state'];
+      if (revision is! String || !['deleted', 'absent'].contains(state)) {
+        throw const FormatException(
+          'The backend returned an invalid Schedule tombstone response.',
+        );
+      }
+      _revisions[id] = revision;
+      _absentRevisions.remove(id);
+      _snapshotRevisions.removeWhere((schedule, _) => schedule.id == id);
+      return const Success(null);
+    } on BackendScheduleApiException catch (error, stackTrace) {
+      return NetworkFailure(
+        error.message,
+        statusCode: error.statusCode,
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    } on FormatException catch (error, stackTrace) {
+      return ValidationFailure(
+        error.message,
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    } on Object catch (error, stackTrace) {
+      return NetworkFailure(
+        'Could not conditionally delete Schedule "$id" from the backend.',
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    }
+  }
+
+  Result<Schedule> _decodeSavedSchedule(Map<String, dynamic> response, String id) {
+    final revision = response['revision'];
+    final data = response['data'];
+    if (revision is! String || response['state'] != 'live' || data is! Map) {
+      throw const FormatException('The backend returned an invalid saved Schedule.');
+    }
+    final schedule = codec.decode(jsonEncode(data));
+    if (schedule.id != id) {
+      throw const FormatException('The saved Schedule identity does not match the request.');
+    }
+    _revisions[id] = revision;
+    _absentRevisions.remove(id);
+    _rememberSnapshotRevision(schedule, revision);
+    return Success(schedule);
+  }
+
+  void _rememberSnapshotRevision(Schedule schedule, String revision) {
+    if (!_snapshotRevisions.containsKey(schedule) && _snapshotRevisions.length >= 256) {
+      _snapshotRevisions.remove(_snapshotRevisions.keys.first);
+    }
+    // Identity-keying preserves the token attached to an older editor snapshot.
+    // Content-keying would overwrite A's original token after an A -> B -> A
+    // sequence and silently defeat the monotonic server generation.
+    _snapshotRevisions[schedule] = revision;
+  }
+
+  String _schedulePath(String id) {
+    if (id.trim().isEmpty || id.length > 128 || id.contains('/')) {
+      throw ArgumentError.value(id, 'id', 'A valid Schedule ID is required.');
+    }
+    return 'api/v1/schedules/${Uri.encodeComponent(id)}';
+  }
+
+  Future<Map<String, dynamic>> _request(
+    String method,
+    String path, {
+    Map<String, dynamic>? body,
+  }) async {
+    final token = await idTokenProvider();
+    if (token == null || token.trim().isEmpty) {
+      throw const BackendScheduleApiException(401, 'Please sign in with Google again.');
+    }
+    final uri = _baseUri.resolve(path);
+    final headers = <String, String>{
+      'Accept': 'application/json',
+      'Authorization': 'Bearer $token',
+      if (body != null) 'Content-Type': 'application/json',
+    };
+    final encodedBody = body == null ? null : jsonEncode(body);
+    final response = switch (method) {
+      'GET' => await _http.get(uri, headers: headers),
+      'PUT' => await _http.put(uri, headers: headers, body: encodedBody),
+      'DELETE' => await _http.delete(uri, headers: headers, body: encodedBody),
+      _ => throw ArgumentError.value(method, 'method', 'Unsupported HTTP method.'),
+    };
+
+    final Object? decoded;
+    try {
+      decoded = jsonDecode(response.body);
+    } on FormatException {
+      throw BackendScheduleApiException(
+        response.statusCode,
+        'The backend returned an invalid response.',
+      );
+    }
+    if (decoded is! Map) {
+      throw BackendScheduleApiException(
+        response.statusCode,
+        'The backend returned an invalid response.',
+      );
+    }
+    final result = decoded.map((key, value) => MapEntry(key.toString(), value));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final error = result['error'];
+      final message = error is Map ? error['message']?.toString() : null;
+      throw BackendScheduleApiException(
+        response.statusCode,
+        message ?? 'The Schedule request failed.',
+      );
+    }
+    return result;
+  }
+
+  void close() {
+    if (_ownsHttpClient) _http.close();
+  }
+}
+
+class BackendScheduleApiException implements Exception {
+  const BackendScheduleApiException(this.statusCode, this.message);
+
+  final int statusCode;
+  final String message;
+
+  @override
+  String toString() => 'BackendScheduleApiException($statusCode): $message';
+}
+
+Result<TTarget> _copyFailure<TSource, TTarget>(Result<TSource> result) {
+  final failure = result as Failure<TSource>;
+  return switch (failure) {
+    ValidationFailure<TSource>() => ValidationFailure(
+      failure.message,
+      fieldErrors: failure.fieldErrors,
+      cause: failure.cause,
+      stackTrace: failure.stackTrace,
+    ),
+    NetworkFailure<TSource>() => NetworkFailure(
+      failure.message,
+      statusCode: failure.statusCode,
+      cause: failure.cause,
+      stackTrace: failure.stackTrace,
+    ),
+    ImportFailure<TSource>() => ImportFailure(
+      failure.message,
+      rowNumber: failure.rowNumber,
+      column: failure.column,
+      cause: failure.cause,
+      stackTrace: failure.stackTrace,
+    ),
+    PersistenceFailure<TSource>() => PersistenceFailure(
+      failure.message,
+      cause: failure.cause,
+      stackTrace: failure.stackTrace,
+    ),
+  };
+}
