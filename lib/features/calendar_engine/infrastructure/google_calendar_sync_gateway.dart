@@ -9,7 +9,7 @@ import '../domain/calendar_sync_gateway.dart';
 import '../domain/managed_calendar_event.dart';
 
 class GoogleCalendarSyncGateway
-    implements CalendarSyncGateway, ComparableCalendarEventGateway {
+    implements CalendarSyncGateway, ComparableCalendarEventGateway, ConditionalCalendarSyncGateway {
   GoogleCalendarSyncGateway(
     this._client, {
     this.requestTimeout = defaultRequestTimeout,
@@ -96,8 +96,10 @@ class GoogleCalendarSyncGateway
             title: event.summary ?? '',
             start: _bangkokWallTime(event.start!.dateTime!),
             end: _bangkokWallTime(event.end!.dateTime!),
-            description: event.description,
+            description: _normalizeManagedDescription(event.description),
             colorId: event.colorId,
+            etag: event.etag,
+            providerSyncId: _managedSyncId(event),
           ),
         )
         .toList(growable: false);
@@ -153,16 +155,16 @@ class GoogleCalendarSyncGateway
     required String eventId,
     required CalendarSyncCommand command,
   }) async {
-    final api = calendar.CalendarApi(_client);
-    final updated = await api.events
-        .update(
-          _toEvent(command),
-          command.calendarId,
-          eventId,
-        )
-        .timeout(requestTimeout);
-
-    return _toManaged(updated, command.syncId);
+    final existing = await _readEvent(command.calendarId, eventId);
+    if (existing == null || existing.etag == null) {
+      throw StateError('Calendar event $eventId is missing or has no ETag; refresh the preview.');
+    }
+    return updateConditionally(
+      eventId: eventId,
+      expectedEtag: existing.etag!,
+      expectedSyncId: _managedSyncId(existing),
+      command: command,
+    );
   }
 
   @override
@@ -170,8 +172,193 @@ class GoogleCalendarSyncGateway
     required String eventId,
     String calendarId = 'primary',
   }) async {
-    final api = calendar.CalendarApi(_client);
-    await api.events.delete(calendarId, eventId).timeout(requestTimeout);
+    final existing = await _readEvent(calendarId, eventId);
+    if (existing == null) return;
+    if (existing.etag == null) {
+      throw StateError('Calendar event $eventId has no ETag; refusing an unguarded delete.');
+    }
+    await deleteConditionally(
+      eventId: eventId,
+      calendarId: calendarId,
+      expectedEtag: existing.etag!,
+      expectedSyncId: _managedSyncId(existing),
+    );
+  }
+
+  @override
+  Future<ManagedCalendarEvent> updateConditionally({
+    required String eventId,
+    required String expectedEtag,
+    required String? expectedSyncId,
+    required CalendarSyncCommand command,
+  }) async {
+    if (expectedEtag.trim().isEmpty) {
+      throw StateError('Calendar update requires the ETag captured by preview.');
+    }
+    final existing = await _readEvent(command.calendarId, eventId);
+    if (existing == null) {
+      throw StateError('Calendar event $eventId no longer exists; refresh the preview.');
+    }
+    if (!_matchesExpectedProviderIdentity(existing, expectedSyncId)) {
+      throw StateError('Calendar event $eventId is no longer the provider event shown in the preview.');
+    }
+    if (_matchesCommand(existing, command)) {
+      return _toManaged(existing, command.syncId);
+    }
+    if (existing.etag == null || existing.etag != expectedEtag) {
+      throw StateError('Calendar event $eventId changed after preview; refresh before retrying.');
+    }
+
+    final request = http.Request('PUT', _eventUri(command.calendarId, eventId))
+      ..headers.addAll({
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'If-Match': expectedEtag,
+      })
+      ..body = jsonEncode(_mergeManagedFields(existing, command, eventId).toJson());
+    final response = await _send(request);
+    if (response.statusCode == 412) {
+      throw StateError('Calendar event $eventId failed the ETag precondition. Refresh the preview.');
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw StateError('Conditional Calendar update failed with HTTP ${response.statusCode}.');
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map) throw const FormatException('Calendar update response is invalid.');
+    return _toManaged(
+      calendar.Event.fromJson(Map<String, dynamic>.from(decoded)),
+      command.syncId,
+    );
+  }
+
+  @override
+  Future<void> deleteConditionally({
+    required String eventId,
+    required String calendarId,
+    required String expectedEtag,
+    required String? expectedSyncId,
+  }) async {
+    if (expectedEtag.trim().isEmpty) {
+      throw StateError('Calendar delete requires the ETag captured by preview.');
+    }
+    final existing = await _readEvent(calendarId, eventId);
+    // A missing event is the desired terminal state for a delete retry.
+    if (existing == null) return;
+    if (!_matchesExpectedProviderIdentity(existing, expectedSyncId)) {
+      throw StateError('Refusing to delete Calendar event $eventId: provider identity changed after preview.');
+    }
+    if (existing.etag == null || existing.etag != expectedEtag) {
+      throw StateError('Calendar event $eventId changed after preview; refusing stale delete.');
+    }
+
+    final request = http.Request('DELETE', _eventUri(calendarId, eventId))
+      ..headers.addAll({'If-Match': expectedEtag});
+    final response = await _send(request);
+    if (response.statusCode == 404 || response.statusCode == 410) return;
+    if (response.statusCode == 412) {
+      throw StateError('Calendar event $eventId failed the ETag precondition; refusing stale delete.');
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw StateError('Conditional Calendar delete failed with HTTP ${response.statusCode}.');
+    }
+  }
+
+  Future<calendar.Event?> _readEvent(String calendarId, String eventId) async {
+    final request = http.Request('GET', _eventUri(calendarId, eventId));
+    final response = await _send(request);
+    if (response.statusCode == 404 || response.statusCode == 410) return null;
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw StateError('Calendar event lookup failed with HTTP ${response.statusCode}.');
+    }
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map) throw const FormatException('Calendar event response is invalid.');
+    return calendar.Event.fromJson(Map<String, dynamic>.from(decoded));
+  }
+
+  Future<http.Response> _send(http.Request request) =>
+      Future<http.Response>(() async {
+        final streamedResponse = await _client.send(request);
+        return http.Response.fromStream(streamedResponse);
+      }).timeout(requestTimeout);
+
+  Uri _eventUri(String calendarId, String eventId) => Uri.parse(
+    'https://www.googleapis.com/calendar/v3/calendars/${Uri.encodeComponent(calendarId)}/events/${Uri.encodeComponent(eventId)}',
+  );
+
+  calendar.Event _mergeManagedFields(
+    calendar.Event existing,
+    CalendarSyncCommand command,
+    String eventId,
+  ) {
+    final desired = _toEvent(command);
+    final privateProperties = Map<String, String>.from(
+      existing.extendedProperties?.private ?? const <String, String>{},
+    )..[syncIdKey] = command.syncId;
+    existing
+      ..id = eventId
+      ..summary = desired.summary
+      ..description = _preserveTimelineSection(
+        desiredDescription: desired.description,
+        existingDescription: existing.description,
+      )
+      ..colorId = desired.colorId
+      ..start = desired.start
+      ..end = desired.end
+      ..extendedProperties = calendar.EventExtendedProperties(
+        private: privateProperties,
+        shared: existing.extendedProperties?.shared,
+      );
+    return existing;
+  }
+
+
+  String? _normalizeManagedDescription(String? value) {
+    final normalized = value?.trim();
+    if (normalized == null || normalized.isEmpty) return null;
+
+    const marker = '--- Timeline ---';
+    final markerIndex = normalized.indexOf(marker);
+    final rosterDescription = markerIndex < 0
+        ? normalized
+        : normalized.substring(0, markerIndex).trimRight();
+    return rosterDescription.isEmpty ? null : rosterDescription;
+  }
+
+  String? _preserveTimelineSection({
+    required String? desiredDescription,
+    required String? existingDescription,
+  }) {
+    const marker = '--- Timeline ---';
+    final existing = existingDescription?.trimRight() ?? '';
+    final markerIndex = existing.indexOf(marker);
+    if (markerIndex < 0) return desiredDescription;
+
+    final desired = desiredDescription?.trimRight();
+    final desiredMarkerIndex = desired?.indexOf(marker) ?? -1;
+    final baseDescription = desired == null || desired.isEmpty
+        ? existing.substring(0, markerIndex).trimRight()
+        : desiredMarkerIndex < 0
+        ? desired
+        : desired.substring(0, desiredMarkerIndex).trimRight();
+    final timelineSection = existing.substring(markerIndex).trimRight();
+    return baseDescription.isEmpty
+        ? timelineSection
+        : '$baseDescription\n\n$timelineSection';
+  }
+
+  bool _matchesExpectedProviderIdentity(calendar.Event event, String? expectedSyncId) =>
+      _managedSyncId(event) == expectedSyncId;
+
+  bool _matchesCommand(calendar.Event event, CalendarSyncCommand command) {
+    final start = event.start?.dateTime;
+    final end = event.end?.dateTime;
+    return _managedSyncId(event) == command.syncId &&
+        event.summary == command.title &&
+        _normalizeManagedDescription(event.description) == command.description &&
+        event.colorId == command.colorId &&
+        start != null && end != null &&
+        _bangkokWallTime(start) == command.start &&
+        _bangkokWallTime(end) == command.end;
   }
 
   String _providerEventId(String syncId) {
@@ -209,8 +396,10 @@ class GoogleCalendarSyncGateway
       end: event.end?.dateTime == null
           ? DateTime.fromMillisecondsSinceEpoch(0)
           : _bangkokWallTime(event.end!.dateTime!),
-      description: event.description,
+      description: _normalizeManagedDescription(event.description),
       colorId: event.colorId,
+      etag: event.etag,
+      providerSyncId: _managedSyncId(event),
     );
   }
 
