@@ -45,6 +45,7 @@ import '../services/calendar_color_service.dart';
 import '../services/drive_ownership_service.dart';
 import '../services/google_auth_service.dart';
 import '../services/shift_color_service.dart';
+import '../services/web_push_subscription_client.dart';
 import 'app_shell_navigation.dart';
 import 'empty_roster_sync_diagnostic.dart';
 import 'first_login_setup_dialog.dart';
@@ -105,6 +106,12 @@ class _AppShellState extends State<AppShell> {
   String? _permissionDialogShownForEmail;
   late final ShiftTransactionApiClient _shiftTransactionApiClient =
       ShiftTransactionApiClient(
+        baseUrl: const String.fromEnvironment('ORGANIZATION_API_BASE_URL'),
+        idTokenProvider: () async =>
+            widget.controller.auth.account?.authentication.idToken,
+      );
+  late final WebPushSubscriptionClient _webPushSubscriptionClient =
+      WebPushSubscriptionClient(
         baseUrl: const String.fromEnvironment('ORGANIZATION_API_BASE_URL'),
         idTokenProvider: () async =>
             widget.controller.auth.account?.authentication.idToken,
@@ -175,6 +182,7 @@ class _AppShellState extends State<AppShell> {
   @override
   void dispose() {
     _shiftTransactionApiClient.close();
+    _webPushSubscriptionClient.close();
     widget.controller.removeListener(_handleControllerChanged);
     super.dispose();
   }
@@ -791,6 +799,7 @@ class _AppShellState extends State<AppShell> {
       _UtilityPage.notifications => _NotificationsPage(
         controller: widget.controller,
         perform: _perform,
+        webPushClient: _webPushSubscriptionClient,
       ),
       _UtilityPage.history => _AuditPage(
         controller: widget.controller,
@@ -5095,10 +5104,15 @@ class _ShiftSettingsDialogState extends State<_ShiftSettingsDialog> {
 }
 
 class _NotificationsPage extends StatelessWidget {
-  const _NotificationsPage({required this.controller, required this.perform});
+  const _NotificationsPage({
+    required this.controller,
+    required this.perform,
+    required this.webPushClient,
+  });
 
   final AppController controller;
   final Future<void> Function(Future<void> Function()) perform;
+  final WebPushSubscriptionClient webPushClient;
 
   Future<void> _deleteCalendarEvent(
     BuildContext context,
@@ -5131,18 +5145,19 @@ class _NotificationsPage extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
-    if (controller.alerts.isEmpty) {
-      return const _EmptyState(
-        icon: Icons.notifications_none,
-        title: 'ยังไม่มีการแจ้งเตือน',
-        message:
-            'เมื่ออ่านเวรและเปรียบเทียบ Calendar แอปจะตรวจเวรซ้อนและช่วง OFF ให้อัตโนมัติ',
-      );
-    }
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
+  Widget build(BuildContext context) => ListView(
+    padding: const EdgeInsets.all(20),
+    children: [
+      _WebPushSettingsCard(client: webPushClient),
+      const SizedBox(height: 14),
+      if (controller.alerts.isEmpty)
+        const _EmptyState(
+          icon: Icons.notifications_none,
+          title: 'ยังไม่มีการแจ้งเตือน',
+          message:
+              'เมื่ออ่านเวรและเปรียบเทียบ Calendar แอปจะตรวจเวรซ้อนและช่วง OFF ให้อัตโนมัติ',
+        )
+      else ...[
         Card(
           color: controller.pendingAlertCount > 0
               ? Theme.of(context).colorScheme.errorContainer
@@ -5186,6 +5201,161 @@ class _NotificationsPage extends StatelessWidget {
           const SizedBox(height: 10),
         ],
       ],
+    ],
+  );
+}
+
+class _WebPushSettingsCard extends StatefulWidget {
+  const _WebPushSettingsCard({required this.client});
+
+  final WebPushSubscriptionClient client;
+
+  @override
+  State<_WebPushSettingsCard> createState() => _WebPushSettingsCardState();
+}
+
+class _WebPushSettingsCardState extends State<_WebPushSettingsCard> {
+  bool _loading = true;
+  bool _busy = false;
+  bool _subscribed = false;
+  String? _error;
+  String? _status;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_refresh());
+  }
+
+  Future<void> _refresh() async {
+    try {
+      final subscribed = await widget.client.isSubscribed;
+      if (!mounted) return;
+      setState(() {
+        _subscribed = subscribed;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'ไม่สามารถตรวจสอบสถานะการแจ้งเตือนได้';
+      });
+    }
+  }
+
+  Future<void> _toggleSubscription() async {
+    setState(() {
+      _busy = true;
+      _error = null;
+      _status = null;
+    });
+    try {
+      if (_subscribed) {
+        await widget.client.unsubscribe();
+        _status = 'ปิดการแจ้งเตือนบนอุปกรณ์นี้แล้ว';
+      } else {
+        await widget.client.subscribe();
+        _status = 'ลงทะเบียนอุปกรณ์รับการแจ้งเตือนแล้ว';
+      }
+      await _refresh();
+    } catch (error) {
+      _error = error.toString().replaceFirst('Bad state: ', '');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final supported = widget.client.isSupported;
+    final configured = widget.client.isConfigured;
+    final permission = widget.client.permission;
+    final description = !supported
+        ? 'เบราว์เซอร์นี้ไม่รองรับ Web Push'
+        : !configured
+        ? 'ระบบนี้ยังไม่ได้ตั้งค่า API หรือ VAPID public key สำหรับ Web Push'
+        : permission == 'denied'
+        ? 'สิทธิ์แจ้งเตือนถูกปฏิเสธ กรุณาเปิดสิทธิ์จากการตั้งค่าเว็บไซต์ของเบราว์เซอร์'
+        : _subscribed
+        ? 'อุปกรณ์นี้ลงทะเบียนรับการแจ้งเตือนแล้ว'
+        : 'เปิดใช้งานเพื่อรับแจ้งเตือนการเปลี่ยนแปลงเวร แม้ไม่ได้เปิดหน้าแอปอยู่';
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  _subscribed
+                      ? Icons.notifications_active_outlined
+                      : Icons.notifications_none_outlined,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'การแจ้งเตือนบนอุปกรณ์นี้',
+                    style: theme.textTheme.titleMedium,
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'ตรวจสอบสถานะอีกครั้ง',
+                  onPressed: _busy || _loading ? null : _refresh,
+                  icon: const Icon(Icons.refresh),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(description),
+            if (permission == 'default' && configured)
+              const Padding(
+                padding: EdgeInsets.only(top: 6),
+                child: Text('เบราว์เซอร์จะถามอนุญาตเมื่อกดเปิดใช้งาน'),
+              ),
+            if (_status != null) ...[
+              const SizedBox(height: 8),
+              Text(_status!, style: TextStyle(color: theme.colorScheme.primary)),
+            ],
+            if (_error != null) ...[
+              const SizedBox(height: 8),
+              Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
+            ],
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _busy ||
+                      _loading ||
+                      !supported ||
+                      (_subscribed
+                          ? !widget.client.isApiConfigured
+                          : !configured || permission == 'denied')
+                  ? null
+                  : _toggleSubscription,
+                icon: _busy || _loading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Icon(
+                        _subscribed
+                            ? Icons.notifications_off_outlined
+                            : Icons.notifications_active_outlined,
+                      ),
+                label: Text(
+                  _subscribed ? 'ปิดการแจ้งเตือน' : 'เปิดการแจ้งเตือน',
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
