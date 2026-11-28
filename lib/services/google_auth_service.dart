@@ -27,6 +27,7 @@ abstract interface class GoogleAuthGateway implements Listenable {
   Future<void> signIn();
   Future<void> requestReadAccess();
   Future<void> signOut();
+  Future<void> disconnect();
   Future<GoogleApiClient> clientFor(
     List<String> scopes, {
     bool promptIfNecessary = true,
@@ -232,6 +233,15 @@ class GoogleAuthService extends ChangeNotifier implements GoogleAuthGateway {
   @override
   Future<void> signOut() async {
     await GoogleSignIn.instance.signOut();
+    _account = null;
+    _checkingReadAccess = false;
+    _readAccessGranted = false;
+    notifyListeners();
+  }
+
+  @override
+  Future<void> disconnect() async {
+    await GoogleSignIn.instance.disconnect();
     _account = null;
     _checkingReadAccess = false;
     _readAccessGranted = false;
