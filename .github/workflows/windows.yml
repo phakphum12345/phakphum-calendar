@@ -83,10 +83,8 @@ jobs:
               -not $env:ORGANIZATION_API_BASE_URL.StartsWith('https://')) {
             Write-Host '::notice::Skipping Windows production artifact because ORGANIZATION_API_BASE_URL is not configured as HTTPS.'
             Add-Content -Path $env:GITHUB_OUTPUT -Value 'available=false'
-            @"
-            ## Production artifact skipped
-            No valid HTTPS ORGANIZATION_API_BASE_URL is configured. Build and upload steps were skipped; this is not a production release.
-            "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+            Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value '## Production artifact skipped'
+            Add-Content -Path $env:GITHUB_STEP_SUMMARY -Value 'No valid HTTPS ORGANIZATION_API_BASE_URL is configured. Build and upload steps were skipped; this is not a production release.'
           } else {
             Add-Content -Path $env:GITHUB_OUTPUT -Value 'available=true'
           }
@@ -129,22 +127,23 @@ jobs:
         shell: pwsh
         run: |
           if ($env:GITHUB_EVENT_NAME -eq 'pull_request' -or $env:BACKEND_AVAILABLE -eq 'true') {
-            @"
-            ## Windows Final Gate
-            - Flutter analyze: PASS
-            - Flutter tests: PASS
-            - Windows release build: PASS
-            - Windows executable: PASS
-            - Windows package: PASS
-            "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+            $summaryLines = @(
+              '## Windows Final Gate'
+              '- Flutter analyze: PASS'
+              '- Flutter tests: PASS'
+              '- Windows release build: PASS'
+              '- Windows executable: PASS'
+              '- Windows package: PASS'
+            )
           } else {
-            @"
-            ## Windows Final Gate
-            - Flutter analyze: PASS
-            - Flutter tests: PASS
-            - Production release artifact: SKIPPED — no HTTPS ORGANIZATION_API_BASE_URL configured
-            "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
+            $summaryLines = @(
+              '## Windows Final Gate'
+              '- Flutter analyze: PASS'
+              '- Flutter tests: PASS'
+              '- Production release artifact: SKIPPED — no HTTPS ORGANIZATION_API_BASE_URL configured'
+            )
           }
+          $summaryLines | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Append
 
       - name: Upload Windows artifact
         if: github.event_name == 'pull_request' || steps.backend_gate.outputs.available == 'true'
