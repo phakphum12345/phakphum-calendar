@@ -859,8 +859,8 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
       pendingClient = await widget.authorizedGoogleClientFactory.create(
         account: account,
         scopes: const [
-          GoogleAuthService.spreadsheetsReadOnlyScope,
-          drive.DriveApi.driveMetadataReadonlyScope,
+          GoogleScopes.spreadsheetsReadOnly,
+          GoogleScopes.driveMetadataReadOnly,
         ],
       );
       final source =
@@ -925,7 +925,7 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
       }
       client = await widget.authorizedGoogleClientFactory.create(
         account: account,
-        scopes: const [drive.DriveApi.driveMetadataReadonlyScope],
+        scopes: const [GoogleScopes.driveMetadataReadOnly],
       );
       final sheets = await widget.driveOwnershipGateway.listOwnedSpreadsheets(
         client,
