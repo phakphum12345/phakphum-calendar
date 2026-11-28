@@ -18,7 +18,7 @@ on:
       - "DISKPATH.json"
       - "DISKPATH.md"
       - ".github/workflows/**"
-# Read-only by default. The deploy job grants only the permissions Pages needs.
+# Read-only permissions for pull-request web build verification.
 permissions:
   contents: read
 
