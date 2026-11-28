@@ -27,28 +27,28 @@ void main() {
   test(
     'Google integration gateways require the active Google account',
     () async {
-    final dependencies = AppDependencies.production();
+      final dependencies = AppDependencies.production();
 
-    await expectLater(
-      dependencies.createGoogleCalendarGateway(),
-      throwsStateError,
-    );
-    await expectLater(
-      dependencies.createGoogleDriveGateway(),
-      throwsStateError,
-    );
-    await expectLater(
-      dependencies.createGoogleSheetsGateway(),
-      throwsStateError,
-    );
-    await expectLater(
-      dependencies.createGoogleEmployeeSyncService(),
-      throwsStateError,
-    );
-    await expectLater(
-      dependencies.createGoogleContactsService(),
-      throwsStateError,
-    );
+      await expectLater(
+        dependencies.createGoogleCalendarGateway(),
+        throwsStateError,
+      );
+      await expectLater(
+        dependencies.createGoogleDriveGateway(),
+        throwsStateError,
+      );
+      await expectLater(
+        dependencies.createGoogleSheetsGateway(),
+        throwsStateError,
+      );
+      await expectLater(
+        dependencies.createGoogleEmployeeSyncService(),
+        throwsStateError,
+      );
+      await expectLater(
+        dependencies.createGoogleContactsService(),
+        throwsStateError,
+      );
     },
   );
 
