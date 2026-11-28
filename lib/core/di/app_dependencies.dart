@@ -24,6 +24,7 @@ import '../../features/excel_import/domain/shift_record.dart';
 import '../../features/google_sheets/infrastructure/google_sheets_gateway.dart';
 import '../../core/google/authorized_google_gateway_session.dart';
 import '../../core/google/google_scopes.dart';
+import '../../core/google/google_scope_routing_client.dart';
 import '../../features/calendar_engine/infrastructure/google_calendar_gateway.dart';
 import '../../features/employees/infrastructure/google_employee_sync_service.dart';
 import '../../features/google_drive/infrastructure/google_drive_gateway.dart';
@@ -613,7 +614,11 @@ class AppDependencies {
   /// Requests Calendar authorization and owns the client for the controller.
   Future<ShiftCalendarWorkflowController>
   createAuthorizedCalendarWorkflowController() async {
-    final client = await googleAuthService.clientFor(GoogleScopes.calendarWrite);
+    // The routing client requests read-only access for preview/list/get calls
+    // and requests write access only when the user confirms a provider write.
+    final client = GoogleScopeRoutingClient(
+      clientForScopes: googleAuthService.clientFor,
+    );
     return createShiftCalendarWorkflowController(
       calendarSyncGatewayFactory(client),
       onDispose: client.close,
