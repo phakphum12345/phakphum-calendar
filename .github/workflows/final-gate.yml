@@ -106,12 +106,12 @@ jobs:
             gh api \
               -H 'Accept: application/vnd.github+json' \
               "/repos/${REPOSITORY}/actions/runs/${run_id}/jobs?per_page=100" \
-              --arg job "$job_name" \
-              --arg build "$build_step" \
-              --arg verify "$verify_step" \
-              --arg package "$package_step" \
-              --arg upload "$upload_step" \
-              --jq '
+            | jq -r \
+                --arg job "$job_name" \
+                --arg build "$build_step" \
+                --arg verify "$verify_step" \
+                --arg package "$package_step" \
+                --arg upload "$upload_step" '
                 [
                   .jobs[]
                   | select(.name == $job)
@@ -128,7 +128,7 @@ jobs:
                 ]
                 | last // ["missing", "unknown", "missing", "missing", "missing", "missing", "missing"]
                 | @tsv
-              ' 2>/dev/null
+              '
           }
 
           # These protect the user-facing application and its primary release paths.
