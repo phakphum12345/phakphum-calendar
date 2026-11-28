@@ -21,16 +21,28 @@ Enable only the APIs used by enabled features:
 
 Request scopes incrementally at the point of use. Do not request every optional scope during basic identity sign-in. Explain each permission before requesting it.
 
-Existing feature scopes include:
+Feature scopes are registered in `lib/core/google/google_scopes.dart` and requested through the canonical `GoogleAuthGateway.clientFor` boundary:
 
-```text
-https://www.googleapis.com/auth/spreadsheets.readonly
-https://www.googleapis.com/auth/calendar.events.readonly
-https://www.googleapis.com/auth/calendar.events
-https://www.googleapis.com/auth/drive.metadata.readonly
-https://www.googleapis.com/auth/drive.readonly
-https://www.googleapis.com/auth/drive.appdata
-```
+| Integration operation | OAuth scope | When requested |
+| --- | --- | --- |
+| Read spreadsheet cells | `spreadsheets.readonly` | Spreadsheet import/read |
+| Create or modify worksheets | `spreadsheets` | Only when a worksheet write is requested |
+| Read Calendar events | `calendar.events.readonly` | Preview and comparison |
+| Create, update or delete Calendar events | `calendar.events` | Only when Calendar sync/write is requested |
+| Verify Calendar metadata | `calendar.readonly` | Calendar metadata gateway |
+| List accessible spreadsheet files | `drive.metadata.readonly` | File picker and access check |
+| Read arbitrary Drive files | `drive.readonly` | Only for workflows that read Drive file content |
+| Employee directory in app-private storage | `drive.appdata` | Employee directory sync |
+| Copy original workbook to archive | `drive` | Only when the user enables original-file archiving |
+| Transfer Google Contacts | `contacts` | Optional Contacts import/export |
+
+The broad `drive` and `spreadsheets` scopes are not part of basic sign-in. The app-private employee directory uses `drive.appdata`; it is not stored in a shared owner account.
+
+## Gateway and account isolation
+
+Production gateways are created from the signed-in account through `AppDependencies` and `GoogleAuthGateway.clientFor`. Each authorized gateway session records the account ID used to obtain its client and owns that client until the feature closes the session. A session is rejected if the active account changes while authorization is being obtained.
+
+The compatibility authentication service delegates to the same `GoogleAuthGateway`; it does not create a second `GoogleSignIn` lifecycle or request Calendar, Sheets, Drive or Contacts data scopes during identity sign-in. Existing legacy workflows also request their operation scopes through that same gateway.
 
 Contacts transfer, when enabled, additionally requires:
 
