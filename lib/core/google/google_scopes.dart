@@ -16,7 +16,7 @@ abstract final class GoogleScopes {
       'https://www.googleapis.com/auth/drive.readonly';
   static const String driveAppData =
       'https://www.googleapis.com/auth/drive.appdata';
-  static const String driveArchive =
+  static const String driveFullAccess =
       'https://www.googleapis.com/auth/drive';
 
   static const String spreadsheetsReadOnly =
@@ -62,7 +62,12 @@ abstract final class GoogleScopes {
   /// Optional app-private Drive storage; not required for ordinary sign-in.
   /// Full Drive access is needed only to copy an original workbook to archive.
   static const List<String> driveBackup = <String>[
-    driveArchive,
+    driveAppData,
+  ];
+
+  /// Full Drive access is needed only to copy an original workbook to archive.
+  static const List<String> driveArchive = <String>[
+    driveFullAccess,
   ];
 
   /// App-private employee directory storage; does not expose the user's Drive.
