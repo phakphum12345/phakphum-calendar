@@ -18,7 +18,9 @@ final class WebPushSender implements WebPushTransport
     public function __construct(
         private readonly WebPushPayloadEncryptor $encryptor,
         private readonly VapidTokenGenerator $vapid,
-    ) {}
+    )
+    {
+    }
 
     public function send(object $subscription, array $payload): array
     {
@@ -84,7 +86,7 @@ final class WebPushSender implements WebPushTransport
             || isset($parts['pass'])
             || (isset($parts['port']) && (int) $parts['port'] !== 443)
             || filter_var($host, FILTER_VALIDATE_IP) !== false
-            || ! $allowed
+            || !$allowed
         ) {
             throw new \RuntimeException('Unsupported Web Push endpoint.');
         }
