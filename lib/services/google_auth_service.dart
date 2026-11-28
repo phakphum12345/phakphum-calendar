@@ -310,7 +310,29 @@ class GoogleAuthService extends ChangeNotifier implements GoogleAuthGateway {
     if (headers == null) {
       throw StateError('ยังไม่ได้อนุญาตสิทธิ์ที่จำเป็น');
     }
-    return GoogleApiClient(headers);
+    final accountId = current.id;
+    return GoogleApiClient.withHeaderProvider(() async {
+      final activeAccount = _account;
+      if (activeAccount == null || activeAccount.id != accountId) {
+        throw StateError(
+          'บัญชี Google เปลี่ยนหรือถูกตัดการเชื่อมต่อ กรุณาเชื่อมต่อใหม่',
+        );
+      }
+      final refreshedHeaders = await activeAccount.authorizationClient
+          .authorizationHeaders(
+            normalizedScopes.toList(growable: false),
+            promptIfNecessary: false,
+          );
+      if (refreshedHeaders == null) {
+        throw StateError(
+          'สิทธิ์ Google หมดอายุหรือถูกเพิกถอน กรุณาเชื่อมต่อบัญชีและอนุญาตใหม่',
+        );
+      }
+      if (_account?.id != accountId) {
+        throw StateError('บัญชี Google เปลี่ยนระหว่างส่งคำขอ กรุณาลองใหม่');
+      }
+      return refreshedHeaders;
+    });
   }
 
   String _friendlyError(Object error) {
