@@ -78,9 +78,20 @@ jobs:
               -H 'Accept: application/vnd.github+json' \
               "/repos/${REPOSITORY}/actions/runs/${run_id}/jobs?per_page=100" \
               --jq '
-                [.jobs[] | select(.name == "Deploy GitHub Pages")]
-                | last // {}
-                | [(.status // "missing"), (.conclusion // ""), (.html_url // "")]
+                [
+                  .jobs[]
+                  | select(.name == "Deploy GitHub Pages")
+                  | . as $job
+                  | [
+                      ($job.status // "missing"),
+                      ($job.conclusion // ""),
+                      ($job.html_url // ""),
+                      ([$job.steps[]? | select(.name == "Require shared backend for production deployment") | .conclusion] | last // "missing"),
+                      ([$job.steps[]? | select(.name == "Deploy to GitHub Pages") | .conclusion] | last // "missing"),
+                      ([$job.steps[]? | select(.name == "Verify published site and deployed commit") | .conclusion] | last // "missing")
+                    ]
+                ]
+                | last // ["missing", "", "", "missing", "missing", "missing"]
                 | @tsv
               ' 2>/dev/null
           }
@@ -105,6 +116,7 @@ jobs:
             required_pending=0
             required_failed=0
             optional_pending=0
+            deployment_skipped=0
             echo ""
             echo "===== EVIDENCE CHECK ${attempt}/80 ====="
 
@@ -129,18 +141,26 @@ jobs:
                   deploy_state="$(get_deploy_job_state "$run_id" || true)"
                   if [[ -z "$deploy_state" ]]; then
                     deploy_status="missing"; deploy_conclusion=""; deploy_url=""
+                    backend_gate_conclusion="missing"; deploy_step_conclusion="missing"; verify_step_conclusion="missing"
                   else
-                    IFS=$'\t' read -r deploy_status deploy_conclusion deploy_url <<< "$deploy_state"
+                    IFS=$'\t' read -r deploy_status deploy_conclusion deploy_url backend_gate_conclusion deploy_step_conclusion verify_step_conclusion <<< "$deploy_state"
                     deploy_status="${deploy_status:-missing}"
                     deploy_conclusion="${deploy_conclusion:-}"
                     deploy_url="${deploy_url:-}"
+                    backend_gate_conclusion="${backend_gate_conclusion:-missing}"
+                    deploy_step_conclusion="${deploy_step_conclusion:-missing}"
+                    verify_step_conclusion="${verify_step_conclusion:-missing}"
                   fi
-                  echo "REQUIRED Web deployment: status=$deploy_status conclusion=${deploy_conclusion:-PENDING}"
+                  echo "REQUIRED Web deployment job: status=$deploy_status conclusion=${deploy_conclusion:-PENDING}"
+                  echo "  backend_guard=$backend_gate_conclusion deploy_step=$deploy_step_conclusion verify_step=$verify_step_conclusion"
                   [[ -z "$deploy_url" ]] || echo "  $deploy_url"
-                  if [[ "$deploy_status" == "completed" && "$deploy_conclusion" == "success" ]]; then
-                    echo "REQUIRED Web deployment: PASS"
+                  if [[ "$deploy_status" == "completed" && "$deploy_conclusion" == "success" && "$backend_gate_conclusion" == "success" && "$deploy_step_conclusion" == "success" && "$verify_step_conclusion" == "success" ]]; then
+                    echo "REQUIRED Web deployment: PASS (deploy and deployed-SHA verification both ran)"
+                  elif [[ "$deploy_status" == "completed" && "$deploy_conclusion" == "success" && "$backend_gate_conclusion" == "success" && "$deploy_step_conclusion" == "skipped" && "$verify_step_conclusion" == "skipped" ]]; then
+                    echo "REQUIRED Web deployment: SKIPPED (backend guard; no production deployment was made)"
+                    deployment_skipped=1
                   elif [[ "$deploy_status" == "completed" || "$deploy_status" == "missing" ]]; then
-                    echo "REQUIRED FAILURE: GitHub Pages deployment did not succeed for $SHA."
+                    echo "REQUIRED FAILURE: GitHub Pages deployment evidence is missing, failed, or inconsistent for $SHA."
                     required_failed=1
                   else
                     required_pending=1
@@ -183,8 +203,29 @@ jobs:
 
             if [[ "$required_pending" -eq 0 && "$optional_pending" -eq 0 ]]; then
               echo ""
-              echo "Required evidence complete for $SHA."
-              echo "Android/iOS/Linux are best-effort; see per-target PASS/SKIPPED lines above."
+              if [[ "$deployment_skipped" -eq 1 ]]; then
+                echo "Core validation complete for $SHA; production Pages deployment is SKIPPED."
+                echo "This Final Gate success is not a production release or deployed-site PASS."
+                {
+                  echo "## Final Gate — $SHA"
+                  echo "- Auto Detect CI: PASS"
+                  echo "- Windows build/test evidence: PASS"
+                  echo "- Web build evidence: PASS"
+                  echo "- GitHub Pages deployment: SKIPPED — backend guard prevented publication"
+                  echo "- Production release readiness: NOT ESTABLISHED"
+                  echo "- Android/iOS/Linux: see per-target PASS/SKIPPED evidence above"
+                } >> "$GITHUB_STEP_SUMMARY"
+              else
+                echo "Required evidence complete for $SHA; GitHub Pages deployment and deployed-SHA verification passed."
+                {
+                  echo "## Final Gate — $SHA"
+                  echo "- Auto Detect CI: PASS"
+                  echo "- Windows build/test evidence: PASS"
+                  echo "- Web build evidence: PASS"
+                  echo "- GitHub Pages deployment and deployed-SHA verification: PASS"
+                  echo "- Android/iOS/Linux: see per-target PASS/SKIPPED evidence above"
+                } >> "$GITHUB_STEP_SUMMARY"
+              fi
               exit 0
             fi
 
