@@ -16,7 +16,10 @@ class SyncHistoryJsonCodec {
             'updated': entry.updated,
             'deleted': entry.deleted,
             'failed': entry.failed,
+            'pending': entry.pending,
             'message': entry.message,
+            'scheduleId': entry.scheduleId,
+            'serverRunId': entry.serverRunId,
           },
         )
         .toList(growable: false),
@@ -44,7 +47,10 @@ class SyncHistoryJsonCodec {
             updated: (json['updated'] as num?)?.toInt() ?? 0,
             deleted: (json['deleted'] as num?)?.toInt() ?? 0,
             failed: (json['failed'] as num?)?.toInt() ?? 0,
+            pending: (json['pending'] as num?)?.toInt() ?? 0,
             message: json['message'] as String?,
+            scheduleId: json['scheduleId'] as String? ?? 'unknown',
+            serverRunId: json['serverRunId'] as String?,
           );
         })
         .toList(growable: false);
