@@ -4,7 +4,8 @@ The active build and delivery surface covers **Windows, Web, Android, iOS, and L
 
 - `ci-auto-detect.yml` — capability detection plus selective Dart/Flutter quality checks.
 - `windows.yml` — Windows x64 release ZIP + SHA-256 checksum.
-- `web.yml` — Flutter Web release + GitHub Pages deployment.
+- `web.yml` — pull-request Flutter Web build and downloadable artifact (no deployment check is skipped on PRs).
+- `deploy-pages.yml` — production GitHub Pages build/deployment, triggered only by pushes to `main`.
 - `android.yml` — Android release APK build artifact.
 - `ios.yml` — independent unsigned iOS release app build artifact.
 - `macos.yml` — independent macOS/Xcode ad-hoc-signed release app build + ZIP/SHA-256 artifacts.
@@ -25,7 +26,7 @@ For the current stabilization phase:
 | Target | Status | CI/CD |
 | --- | --- | --- |
 | Windows x64 | Supported | `windows.yml` |
-| Web / GitHub Pages | Supported | `web.yml` |
+| Web / GitHub Pages | Supported | `web.yml` (PR build), `deploy-pages.yml` (main deployment) |
 | Capability detection | Supported | `ci-auto-detect.yml` |
 | Core pull request evidence gate | Required evidence workflow | `pull-request-gate.yml` |
 | iOS advisory evidence report | Non-blocking diagnostic workflow | `ios-evidence-gate.yml` |
