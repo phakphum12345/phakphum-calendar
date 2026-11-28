@@ -1,3 +1,5 @@
+> **Current status warning (2026-11-28):** This file is a historical 2026-11-27 snapshot and must not be used as the live PR/CI baseline. Use [current Completion Status](project/LIVE_PROJECT_STATUS_2026-11-28.md) and [Remaining Acceptance](project/REMAINING_ACCEPTANCE_2026-11-28.md), based on main SHA `f7499d76a2d5111a7d37801462a4b837e5791ff9`.
+
 # Completion Status — 2026-11-27
 
 Repository: phakphum12345/phakphum-calendar

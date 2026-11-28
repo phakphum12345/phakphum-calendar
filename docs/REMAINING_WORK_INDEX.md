@@ -1,3 +1,11 @@
+# Current execution index — 2026-11-28
+
+- Current baseline: main `f7499d76a2d5111a7d37801462a4b837e5791ff9`.
+- Use [Live Project Status](project/LIVE_PROJECT_STATUS_2026-11-28.md), [Completion Status](COMPLETION_STATUS.md), and [Remaining Acceptance](project/REMAINING_ACCEPTANCE_2026-11-28.md) for the current state.
+- Historical PR lists and dated work-package snapshots below are retained as history; they are not a live statement of open PRs or current CI. Do not treat closed/superseded PRs or old green checks as current evidence.
+
+---
+
 # Remaining Work Index — 2026-11-27
 
 This is the concise execution checklist. The detailed design and test criteria are in the linked documents.

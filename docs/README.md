@@ -1,3 +1,9 @@
+# Current documentation status — 2026-11-28
+
+See [Live Project Status](project/LIVE_PROJECT_STATUS_2026-11-28.md) and [Remaining Acceptance](project/REMAINING_ACCEPTANCE_2026-11-28.md) for the current main SHA and remaining work. Historical dated audits and trackers remain available below; verify their baseline before relying on them.
+
+---
+
 # Documentation home
 
 Start with the [Master Documentation Index](DOCUMENTATION_MASTER_INDEX.md), which defines the target documentation tree and catalogs existing root-level and nested references.

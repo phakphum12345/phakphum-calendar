@@ -1,58 +1,57 @@
-# Live Project Status — 2026-11-28
+# Live Project Status — 2026-11-28 (reconciled)
 
-> This is a dated execution checkpoint, not a declaration that the product is complete. Verify live GitHub state before treating any branch, PR, CI result, or deployment as current.
+> Current-main checkpoint only. This is not a production-readiness declaration. Recheck the live repository and exact workflow runs before making release or operational claims.
 
 ## Repository baseline
 
 - Repository: `phakphum12345/phakphum-calendar`
-- Target branch: `main`
-- Main baseline at checkpoint: `1f2aba7b50b59cd44a6754a7a5ea8f16ba94cef0`
-- PR #211 merged as `1f2aba7b50b59cd44a6754a7a5ea8f16ba94cef0`.
+- Branch: `main`
+- Baseline SHA when this checkpoint was prepared: `f7499d76a2d5111a7d37801462a4b837e5791ff9`
+- This checkpoint supersedes the earlier same-date snapshot at `1f2aba7b50b59cd44a6754a7a5ea8f16ba94cef0`.
 
-## Integrated work
+## Integrated delivery
 
-- PR #211 integrated durable roster history/Drive revision restore through the reviewed Grid import and conditional Schedule commit workflow, together with reviewer-selected date-axis orientation.
-- PRs #204 and #205 are closed as superseded by #211. Their former branches are not the active integration path.
+| PR | Result | Integrated scope |
+|---|---|---|
+| #211 | Merged | Durable roster history / Drive revision restore through reviewed Grid import and conditional Schedule commit; reviewer-selected date-axis orientation |
+| #212 | Merged | Calendar Sync coordination and durable operation ledger; ETag/managed Sync ID preconditions and confirmation-gated recovery; browser Web Push subscription/outbox, encrypted payload transport, retry and dead-letter foundations |
+| #214 | Merged | Restored missing Laravel Calendar Sync coordination API feature coverage from the prior #196 implementation |
+| #215 | Merged | Backend configuration gates: PR builds remain available; main/manual production artifacts and Pages deployment are skipped with explicit evidence when `ORGANIZATION_API_BASE_URL` is not a valid HTTPS URL |
+| #213 | Merged | Earlier live-status documentation snapshot; superseded by this reconciliation |
 
-## Active integration work
+PR #191 was closed as superseded after verifying its 35 changed paths were integrated by #212. PR #196 was closed as superseded after verifying the implementation paths were present and restoring its missing Laravel feature test in #214. Their closed branches are historical references, not active delivery branches.
 
-### PR #212 — Calendar Sync coordination + Web Push outbox
+## Current post-merge verification
 
-- Branch: `integration/calendar-sync-notifications-on-main-20261128`
-- Head at checkpoint: `0d086809cdcc7335a69a29ed469a79ebbd3d1e6a`
-- Base at checkpoint: `2e30ca4237f6191cf23a2c005c6157523bf4558a`
-- GitHub compare against current main reported 83 commits ahead and 19 commits behind; mergeability was false.
-- Three files overlap with the merged #211 change set: `lib/controller/app_controller.dart`, `lib/ui/app_shell.dart`, and `test/widget_test.dart`.
-- No PR-triggered workflow runs were returned for this exact head; CI status is UNKNOWN, not PASS.
-- Keep Draft. Reconcile the branch with current main while preserving both feature sets, inspect the three overlapping files, then run formatting, backend tests, Flutter tests and all required CI on the resulting exact head.
+- Exact post-merge main SHA: `f7499d76a2d5111a7d37801462a4b837e5791ff9`.
+- All 10 workflows attached to this SHA completed with conclusion SUCCESS: Build macOS (Xcode) run `46104697338`; Build Android `46104697396`; Build Windows `46104697441`; Build iOS `46104697437`; Build Linux `46104697462`; Build and Deploy Web `46104697509`; Cross-platform Runtime `46104697456`; Auto Detect CI `46104697429`; Dependency Security `46104697646`; Final Gate `46104697404`.
+- Final Gate confirmed required quality/core evidence succeeded. The non-production web build artifact was created and uploaded; GitHub Pages deployment and published-site verification were SKIPPED because no valid HTTPS backend URL was configured.
+- Windows, iOS, macOS, Android and Linux analysis/test/toolchain evidence passed; their production build/package/upload steps were SKIPPED because the shared backend URL was not configured. This is not a platform release.
+- PR #214's post-merge Laravel Backend CI, Cross-platform Runtime, Auto Detect CI and Dependency Security workflows all completed successfully. Laravel feature/API tests are included in run `46103367270`.
+- PR #215's workflow change is verified on the merged main SHA: missing backend configuration no longer fails the whole CI, while production artifact and Pages deployment remain blocked. No backend was deployed or configured.
 
-Intended feature scope includes owner+Calendar-scoped durable sync leases, run history and operation ledger, ETag/managed Sync ID preconditions, stable Sync IDs for ambiguous inserts, confirmation-gated recovery, and transactional/idempotent browser Web Push outbox delivery with encrypted payload transport, retries and dead-letter handling.
+## Remaining work — highest priority
 
-### PR #209 — broad documentation reconciliation
+1. **Verify post-merge #215 behavior:** inspect all workflows on exact main SHA `f7499d76...`; confirm build/test evidence remains successful, release artifacts are explicitly skipped when backend config is absent, and Pages deployment is not performed. A skipped artifact is not a production release.
+2. **Shared backend operational readiness:** provision/configure the intended self-hosted Laravel backend, HTTPS origin, database/locking, secrets and backup/restore; run migrations and health checks. No deployment or live backend acceptance is claimed here.
+3. **Calendar Sync live acceptance:** use a controlled Google test calendar and two clients to test concurrent leases, heartbeat, expiry/reclaim, stale-token fencing, ETag-protected update/delete, ambiguous insert outcomes and restart recovery.
+4. **Web Push live acceptance:** configure VAPID keys and scheduler/worker; test permission, subscribe/unsubscribe, delivery, expiration, retries and recovery on a registered supported browser/device. Browser Web Push is not native iOS/Android push.
+5. **Universal roster real-file acceptance:** test representative original workbooks with horizontal, vertical and mixed sections, multi-level/merged headers, multiple departments and partial periods. Preserve provenance, reviewer corrections, existing Schedule data and overrides. Synthetic fixtures do not substitute for the original workbooks.
+6. **History restore acceptance:** test real Drive revision exports and multiple Schedule contexts, including stale-source guards, preview, confirmation, conditional commit and audit; do not mutate original Drive files.
+7. **Shift Pay completion:** finish Personal / Organization / Hybrid rule-source resolution, durable versioned settings, confirmed assignment linkage, immutable calculation snapshots, monthly statements, reconciliation and tenant authorization.
+8. **Public Google authentication:** separate basic identity from optional Google API scopes; configure OAuth clients/origins/redirects and verify a normal non-tester account across supported platforms.
+9. **AI Assistant readiness:** prove the end-to-end request path; provide offline documentation-grounded help; configure any live provider server-side with authorization, privacy, quotas, safe failures and user-confirmed writes. Do not advertise unavailable live research/provider functions.
+10. **Release readiness:** clean install and upgrade on supported platforms, production signing/provisioning where applicable, package dependencies, exact deployed SHA/health, checksums, release notes and rollback/restore evidence.
 
-- Branch: `docs/project-completion-audit-20261127`
-- Head at checkpoint: `2eddbe0060aa42c8f39ff18506c904ed0b164964`
-- Its merge base with current main was `6b96b2fa81d7c2a40225067fb6aeaeb03907cb2d`; compare reported 120 commits ahead and 532 behind.
-- Keep Draft. Do not force-update or overwrite newer documentation. Reconcile only after inspecting each document against current main and the actual implementation.
+## Documentation reconciliation
 
-## Superseded source PRs
+- PR #209 is a stale, divergent documentation branch based on an older repository state. It is not safe to merge wholesale. Its useful requirements are being reconciled selectively into this current-main documentation update.
+- Older dated snapshots in the repository remain historical records unless explicitly refreshed. They must not be used as live PR/CI status.
 
-- #191 contains the earlier Web Push outbox implementation.
-- #196 contains the earlier Calendar Sync coordination implementation.
-- Their work is being consolidated through #212. Keep their branches as reference until #212 has been reconciled and its full feature coverage verified; do not treat their older CI results as validation of #212.
+## Merge and evidence policy
 
-## Operational acceptance still required
-
-1. Deploy/migrate the self-hosted Laravel backend in a controlled environment and verify configuration, durable database transactions/locking, key backup and recovery.
-2. Test concurrent Calendar sync runs, lease expiry/reclaim, stale-token fencing, ETag-protected updates/deletes, ambiguous provider outcomes and restart recovery against a controlled Google test calendar.
-3. Verify real browser Web Push permission, subscription lifecycle, delivery, expiry and worker recovery on an actual supported browser/device. Browser Web Push is not native iOS/Android push.
-4. Validate roster imports using representative real workbooks with mixed layouts, departments, merged headers and varying date axes; preserve review decisions, provenance and existing Schedule data.
-5. Verify history restore against real Drive revision exports and multiple Schedule contexts, without mutating the original Drive source.
-6. Record deployment and acceptance evidence before declaring production readiness.
-
-## Merge policy
-
-- Merge only after the exact current PR head has all required CI checks terminal and successful, conflicts resolved, review requirements satisfied, and the intended base/head SHAs verified.
-- Pending, skipped, missing, unknown or stale checks are not passing.
-- Never claim operational acceptance from mocked tests or CI alone.
-- Preserve user data, API contracts, schema compatibility, existing overrides and unrelated main-branch changes.
+- Verify exact base/head SHAs and every required check before merge.
+- Pending, missing, skipped, cancelled, unknown, stale or non-terminal checks are not PASS.
+- Distinguish source/CI acceptance from provider, device, security, deployment and production acceptance.
+- Never add a placeholder backend URL or bypass HTTPS/backend release guards.
+- Preserve user data, API contracts, schemas, business rules, overrides and unfinished work.

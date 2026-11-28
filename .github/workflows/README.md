@@ -134,14 +134,18 @@ on `main`.
 The Web workflow installs dependencies, builds the release site, uploads the
 build as a downloadable artifact, and deploys the same build to GitHub Pages
 from `main`. Production Pages deployment requires the HTTPS
-`ORGANIZATION_API_BASE_URL` repository variable; it refuses to publish an
-artifact that would silently fall back to local-only Schedule storage.
+`ORGANIZATION_API_BASE_URL` repository variable. When that value is absent or
+not HTTPS, the workflow records an explicit SKIPPED deployment outcome and
+skips publication and published-site verification; it does not publish a
+local-only Schedule fallback.
 
 ### Shared backend and dependency security
 
 Non-PR release builds for Android, iOS, macOS, Windows and Linux require the
-same HTTPS `ORGANIZATION_API_BASE_URL`. Pull-request builds remain available for
-compile/test evidence without requiring production configuration. The
+same HTTPS `ORGANIZATION_API_BASE_URL`. If the variable is absent or not HTTPS,
+production artifact steps are explicitly SKIPPED rather than failing the
+entire validation job. Pull-request builds remain available for compile/test
+evidence without requiring production configuration. The
 `dependency-security.yml` workflow scans both `pubspec.lock` and nested PHP
 `composer.lock` files with OSV-Scanner on pull requests, main pushes and weekly
 scheduled runs. Laravel CI separately runs `composer audit --locked`.
@@ -197,3 +201,12 @@ This workflow reports its own result. Its existence does not silently add
 macOS to the repository's required merge checks; branch protection/rulesets
 must be configured separately if macOS success is to become a required merge
 condition.
+
+
+## Current backend-gate behavior (PR #215, merged 2026-11-28)
+
+- PR builds run compile/test evidence without requiring the production backend URL.
+- Main/manual release workflows only build and upload production artifacts when `ORGANIZATION_API_BASE_URL` is a valid HTTPS URL.
+- When the URL is missing or invalid, the affected artifact/deployment steps are reported as SKIPPED; this is not a successful production release.
+- Web build artifacts may be retained for inspection, but GitHub Pages deployment and published-site verification are skipped without the valid backend URL.
+- The workflows do not configure or deploy the backend and do not inject placeholder URLs.
