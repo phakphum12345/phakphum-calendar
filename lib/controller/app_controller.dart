@@ -699,9 +699,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     }
 
     await _run('กำลังค้นหา Google Sheets จาก Google Drive', () async {
-      final client = await auth.clientFor([
-        GoogleScopes.driveMetadataReadOnly,
-      ]);
+      final client = await auth.clientFor(GoogleScopes.driveFileDiscovery);
       try {
         recentOwnedSheets = await _ownershipService.listOwnedSpreadsheets(
           client,
@@ -744,8 +742,8 @@ class AppController extends ChangeNotifier implements ControllerState {
 
     await _run('ตรวจและเพิ่ม Google Sheets ที่เลือก', () async {
       final client = await auth.clientFor([
-        GoogleScopes.spreadsheetsReadOnly,
-        GoogleScopes.driveMetadataReadOnly,
+        ...GoogleScopes.spreadsheetRead,
+        ...GoogleScopes.driveFileDiscovery,
       ]);
 
       try {
@@ -940,8 +938,8 @@ class AppController extends ChangeNotifier implements ControllerState {
         );
       }
       final client = await auth.clientFor([
-        GoogleScopes.spreadsheetsReadOnly,
-        GoogleScopes.driveMetadataReadOnly,
+        ...GoogleScopes.spreadsheetRead,
+        ...GoogleScopes.driveFileDiscovery,
         GoogleScopes.driveReadOnly,
       ], promptIfNecessary: !background);
       try {
@@ -1092,8 +1090,8 @@ class AppController extends ChangeNotifier implements ControllerState {
     GoogleApiClient? client;
     try {
       client = await auth.clientFor([
-        GoogleScopes.spreadsheetsReadOnly,
-        GoogleScopes.driveMetadataReadOnly,
+        ...GoogleScopes.spreadsheetRead,
+        ...GoogleScopes.driveFileDiscovery,
         GoogleScopes.driveReadOnly,
       ], promptIfNecessary: false);
       if (generation != _timelineLoadGeneration) return;
@@ -1646,9 +1644,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     if (effectiveShifts.isEmpty) throw StateError('กรุณาอ่านตารางเวรก่อน');
     await _run('เปรียบเทียบ Google Calendar', () async {
       final periods = _activeRosterPeriods();
-      final client = await auth.clientFor([
-        GoogleScopes.calendarEventsReadOnly,
-      ]);
+      final client = await auth.clientFor(GoogleScopes.calendarRead);
       try {
         final snapshot = await _readCalendarPeriods(client, periods);
         existingKeys = snapshot.sourceKeys;
@@ -1721,9 +1717,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       throw StateError('กรุณากดตรวจหาเวรซ้ำก่อนลบ');
     }
     await _run('ลบเวรซ้ำจาก Google Calendar', () async {
-      final client = await auth.clientFor([
-        GoogleScopes.calendarEvents,
-      ]);
+      final client = await auth.clientFor(GoogleScopes.calendarWrite);
       var deleted = 0;
       try {
         for (final eventId in ids) {
@@ -2164,8 +2158,8 @@ class AppController extends ChangeNotifier implements ControllerState {
     }
     await _run('สร้างชีตเดือนล่วงหน้า', () async {
       final client = await auth.clientFor([
-        GoogleScopes.spreadsheetsWrite,
-        GoogleScopes.driveMetadataReadOnly,
+        ...GoogleScopes.spreadsheetWrite,
+        ...GoogleScopes.driveFileDiscovery,
       ]);
       try {
         final spreadsheetId = _sheetsService.parseSpreadsheetId(sourceUrl);
@@ -2541,9 +2535,7 @@ class AppController extends ChangeNotifier implements ControllerState {
     final record =
         '[$action] ${timestamp.toIso8601String()} | ผู้แก้ไข: $actor\n$details';
     var sourceEventStatus = '';
-    final client = await auth.clientFor([
-      GoogleScopes.calendarEvents,
-    ]);
+    final client = await auth.clientFor(GoogleScopes.calendarWrite);
     try {
       final api = calendar.CalendarApi(client);
       if (shift != null) {
