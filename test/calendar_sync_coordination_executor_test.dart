@@ -1,0 +1,762 @@
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:phakphum_calendar/features/calendar_engine/application/calendar_sync_plan.dart';
+import 'package:phakphum_calendar/features/calendar_engine/application/resilient_calendar_sync_executor.dart';
+import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_command.dart';
+import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_coordination_gateway.dart';
+import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_gateway.dart';
+import 'package:phakphum_calendar/features/calendar_engine/domain/calendar_sync_operation_result.dart';
+import 'package:phakphum_calendar/features/calendar_engine/application/resume_sync_service.dart';
+import 'package:phakphum_calendar/features/calendar_engine/domain/failed_sync_operation.dart';
+import 'package:phakphum_calendar/features/calendar_engine/domain/failed_sync_repository.dart';
+import 'package:phakphum_calendar/features/calendar_engine/domain/managed_calendar_event.dart';
+import 'package:phakphum_calendar/features/history/domain/sync_history_entry.dart';
+import 'package:phakphum_calendar/features/history/domain/sync_history_repository.dart';
+
+void main() {
+  test('coordinates every provider mutation and releases the lease', () async {
+    final coordination = _FakeCoordinationGateway();
+    final history = _MemoryHistoryRepository();
+    final failed = _MemoryFailedSyncRepository();
+    final executor = ResilientCalendarSyncExecutor(
+      gateway: _FakeCalendarGateway(),
+      historyRepository: history,
+      failedRepository: failed,
+      coordinationGateway: coordination,
+    );
+    final command = CalendarSyncCommand(
+      syncId: 'stable-sync-id',
+      title: 'OPD',
+      start: DateTime(2026, 11, 26, 8),
+      end: DateTime(2026, 11, 26, 16),
+    );
+
+    final result = await executor.execute(
+      CalendarSyncPlan(
+        inserts: [command],
+        updates: const [],
+        deletes: const [],
+        scheduleId: 'schedule-1',
+        calendarId: 'primary',
+      ),
+    );
+
+    expect(result.historyEntry.status, SyncHistoryStatus.success);
+    expect(result.operations.single.success, isTrue);
+    expect(coordination.recorded.single.operationType, 'insert');
+    expect(
+      coordination.recorded.single.payloadHash,
+      matches(RegExp(r'^[a-f0-9]{64}$')),
+    );
+    expect(coordination.updates.map((value) => value.status), [
+      'running',
+      'succeeded',
+    ]);
+    expect(coordination.updates.last.providerEventId, 'provider-event-1');
+    expect(coordination.released.single.status, 'success');
+    expect(coordination.calls.first, 'acquire:primary:schedule-1');
+    expect(coordination.calls.last, 'release:success');
+  });
+
+  test(
+    'coordinates resumed operations under the original Schedule lease',
+    () async {
+      final history = _MemoryHistoryRepository();
+      history.entries['history-1'] = SyncHistoryEntry(
+        id: 'history-1',
+        startedAt: DateTime(2026, 11, 26, 8),
+        status: SyncHistoryStatus.failure,
+        inserted: 0,
+        updated: 0,
+        deleted: 0,
+        failed: 1,
+        scheduleId: 'schedule-1',
+      );
+      final command = CalendarSyncCommand(
+        syncId: 'resume-sync-id',
+        title: 'OPD',
+        start: DateTime(2026, 11, 26, 8),
+        end: DateTime(2026, 11, 26, 16),
+      );
+      final failed = _MemoryFailedSyncRepository([
+        FailedSyncOperation(
+          historyId: 'history-1',
+          type: CalendarSyncOperationType.insert,
+          referenceId: command.syncId,
+          attempts: 1,
+          command: command,
+        ),
+      ]);
+      final coordination = _FakeCoordinationGateway();
+      final result = await ResumeSyncService(
+        gateway: _FakeCalendarGateway(),
+        historyRepository: history,
+        failedRepository: failed,
+        coordinationGateway: coordination,
+      ).resume('history-1');
+
+      expect(result.completed, isTrue);
+      expect(result.historyEntry.scheduleId, 'schedule-1');
+      expect(failed.operations, isEmpty);
+      expect(coordination.updates.map((value) => value.status), [
+        'running',
+        'succeeded',
+      ]);
+      expect(coordination.released.single.status, 'success');
+    },
+  );
+
+  test('recovers an interrupted insert from the encrypted durable ledger', () async {
+    final history = _MemoryHistoryRepository();
+    history.entries['local-history-1'] = SyncHistoryEntry(
+      id: 'local-history-1',
+      startedAt: DateTime(2026, 11, 26, 8),
+      status: SyncHistoryStatus.failure,
+      inserted: 0,
+      updated: 0,
+      deleted: 0,
+      failed: 1,
+      scheduleId: 'schedule-1',
+      serverRunId: 'remote-run-1',
+    );
+    final failed = _MemoryFailedSyncRepository();
+    final gateway = _FakeCalendarGateway();
+    final coordination = _FakeCoordinationGateway()
+      ..runRecord = CalendarSyncRunRecord(
+        runId: 'remote-run-1',
+        calendarId: 'primary',
+        scheduleId: 'schedule-1',
+        status: 'expired',
+        startedAt: DateTime(2026, 11, 26, 8),
+        heartbeatAt: DateTime(2026, 11, 26, 8, 1),
+      )
+      ..operationRecords = [
+        CalendarSyncOperationRecord(
+          operationKey: 'insert:stable-sync-id',
+          operationType: 'insert',
+          status: 'running',
+          payloadHash: List.filled(64, 'a').join(),
+          operationPayload: {
+            'sync_id': 'stable-sync-id',
+            'title': 'OPD',
+            'start': DateTime(2026, 11, 26, 8).toIso8601String(),
+            'end': DateTime(2026, 11, 26, 16).toIso8601String(),
+            'description': null,
+            'color_id': null,
+            'calendar_id': 'primary',
+          },
+          attemptCount: 1,
+        ),
+      ];
+
+    final result = await ResumeSyncService(
+      gateway: gateway,
+      historyRepository: history,
+      failedRepository: failed,
+      coordinationGateway: coordination,
+    ).recoverHistory('local-history-1');
+
+    expect(result.completed, isTrue);
+    expect(result.historyEntry.id, 'local-history-1');
+    expect(result.historyEntry.serverRunId, coordination.lease.runId);
+    expect(result.historyEntry.scheduleId, 'schedule-1');
+    expect(coordination.updates.first.attemptCount, 2);
+    expect(gateway.insertCount, 1);
+    expect(failed.operations, isEmpty);
+    expect(coordination.recorded.single.payload['sync_id'], 'stable-sync-id');
+  });
+
+  test('recovers update and delete with their original provider preconditions', () async {
+    final history = _MemoryHistoryRepository()
+      ..entries['local-history-2'] = SyncHistoryEntry(
+        id: 'local-history-2',
+        startedAt: DateTime(2026, 11, 26, 8),
+        status: SyncHistoryStatus.failure,
+        inserted: 0,
+        updated: 0,
+        deleted: 0,
+        failed: 2,
+        scheduleId: 'schedule-2',
+        serverRunId: 'remote-run-2',
+      );
+    final gateway = _FakeCalendarGateway();
+    final coordination = _FakeCoordinationGateway()
+      ..runRecord = CalendarSyncRunRecord(
+        runId: 'remote-run-2',
+        calendarId: 'primary',
+        scheduleId: 'schedule-2',
+        status: 'expired',
+        startedAt: DateTime(2026, 11, 26, 8),
+        heartbeatAt: DateTime(2026, 11, 26, 8, 1),
+      )
+      ..operationRecords = [
+        CalendarSyncOperationRecord(
+          operationKey: 'update:sync-update',
+          operationType: 'update',
+          status: 'failed',
+          payloadHash: List.filled(64, 'b').join(),
+          operationPayload: {
+            'event_id': 'provider-update',
+            'expected_etag': 'etag-update-original',
+            'expected_sync_id': 'sync-update',
+            'sync_id': 'sync-update',
+            'title': 'Updated OPD',
+            'start': DateTime(2026, 11, 26, 8).toIso8601String(),
+            'end': DateTime(2026, 11, 26, 16).toIso8601String(),
+            'description': null,
+            'color_id': null,
+            'calendar_id': 'primary',
+          },
+          attemptCount: 1,
+        ),
+        CalendarSyncOperationRecord(
+          operationKey: 'delete:provider-delete',
+          operationType: 'delete',
+          status: 'running',
+          payloadHash: List.filled(64, 'c').join(),
+          operationPayload: {
+            'event_id': 'provider-delete',
+            'calendar_id': 'primary',
+            'expected_etag': 'etag-delete-original',
+            'expected_sync_id': 'sync-delete',
+          },
+          attemptCount: 2,
+        ),
+      ];
+
+    final result = await ResumeSyncService(
+      gateway: gateway,
+      historyRepository: history,
+      failedRepository: _MemoryFailedSyncRepository(),
+      coordinationGateway: coordination,
+    ).recoverHistory('local-history-2');
+
+    expect(result.completed, isTrue);
+    expect(gateway.updatedEtags, ['etag-update-original']);
+    expect(gateway.deletedEtags, ['etag-delete-original']);
+    expect(gateway.updatedSyncIds, ['sync-update']);
+    expect(gateway.deletedSyncIds, ['sync-delete']);
+  });
+
+  test('does not replay a terminal successful server run', () async {
+    final history = _MemoryHistoryRepository()
+      ..entries['local-history-success'] = SyncHistoryEntry(
+        id: 'local-history-success',
+        startedAt: DateTime(2026, 11, 26, 8),
+        status: SyncHistoryStatus.success,
+        inserted: 1,
+        updated: 0,
+        deleted: 0,
+        failed: 0,
+        scheduleId: 'schedule-success',
+        serverRunId: 'remote-run-success',
+      );
+    final gateway = _FakeCalendarGateway();
+    final coordination = _FakeCoordinationGateway()
+      ..runRecord = CalendarSyncRunRecord(
+        runId: 'remote-run-success',
+        calendarId: 'primary',
+        scheduleId: 'schedule-success',
+        status: 'success',
+        startedAt: DateTime(2026, 11, 26, 8),
+        heartbeatAt: DateTime(2026, 11, 26, 8, 1),
+      );
+
+    await expectLater(
+      ResumeSyncService(
+        gateway: gateway,
+        historyRepository: history,
+        failedRepository: _MemoryFailedSyncRepository(),
+        coordinationGateway: coordination,
+      ).recoverHistory('local-history-success'),
+      throwsA(isA<StateError>().having(
+        (error) => error.message,
+        'message',
+        contains('not eligible for recovery'),
+      )),
+    );
+
+    expect(gateway.insertCount, 0);
+    expect(
+      coordination.calls.where((call) => call.startsWith('acquire:')),
+      isEmpty,
+    );
+  });
+
+  test('does not mark an expired run with an empty ledger as recovered', () async {
+    final history = _MemoryHistoryRepository()
+      ..entries['local-history-empty'] = SyncHistoryEntry(
+        id: 'local-history-empty',
+        startedAt: DateTime(2026, 11, 26, 8),
+        status: SyncHistoryStatus.failure,
+        inserted: 0,
+        updated: 0,
+        deleted: 0,
+        failed: 1,
+        scheduleId: 'schedule-empty',
+        serverRunId: 'remote-run-empty',
+      );
+    final gateway = _FakeCalendarGateway();
+    final coordination = _FakeCoordinationGateway()
+      ..runRecord = CalendarSyncRunRecord(
+        runId: 'remote-run-empty',
+        calendarId: 'primary',
+        scheduleId: 'schedule-empty',
+        status: 'expired',
+        startedAt: DateTime(2026, 11, 26, 8),
+        heartbeatAt: DateTime(2026, 11, 26, 8, 1),
+      );
+
+    await expectLater(
+      ResumeSyncService(
+        gateway: gateway,
+        historyRepository: history,
+        failedRepository: _MemoryFailedSyncRepository(),
+        coordinationGateway: coordination,
+      ).recoverHistory('local-history-empty'),
+      throwsA(isA<StateError>().having(
+        (error) => error.message,
+        'message',
+        contains('no operation records'),
+      )),
+    );
+
+    expect(history.entries['local-history-empty']?.status, SyncHistoryStatus.failure);
+    expect(gateway.insertCount, 0);
+    expect(coordination.calls.where((call) => call.startsWith('acquire:')), isEmpty);
+  });
+
+  test('does not claim success when a nonterminal run has no unfinished ledger operations', () async {
+    final history = _MemoryHistoryRepository()
+      ..entries['local-history-complete-ledger'] = SyncHistoryEntry(
+        id: 'local-history-complete-ledger',
+        startedAt: DateTime(2026, 11, 26, 8),
+        status: SyncHistoryStatus.failure,
+        inserted: 0,
+        updated: 0,
+        deleted: 0,
+        failed: 1,
+        scheduleId: 'schedule-complete-ledger',
+        serverRunId: 'remote-run-complete-ledger',
+      );
+    final gateway = _FakeCalendarGateway();
+    final coordination = _FakeCoordinationGateway()
+      ..runRecord = CalendarSyncRunRecord(
+        runId: 'remote-run-complete-ledger',
+        calendarId: 'primary',
+        scheduleId: 'schedule-complete-ledger',
+        status: 'expired',
+        startedAt: DateTime(2026, 11, 26, 8),
+        heartbeatAt: DateTime(2026, 11, 26, 8, 1),
+      )
+      ..operationRecords = [
+        CalendarSyncOperationRecord(
+          operationKey: 'insert:already-done',
+          operationType: 'insert',
+          status: 'succeeded',
+          payloadHash: List.filled(64, 'a').join(),
+          operationPayload: {
+            'sync_id': 'already-done',
+            'title': 'OPD',
+            'start': DateTime(2026, 11, 26, 8).toIso8601String(),
+            'end': DateTime(2026, 11, 26, 16).toIso8601String(),
+            'calendar_id': 'primary',
+          },
+          attemptCount: 1,
+        ),
+      ];
+
+    await expectLater(
+      ResumeSyncService(
+        gateway: gateway,
+        historyRepository: history,
+        failedRepository: _MemoryFailedSyncRepository(),
+        coordinationGateway: coordination,
+      ).recoverHistory('local-history-complete-ledger'),
+      throwsA(isA<StateError>().having(
+        (error) => error.message,
+        'message',
+        contains('no unfinished operations'),
+      )),
+    );
+
+    expect(history.entries['local-history-complete-ledger']?.status, SyncHistoryStatus.failure);
+    expect(gateway.insertCount, 0);
+    expect(coordination.calls.where((call) => call.startsWith('acquire:')), isEmpty);
+  });
+
+  test('maps owner-scoped server run summaries to visible history entries', () async {
+    final coordination = _FakeCoordinationGateway()
+      ..runRecords = [
+        CalendarSyncRunRecord(
+          runId: 'remote-summary-1',
+          calendarId: 'primary',
+          scheduleId: 'schedule-1',
+          status: 'expired',
+          startedAt: DateTime(2026, 11, 26, 8),
+          heartbeatAt: DateTime(2026, 11, 26, 8, 1),
+          operationCount: 4,
+          insertedCount: 1,
+          updatedCount: 1,
+          deletedCount: 0,
+          failedCount: 1,
+          pendingCount: 1,
+        ),
+      ];
+
+    final entries = await ResumeSyncService.listServerHistory(coordination);
+
+    expect(entries, hasLength(1));
+    expect(entries.single.id, 'remote-summary-1');
+    expect(entries.single.serverRunId, 'remote-summary-1');
+    expect(entries.single.status, SyncHistoryStatus.failure);
+    expect(entries.single.inserted, 1);
+    expect(entries.single.updated, 1);
+    expect(entries.single.failed, 1);
+    expect(entries.single.pending, 1);
+  });
+
+  test('missing durable server run fails closed without replay', () async {
+    final gateway = _FakeCalendarGateway();
+    final coordination = _FakeCoordinationGateway();
+    await expectLater(
+      ResumeSyncService(
+        gateway: gateway,
+        historyRepository: _MemoryHistoryRepository(),
+        failedRepository: _MemoryFailedSyncRepository(),
+        coordinationGateway: coordination,
+      ).recoverRun('missing-run'),
+      throwsStateError,
+    );
+    expect(gateway.insertCount, 0);
+    expect(coordination.calls, isEmpty);
+  });
+
+  test('blocked resume keeps its failed history instead of leaving it running', () async {
+    final history = _MemoryHistoryRepository()
+      ..entries['local-history-3'] = SyncHistoryEntry(
+        id: 'local-history-3',
+        startedAt: DateTime(2026, 11, 26, 8),
+        status: SyncHistoryStatus.failure,
+        inserted: 0,
+        updated: 0,
+        deleted: 0,
+        failed: 1,
+        scheduleId: 'schedule-3',
+        serverRunId: 'old-run-3',
+      );
+    final failed = _MemoryFailedSyncRepository([
+      FailedSyncOperation(
+        historyId: 'local-history-3',
+        type: CalendarSyncOperationType.insert,
+        referenceId: 'sync-3',
+        attempts: 1,
+        command: CalendarSyncCommand(
+          syncId: 'sync-3',
+          title: 'OPD',
+          start: DateTime(2026, 11, 26, 8),
+          end: DateTime(2026, 11, 26, 16),
+          calendarId: 'primary',
+        ),
+        calendarId: 'primary',
+      ),
+    ]);
+    final gateway = _FakeCalendarGateway();
+    final coordination = _FakeCoordinationGateway()..rejectAcquire = true;
+
+    await expectLater(
+      ResumeSyncService(
+        gateway: gateway,
+        historyRepository: history,
+        failedRepository: failed,
+        coordinationGateway: coordination,
+      ).resume('local-history-3'),
+      throwsStateError,
+    );
+
+    expect(gateway.insertCount, 0);
+    expect(history.entries['local-history-3']?.status, SyncHistoryStatus.failure);
+    expect(
+      history.entries['local-history-3']?.message,
+      startsWith('Resume was blocked before Calendar operations started:'),
+    );
+    expect(coordination.calls, ['acquire:primary:schedule-3']);
+  });
+
+  test('blocks shared synchronization when Schedule identity is unknown', () async {
+    final coordination = _FakeCoordinationGateway();
+    final gateway = _FakeCalendarGateway();
+    final history = _MemoryHistoryRepository();
+    final executor = ResilientCalendarSyncExecutor(
+      gateway: gateway,
+      historyRepository: history,
+      coordinationGateway: coordination,
+    );
+
+    await expectLater(
+      executor.execute(
+        CalendarSyncPlan(
+          inserts: [
+            CalendarSyncCommand(
+              syncId: 'stable-sync-id',
+              title: 'OPD',
+              start: DateTime(2026, 11, 26, 8),
+              end: DateTime(2026, 11, 26, 16),
+            ),
+          ],
+          updates: const [],
+          deletes: const [],
+          scheduleId: 'unknown',
+        ),
+      ),
+      throwsStateError,
+    );
+
+    expect(gateway.insertCount, 0);
+    expect(coordination.calls, isEmpty);
+    expect(history.entries.values.single.status, SyncHistoryStatus.failure);
+    expect(
+      history.entries.values.single.message,
+      'Synchronization was blocked before Calendar writes because this preview has no stable Schedule ID.',
+    );
+  });
+
+  test('does not call Calendar when lease acquisition is rejected', () async {
+    final coordination = _FakeCoordinationGateway()..rejectAcquire = true;
+    final gateway = _FakeCalendarGateway();
+    final history = _MemoryHistoryRepository();
+    final executor = ResilientCalendarSyncExecutor(
+      gateway: gateway,
+      historyRepository: history,
+      coordinationGateway: coordination,
+    );
+
+    await expectLater(
+      executor.execute(
+        CalendarSyncPlan(
+          inserts: [
+            CalendarSyncCommand(
+              syncId: 'stable-sync-id',
+              title: 'OPD',
+              start: DateTime(2026, 11, 26, 8),
+              end: DateTime(2026, 11, 26, 16),
+            ),
+          ],
+          updates: const [],
+          deletes: const [],
+          scheduleId: 'schedule-1',
+        ),
+      ),
+      throwsStateError,
+    );
+    expect(gateway.insertCount, 0);
+    expect(coordination.calls, ['acquire:primary:schedule-1']);
+    expect(history.entries.values.single.status, SyncHistoryStatus.failure);
+    expect(history.entries.values.single.failed, 0);
+    expect(
+      history.entries.values.single.message,
+      'Synchronization was blocked before Calendar writes; another run may hold the lease. Retry after it finishes.',
+    );
+  });
+}
+
+class _FakeCalendarGateway implements CalendarSyncGateway, ConditionalCalendarSyncGateway {
+  int insertCount = 0;
+  final updatedEtags = <String>[];
+  final deletedEtags = <String>[];
+  final updatedSyncIds = <String?>[];
+  final deletedSyncIds = <String?>[];
+
+  @override
+  Future<ManagedCalendarEvent> insert(CalendarSyncCommand command) async {
+    insertCount++;
+    return ManagedCalendarEvent(
+      eventId: 'provider-event-1',
+      syncId: command.syncId,
+      title: command.title,
+      start: command.start,
+      end: command.end,
+    );
+  }
+
+  @override
+  Future<ManagedCalendarEvent> updateConditionally({
+    required String eventId,
+    required String expectedEtag,
+    required String? expectedSyncId,
+    required CalendarSyncCommand command,
+  }) async {
+    updatedEtags.add(expectedEtag);
+    updatedSyncIds.add(expectedSyncId);
+    return ManagedCalendarEvent(
+      eventId: eventId,
+      syncId: command.syncId,
+      title: command.title,
+      start: command.start,
+      end: command.end,
+      etag: 'etag-update-result',
+      providerSyncId: expectedSyncId,
+    );
+  }
+
+  @override
+  Future<void> deleteConditionally({
+    required String eventId,
+    required String calendarId,
+    required String expectedEtag,
+    required String? expectedSyncId,
+  }) async {
+    deletedEtags.add(expectedEtag);
+    deletedSyncIds.add(expectedSyncId);
+  }
+
+  @override
+  Future<ManagedCalendarEvent> update({
+    required String eventId,
+    required CalendarSyncCommand command,
+  }) async => throw UnimplementedError();
+
+  @override
+  Future<void> delete({
+    required String eventId,
+    String calendarId = 'primary',
+  }) async {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<ManagedCalendarEvent>> listManagedEvents({
+    required DateTime timeMin,
+    required DateTime timeMax,
+    String calendarId = 'primary',
+  }) async => const [];
+}
+
+class _FakeCoordinationGateway implements CalendarSyncCoordinationGateway {
+  final calls = <String>[];
+  final recorded = <({String operationType, String payloadHash, Map<String, Object?> payload})>[];
+  final updates = <({String status, String? providerEventId, int attemptCount})>[];
+  final released = <({String status})>[];
+  bool rejectAcquire = false;
+  CalendarSyncRunRecord? runRecord;
+  List<CalendarSyncOperationRecord> operationRecords = [];
+  List<CalendarSyncRunRecord> runRecords = [];
+
+  final lease = CalendarSyncLease(
+    runId: '00000000-0000-4000-8000-000000000001',
+    calendarId: 'primary',
+    scheduleId: 'schedule-1',
+    leaseToken: List.filled(64, 'a').join(),
+    expiresAt: DateTime(2026, 11, 26, 12),
+  );
+
+  @override
+  Future<CalendarSyncLease> acquire({
+    required String calendarId,
+    required String scheduleId,
+  }) async {
+    calls.add('acquire:$calendarId:$scheduleId');
+    if (rejectAcquire) throw StateError('lease rejected');
+    return lease;
+  }
+
+  @override
+  Future<void> heartbeat(CalendarSyncLease lease) async {
+    calls.add('heartbeat');
+  }
+
+  @override
+  Future<CalendarSyncRunRecord?> getRun(String runId) async {
+    final value = runRecord;
+    if (value == null || value.runId != runId) {
+      return null;
+    }
+    return value;
+  }
+
+  @override
+  Future<List<CalendarSyncRunRecord>> listRuns({
+    String? calendarId,
+    int limit = 50,
+  }) async => runRecords
+      .where((run) => calendarId == null || run.calendarId == calendarId)
+      .take(limit)
+      .toList(growable: false);
+
+  @override
+  Future<List<CalendarSyncOperationRecord>> listOperations(String runId) async =>
+      operationRecords;
+
+  @override
+  Future<void> recordOperation({
+    required CalendarSyncLease lease,
+    required String operationKey,
+    required String operationType,
+    required String payloadHash,
+    required Map<String, Object?> operationPayload,
+  }) async {
+    calls.add('record');
+    recorded.add((operationType: operationType, payloadHash: payloadHash, payload: operationPayload));
+  }
+
+  @override
+  Future<void> updateOperation({
+    required CalendarSyncLease lease,
+    required String operationKey,
+    required String status,
+    required int attemptCount,
+    String? providerEventId,
+    String? lastError,
+  }) async {
+    calls.add('update:$status');
+    updates.add((status: status, providerEventId: providerEventId, attemptCount: attemptCount));
+  }
+
+  @override
+  Future<void> release({
+    required CalendarSyncLease lease,
+    required String status,
+  }) async {
+    calls.add('release:$status');
+    released.add((status: status));
+  }
+}
+
+class _MemoryHistoryRepository implements SyncHistoryRepository {
+  final entries = <String, SyncHistoryEntry>{};
+
+  @override
+  Future<SyncHistoryEntry?> findById(String id) async => entries[id];
+
+  @override
+  Future<List<SyncHistoryEntry>> list({int limit = 100}) async =>
+      entries.values.take(limit).toList();
+
+  @override
+  Future<void> save(SyncHistoryEntry entry) async {
+    entries[entry.id] = entry;
+  }
+}
+
+class _MemoryFailedSyncRepository implements FailedSyncRepository {
+  _MemoryFailedSyncRepository([this.operations = const []]);
+
+  List<FailedSyncOperation> operations;
+
+  @override
+  Future<void> clearHistory(String historyId) async {
+    operations = [];
+  }
+
+  @override
+  Future<List<FailedSyncOperation>> listForHistory(String historyId) async =>
+      operations;
+
+  @override
+  Future<void> replaceForHistory(
+    String historyId,
+    List<FailedSyncOperation> operations,
+  ) async {
+    this.operations = List.of(operations);
+  }
+}
