@@ -35,6 +35,12 @@ abstract interface class GoogleAuthGateway implements Listenable {
 }
 
 class GoogleAuthService extends ChangeNotifier implements GoogleAuthGateway {
+  /// Legacy alias retained while existing feature screens migrate to
+  /// [GoogleScopes.rosterRead].
+  @Deprecated('Use GoogleScopes.rosterRead instead.')
+  static const String spreadsheetsReadOnlyScope =
+      GoogleScopes.spreadsheetsReadOnly;
+
   /// Backward-compatible aggregate for the legacy import/review entry point.
   ///
   /// New workflows should request [GoogleScopes.rosterRead] or
