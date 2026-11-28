@@ -33,8 +33,8 @@
 | ID | Function / user outcome | Required acceptance | Initial status |
 |---|---|---|---|
 | SCOPE-01 | Basic identity without data scopes | Sign-in does not request Calendar/Drive/Sheets/Contacts scopes | NOT_AUDITED |
-| SCOPE-02 | Request Calendar read permission | Requested only when preview/comparison starts; denial leaves unrelated features usable | NOT_AUDITED |
-| SCOPE-03 | Request Calendar write permission | Requested only for confirmed sync/write operation | NOT_AUDITED |
+| SCOPE-02 | Request Calendar read permission | Requested only when preview/comparison starts; denial leaves unrelated features usable | IN_PROGRESS |
+| SCOPE-03 | Request Calendar write permission | Requested only for confirmed sync/write operation | IN_PROGRESS |
 | SCOPE-04 | Request Drive discovery permission | Least-privilege metadata access; no broad Drive access by default | NOT_AUDITED |
 | SCOPE-05 | Request Sheets read permission | Read-only permission is sufficient for import/preview | NOT_AUDITED |
 | SCOPE-06 | Request Sheets write permission | Write permission requested only for a user-selected write action | NOT_AUDITED |
@@ -44,7 +44,7 @@
 | TOKEN-02 | Expired access token | Refresh succeeds or produces a clear reconnect-required state | NOT_AUDITED |
 | TOKEN-03 | Revoked/denied scope | API call fails safely; user can grant again without corrupting local data | NOT_AUDITED |
 | TOKEN-04 | Account changes during operation | Old account's session is rejected; no cross-account request is sent | NOT_AUDITED |
-| TOKEN-05 | Close authorized session/client | Close is idempotent; no leaked HTTP clients or stale credentials | IMPLEMENTED_UNVERIFIED |
+| TOKEN-05 | Close authorized session/client | Close is idempotent; no leaked HTTP clients or stale credentials | IN_PROGRESS |
 | TOKEN-06 | Secure credential handling | No token/secret in logs, source, web/mobile bundle or ordinary preferences | NOT_AUDITED |
 
 ## 3. Google Calendar operations
@@ -54,8 +54,8 @@
 | CAL-01 | Verify Calendar access | Uses current account and read scope; handles empty/inaccessible primary calendar | IMPLEMENTED_UNVERIFIED |
 | CAL-02 | Read calendar list / select target | User can select intended calendar; pagination and permission errors are handled | NOT_AUDITED |
 | CAL-03 | Read existing events | Date range, timezone, pagination and event identity are correct | NOT_AUDITED |
-| CAL-04 | Preview proposed changes | Preview exactly matches operations that would be submitted; no writes occur | NOT_AUDITED |
-| CAL-05 | Create events | Writes only after explicit confirmation; stable managed identity prevents duplicates | NOT_AUDITED |
+| CAL-04 | Preview proposed changes | Preview exactly matches operations that would be submitted; no writes occur | IN_PROGRESS |
+| CAL-05 | Create events | Writes only after explicit confirmation; stable managed identity prevents duplicates | IN_PROGRESS |
 | CAL-06 | Update managed events | ETag/precondition and ownership markers prevent overwriting unrelated events | NOT_AUDITED |
 | CAL-07 | Delete managed events | Only app-managed selected events can be deleted; confirmation and preconditions required | NOT_AUDITED |
 | CAL-08 | Retry and ambiguous insert recovery | Reconcile provider state before retry; no duplicate events | NOT_AUDITED |
@@ -178,3 +178,23 @@ No function is marked `PASS_LIVE`: the repository run did not authenticate again
 6. Implement and test optional Contacts transfer only if the product continues to expose it.
 7. Complete UI states, diagnostics, platform acceptance and controlled non-owner provider tests.
 8. Update this matrix with evidence links and actual status; never infer completion from PR merge alone.
+
+
+## 13. Current implementation evidence — 2026-11-28
+
+Main baseline observed: `9aed0905e731efdf0c02b07bddffcd04f2f056b0`.
+
+The following functions have moved from an unaudited state into active implementation and code-level verification. These are not PASS claims:
+
+| Function IDs | Current implementation / regression evidence | Status |
+|---|---|---|
+| SCOPE-02 | PR #225 routes Calendar GET/HEAD through the read-only scope; `test/google_scope_routing_client_test.dart` covers preview reads and denied write consent. Exact-head platform CI is still running. | IN_PROGRESS |
+| SCOPE-03 | PR #225 requests the Calendar write scope only for POST/PUT/PATCH/DELETE after the caller's explicit confirmation flow. Denied authorization must fail before the mutation request is sent. Exact-head CI is still running. | IN_PROGRESS |
+| TOKEN-05 | PR #225 caches account-bound clients by scope set and closes owned clients; retry-after-denial and close tests are present. Exact-head CI is still running. | IN_PROGRESS |
+| CAL-04 / CAL-05 | PR #226 compares the prepared Calendar preview Schedule snapshot with the current effective Schedule immediately before archive/provider writes. Its regression test asserts that a stale preview produces zero Calendar inserts. Exact-head CI is still running. | IN_PROGRESS |
+
+Related active PRs:
+- [#225 — incremental Calendar authorization](https://github.com/phakphum12345/phakphum-calendar/pull/225)
+- [#226 — stale Schedule preview write guard](https://github.com/phakphum12345/phakphum-calendar/pull/226)
+
+No live Google provider test has been performed. These functions must remain short of `PASS_CODE` until all relevant tests pass on the final exact head, and short of `PASS_LIVE` until controlled provider acceptance is recorded. Preview freshness must also cover any transaction/projection changes that can alter the effective Calendar payload, not only raw Schedule fields.
