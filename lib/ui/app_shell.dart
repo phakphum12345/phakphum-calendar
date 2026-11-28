@@ -563,7 +563,10 @@ class _AppShellState extends State<AppShell> {
           );
           final pages = [
             for (final destination in orderedDestinations)
-              pagesByDestination[destination]!,
+              KeyedSubtree(
+                key: ValueKey(destination.name),
+                child: pagesByDestination[destination]!,
+              ),
           ];
           final destinations = [
             for (final destination in orderedDestinations)
