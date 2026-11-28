@@ -1,8 +1,17 @@
 # Documentation home
 
-Start with the [Master Documentation Index](DOCUMENTATION_MASTER_INDEX.md), which defines the target documentation tree and catalogs existing root-level and nested references.
+## Current execution status
+
+- [Live Project Status — 2026-11-28](project/LIVE_PROJECT_STATUS_2026-11-28.md)
+- [Remaining Acceptance — 2026-11-28](project/REMAINING_ACCEPTANCE_2026-11-28.md)
+- [Completion Status](COMPLETION_STATUS.md)
+- [Remaining Work Index](REMAINING_WORK_INDEX.md)
+- [Testing and Release Acceptance](TESTING_AND_RELEASE_ACCEPTANCE.md)
+
+The live status and acceptance files are the current execution references. Older dated completion plans, trackers and audits remain historical unless their baseline SHA is explicitly refreshed.
 
 ## Canonical domain folders
+
 - [Architecture](architecture/README.md)
 - [Product](product/README.md)
 - [Workforce and shift pay](workforce/README.md)
@@ -16,20 +25,12 @@ Start with the [Master Documentation Index](DOCUMENTATION_MASTER_INDEX.md), whic
 - [Governance](governance/README.md)
 
 ## Existing documentation areas
+
 - [Architecture decisions](adr/)
 - [CI operations](ci/SELF_HOSTED_WINDOWS_RUNNER.md)
 - [Flexible workforce](flexible-workforce/README.md)
 - [Technical wiki](wiki/README.md)
 
-## Delivery package
-- [Current end-to-end completion plan](END_TO_END_COMPLETION_PLAN_2026-11-25.md)
-- [Historical completion plan (2026-11-24)](END_TO_END_COMPLETION_PLAN_2026-11-24.md)
-- [Remaining work index](REMAINING_WORK_INDEX.md)
-- [Acceptance matrix](END_TO_END_ACCEPTANCE_MATRIX.md)
-- [AI Assistant readiness plan](AI_ASSISTANT_END_TO_END_COMPLETION.md)
-- [Public Google authentication readiness](PUBLIC_GOOGLE_AUTH_READINESS.md)
-- [Installation release readiness](INSTALLATION_RELEASE_READINESS.md)
-- [Current PR delivery tracker](PR_DELIVERY_TRACKER_2026-11-25.md)
-- [Historical PR delivery tracker (2026-11-24)](PR_DELIVERY_TRACKER_2026-11-24.md)
+## Delivery policy
 
-PASS requires current evidence for the stated scope and exact revision. Skipped, missing, queued or cancelled checks are not PASS.
+A green CI run is evidence for its exact commit and test scope, not proof of provider, device, security, production deployment or operational acceptance. Skipped, missing, queued or cancelled checks are not PASS.
