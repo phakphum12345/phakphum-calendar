@@ -26,10 +26,10 @@ abstract final class GoogleScopes {
 
   static const String contacts = 'https://www.googleapis.com/auth/contacts';
 
-  /// Compatibility scope list for the not-yet-migrated authentication adapter.
+  /// Deprecated aggregate retained for source compatibility only.
   ///
-  /// New code must use feature-specific lists and must not request this list
-  /// during basic identity sign-in.
+  /// Do not use this list for identity sign-in or new feature authorization;
+  /// request the narrow feature-specific scope group at the point of use.
   @Deprecated('Use the feature-specific scope lists instead.')
   static const List<String> required = <String>[
     driveReadOnly,
