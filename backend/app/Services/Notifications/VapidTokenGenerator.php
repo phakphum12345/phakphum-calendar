@@ -28,7 +28,7 @@ final class VapidTokenGenerator
         $parts = parse_url($endpoint);
         $scheme = $parts['scheme'] ?? null;
         $host = $parts['host'] ?? null;
-        if (! in_array($scheme, ['https'], true) || ! is_string($host) || $host === '') {
+        if (!in_array($scheme, ['https'], true) || !is_string($host) || $host === '') {
             throw new RuntimeException('The Web Push endpoint origin is invalid.');
         }
         $audience = 'https://'.$host;
@@ -55,7 +55,7 @@ final class VapidTokenGenerator
         }
 
         $derSignature = '';
-        if (! openssl_sign($signingInput, $derSignature, $key, OPENSSL_ALGO_SHA256)) {
+        if (!openssl_sign($signingInput, $derSignature, $key, OPENSSL_ALGO_SHA256)) {
             throw new WebPushConfigurationException('Could not sign the Web Push VAPID token.');
         }
 
