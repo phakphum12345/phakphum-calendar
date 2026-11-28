@@ -334,6 +334,7 @@ jobs:
                   echo "- Android release artifact: $android_artifact_state"
                   echo "- iOS release artifact: $ios_artifact_state"
                   echo "- Linux release artifact: $linux_artifact_state"
+                  echo "- Production release readiness: NOT ESTABLISHED by CI evidence alone"
                 } >> "$GITHUB_STEP_SUMMARY"
               fi
               exit 0
