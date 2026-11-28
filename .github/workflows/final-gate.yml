@@ -152,7 +152,6 @@ jobs:
             required_failed=0
             optional_pending=0
             deployment_skipped=0
-            release_artifacts_skipped=0
             windows_artifact_state="PENDING"
             android_artifact_state="PENDING"
             ios_artifact_state="PENDING"
@@ -192,7 +191,6 @@ jobs:
                     echo "REQUIRED Windows release artifact: PASS"
                   elif [[ "$artifact_job_status" == "completed" && "$artifact_job_conclusion" == "success" && "$backend_gate" == "success" && "$build_step" == "skipped" && "$verify_step" == "skipped" && "$package_step" == "skipped" && "$upload_step" == "skipped" ]]; then
                     windows_artifact_state="SKIPPED (backend guard)"
-                    release_artifacts_skipped=1
                     echo "REQUIRED Windows release artifact: SKIPPED (backend guard; quality/tests passed, no release artifact)"
                   else
                     windows_artifact_state="FAIL"
@@ -278,13 +276,12 @@ jobs:
                 verify_step="${verify_step:-missing}"
                 package_step="${package_step:-missing}"
                 upload_step="${upload_step:-missing}"
-                if [[ "$artifact_job_status" == "completed" && "$artifact_job_conclusion" == "success" && "$build_step" == "success" && "$verify_step" != "failure" && "$package_step" != "failure" && "$upload_step" == "success" ]]; then
+                if [[ "$artifact_job_status" == "completed" && "$artifact_job_conclusion" == "success" && "$build_step" == "success" && ( "$verify_step" == "success" || "$verify_step" == "not_required" ) && ( "$package_step" == "success" || "$package_step" == "not_required" ) && "$upload_step" == "success" ]]; then
                   case "$label" in Android) android_artifact_state="PASS";; iOS) ios_artifact_state="PASS";; Linux) linux_artifact_state="PASS";; esac
                   echo "OPTIONAL $label artifact: PASS"
                   [[ -z "$url" ]] || echo "  $url"
                 elif [[ "$artifact_job_status" == "completed" && "$artifact_job_conclusion" == "success" && "$backend_gate" == "success" && "$build_step" == "skipped" && "$verify_step" =~ ^(skipped|not_required)$ && "$package_step" =~ ^(skipped|not_required)$ && "$upload_step" == "skipped" ]]; then
                   case "$label" in Android) android_artifact_state="SKIPPED (backend guard)";; iOS) ios_artifact_state="SKIPPED (backend guard)";; Linux) linux_artifact_state="SKIPPED (backend guard)";; esac
-                  release_artifacts_skipped=1
                   echo "OPTIONAL $label artifact: SKIPPED (backend guard; no production artifact)"
                 else
                   case "$label" in Android) android_artifact_state="SKIPPED (incomplete evidence)";; iOS) ios_artifact_state="SKIPPED (incomplete evidence)";; Linux) linux_artifact_state="SKIPPED (incomplete evidence)";; esac
