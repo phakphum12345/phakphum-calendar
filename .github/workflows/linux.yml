@@ -79,6 +79,7 @@ jobs:
         run: flutter config --enable-linux-desktop
 
       - name: Require shared backend for production artifact
+        id: backend_gate
         if: github.event_name != 'pull_request'
         env:
           ORGANIZATION_API_BASE_URL: ${{ vars.ORGANIZATION_API_BASE_URL }}
@@ -86,11 +87,18 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -z "${ORGANIZATION_API_BASE_URL//[[:space:]]/}" || "$ORGANIZATION_API_BASE_URL" != https://* ]]; then
-            echo "Production artifacts require an HTTPS ORGANIZATION_API_BASE_URL."
-            exit 1
+            echo "::notice::Skipping Linux production artifact because ORGANIZATION_API_BASE_URL is not configured as HTTPS."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "## Production artifact skipped"
+              echo "No valid HTTPS ORGANIZATION_API_BASE_URL is configured. Build and upload steps were skipped; this is not a production release."
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "available=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build Linux release
+        if: github.event_name == 'pull_request' || steps.backend_gate.outputs.available == 'true'
         env:
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}
           ORGANIZATION_API_BASE_URL: ${{ vars.ORGANIZATION_API_BASE_URL }}
@@ -100,6 +108,7 @@ jobs:
           --dart-define=ORGANIZATION_API_BASE_URL="$ORGANIZATION_API_BASE_URL"
 
       - name: Package Linux application
+        if: github.event_name == 'pull_request' || steps.backend_gate.outputs.available == 'true'
         run: |
           set -euo pipefail
           test -x build/linux/x64/release/bundle/phakphum_calendar
@@ -108,6 +117,7 @@ jobs:
             -C build/linux/x64/release bundle
 
       - name: Upload Linux application
+        if: github.event_name == 'pull_request' || steps.backend_gate.outputs.available == 'true'
         uses: actions/upload-artifact@v7
         with:
           name: phakphum-calendar-linux-x64
