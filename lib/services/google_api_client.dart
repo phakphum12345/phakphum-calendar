@@ -27,7 +27,7 @@ class GoogleApiClient extends http.BaseClient {
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     final headers = _headersProvider == null
         ? _headers
-        : await _headersProvider();
+        : await _headersProvider!().timeout(_timeout);
     request.headers.addAll(headers);
     final response = await _inner.send(request).timeout(_timeout);
     // A timeout on send() only bounds waiting for response headers. Google API
