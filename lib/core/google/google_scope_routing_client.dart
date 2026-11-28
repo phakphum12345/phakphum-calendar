@@ -17,8 +17,8 @@ class GoogleScopeRoutingClient extends http.BaseClient {
     required this.clientForScopes,
     List<String> readScopes = GoogleScopes.calendarRead,
     List<String> writeScopes = GoogleScopes.calendarWrite,
-  }) : _readScopes = List.unmodifiable(readScopes),
-       _writeScopes = List.unmodifiable(writeScopes) {
+  }) : _readScopes = List<String>.unmodifiable(readScopes),
+       _writeScopes = List<String>.unmodifiable(writeScopes) {
     if (_readScopes.isEmpty || _writeScopes.isEmpty) {
       throw ArgumentError('Calendar read and write scopes must not be empty.');
     }
@@ -67,8 +67,10 @@ class GoogleScopeRoutingClient extends http.BaseClient {
     for (final pending in _clients.values) {
       unawaited(
         pending
-            .then<void>((client) => client.close())
-            .onError((Object _, StackTrace __) {}),
+            .then<void>((client) {
+              client.close();
+            })
+            .catchError((Object _) {}),
       );
     }
     _clients.clear();
