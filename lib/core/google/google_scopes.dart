@@ -60,7 +60,6 @@ abstract final class GoogleScopes {
   ];
 
   /// Optional app-private Drive storage; not required for ordinary sign-in.
-  /// Full Drive access is needed only to copy an original workbook to archive.
   static const List<String> driveBackup = <String>[
     driveAppData,
   ];
