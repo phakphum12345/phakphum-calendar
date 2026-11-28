@@ -1,6 +1,6 @@
 # Current execution index — 2026-11-28
 
-- Current baseline: main `f7499d76a2d5111a7d37801462a4b837e5791ff9`.
+- Current baseline observed: main `4141e2715a15a211cc42dce2525361cd6688990e` after PRs #219, #225, #227 and #223. The `5a4e83ac...`, `4aea651...`, `953e5d00...`, `9aed0905...` and `f7499d76...` checkpoints are historical.
 - Use [Live Project Status](project/LIVE_PROJECT_STATUS_2026-11-28.md), [Completion Status](COMPLETION_STATUS.md), and [Remaining Acceptance](project/REMAINING_ACCEPTANCE_2026-11-28.md) for the current state.
 - Historical PR lists and dated work-package snapshots below are retained as history; they are not a live statement of open PRs or current CI. Do not treat closed/superseded PRs or old green checks as current evidence.
 
@@ -23,17 +23,18 @@ This is the concise execution checklist. The detailed design and test criteria a
 - See `COMPLETION_STATUS.md` and `IMPLEMENTATION_EVIDENCE.md` for live status and evidence boundaries.
 
 
-## P0 — Required for the requested feature
+## P0 — Shift Pay end-to-end completion
 
-- [ ] Validate and complete PR #181: typed Personal / Organization / Hybrid rule-source resolution.
-- [ ] Add versioned persistence for profiles and rules.
-- [ ] Add first-run mode selection and complete rate/shift-type editor.
-- [ ] Ensure Personal mode works without an organization.
-- [ ] Add organization role checks and tenant isolation.
-- [ ] Connect actual/confirmed roster assignments to one resolved rule source.
-- [ ] Add immutable calculation snapshots and duplicate prevention.
-- [ ] Add monthly pay statement and assignment-level reconciliation.
-- [ ] Add full end-to-end tests for all three modes.
+Merged foundations: Personal / Organization / Hybrid domain model and source resolution (#181), profile/rule persistence (#183), calculation API and immutable snapshots (#186), and subsequent conflict/source-selection work. These are implementation foundations, not a completed user journey.
+
+- [ ] Add first-run mode selection and a complete rate/shift-type/day-policy editor in the app.
+- [ ] Ensure Personal mode works without organization membership or backend organization context.
+- [ ] Complete organization role checks and tenant-isolation negative tests.
+- [ ] Connect confirmed/fulfilled roster assignments to one resolved rule source; a Calendar event alone is not fulfillment.
+- [ ] Persist and read back immutable assignment calculation snapshots with idempotency and correction history.
+- [ ] Connect the monthly statement builder to a durable repository/API and user-facing monthly statement/reconciliation UI.
+- [ ] Complete full end-to-end tests for all three modes, migrations, history, conflict handling and offline/sync behavior.
+- [ ] Confirm the exact third contractor employment/payment mode before adding it to the existing `salaried` and `dailyPaid` model; do not infer or invent the user's intended mode.
 
 ## P0 — Required for a genuinely usable AI Assistant
 

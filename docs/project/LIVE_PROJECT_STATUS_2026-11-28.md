@@ -2,11 +2,26 @@
 
 > Current-main checkpoint only. This is not a production-readiness declaration. Recheck the live repository and exact workflow runs before making release or operational claims.
 
-## Repository baseline
+## Latest execution checkpoint — current main
+
+- Repository: `phakphum12345/phakphum-calendar`
+- Current main SHA after PR #223 documentation matrix merged: `4141e2715a15a211cc42dce2525361cd6688990e`.
+- PR #227 merged at `5a4e83ac42b1b383768b96828a7a932db9bf3c15`; PR #223 merged at `4141e2715a15a211cc42dce2525361cd6688990e`.
+- Open PRs: #224 customizable navigation, #226 stale-preview write guard, and #228 this live-status reconciliation.
+- #223 exact head `6f67b968257a4e7f5867820d4a0159c272733041` passed all three documentation-focused workflows (Dependency Security, Auto Detect CI and Cross-platform Runtime) and merged.
+- #224 exact head `c13e811ae16d05a91f1ae5443623e246e1246713`: all 12 observed exact-head workflows completed successfully. Its current PR metadata briefly reported a stale `mergeable=false`; a fresh GitHub PR read reported `mergeable=true`, `mergeable_state=clean`. It is not merged yet.
+- #226 exact head `134e067d8870de4aea3ceb66698ef2754a93a4cb`: all 12 observed exact-head workflows completed successfully. Its stale-preview regression prevents provider/archive writes when the Schedule changed after preview. Full Calendar provider acceptance remains open. A fresh GitHub PR read reported `mergeable=true`, `mergeable_state=clean`; it is not merged yet.
+- #227 exact head `d95e57e5f336eeb6ef300c88c04b0ad14da20b27`: eight applicable exact-head workflows passed (Windows, Linux, Android, Web, Cross-platform Runtime, Dependency Security, Auto Detect CI and Pull Request Gate). iOS/macOS were not triggered by the workflow-only patch.
+- Post-merge workflows for SHA `5a4e83ac42b1b383768b96828a7a932db9bf3c15`: Build Windows, Linux, Android, Web build, Auto Detect CI, Dependency Security and Cross-platform Runtime completed successfully. Final Gate remained in progress at last inspection.
+- Web build and downloadable artifact succeeded. GitHub Pages deployment and published-site/deployed-SHA verification were skipped because `ORGANIZATION_API_BASE_URL` was not configured as HTTPS. This is not a production deployment PASS.
+- No live Google provider acceptance, configured HTTPS backend, deployed site, or deployed SHA is verified. No independent review approval was recorded for these owner-authored PRs; repository branch protection was observed disabled.
+- Continue to fetch exact-head checks after every commit. Pending, cancelled, skipped, missing and unknown are never PASS.
+
+## Repository baseline (historical checkpoint)
 
 - Repository: `phakphum12345/phakphum-calendar`
 - Branch: `main`
-- Baseline SHA when this checkpoint was prepared: `f7499d76a2d5111a7d37801462a4b837e5791ff9`
+- Baseline SHA when this earlier checkpoint was prepared: `f7499d76a2d5111a7d37801462a4b837e5791ff9`
 - This checkpoint supersedes the earlier same-date snapshot at `1f2aba7b50b59cd44a6754a7a5ea8f16ba94cef0`.
 
 ## Integrated delivery
