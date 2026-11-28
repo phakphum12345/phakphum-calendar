@@ -9,6 +9,7 @@ import 'google_api_client.dart';
 /// Authentication boundary required by the legacy application workflow.
 abstract interface class GoogleAuthGateway implements Listenable {
   GoogleSignInAccount? get account;
+  String? get idToken;
   bool get isSignedIn;
   bool get initialized;
   bool get signInReady;
@@ -71,6 +72,8 @@ class GoogleAuthService extends ChangeNotifier implements GoogleAuthGateway {
 
   @override
   GoogleSignInAccount? get account => _account;
+  @override
+  String? get idToken => _account?.authentication.idToken;
   @override
   bool get isSignedIn => _account != null;
   @override
