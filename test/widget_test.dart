@@ -12,13 +12,17 @@ import 'package:phakphum_calendar/models/shift_alert.dart';
 import 'package:phakphum_calendar/ui/app_shell.dart';
 import 'package:phakphum_calendar/ui/first_login_setup_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
+import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 
 void main() {
-  setUp(
-    () => SharedPreferences.setMockInitialValues({
+  setUp(() {
+    SharedPreferences.setMockInitialValues({
       AppEditionRepository.storageKey: AppEdition.organization.name,
-    }),
-  );
+    });
+    SharedPreferencesAsyncPlatform.instance =
+        InMemorySharedPreferencesAsync.empty();
+  });
 
   AppController demoController() {
     final repository = InMemoryConditionalScheduleRepository();
