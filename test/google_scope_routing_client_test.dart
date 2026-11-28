@@ -113,7 +113,10 @@ void main() {
       throwsStateError,
     );
 
-    expect(requestedScopes, [GoogleScopes.calendarRead, GoogleScopes.calendarWrite]);
+    expect(
+      requestedScopes,
+      [GoogleScopes.calendarRead, GoogleScopes.calendarWrite],
+    );
     expect(readClient.methods, ['GET']);
 
     client.close();
