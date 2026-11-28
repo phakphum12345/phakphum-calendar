@@ -20,6 +20,17 @@ abstract final class GoogleScopes {
 
   static const String contacts = 'https://www.googleapis.com/auth/contacts';
 
+  /// Compatibility scope list for the not-yet-migrated authentication adapter.
+  ///
+  /// New code must use feature-specific lists and must not request this list
+  /// during basic identity sign-in.
+  @Deprecated('Use the feature-specific scope lists instead.')
+  static const List<String> required = <String>[
+    driveReadOnly,
+    spreadsheetsReadOnly,
+    calendarEvents,
+  ];
+
   /// Read access required by the existing roster import and review workflows.
   static const List<String> rosterRead = <String>[
     spreadsheetsReadOnly,
