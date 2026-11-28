@@ -7,6 +7,8 @@ abstract final class GoogleScopes {
       'https://www.googleapis.com/auth/calendar.events.readonly';
   static const String calendarEvents =
       'https://www.googleapis.com/auth/calendar.events';
+  static const String calendarReadOnly =
+      'https://www.googleapis.com/auth/calendar.readonly';
 
   static const String driveMetadataReadOnly =
       'https://www.googleapis.com/auth/drive.metadata.readonly';
@@ -14,9 +16,13 @@ abstract final class GoogleScopes {
       'https://www.googleapis.com/auth/drive.readonly';
   static const String driveAppData =
       'https://www.googleapis.com/auth/drive.appdata';
+  static const String driveArchive =
+      'https://www.googleapis.com/auth/drive';
 
   static const String spreadsheetsReadOnly =
       'https://www.googleapis.com/auth/spreadsheets.readonly';
+  static const String spreadsheetsWrite =
+      'https://www.googleapis.com/auth/spreadsheets';
 
   static const String contacts = 'https://www.googleapis.com/auth/contacts';
 
@@ -43,14 +49,40 @@ abstract final class GoogleScopes {
     calendarEventsReadOnly,
   ];
 
+  /// Calendar metadata verification; separate from event read/write access.
+  static const List<String> calendarMetadataRead = <String>[
+    calendarReadOnly,
+  ];
+
   /// Write access is requested only when the user starts a Calendar sync.
   static const List<String> calendarWrite = <String>[
     calendarEvents,
   ];
 
   /// Optional app-private Drive storage; not required for ordinary sign-in.
+  /// Full Drive access is needed only to copy an original workbook to archive.
   static const List<String> driveBackup = <String>[
+    driveArchive,
+  ];
+
+  /// App-private employee directory storage; does not expose the user's Drive.
+  static const List<String> employeeDirectory = <String>[
     driveAppData,
+  ];
+
+  /// Metadata-only access for listing and checking accessible spreadsheets.
+  static const List<String> driveFileDiscovery = <String>[
+    driveMetadataReadOnly,
+  ];
+
+  /// Read-only access to spreadsheet cell data.
+  static const List<String> spreadsheetRead = <String>[
+    spreadsheetsReadOnly,
+  ];
+
+  /// Write access for creating or modifying worksheets.
+  static const List<String> spreadsheetWrite = <String>[
+    spreadsheetsWrite,
   ];
 
   /// Optional contact transfer; not required for roster or calendar features.
