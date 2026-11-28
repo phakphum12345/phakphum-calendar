@@ -144,6 +144,7 @@ jobs:
             "Android:android.yml"
             "iOS:ios.yml"
             "Linux:linux.yml"
+            "macOS:macos.yml"
           )
 
           optional_grace_attempt=20
@@ -156,6 +157,7 @@ jobs:
             android_artifact_state="PENDING"
             ios_artifact_state="PENDING"
             linux_artifact_state="PENDING"
+            macos_artifact_state="PENDING"
             echo ""
             echo "===== EVIDENCE CHECK ${attempt}/80 ====="
 
@@ -265,6 +267,13 @@ jobs:
                     package_name="Package Linux application"
                     upload_name="Upload Linux application"
                     ;;
+                  macOS)
+                    job_name="macOS / Xcode / Unsigned Release"
+                    build_name="Build macOS application with the project ad-hoc signing identity"
+                    verify_name="Verify macOS application bundle"
+                    package_name="Package ad-hoc macOS application"
+                    upload_name="Upload macOS build artifacts"
+                    ;;
                 esac
                 artifact_state="$(get_artifact_state "$run_id" "$job_name" "$build_name" "$verify_name" "$package_name" "$upload_name" || true)"
                 IFS=$'\t' read -r artifact_job_status artifact_job_conclusion backend_gate build_step verify_step package_step upload_step <<< "$artifact_state"
@@ -276,14 +285,14 @@ jobs:
                 package_step="${package_step:-missing}"
                 upload_step="${upload_step:-missing}"
                 if [[ "$artifact_job_status" == "completed" && "$artifact_job_conclusion" == "success" && "$build_step" == "success" && ( "$verify_step" == "success" || "$verify_step" == "not_required" ) && ( "$package_step" == "success" || "$package_step" == "not_required" ) && "$upload_step" == "success" ]]; then
-                  case "$label" in Android) android_artifact_state="PASS";; iOS) ios_artifact_state="PASS";; Linux) linux_artifact_state="PASS";; esac
+                  case "$label" in Android) android_artifact_state="PASS";; iOS) ios_artifact_state="PASS";; Linux) linux_artifact_state="PASS";; macOS) macos_artifact_state="PASS";; esac
                   echo "OPTIONAL $label artifact: PASS"
                   [[ -z "$url" ]] || echo "  $url"
                 elif [[ "$artifact_job_status" == "completed" && "$artifact_job_conclusion" == "success" && "$backend_gate" == "success" && "$build_step" == "skipped" && "$verify_step" =~ ^(skipped|not_required)$ && "$package_step" =~ ^(skipped|not_required)$ && "$upload_step" == "skipped" ]]; then
-                  case "$label" in Android) android_artifact_state="SKIPPED (backend guard)";; iOS) ios_artifact_state="SKIPPED (backend guard)";; Linux) linux_artifact_state="SKIPPED (backend guard)";; esac
+                  case "$label" in Android) android_artifact_state="SKIPPED (backend guard)";; iOS) ios_artifact_state="SKIPPED (backend guard)";; Linux) linux_artifact_state="SKIPPED (backend guard)";; macOS) macos_artifact_state="SKIPPED (backend guard)";; esac
                   echo "OPTIONAL $label artifact: SKIPPED (backend guard; no production artifact)"
                 else
-                  case "$label" in Android) android_artifact_state="SKIPPED (incomplete evidence)";; iOS) ios_artifact_state="SKIPPED (incomplete evidence)";; Linux) linux_artifact_state="SKIPPED (incomplete evidence)";; esac
+                  case "$label" in Android) android_artifact_state="SKIPPED (incomplete evidence)";; iOS) ios_artifact_state="SKIPPED (incomplete evidence)";; Linux) linux_artifact_state="SKIPPED (incomplete evidence)";; macOS) macos_artifact_state="SKIPPED (incomplete evidence)";; esac
                   echo "OPTIONAL $label artifact: SKIPPED (artifact evidence incomplete; workflow result alone is not artifact PASS)"
                 fi
               elif [[ "$attempt" -lt "$optional_grace_attempt" && "$status" != "completed" ]]; then
@@ -291,7 +300,7 @@ jobs:
                 optional_pending=1
               else
                 reason="${conclusion:-no successful run within grace period}"
-                case "$label" in Android) android_artifact_state="SKIPPED ($reason)";; iOS) ios_artifact_state="SKIPPED ($reason)";; Linux) linux_artifact_state="SKIPPED ($reason)";; esac
+                case "$label" in Android) android_artifact_state="SKIPPED ($reason)";; iOS) ios_artifact_state="SKIPPED ($reason)";; Linux) linux_artifact_state="SKIPPED ($reason)";; macOS) macos_artifact_state="SKIPPED ($reason)";; esac
                 echo "OPTIONAL $label artifact: SKIPPED (workflow status=$status; reason=$reason)"
                 [[ -z "$url" ]] || echo "  $url"
               fi
@@ -318,6 +327,7 @@ jobs:
                   echo "- Android release artifact: $android_artifact_state"
                   echo "- iOS release artifact: $ios_artifact_state"
                   echo "- Linux release artifact: $linux_artifact_state"
+                  echo "- macOS release artifact: $macos_artifact_state"
                   echo "- Production release readiness: NOT ESTABLISHED"
                 } >> "$GITHUB_STEP_SUMMARY"
               else
