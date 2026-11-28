@@ -14,6 +14,7 @@ import 'package:phakphum_calendar/features/shift_parser/data/grid_roster_bundle_
 import 'package:phakphum_calendar/features/shift_parser/domain/monthly_roster_section.dart';
 import 'package:phakphum_calendar/features/shift_parser/domain/normalized_cell.dart';
 import 'package:phakphum_calendar/features/shift_parser/domain/shift_parser_input.dart';
+import 'package:phakphum_calendar/features/shift_parser/domain/roster_grid_axis_mapping.dart';
 import 'package:phakphum_calendar/features/shift_parser/presentation/pages/grid_roster_review_page.dart';
 
 class _MemoryStore implements ScheduleKeyValueStore {
@@ -216,6 +217,95 @@ void main() {
     );
     expect(dropdown.initialValue, aliasEmployee.id);
   });
+
+  testWidgets('reviewer can reparse a section with an explicit date orientation', (
+    tester,
+  ) async {
+    List<NormalizedCell> row(int rowIndex, List<Object?> values) => [
+      for (var columnIndex = 0; columnIndex < values.length; columnIndex++)
+        if (values[columnIndex] != null)
+          NormalizedCell(
+            sheetId: 1,
+            sheetTitle: 'X-OPD',
+            a1: '',
+            rowIndex: rowIndex,
+            columnIndex: columnIndex,
+            text: values[columnIndex] is String
+                ? values[columnIndex] as String
+                : null,
+            rawValue: values[columnIndex],
+          ),
+    ];
+    final sourceCells = [
+      ...row(0, [null, 'เวรเช้า', 'เวรบ่าย']),
+      ...row(1, ['ประจำเดือน พฤศจิกายน พ.ศ. 2569']),
+      for (var day = 1; day <= 7; day++)
+        ...row(day + 1, [day, 'Somchai Example', 'Somsri Example']),
+    ];
+    final section = MonthlyRosterSection(
+      title: 'Ambiguous roster layout',
+      headerRowIndex: 0,
+      orientation: RosterGridOrientation.datesAcrossColumns,
+      startDate: DateTime(2026, 11, 1),
+      endDate: DateTime(2026, 11, 7),
+      sourceSpreadsheetId: 'spreadsheet-1',
+      sourceSheetId: 1,
+      sourceSheetTitle: 'X-OPD',
+      sourceCells: sourceCells,
+      assignments: const [],
+    );
+    final report = MonthlyRosterParseReport(
+      sections: [section],
+      warnings: const [],
+      sourceSheetCount: 1,
+      sourceFingerprint: 'sha256:orientation-ui',
+    );
+    final session = const GridRosterReviewSessionBuilder().build(
+      report: report,
+      employees: const [],
+      shiftTemplates: const [],
+      sourceFingerprint: 'sha256:orientation-ui',
+      targetScheduleId: 'schedule-1',
+      targetScheduleRevision: 'absent:schedule-1',
+    );
+    final workflow = GridRosterImportWorkflow(
+      scheduleRepository: _UnusedScheduleRepository(),
+      journal: GridRosterBundleJournal(store: _MemoryStore()),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: GridRosterReviewPage(
+          workflow: workflow,
+          contextSnapshot: GridRosterImportReviewContext(
+            session: session,
+            targetSchedule: Schedule(
+              id: 'schedule-1',
+              name: 'November roster',
+            ),
+            targetExisted: false,
+          ),
+          employees: const [],
+          shiftTemplates: const [],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final orientationField =
+        find.byType(DropdownButtonFormField<RosterGridOrientation>);
+    expect(orientationField, findsOneWidget);
+    await tester.tap(orientationField);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('วันที่เรียงตามแถว').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('เปลี่ยนแนววันที่และตรวจตารางใหม่'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('ชื่อจากต้นฉบับ: Somchai Example'), findsNWidgets(7));
+    expect(find.text('ชื่อจากต้นฉบับ: Somsri Example'), findsNWidgets(7));
+  });
+
 
   testWidgets('date anomaly choices are isolated by source worksheet', (
     tester,

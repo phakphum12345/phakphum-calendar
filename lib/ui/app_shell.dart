@@ -9,6 +9,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../controller/app_controller.dart';
 import '../core/result/result.dart';
 import '../features/shift_parser/application/grid_roster_import_workflow.dart';
+import '../features/shift_parser/presentation/pages/grid_roster_review_page.dart';
+import '../features/history/application/roster_history_restore_workflow.dart';
 import '../features/google_drive/application/multi_sheet_picker_selection.dart';
 import '../domain/entities/schedule.dart';
 import '../features/reports/presentation/controllers/monthly_schedule_report_controller.dart';
@@ -42,6 +44,7 @@ import '../services/calendar_service.dart';
 import '../services/calendar_color_service.dart';
 import '../services/drive_ownership_service.dart';
 import '../services/google_auth_service.dart';
+import '../services/roster_revision_service.dart';
 import '../services/shift_color_service.dart';
 import 'app_shell_navigation.dart';
 import 'empty_roster_sync_diagnostic.dart';
@@ -113,6 +116,7 @@ class _AppShellState extends State<AppShell> {
   bool _gridRecoveryLoading = false;
   List<String> _gridRecoveryScheduleIds = [];
   String? _gridRecoveryError;
+  bool _historyRestoreBusy = false;
 
   NavigationDestination _destination(
     BuildContext context,
@@ -782,6 +786,105 @@ class _AppShellState extends State<AppShell> {
     );
   }
 
+  Future<void> _restoreRosterRevision(
+    RosterRevisionDocument revision,
+  ) async {
+    if (_historyRestoreBusy) return;
+    final gridWorkflow = _gridRosterRecoveryWorkflow;
+    if (gridWorkflow == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ยังไม่ได้ตั้งค่า Grid import workflow สำหรับกู้คืน'),
+        ),
+      );
+      return;
+    }
+    _historyRestoreBusy = true;
+
+    EmployeeDirectoryController? createdEmployeeController;
+    ShiftTemplateController? createdTemplateController;
+    try {
+      final targetSchedule = widget.controller.effectiveSchedule;
+      final employeeController = widget.employeeDirectoryControllerFactory(
+        targetSchedule,
+      );
+      createdEmployeeController = employeeController;
+      final templateController = widget.shiftTemplateControllerFactory();
+      createdTemplateController = templateController;
+      await employeeController.load();
+      if (!mounted) return;
+      if (employeeController.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(employeeController.error!)),
+        );
+        return;
+      }
+      await templateController.load();
+      if (!mounted) return;
+      if (templateController.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(templateController.error!)),
+        );
+        return;
+      }
+
+      final employees = employeeController.employees;
+      final templates = templateController.templates
+          .where((template) => template.active)
+          .toList(growable: false);
+      final restoreWorkflow = RosterHistoryRestoreWorkflow(
+        gridImportWorkflow: gridWorkflow,
+      );
+      final prepared = await restoreWorkflow.prepareReview(
+        revision: revision,
+        targetScheduleId: targetSchedule.id,
+        targetScheduleName: targetSchedule.name,
+        employees: employees,
+        shiftTemplates: templates,
+      );
+      if (!mounted) return;
+      if (prepared case Failure<GridRosterImportReviewContext>()) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(prepared.message)),
+        );
+        return;
+      }
+      final reviewContext =
+          (prepared as Success<GridRosterImportReviewContext>).value;
+      final saved = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (context) => GridRosterReviewPage(
+            workflow: gridWorkflow,
+            contextSnapshot: reviewContext,
+            employees: employees,
+            shiftTemplates: templates,
+            sourceLabel: 'Drive revision ${revision.revisionId}',
+          ),
+        ),
+      );
+      if (!mounted) return;
+      if (saved == true) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'กู้คืนจาก Drive revision ${revision.revisionId} ลง ${targetSchedule.name} แล้ว',
+            ),
+          ),
+        );
+      }
+    } on Object catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('เตรียมกู้คืน Revision ไม่สำเร็จ: $error')),
+        );
+      }
+    } finally {
+      createdEmployeeController?.dispose();
+      createdTemplateController?.dispose();
+      _historyRestoreBusy = false;
+    }
+  }
+
   Future<void> _openUtilityPage(_UtilityPage page) {
     final child = switch (page) {
       _UtilityPage.notifications => _NotificationsPage(
@@ -794,6 +897,7 @@ class _AppShellState extends State<AppShell> {
         activateSavedSheet: _activateSavedSheet,
         openSavedSheet: _openSavedSheet,
         deleteSavedSheet: _deleteSavedSheet,
+        restoreRevision: _restoreRosterRevision,
       ),
       _UtilityPage.tools => _ToolsPage(
         controller: widget.controller,
@@ -5312,6 +5416,7 @@ class _AuditPage extends StatelessWidget {
     required this.activateSavedSheet,
     required this.openSavedSheet,
     required this.deleteSavedSheet,
+    required this.restoreRevision,
   });
 
   final AppController controller;
@@ -5319,6 +5424,7 @@ class _AuditPage extends StatelessWidget {
   final Future<void> Function(SavedSheet sheet) activateSavedSheet;
   final Future<void> Function(SavedSheet sheet) openSavedSheet;
   final Future<void> Function(SavedSheet sheet) deleteSavedSheet;
+  final Future<void> Function(RosterRevisionDocument revision) restoreRevision;
 
   @override
   Widget build(BuildContext context) {
@@ -5409,6 +5515,68 @@ class _AuditPage extends StatelessWidget {
               ],
             ),
           ),
+        ),
+        const SizedBox(height: 20),
+        AnimatedBuilder(
+          animation: controller,
+          builder: (context, _) {
+            final revisions = controller.revisionDocuments.reversed.toList();
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'ประวัติ Revision ของตารางเวร',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                const SizedBox(height: 8),
+                if (controller.timelineLoading)
+                  const LinearProgressIndicator(),
+                if (revisions.isEmpty)
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.history_toggle_off_outlined),
+                      title: const Text('ยังไม่มี Revision ที่อ่านเก็บไว้'),
+                      subtitle: Text(
+                        controller.timelineWarning ??
+                            'เลือกชีต Google Sheets แล้วกด “ซิงค์ Timeline ย้อนหลัง” '
+                                'เพื่ออ่านประวัติแบบ read-only ก่อนกู้คืน',
+                      ),
+                    ),
+                  )
+                else
+                  for (final revision in revisions)
+                    Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.history_outlined),
+                        title: Text('Revision ${revision.revisionId}'),
+                        subtitle: Text(
+                          '${_thaiDate(revision.modifiedAt)} '
+                          '${_clock(revision.modifiedAt)} • '
+                          '${revision.snapshots.length} worksheets',
+                        ),
+                        trailing: OutlinedButton.icon(
+                          onPressed: controller.busy
+                              ? null
+                              : () => unawaited(restoreRevision(revision)),
+                          icon: const Icon(Icons.restore),
+                          label: const Text('ตรวจสอบและกู้คืน'),
+                        ),
+                      ),
+                    ),
+                if (controller.timelineWarning != null &&
+                    revisions.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      controller.timelineWarning!,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 20),
         Text('ประวัติการทำงาน', style: Theme.of(context).textTheme.titleLarge),

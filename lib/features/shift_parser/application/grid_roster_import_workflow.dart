@@ -59,11 +59,13 @@ class GridRosterImportReviewContext {
     required this.session,
     required this.targetSchedule,
     required this.targetExisted,
+    this.sourceRevisionId,
   });
 
   final GridRosterReviewSession session;
   final Schedule targetSchedule;
   final bool targetExisted;
+  final String? sourceRevisionId;
 
   String get targetScheduleRevision => session.targetScheduleRevision;
 }
@@ -137,6 +139,7 @@ class GridRosterImportWorkflow {
     required String targetScheduleName,
     required Iterable<Employee> employees,
     required Iterable<ShiftTemplate> shiftTemplates,
+    String? sourceRevisionId,
   }) async {
     final sourceFingerprint = report.sourceFingerprint;
     if (report.sections.isEmpty) {
@@ -148,6 +151,9 @@ class GridRosterImportWorkflow {
       return const ValidationFailure(
         'Parsed workbook is missing its source fingerprint.',
       );
+    }
+    if (sourceRevisionId != null && sourceRevisionId.trim().isEmpty) {
+      return const ValidationFailure('Source revision id must not be empty.');
     }
     if (targetScheduleId.trim().isEmpty || targetScheduleName.trim().isEmpty) {
       return const ValidationFailure(
@@ -203,6 +209,7 @@ class GridRosterImportWorkflow {
           session: session,
           targetSchedule: target,
           targetExisted: existing != null,
+          sourceRevisionId: sourceRevisionId,
         ),
       );
     } on Object catch (error, stackTrace) {
@@ -235,6 +242,7 @@ class GridRosterImportWorkflow {
           importRunId: importRunId,
           parserVersion: parserVersion,
           createdAtUtc: createdAtUtc,
+          sourceRevisionId: context.sourceRevisionId,
         ),
       );
     } on Object catch (error, stackTrace) {

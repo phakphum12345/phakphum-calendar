@@ -9,6 +9,7 @@ void main() {
 
   GridRosterImportProvenance fixture({
     GridRosterImportLifecycle lifecycle = GridRosterImportLifecycle.prepared,
+    String? sourceRevisionId = 'drive-revision-17',
   }) {
     return GridRosterImportProvenance(
       importRunId: 'run-001',
@@ -20,6 +21,7 @@ void main() {
       lifecycle: lifecycle,
       acceptedScheduleFingerprint:
           lifecycle == GridRosterImportLifecycle.committed ? 'sha256:accepted' : null,
+      sourceRevisionId: sourceRevisionId,
       sections: [
         GridRosterProvenanceSection(
           sectionId: 'section-portable',
@@ -68,6 +70,7 @@ void main() {
     final decoded = codec.decode(codec.encode(original));
 
     expect(decoded.importRunId, original.importRunId);
+    expect(decoded.sourceRevisionId, original.sourceRevisionId);
     expect(decoded.createdAtUtc, original.createdAtUtc);
     expect(decoded.sections.single.startDate, DateTime.utc(2026, 11, 16));
     expect(decoded.assignments.map((item) => item.reviewDecision), [
@@ -85,6 +88,16 @@ void main() {
       codec.decode(codec.encode(committed)).acceptedScheduleFingerprint,
       'sha256:accepted',
     );
+  });
+
+  test('decodes older schema-one envelopes without a source revision id', () {
+    final json = jsonDecode(codec.encode(fixture())) as Map<String, Object?>;
+    final provenance = json['provenance']! as Map<String, Object?>;
+    provenance.remove('sourceRevisionId');
+
+    final decoded = codec.decode(jsonEncode(json));
+
+    expect(decoded.sourceRevisionId, isNull);
   });
 
   test('unsupported schema versions fail explicitly', () {

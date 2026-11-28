@@ -41,6 +41,24 @@ class MonthlyRosterSectionParser {
     return populateAssignments(input, structure);
   }
 
+  /// Re-parses one retained source section using the reviewer's explicit
+  /// date-axis choice. The caller must provide only that section's original
+  /// cells; no worksheet-wide orientation is imposed on sibling sections.
+  MonthlyRosterParseReport parseWithOrientation(
+    ShiftParserInput input,
+    RosterGridOrientation orientation,
+  ) {
+    final structure = switch (orientation) {
+      RosterGridOrientation.datesAcrossColumns =>
+        generateDateStructure(input, includeVertical: false),
+      RosterGridOrientation.datesDownRows =>
+        VerticalMonthlyRosterSectionParser(
+          periodParser: periodParser,
+        ).parse(input, populateAssignments: false),
+    };
+    return populateAssignments(input, structure);
+  }
+
   /// Rebuilds a section from its retained source grid after an explicit
   /// reviewer-selected date correction. Every correction is re-parsed and
   /// revalidated; this method never infers a replacement date.
@@ -237,7 +255,10 @@ class MonthlyRosterSectionParser {
 
   /// Phase 1: identify each section, its own period, date columns, and shift rows.
   /// No worker names are read in this phase.
-  MonthlyRosterParseReport generateDateStructure(ShiftParserInput input) {
+  MonthlyRosterParseReport generateDateStructure(
+    ShiftParserInput input, {
+    bool includeVertical = true,
+  }) {
     final cellsByRow = <int, List<dynamic>>{};
     for (final cell in input.cells) {
       cellsByRow.putIfAbsent(cell.rowIndex, () => []).add(cell);
@@ -465,13 +486,17 @@ class MonthlyRosterSectionParser {
       );
     }
 
-    final verticalStructure = VerticalMonthlyRosterSectionParser(
-      periodParser: periodParser,
-    ).parse(input, populateAssignments: false);
-    sections.addAll(verticalStructure.sections);
-    warnings.addAll(verticalStructure.warnings);
-    if (headerRows.isEmpty && verticalStructure.sections.isEmpty) {
-      warnings.add('ไม่พบบล็อกตารางรายเดือนในชีต ${input.sheetTitle}');
+    if (includeVertical) {
+      final verticalStructure = VerticalMonthlyRosterSectionParser(
+        periodParser: periodParser,
+      ).parse(input, populateAssignments: false);
+      sections.addAll(verticalStructure.sections);
+      warnings.addAll(verticalStructure.warnings);
+      if (headerRows.isEmpty && verticalStructure.sections.isEmpty) {
+        warnings.add('ไม่พบบล็อกตารางรายเดือนในชีต ${input.sheetTitle}');
+      }
+    } else if (headerRows.isEmpty) {
+      warnings.add('ไม่พบบล็อกตารางวันที่เรียงตามคอลัมน์ในชีต ${input.sheetTitle}');
     }
     return MonthlyRosterParseReport(
       sections: List.unmodifiable(sections),
