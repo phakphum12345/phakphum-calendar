@@ -24,6 +24,31 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
+  test('Google integration gateways require the active Google account', () async {
+    final dependencies = AppDependencies.production();
+
+    await expectLater(
+      dependencies.createGoogleCalendarGateway(),
+      throwsStateError,
+    );
+    await expectLater(
+      dependencies.createGoogleDriveGateway(),
+      throwsStateError,
+    );
+    await expectLater(
+      dependencies.createGoogleSheetsGateway(),
+      throwsStateError,
+    );
+    await expectLater(
+      dependencies.createGoogleEmployeeSyncService(),
+      throwsStateError,
+    );
+    await expectLater(
+      dependencies.createGoogleContactsService(),
+      throwsStateError,
+    );
+  });
+
   test('composition root injects services into AppController', () async {
     final auth = _FakeGoogleAuthService();
     final settings = _FakeSettingsService();
