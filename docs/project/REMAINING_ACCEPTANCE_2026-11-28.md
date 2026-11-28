@@ -2,14 +2,15 @@
 
 This document turns the current project checkpoint into verifiable work packages. It distinguishes code/CI evidence from operational acceptance.\n\n## Latest execution checkpoint — 2026-11-28
 
-- Current main after PR #227: `5a4e83ac42b1b383768b96828a7a932db9bf3c15`; prior SHA checks remain historical.
-- PR #219 and #225 are merged; PR #227 has now merged as `5a4e83ac42b1b383768b96828a7a932db9bf3c15`.
-- Open PRs: #223, #224, #226 and #228. #223 and #228 have new documentation edits pending fresh exact-head CI.
-- #224 exact head `c13e811ae16d05a91f1ae5443623e246e1246713`: all 12 observed workflows passed.
-- #226 exact head `134e067d8870de4aea3ceb66698ef2754a93a4cb`: all 12 observed workflows passed; stale Schedule preview regression test prevents provider/archive writes. Full Calendar provider acceptance remains open.
-- #227 exact head `d95e57e5f336eeb6ef300c88c04b0ad14da20b27`: all eight applicable exact-head workflows passed. iOS/macOS were not triggered for the workflow-only patch; iOS advisory now follows the iOS build paths.
-- Main post-merge CI on `5a4e83ac42b1b383768b96828a7a932db9bf3c15`: Build Linux and Dependency Security passed; Final Gate, Windows, Android, Web, Cross-platform Runtime and Auto Detect CI were in progress at last inspection. Do not merge #224/#226 until required mainline checks and Final Gate finish successfully.
-- No live Google provider, configured HTTPS backend, production deployment or deployed-SHA acceptance is claimed. Skipped release/deployment evidence is not PASS.
+- Current main after PR #223: `4141e2715a15a211cc42dce2525361cd6688990e`; earlier SHA checks remain historical.
+- PR #219, #225, #227 and #223 are merged. #227 fixed Final Gate's Web evidence mapping; #223 records Google function acceptance evidence.
+- Open PRs: #224, #226 and #228.
+- #224 exact head `c13e811ae16d05a91f1ae5443623e246e1246713`: all 12 observed workflows passed; fresh PR metadata reports clean mergeability.
+- #226 exact head `134e067d8870de4aea3ceb66698ef2754a93a4cb`: all 12 observed workflows passed; stale Schedule preview regression prevents provider/archive writes. Full Calendar provider acceptance remains open.
+- #227 exact head `d95e57e5f336eeb6ef300c88c04b0ad14da20b27`: all eight applicable exact-head workflows passed.
+- #223 exact head `6f67b968257a4e7f5867820d4a0159c272733041`: all three documentation-focused workflows passed and PR merged.
+- Main post-merge CI on `5a4e83ac42b1b383768b96828a7a932db9bf3c15`: Windows, Linux, Android, Web build, Auto Detect CI, Dependency Security and Cross-platform Runtime passed; Final Gate was still in progress at last inspection. Wait for its terminal result before merging #224/#226.
+- Web artifact creation succeeded; GitHub Pages deploy and deployed-SHA verification were skipped by the HTTPS backend guard. No live Google provider, configured HTTPS backend, production deployment or deployed-SHA acceptance is claimed.
 - Re-fetch exact-head checks after every update; pending/cancelled/skipped/missing/unknown remain non-passing.
 
 
