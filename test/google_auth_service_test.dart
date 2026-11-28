@@ -41,9 +41,15 @@ void main() {
 
   group('Google integration scope registry', () {
     test('keeps basic identity sign-in separate from API permissions', () {
-      expect(GoogleScopes.rosterRead, contains(GoogleScopes.spreadsheetsReadOnly));
+      expect(
+        GoogleScopes.rosterRead,
+        contains(GoogleScopes.spreadsheetsReadOnly),
+      );
       expect(GoogleScopes.rosterRead, contains(GoogleScopes.driveReadOnly));
-      expect(GoogleScopes.rosterRead, contains(GoogleScopes.driveMetadataReadOnly));
+      expect(
+        GoogleScopes.rosterRead,
+        contains(GoogleScopes.driveMetadataReadOnly),
+      );
       expect(GoogleScopes.calendarRead, <String>[
         GoogleScopes.calendarEventsReadOnly,
       ]);
@@ -65,16 +71,28 @@ void main() {
       expect(GoogleScopes.calendarWrite, <String>[
         GoogleScopes.calendarEvents,
       ]);
-      expect(GoogleScopes.rosterRead, isNot(contains(GoogleScopes.calendarEvents)));
-      expect(GoogleScopes.calendarRead, isNot(contains(GoogleScopes.calendarEvents)));
+      expect(
+        GoogleScopes.rosterRead,
+        isNot(contains(GoogleScopes.calendarEvents)),
+      );
+      expect(
+        GoogleScopes.calendarRead,
+        isNot(contains(GoogleScopes.calendarEvents)),
+      );
     });
 
     test('keeps Drive backup and Contacts transfer optional', () {
       expect(GoogleScopes.driveBackup, <String>[GoogleScopes.driveAppData]);
       expect(GoogleScopes.driveArchive, <String>[GoogleScopes.driveFullAccess]);
-      expect(GoogleScopes.employeeDirectory, <String>[GoogleScopes.driveAppData]);
+      expect(
+        GoogleScopes.employeeDirectory,
+        <String>[GoogleScopes.driveAppData],
+      );
       expect(GoogleScopes.contactTransfer, <String>[GoogleScopes.contacts]);
-      expect(GoogleScopes.rosterRead, isNot(contains(GoogleScopes.driveAppData)));
+      expect(
+        GoogleScopes.rosterRead,
+        isNot(contains(GoogleScopes.driveAppData)),
+      );
       expect(GoogleScopes.rosterRead, isNot(contains(GoogleScopes.contacts)));
     });
 
