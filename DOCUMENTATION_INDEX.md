@@ -4,6 +4,8 @@ This file is the central map of project documentation. Prefer updating an existi
 
 ## Project overview and status
 
+- [Master execution roadmap — seven work packages (2026-11-28)](docs/MASTER_EXECUTION_ROADMAP_2026-11-28.md) — acceptance criteria, dependencies, blockers, and evidence-based progress log.
+
 - [README](README.md) — user installation, setup and usage.
 - [Roadmap](ROADMAP.md) — planned product direction.
 - [Implementation status](IMPLEMENTATION_STATUS.md) — current repository inventory and open gaps.
