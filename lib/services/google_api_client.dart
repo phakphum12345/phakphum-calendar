@@ -6,17 +6,16 @@ class GoogleApiClient extends http.BaseClient {
   GoogleApiClient(
     this._headers, [
     http.Client? inner,
-    Duration timeout = const Duration(seconds: 30),
-  ])  : _inner = inner ?? http.Client(),
-        _timeout = timeout;
+    this._timeout = const Duration(seconds: 30),
+  ]) : _headersProvider = null,
+       _inner = inner ?? http.Client();
 
   GoogleApiClient.withHeaderProvider(
     this._headersProvider, {
     http.Client? inner,
-    Duration timeout = const Duration(seconds: 30),
+    this._timeout = const Duration(seconds: 30),
   }) : _headers = const <String, String>{},
-       _inner = inner ?? http.Client(),
-       _timeout = timeout;
+       _inner = inner ?? http.Client();
 
   final Map<String, String> _headers;
   final Future<Map<String, String>> Function()? _headersProvider;
@@ -27,7 +26,7 @@ class GoogleApiClient extends http.BaseClient {
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     final headers = _headersProvider == null
         ? _headers
-        : await _headersProvider!().timeout(_timeout);
+        : await _headersProvider().timeout(_timeout);
     request.headers.addAll(headers);
     final response = await _inner.send(request).timeout(_timeout);
     // A timeout on send() only bounds waiting for response headers. Google API
