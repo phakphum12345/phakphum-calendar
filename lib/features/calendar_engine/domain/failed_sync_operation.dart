@@ -11,6 +11,8 @@ class FailedSyncOperation {
     this.eventId,
     this.calendarId = 'primary',
     this.message,
+    this.expectedEtag,
+    this.expectedSyncId,
   });
 
   final String historyId;
@@ -21,4 +23,6 @@ class FailedSyncOperation {
   final String? eventId;
   final String calendarId;
   final String? message;
+  final String? expectedEtag;
+  final String? expectedSyncId;
 }

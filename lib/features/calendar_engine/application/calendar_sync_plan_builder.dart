@@ -11,6 +11,7 @@ class CalendarSyncPlanBuilder {
     required CalendarDiff diff,
     required List<ManagedCalendarEvent> existingEvents,
     String calendarId = 'primary',
+    required String scheduleId,
   }) {
     final existingBySyncId = <String, ManagedCalendarEvent>{
       for (final event in existingEvents) event.syncId: event,
@@ -35,6 +36,8 @@ class CalendarSyncPlanBuilder {
         CalendarUpdateOperation(
           eventId: existing.eventId,
           command: _toCommand(candidate, calendarId),
+          expectedEtag: existing.etag,
+          expectedSyncId: existing.providerSyncId,
         ),
       );
     }
@@ -50,6 +53,8 @@ class CalendarSyncPlanBuilder {
           eventId: existing.eventId,
           calendarId: calendarId,
           beforeWrites: candidate.syncId.startsWith('legacy:'),
+          expectedEtag: existing.etag,
+          expectedSyncId: existing.providerSyncId,
         ),
       );
     }
@@ -58,6 +63,8 @@ class CalendarSyncPlanBuilder {
       inserts: inserts,
       updates: updates,
       deletes: deletes,
+      scheduleId: scheduleId,
+      calendarId: calendarId,
     );
   }
 

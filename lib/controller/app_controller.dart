@@ -2042,7 +2042,10 @@ class AppController extends ChangeNotifier implements ControllerState {
     return _run('เตรียมตัวอย่างรายการปฏิทิน', () async {
       final workflow = await _calendarWorkflowControllerFactory();
       try {
-        await workflow.prepareCandidatePreview(desired: desired);
+        await workflow.prepareCandidatePreview(
+          desired: desired,
+          scheduleId: canonicalSchedule.id,
+        );
         final preview = workflow.preview;
         if (preview == null) throw StateError('ไม่พบ preview หลังจากเตรียม');
         return preview.diff;
@@ -2057,7 +2060,10 @@ class AppController extends ChangeNotifier implements ControllerState {
     return _run('ซิงก์รายการปฏิทิน', () async {
       final workflow = await _calendarWorkflowControllerFactory();
       try {
-        await workflow.prepareCandidatePreview(desired: desired);
+        await workflow.prepareCandidatePreview(
+          desired: desired,
+          scheduleId: canonicalSchedule.id,
+        );
         if (workflow.preview == null) {
           throw StateError('ไม่พบแผนการซิงก์สำหรับรายการนี้');
         }

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\CalendarSyncCoordinationController;
 use App\Http\Controllers\Api\V1\ClientErrorController;
 use App\Http\Controllers\Api\V1\GoogleAccountController;
 use App\Http\Controllers\Api\V1\HealthController;
@@ -22,6 +23,23 @@ Route::prefix('v1')->group(function (): void {
         ->name('api.v1.diagnostics.client-errors');
 
     Route::middleware(['throttle:120,1', 'google.account'])->group(function (): void {
+        Route::get('/calendar-sync/runs', [CalendarSyncCoordinationController::class, 'index'])
+            ->name('api.v1.calendar-sync.runs.index');
+        Route::get('/calendar-sync/runs/{runId}', [CalendarSyncCoordinationController::class, 'show'])
+            ->whereUuid('runId')->name('api.v1.calendar-sync.runs.show');
+        Route::get('/calendar-sync/runs/{runId}/operations', [CalendarSyncCoordinationController::class, 'operations'])
+            ->whereUuid('runId')->name('api.v1.calendar-sync.runs.operations.index');
+        Route::post('/calendar-sync/leases', [CalendarSyncCoordinationController::class, 'acquire'])
+            ->name('api.v1.calendar-sync.leases.acquire');
+        Route::put('/calendar-sync/leases/{runId}', [CalendarSyncCoordinationController::class, 'heartbeat'])
+            ->whereUuid('runId')->name('api.v1.calendar-sync.leases.heartbeat');
+        Route::delete('/calendar-sync/leases/{runId}', [CalendarSyncCoordinationController::class, 'release'])
+            ->whereUuid('runId')->name('api.v1.calendar-sync.leases.release');
+        Route::post('/calendar-sync/leases/{runId}/operations', [CalendarSyncCoordinationController::class, 'recordOperation'])
+            ->whereUuid('runId')->name('api.v1.calendar-sync.operations.store');
+        Route::patch('/calendar-sync/leases/{runId}/operations/{operationKey}', [CalendarSyncCoordinationController::class, 'updateOperation'])
+            ->whereUuid('runId')->where('operationKey', '[A-Za-z0-9._:-]{1,128}')
+            ->name('api.v1.calendar-sync.operations.update');
         Route::get('/schedules/import-journals', [ScheduleImportJournalController::class, 'discover'])
             ->name('api.v1.schedules.import-journals.discover');
         Route::get('/schedules/{scheduleId}', [ScheduleController::class, 'show'])

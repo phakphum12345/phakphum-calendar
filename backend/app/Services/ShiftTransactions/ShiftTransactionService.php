@@ -2,6 +2,7 @@
 
 namespace App\Services\ShiftTransactions;
 
+use App\Services\Notifications\NotificationOutboxService;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,10 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 class ShiftTransactionService
 {
     private const TYPES = ['give_up', 'exchange', 'exchange_and_return'];
+
+    public function __construct(
+        private readonly NotificationOutboxService $notificationOutbox,
+    ) {}
 
     public function create(object $actor, array $input, string $idempotencyKey): array
     {
@@ -160,6 +165,26 @@ class ShiftTransactionService
                     'mode' => $mode, 'type' => $input['type'],
                     'requires_organization_approval' => $metadata['requires_organization_approval'],
                 ], $now);
+                $recipient = collect($participantUsers)->firstWhere('role', 'recipient');
+                $recipientUserId = (int) $recipient['user']->id;
+                $this->notificationOutbox->enqueue(
+                    $recipientUserId,
+                    'shift_transaction.created',
+                    "shift-transaction:$id:created:$recipientUserId",
+                    [
+                        'transaction_id' => $id,
+                        'transaction_type' => $input['type'],
+                        'mode' => $mode,
+                        'status' => 'pending_response',
+                        'version' => 1,
+                        'transfer_count' => count($transfers),
+                        'title' => 'New shift request',
+                        'body' => $this->notificationBody('created', $input['type']),
+                        'tag' => "shift-transaction:$id:v1",
+                        'url' => '../',
+                    ],
+                    $now,
+                );
             });
         } catch (QueryException $exception) {
             $existing = DB::table('shift_transactions')
@@ -496,9 +521,93 @@ class ShiftTransactionService
                 throw new ConflictHttpException('Transaction version changed; reload and retry.');
             }
             $this->appendEvent($id, $transaction->organization_id, $actor->id, $action, $nextVersion, $eventData, $now);
+            $this->enqueueParticipantNotifications(
+                $transaction,
+                $actor,
+                $action,
+                $nextVersion,
+                $status,
+                $sync,
+                $now,
+            );
 
             return $this->read($id, $actor);
         });
+    }
+
+    private function enqueueParticipantNotifications(
+        object $transaction,
+        object $actor,
+        string $action,
+        int $version,
+        string $status,
+        string $syncStatus,
+        \DateTimeInterface $availableAt,
+    ): void {
+        // Starting a provider operation is an internal step; notify only
+        // durable decisions and outcomes that another participant needs.
+        if ($action === 'sync_start') {
+            return;
+        }
+
+        $recipients = DB::table('shift_transaction_participants')
+            ->where('transaction_id', $transaction->id)
+            ->where('user_id', '<>', $actor->id)
+            ->pluck('user_id');
+
+        [$title, $body] = $this->notificationCopy($action, $transaction->type);
+        foreach ($recipients as $recipientUserId) {
+            $recipientUserId = (int) $recipientUserId;
+            $this->notificationOutbox->enqueue(
+                $recipientUserId,
+                'shift_transaction.'.$action,
+                "shift-transaction:$transaction->id:v$version:$action:$recipientUserId",
+                [
+                    'transaction_id' => $transaction->id,
+                    'transaction_type' => $transaction->type,
+                    'action' => $action,
+                    'status' => $status,
+                    'sync_status' => $syncStatus,
+                    'version' => $version,
+                    'title' => $title,
+                    'body' => $body,
+                    'tag' => "shift-transaction:$transaction->id:v$version",
+                    'url' => '../',
+                ],
+                $availableAt,
+            );
+        }
+    }
+
+    /**
+     * @return array{0: string, 1: string}
+     */
+    private function notificationCopy(string $action, string $transactionType): array
+    {
+        $kind = match ($transactionType) {
+            'give_up' => 'shift handoff',
+            'exchange' => 'shift exchange',
+            'exchange_and_return' => 'shift exchange and return',
+            default => 'shift request',
+        };
+
+        return match ($action) {
+            'created' => ['New shift request', "A colleague sent you a $kind request."],
+            'confirm' => ['Shift request accepted', 'Another participant confirmed the request.'],
+            'reject' => ['Shift request rejected', 'A participant rejected the request.'],
+            'approve' => ['Shift request approved', 'The organization approved the request.'],
+            'reject_by_approver' => ['Shift request not approved', 'The organization did not approve the request.'],
+            'cancel' => ['Shift request cancelled', 'The requester cancelled the request.'],
+            'sync_complete' => ['Calendar sync completed', 'The shift request Calendar events were synchronized.'],
+            'sync_fail' => ['Calendar sync needs attention', 'Calendar sync failed. Open the request to review it.'],
+            'fulfill' => ['Shift handoff confirmed', 'A recipient confirmed fulfillment of a transferred shift.'],
+            default => ['Shift request updated', "Your $kind has been updated."],
+        };
+    }
+
+    private function notificationBody(string $action, string $transactionType): string
+    {
+        return $this->notificationCopy($action, $transactionType)[1];
     }
 
     private function normalizeCalendarEvents(string $transactionId, array $input): array
