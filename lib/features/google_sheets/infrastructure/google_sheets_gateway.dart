@@ -1,5 +1,5 @@
 import 'package:googleapis/sheets/v4.dart' as sheets;
-import 'package:googleapis_auth/googleapis_auth.dart' as auth;
+import 'package:http/http.dart' as http;
 
 import '../domain/grid_range.dart';
 import '../domain/sheet_cell.dart';
@@ -11,7 +11,7 @@ import '../../shift_parser/domain/a1_notation.dart';
 class GoogleSheetsGateway implements SheetsGateway {
   GoogleSheetsGateway(this._client);
 
-  final auth.AuthClient _client;
+  final http.Client _client;
 
   @override
   Future<SpreadsheetSnapshot> readSpreadsheet({
