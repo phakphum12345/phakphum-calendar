@@ -10,6 +10,7 @@ use Throwable;
 final class WebPushSender implements WebPushTransport
 {
     private readonly WebPushPayloadEncryptor $encryptor;
+
     private readonly VapidTokenGenerator $vapid;
 
     private const ALLOWED_HOSTS = [
@@ -21,8 +22,7 @@ final class WebPushSender implements WebPushTransport
     public function __construct(
         WebPushPayloadEncryptor $encryptor,
         VapidTokenGenerator $vapid,
-    )
-    {
+    ) {
         $this->encryptor = $encryptor;
         $this->vapid = $vapid;
     }
