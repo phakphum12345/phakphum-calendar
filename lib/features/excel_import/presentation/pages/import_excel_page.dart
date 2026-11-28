@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 
-import '../../../../core/google/authorized_google_client_factory.dart';
 import '../../../../core/google/google_scopes.dart';
 import '../../../../core/result/result.dart';
 import '../../../../core/utils/excel_column_name.dart';
@@ -10,6 +8,7 @@ import '../../../../domain/entities/schedule.dart';
 import '../../../../domain/repositories/employee_repository.dart';
 import '../../../../l10n/l10n.dart';
 import '../../../../services/google_auth_service.dart';
+import '../../../../services/google_api_client.dart';
 import '../../../../services/local_roster_file_service.dart';
 import '../../../../services/drive_ownership_service.dart';
 import '../../../../services/sheets_service.dart';
@@ -46,7 +45,6 @@ class ImportExcelPage extends StatefulWidget {
     this.mappingController,
     this.mappingControllerFactory,
     this.googleAuthService,
-    this.authorizedGoogleClientFactory = const AuthorizedGoogleClientFactory(),
     this.driveOwnershipGateway = const DriveOwnershipService(),
     this.googleSheetsImportDataSourceFactory,
     this.importedScheduleFactory,
@@ -68,9 +66,8 @@ class ImportExcelPage extends StatefulWidget {
   final ColumnMappingController? mappingController;
   final ColumnMappingController Function()? mappingControllerFactory;
   final GoogleAuthGateway? googleAuthService;
-  final AuthorizedGoogleClientFactory authorizedGoogleClientFactory;
   final DriveOwnershipGateway driveOwnershipGateway;
-  final GoogleSheetsImportDataSource Function(auth.AuthClient)?
+  final GoogleSheetsImportDataSource Function(GoogleApiClient)?
   googleSheetsImportDataSourceFactory;
   final Schedule Function(Iterable<ShiftRecord>)? importedScheduleFactory;
   final ScheduleController Function(Schedule)? scheduleControllerFactory;
@@ -101,7 +98,7 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
   final googleSheetsInputController = TextEditingController();
   GoogleSheetsImportDataSource? googleSheetsSource;
   GoogleSheetsImportInfo? googleSheetsInfo;
-  auth.AuthClient? googleSheetsClient;
+  GoogleApiClient? googleSheetsClient;
   bool loadingGoogleSheets = false;
   String? googleSheetsError;
   bool loadingGridRoster = false;
@@ -838,7 +835,7 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
     final input = googleSheetsInputController.text.trim();
     if (input.isEmpty || loadingGoogleSheets) return;
 
-    auth.AuthClient? pendingClient;
+    GoogleApiClient? pendingClient;
     setState(() {
       loadingGoogleSheets = true;
       googleSheetsError = null;
@@ -851,18 +848,14 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
       if (authService.account == null) {
         await authService.signIn();
       }
-      final account = authService.account;
-      if (account == null) {
+      if (authService.account == null) {
         throw StateError('Sign in to Google before loading a spreadsheet.');
       }
       final spreadsheetId = SheetsService.spreadsheetIdFromUrl(input);
-      pendingClient = await widget.authorizedGoogleClientFactory.create(
-        account: account,
-        scopes: const [
-          GoogleScopes.spreadsheetsReadOnly,
-          GoogleScopes.driveMetadataReadOnly,
-        ],
-      );
+      pendingClient = await authService.clientFor(const [
+        GoogleScopes.spreadsheetsReadOnly,
+        GoogleScopes.driveMetadataReadOnly,
+      ]);
       final source =
           widget.googleSheetsImportDataSourceFactory?.call(pendingClient) ??
           GoogleSheetsImportDataSource(
@@ -906,7 +899,7 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
 
   Future<void> _pickGoogleSheetFromDrive() async {
     if (loadingGoogleSheets) return;
-    auth.AuthClient? client;
+    GoogleApiClient? client;
     setState(() {
       loadingGoogleSheets = true;
       googleSheetsError = null;
@@ -919,13 +912,11 @@ class _ImportExcelPageState extends State<ImportExcelPage> {
       if (authService.account == null) {
         await authService.signIn();
       }
-      final account = authService.account;
-      if (account == null) {
+      if (authService.account == null) {
         throw StateError('Sign in to Google before choosing a spreadsheet.');
       }
-      client = await widget.authorizedGoogleClientFactory.create(
-        account: account,
-        scopes: const [GoogleScopes.driveMetadataReadOnly],
+      client = await authService.clientFor(
+        const [GoogleScopes.driveMetadataReadOnly],
       );
       final sheets = await widget.driveOwnershipGateway.listOwnedSpreadsheets(
         client,
