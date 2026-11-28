@@ -31,7 +31,9 @@ void main() {
     );
 
     final writeResponse = await client.post(
-      Uri.parse('https://www.googleapis.com/calendar/v3/calendars/primary/events'),
+      Uri.parse(
+        'https://www.googleapis.com/calendar/v3/calendars/primary/events',
+      ),
       body: '{}',
     );
     expect(writeResponse.statusCode, 200);
@@ -57,7 +59,10 @@ void main() {
         'https://www.googleapis.com/calendar/v3/calendars/primary/events/event-1',
       ),
     );
-    expect(requestedScopes, [GoogleScopes.calendarRead, GoogleScopes.calendarWrite]);
+    expect(
+      requestedScopes,
+      [GoogleScopes.calendarRead, GoogleScopes.calendarWrite],
+    );
     expect(clients.map((item) => item.methods), [
       ['GET', 'GET'],
       ['POST', 'PUT', 'DELETE'],
@@ -71,7 +76,7 @@ void main() {
   test('unsupported HTTP methods fail before requesting OAuth scopes', () async {
     var factoryCalls = 0;
     final client = GoogleScopeRoutingClient(
-      clientForScopes: (scopes) async {
+      clientForScopes: (_) async {
         factoryCalls++;
         return _RecordingClient();
       },
@@ -89,7 +94,7 @@ void main() {
     var factoryCalls = 0;
     final created = _RecordingClient();
     final client = GoogleScopeRoutingClient(
-      clientForScopes: (scopes) async {
+      clientForScopes: (_) async {
         factoryCalls++;
         if (factoryCalls == 1) throw StateError('consent was denied');
         return created;
@@ -100,7 +105,9 @@ void main() {
       client.get(Uri.parse('https://example.test/calendar')),
       throwsStateError,
     );
-    final response = await client.get(Uri.parse('https://example.test/calendar'));
+    final response = await client.get(
+      Uri.parse('https://example.test/calendar'),
+    );
     expect(response.statusCode, 200);
     expect(factoryCalls, 2);
 
