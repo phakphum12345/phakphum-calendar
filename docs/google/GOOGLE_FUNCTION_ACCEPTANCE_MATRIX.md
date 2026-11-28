@@ -154,7 +154,21 @@ A function may be marked `PASS_CODE` only after code tests pass on the exact rev
 - Real OAuth client IDs, consent publication/verification, exact platform redirects, backend configuration and non-owner/non-tester account acceptance are external release gates.
 - This matrix covers Google integration only. Calendar sync, roster import, shift transactions, shift pay, AI, notifications, organization administration and platform release retain their own acceptance plans.
 
-## 12. Execution order
+## 12. Evidence update after PR #222
+
+PR #222 merged as `9aed0905e731efdf0c02b07bddffcd04f2f056b0`. Its exact pre-merge head passed all 12 CI workflows. The following are code-level evidence only:
+
+| Function IDs | Current evidence | Status | Source / test |
+|---|---|---|---|
+| AUTH-01, AUTH-07 | Canonical auth gateway owns the Google sign-in lifecycle; compatibility adapter delegates instead of initializing a second lifecycle. Disconnect/revoke path is exposed. | IMPLEMENTED_UNVERIFIED | `lib/services/google_auth_service.dart`, `lib/features/authentication/infrastructure/google_authentication_service.dart` |
+| SCOPE-01–SCOPE-08 | Feature-specific scope groups exist and legacy call sites were migrated. Tests verify group membership and separation of optional/write scopes, but not actual consent prompts and denial recovery. | IMPLEMENTED_UNVERIFIED | `lib/core/google/google_scopes.dart`; `test/google_auth_service_test.dart` |
+| TOKEN-01 | Per-request header provider is invoked for each HTTP request and the test observes a changed bearer token between requests. This does not prove real Google token refresh. | PASS_CODE | `test/google_api_client_test.dart` — “refreshes authorization headers for each request” |
+| TOKEN-05 | Authorized gateway session closes its owned HTTP client once even when close is called repeatedly. | PASS_CODE | `test/authorized_google_gateway_session_test.dart` — “authorized gateway session closes its client exactly once” |
+| EMP-01, BACKEND-01 | Account-scoped gateway factories reject creation without an active Google account; backend identity token access is exposed through the canonical gateway. Server-side audience/issuer/tenant validation is not established by these client tests. | IMPLEMENTED_UNVERIFIED | `lib/core/di/app_dependencies.dart`; `test/app_dependencies_test.dart` — “Google integration gateways require the active Google account” |
+
+No function is marked `PASS_LIVE`: the repository run did not authenticate against a controlled non-owner Google account or verify real provider-side effects. The post-merge main Final Gate is also tracked separately from the successful PR-head CI.
+
+## 13. Execution order
 
 1. PR #222 gateway wiring is merged; verify its post-merge main CI and preserve the real-provider release boundary.
 2. Consolidate identity/session lifecycle and incremental scope authorization; close AUTH and SCOPE/TOKEN tests.
