@@ -1,59 +1,45 @@
-# Completion Status — 2026-11-27
+# Completion Status — 2026-11-28
 
-Repository: phakphum12345/phakphum-calendar
-Base branch: main
-Audited main SHA: 68ef85361c2d08e2970160a36475592010d908f7
-Execution branch: feat/universal-roster-grid-reconciled-2026-11-25
-Execution head at this snapshot: 8d262dc7365a63c279e06affcdedbdbcf1b6fadc
-Status: IN PROGRESS — not a release-readiness declaration.
+Repository: \`phakphum12345/phakphum-calendar\`  
+Branch: \`main\`  
+Checkpoint SHA: \`f7499d76a2d5111a7d37801462a4b837e5791ff9\`  
+Overall status: **IN PROGRESS — not production-ready**.
 
-## Current work package state
+See [Live Project Status](project/LIVE_PROJECT_STATUS_2026-11-28.md) and [Remaining Acceptance](project/REMAINING_ACCEPTANCE_2026-11-28.md) for current evidence and next work.
 
-| Package | Evidence state | Remaining acceptance |
+## Integrated code foundations
+
+| Area | Integrated evidence | Not yet accepted |
 |---|---|---|
-| A. Universal roster import | IN PROGRESS — PR #192 integrates per-section horizontal/vertical axis detection, two-phase date-first parsing, original coordinates, vertical correction and Grid review UI | Actual user workbooks, complete merged/multi-level headers, ambiguous orientation selection, semantic axis reversal and end-to-end import reconciliation |
-| B. Persistence | IN PROGRESS — PR #192 includes caller-bound CAS, writer migration, journal, conditional delete/tombstone and startup recovery assessment/banner | Every writer and edit path, cross-device backend transactions, startup crash recovery, conflict resolution UI, local fallback limits and tombstone acceptance |
-| C. Calendar Sync | IN PROGRESS — PR #196 has lease/ledger/ETag implementation and 13/13 exact-head CI | Controlled backend and Google test-calendar acceptance, multi-client contention, ambiguous provider outcomes and production durability |
-| D. Notifications | IN PROGRESS — PR #191 contains outbox, worker, VAPID/RFC 8291 sender, browser subscription UI and service worker | Exact-head platform CI, real registered browser delivery, scheduler deployment, operational alerts and production database concurrency |
-| E. Schedule generation | IN PROGRESS — PR #202 adds immutable preview, version/fingerprint approval, candidate revalidation, CAS commit and read-back | Exact-head CI, review UI, durable approval/provenance journal, crash recovery, authoritative catalog revisions and cross-device acceptance |
-| F. Shift Pay | IN PROGRESS — PR #201 rejects equal-specificity rule conflicts | Confirmed assignment linkage, client/UI integration, monthly statements and immutable historical snapshots |
-| G. History restore | IN PROGRESS — read-only history/revision foundations | Diff preview, stale-source guard, explicit confirmation, conditional commit, audit and recovery |
-| H. Organization/security | IN PROGRESS — backend authorization/membership foundations | Endpoint-by-endpoint tenant-isolation negatives, membership lifecycle, token/rate-limit and privacy review |
-| I. Quality/performance/accessibility | IN PROGRESS — CI and regression foundations | Reproducible benchmarks, fuzz/property tests, responsive/accessibility acceptance and backup/restore drills |
-| J. Documentation | IN PROGRESS — completion, evidence, recovery and generation docs reconciled against current implementation | Full Markdown inventory reconciliation and remaining source-to-requirement traceability |
-| K. Release | IN PROGRESS — build workflows exist | Exact deployment SHA, live health, release artifacts, rollback and restore evidence |
+| Roster import and review | Flexible Grid import, date-first parsing/orientation review, source provenance and corrections | Original user workbooks; mixed real layouts; full Schedule preservation and override regression |
+| Schedule persistence | Conditional/CAS writer and recovery foundations | All writer paths, cross-device transactions, crash recovery and tombstone acceptance |
+| Calendar Sync | Scoped coordination/lease and operation-ledger foundations; ETag/managed Sync ID safeguards; recovery UI; API feature tests | Live backend/database contention and controlled Google test-calendar acceptance |
+| Browser notifications | Web Push subscription/outbox, VAPID encryption/transport and worker/retry foundations | Configured production keys/scheduler and real registered-browser delivery |
+| History restore | Reviewed restore and conditional Schedule commit foundation | Real Drive revision export acceptance, stale-source and multi-Schedule tests |
+| Shift Pay | Earlier rule conflict and calculation foundations remain in repository | Complete Personal/Organization/Hybrid modes, confirmed assignments, durable snapshots and statements |
+| Google identity | Existing Google authentication integration | Normal non-tester account, optional scopes, OAuth publication and platform lifecycle |
+| AI Assistant | Existing UI/documentation foundations | Proven live request path, offline help, server-side provider/security/privacy and verified research |
+| Platform builds | Independent CI workflows for Windows, Web, Android, iOS, macOS and Linux | Signing, clean-device installation, production deployment and release/rollback acceptance |
+| Documentation | Current-main checkpoint and acceptance plan being reconciled | Full Markdown inventory, requirement-to-code traceability and removal/labeling of stale status claims |
 
-## Open PRs and exact-head evidence
+## Recent merged delivery
 
-| PR | Base SHA | Head SHA | State | Exact-head CI evidence | Review |
-|---|---|---|---|---|---|
-| [#191](https://github.com/phakphum12345/phakphum-calendar/pull/191) | 68ef85361c2d08e2970160a36475592010d908f7 | cf7eaa22eaf81e04b0b444acfc3aee2a8ca51e5e | OPEN / Draft | 11 workflows success; Cross-platform Runtime in progress; macOS queued | None recorded |
-| [#192](https://github.com/phakphum12345/phakphum-calendar/pull/192) | 68ef85361c2d08e2970160a36475592010d908f7 | 8d262dc7365a63c279e06affcdedbdbcf1b6fadc | OPEN / Draft | 8 workflows success; Windows startup_failure; PR Gate failed because Windows startup_failure; Cross-platform Runtime and iOS Advisory in progress; iOS and CAS Storage Spike queued | None recorded |
-| [#196](https://github.com/phakphum12345/phakphum-calendar/pull/196) | 68ef85361c2d08e2970160a36475592010d908f7 | e4e09e3c74856c64306030679a9701ec51a3b18b | OPEN / Draft | 13/13 observed workflows success | None recorded |
-| [#201](https://github.com/phakphum12345/phakphum-calendar/pull/201) | 68ef85361c2d08e2970160a36475592010d908f7 | d3f228dcdaea4f1a3771c271421226ab71ab00b5 | OPEN / Draft | 12/12 observed workflows success | None recorded |
-| [#202](https://github.com/phakphum12345/phakphum-calendar/pull/202) | PR #192 branch at 8d262dc7365a63c279e06affcdedbdbcf1b6fadc | ca6ebd095ef6566fcce00e9bc49e9c820470b80d | OPEN / Draft / stacked | Exact-head workflows are running; earlier head had one unused-import analyzer failure, now removed | None recorded |
-| [#199](https://github.com/phakphum12345/phakphum-calendar/pull/199) | 68ef85361c2d08e2970160a36475592010d908f7 | 5d6906e1b6f938604ba665e2a0963a8d4320bf36 | CLOSED / superseded | 11/11 observed workflows success on historical head | No review; foundation integrated into #192 |
-| [#200](https://github.com/phakphum12345/phakphum-calendar/pull/200) | 68ef85361c2d08e2970160a36475592010d908f7 | f88e94d9978820d568da8f73f417ed78ab9f2bfa | CLOSED / superseded | Historical branch had an initial missing-import failure; not current acceptance evidence | No review; implementation integrated into #192 |
+- #211 — reviewed roster history / revision restore and date-axis orientation.
+- #212 — Calendar Sync coordination and browser Web Push foundations.
+- #214 — missing Calendar Sync Laravel API feature tests restored.
+- #215 — safe behavior when the shared backend HTTPS configuration is absent: CI continues, but production artifacts and Pages deployment are skipped.
+- #213 — prior live checkpoint, now superseded by the reconciled status.
 
-All open PRs remain Draft. No submitted review or review thread was present at the latest inspection. No PR has been merged. CI success is not product, provider, security or production acceptance. Do not count startup_failure, failure, pending, cancelled, skipped, unknown or missing checks as pass.
+#191 and #196 are closed as superseded references. #209 is a stale Draft documentation PR and must not be merged as-is.
 
-## Current recovery and generation changes
+## CI status boundary
 
-- PR #192 startup discovery enumerates local and remote journal IDs separately; a remote failure is surfaced without hiding local IDs.
-- AppShell displays a review queue and requires explicit confirmation. The exact reviewed journal run ID, target revision, accepted fingerprint and candidate payload are revalidated before CAS.
-- The canonical roster editor and Grid re-import workflow block the affected Schedule while a committed recovery is ready or conflicting. This is not yet a global lock over every legacy editor/writer.
-- PR #202 introduces immutable generation preview, exact approval, current-input revalidation, deterministic re-generation, CAS write and read-back verification. It is stacked on #192 because it depends on the revision-aware Schedule interfaces.
-- Neither recovery nor generation is yet accepted for cross-device production operation; generation still lacks a durable approval/operation journal and dedicated UI.
-
-## Repository protection and safety
-
-- The initial repository audit found main branch protection and required status checks disabled. Recheck before any merge; do not infer protection from PR Gate workflows.
-- No direct commits to main, no force-push over shared branches, and no production data, Calendar, OAuth or deployment mutation occurred in this work.
-- Preserve user data, API contracts, schemas, business logic and unfinished work.
+The exact-head PR #215 checks were green before merge. The post-merge run set for \`f7499d76...\` was still in progress at the time of this checkpoint. The post-merge outcome is therefore **PENDING**, not PASS. See the live status document for the follow-up procedure.
 
 ## External acceptance dependencies
 
-- Original X-OPD November 2569, 16 November–15 December 2569 and US Clinic ภปร.4 workbooks are not attached to this execution. Synthetic fixtures are not evidence about those originals.
-- Controlled Google test account/calendar and a test backend deployment are required for live provider acceptance.
-- Registered browser/device and configured VAPID key pair are required for actual notification delivery acceptance.
-- Production deployment, secret rotation and production data mutations remain separate authorization boundaries.
+No claim is made that the Laravel backend is deployed, Google Calendar live writes have been accepted, browser notifications reached a real device, OAuth works for an ordinary public user, or platform packages are signed and installable. Those require controlled external environments and evidence.
+
+## Completion criteria
+
+A workstream is complete only when implementation, exact-head CI, regression tests, operational acceptance, documentation and supported-platform behavior are evidenced. A successful compile or CI workflow alone is insufficient.
