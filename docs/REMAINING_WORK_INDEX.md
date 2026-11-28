@@ -1,6 +1,6 @@
 # Current execution index — 2026-11-28
 
-- Current baseline observed: main `9aed0905e731efdf0c02b07bddffcd04f2f056b0`. The `f7499d76a2d5111a7d37801462a4b837e5791ff9` checkpoint below is historical.
+- Current baseline observed: main `953e5d00b85d281566ed8bc98453727cc9112ec3` after PR #225. The `9aed0905...` and `f7499d76...` checkpoints below are historical.
 - Use [Live Project Status](project/LIVE_PROJECT_STATUS_2026-11-28.md), [Completion Status](COMPLETION_STATUS.md), and [Remaining Acceptance](project/REMAINING_ACCEPTANCE_2026-11-28.md) for the current state.
 - Historical PR lists and dated work-package snapshots below are retained as history; they are not a live statement of open PRs or current CI. Do not treat closed/superseded PRs or old green checks as current evidence.
 
