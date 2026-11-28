@@ -229,7 +229,6 @@ jobs:
               else
                 required_pending=1
               fi
-              fi
             done
 
             for entry in "${optional_workflows[@]}"; do
@@ -295,7 +294,6 @@ jobs:
                 case "$label" in Android) android_artifact_state="SKIPPED ($reason)";; iOS) ios_artifact_state="SKIPPED ($reason)";; Linux) linux_artifact_state="SKIPPED ($reason)";; esac
                 echo "OPTIONAL $label artifact: SKIPPED (workflow status=$status; reason=$reason)"
                 [[ -z "$url" ]] || echo "  $url"
-              fi
               fi
             done
 
