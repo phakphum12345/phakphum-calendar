@@ -295,7 +295,7 @@ class EmployeeDirectoryController extends ChangeNotifier {
     _setLoading(true);
     GoogleApiClient? client;
     try {
-      client = await auth.clientFor(const [GoogleScopes.contacts]);
+      client = await auth.clientFor(GoogleScopes.contactTransfer);
       return await GoogleContactsService(client).exportEmployees(candidates);
     } catch (error) {
       _error = 'ส่งออก Google Contacts ไม่สำเร็จ: $error';
