@@ -3,15 +3,15 @@
 ## Current delivery contract
 
 Windows and Web are the required application delivery targets. Android, iOS,
-and Linux have active optional artifact workflows; macOS has no active build
-workflow.
+Linux and macOS have active optional artifact workflows. Optional artifacts do
+not imply production signing, installation readiness or public release.
 
 ```text
 main
 ├── Required: Auto Detect CI, Windows, deploy-pages.yml (Web build + guarded Pages deployment)
 ├── Final Gate: verifies required workflows for the same main commit
 ├── Optional artifacts: Android, iOS, Linux
-└── No active workflow: macOS
+└── Optional artifact: macOS (unsigned/ad-hoc; not a signed public release)
 ```
 
 Use the Actions run for the exact commit SHA to determine its current result.
@@ -28,7 +28,7 @@ This document describes workflow policy, not a permanent PASS snapshot.
 | Android | Optional APK artifact | `.github/workflows/android.yml` |
 | iOS | Optional unsigned IPA artifact | `.github/workflows/ios.yml` |
 | Linux x64 | Optional application archive | `.github/workflows/linux.yml` |
-| macOS | Paused; no workflow | None |
+| macOS | Optional unsigned/ad-hoc artifact; not production-signed | `.github/workflows/macos.yml` |
 | Backend/Laravel | Backend tests, not deployment | `.github/workflows/laravel.yml` |
 
 Android, iOS, and Linux builds are best-effort artifacts and do not block the
@@ -40,7 +40,7 @@ application delivery gate.
 - Do not require `integration_test/` when the repository does not contain it.
 - Do not upload `coverage/lcov.info` from Windows/Web release workflows.
 - Do not auto-commit formatter output inside a release gate.
-- Do not add a macOS workflow without an explicit support decision.
+- Keep macOS artifact evidence optional until signing, notarization, clean installation and support scope are explicitly accepted.
 - Keep Windows and Web workflows independent.
 - Changes to documentation alone must not trigger platform builds unless the
   workflow path filter explicitly includes the relevant documentation.
