@@ -5,15 +5,15 @@
 ## Latest execution checkpoint — current main
 
 - Repository: `phakphum12345/phakphum-calendar`
-- Main SHA observed during the 2026-11-28 execution: `9aed0905e731efdf0c02b07bddffcd04f2f056b0` (PR #222 integration).
-- This supersedes the earlier checkpoint below at `f7499d76a2d5111a7d37801462a4b837e5791ff9`; retain that older evidence as historical, not current-main evidence.
-- Open PRs observed: #219 roadmap, #223 Google function acceptance matrix, #224 customizable navigation, #225 incremental Calendar authorization, #226 stale-preview write guard, and #227 Final Gate Web workflow source.
+- Main SHA observed after PR #225 merge: `953e5d00b85d281566ed8bc98453727cc9112ec3`.
+- This supersedes the earlier checkpoints below at `9aed0905e731efdf0c02b07bddffcd04f2f056b0` and `f7499d76a2d5111a7d37801462a4b837e5791ff9`; retain them as historical, not current-main evidence.
+- Open PRs observed: #219 roadmap, #223 Google function acceptance matrix, #224 customizable navigation, #226 stale-preview write guard, #227 Final Gate Web workflow source, and #228 live-status reconciliation.
 - #219 and #223 have successful observed documentation-focused CI runs (Dependency Security, Auto Detect CI, Cross-platform Runtime). No submitted reviews were recorded.
 - #224's earlier exact head `8c1ce4f4e631a1b3db4105122a6d54247ff59e17` passed the observed platform/gate workflows. A follow-up fix `c13e811ae16d05a91f1ae5443623e246e1246713` adds stable keys to preserve page state during tab reorder; its new exact-head CI was queued when inspected. Do not use the earlier green runs to certify the moved head.
-- #225 exact head `daa4c184658265bd803f5313bb2b00e233d4fa4c`: Linux, Web, Dependency Security, Dart Format Baseline Audit, and Auto Detect CI passed; Windows, Android, iOS, macOS, Cross-platform Runtime and Pull Request Gate were still running.
+- #225 merged successfully as `953e5d00b85d281566ed8bc98453727cc9112ec3`. Its exact PR head `daa4c184658265bd803f5313bb2b00e233d4fa4c` passed Linux, Windows, Android, iOS, macOS, Web, Cross-platform Runtime, Dependency Security, Dart Format, Auto Detect CI, Pull Request Gate and iOS Advisory Evidence.
 - #226 exact head `134e067d8870de4aea3ceb66698ef2754a93a4cb`: Linux, Web, Dependency Security and Dart Format Baseline Audit passed; Windows, Android, iOS, macOS, Cross-platform Runtime and Pull Request Gate were still pending/in progress. Some earlier duplicate runs were cancelled and are not PASS evidence.
 - #227 exact head `861536cd1528e9016d17a3336111e0352b9c090c`: checks had just been queued/in progress. Its change points Final Gate at the main-push `deploy-pages.yml` workflow; it does not bypass the HTTPS backend deployment guard.
-- No PR in this set was merged at the time of this checkpoint. No PR approval was recorded. No production backend URL, provider acceptance, Pages deployment, or deployed SHA was verified.
+- PR #225 is merged; the other PRs listed above remain open at this checkpoint. No independent review approval was recorded. Post-merge workflows for `953e5d00b85d281566ed8bc98453727cc9112ec3` were queued/in progress at the last inspection. No production backend URL, live Google provider acceptance, Pages deployment, or deployed SHA was verified.
 - Continue to fetch exact-head checks after every commit. Pending, cancelled, skipped, missing and unknown are never PASS.
 
 ## Repository baseline (historical checkpoint)
