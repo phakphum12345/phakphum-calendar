@@ -32,6 +32,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
+      - name: Validate post-merge Final Gate shell syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby -ryaml -e '
+            workflow = YAML.load_file(".github/workflows/final-gate.yml")
+            steps = workflow.fetch("jobs").fetch("final-gate").fetch("steps")
+            collector = steps.find { |item| item["name"] == "Collect required and optional evidence for this commit" }
+            abort "Final Gate evidence collector step is missing" unless collector && collector["run"].is_a?(String)
+            File.write(File.join(ENV.fetch("RUNNER_TEMP"), "final-gate-evidence.sh"), collector["run"])
+          '
+          bash -n "$RUNNER_TEMP/final-gate-evidence.sh"
+
       - name: Collect core workflow evidence
         env:
           GH_TOKEN: ${{ github.token }}
