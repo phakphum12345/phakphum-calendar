@@ -8,7 +8,7 @@ workflow.
 
 ```text
 main
-├── Required: Auto Detect CI, Windows, Web
+├── Required: Auto Detect CI, Windows, deploy-pages.yml (Web build + guarded Pages deployment)
 ├── Final Gate: verifies required workflows for the same main commit
 ├── Optional artifacts: Android, iOS, Linux
 └── No active workflow: macOS
@@ -23,7 +23,7 @@ This document describes workflow policy, not a permanent PASS snapshot.
 | --- | --- | --- |
 | Auto Detect CI | Required | `.github/workflows/ci-auto-detect.yml` |
 | Windows x64 | Required | `.github/workflows/windows.yml` |
-| Web / GitHub Pages | Required | `.github/workflows/web.yml` |
+| Web PR build | Pull-request validation | `.github/workflows/web.yml` |\n| Web / GitHub Pages on main | Required evidence source for Final Gate | `.github/workflows/deploy-pages.yml` |
 | Final Gate | Required on `main` | `.github/workflows/final-gate.yml` |
 | Android | Optional APK artifact | `.github/workflows/android.yml` |
 | iOS | Optional unsigned IPA artifact | `.github/workflows/ios.yml` |
