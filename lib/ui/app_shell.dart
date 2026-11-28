@@ -3137,11 +3137,6 @@ class _GoogleAccountCard extends StatelessWidget {
                             controller.auth.signInReady && !controller.busy,
                         onPressed: () => perform(controller.signIn),
                       )
-                  else if (controller.auth.canConfigureWebOAuth)
-                    OutlinedButton.icon(
-                      icon: const Icon(Icons.settings_outlined),
-                      label: const Text('ตั้งค่า Google OAuth'),
-                    )
                   else
                     Tooltip(
                       message: controller.auth.oauthUnavailableMessage ?? '',
