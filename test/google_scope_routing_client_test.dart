@@ -19,27 +19,43 @@ void main() {
     );
 
     final previewResponse = await client.get(
-      Uri.parse('https://www.googleapis.com/calendar/v3/calendars/primary/events'),
+      Uri.parse(
+        'https://www.googleapis.com/calendar/v3/calendars/primary/events',
+      ),
     );
     expect(previewResponse.statusCode, 200);
     expect(requestedScopes, [GoogleScopes.calendarRead]);
-    expect(requestedScopes.expand((scopes) => scopes), isNot(contains(GoogleScopes.calendarEvents)));
+    expect(
+      requestedScopes.expand((scopes) => scopes),
+      isNot(contains(GoogleScopes.calendarEvents)),
+    );
 
     final writeResponse = await client.post(
       Uri.parse('https://www.googleapis.com/calendar/v3/calendars/primary/events'),
       body: '{}',
     );
     expect(writeResponse.statusCode, 200);
-    expect(requestedScopes, [GoogleScopes.calendarRead, GoogleScopes.calendarWrite]);
+    expect(
+      requestedScopes,
+      [GoogleScopes.calendarRead, GoogleScopes.calendarWrite],
+    );
 
     // Further reads and writes reuse their account-bound clients.
-    await client.get(Uri.parse('https://www.googleapis.com/calendar/v3/calendars/primary/events'));
+    await client.get(
+      Uri.parse(
+        'https://www.googleapis.com/calendar/v3/calendars/primary/events',
+      ),
+    );
     await client.put(
-      Uri.parse('https://www.googleapis.com/calendar/v3/calendars/primary/events/event-1'),
+      Uri.parse(
+        'https://www.googleapis.com/calendar/v3/calendars/primary/events/event-1',
+      ),
       body: '{}',
     );
     await client.delete(
-      Uri.parse('https://www.googleapis.com/calendar/v3/calendars/primary/events/event-1'),
+      Uri.parse(
+        'https://www.googleapis.com/calendar/v3/calendars/primary/events/event-1',
+      ),
     );
     expect(requestedScopes, [GoogleScopes.calendarRead, GoogleScopes.calendarWrite]);
     expect(clients.map((item) => item.methods), [
@@ -48,6 +64,7 @@ void main() {
     ]);
 
     client.close();
+    await Future<void>.delayed(Duration.zero);
     expect(clients.map((item) => item.closeCalls), [1, 1]);
   });
 
@@ -88,6 +105,7 @@ void main() {
     expect(factoryCalls, 2);
 
     client.close();
+    await Future<void>.delayed(Duration.zero);
     expect(created.closeCalls, 1);
   });
 }
