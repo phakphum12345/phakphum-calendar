@@ -363,14 +363,16 @@ jobs:
           test -f pubspec.yaml
           test -d windows
           test -d web
+          test -d macos
           test -f .github/workflows/ci-auto-detect.yml
           test -f .github/workflows/windows.yml
           test -f .github/workflows/web.yml
+          test -f .github/workflows/macos.yml
           test -f .github/workflows/final-gate.yml
           test -f scripts/detect-ci-targets.sh
 
           echo "REQUIRED TARGETS: Windows + Web"
-          for target in android ios linux; do
+          for target in android ios linux macos; do
             if [[ -d "$target" && -f ".github/workflows/$target.yml" ]]; then
               echo "OPTIONAL TARGET $target: available; build evidence is best-effort"
             else
