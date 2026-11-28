@@ -1,4 +1,4 @@
-import 'package:googleapis_auth/googleapis_auth.dart' as auth;
+import 'package:http/http.dart' as http;
 
 /// Owns one Google API client and the gateway built around that client.
 ///
@@ -8,13 +8,13 @@ import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 class AuthorizedGoogleGatewaySession<T> {
   AuthorizedGoogleGatewaySession({
     required this.gateway,
-    required auth.AuthClient client,
+    required http.Client client,
     required this.accountId,
   }) : _client = client;
 
   final T gateway;
   final String accountId;
-  final auth.AuthClient _client;
+  final http.Client _client;
   bool _closed = false;
 
   bool get isClosed => _closed;
