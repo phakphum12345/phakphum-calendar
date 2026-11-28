@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 
 import '../../../../core/google/authorized_google_client_factory.dart';
+import '../../../../core/google/google_scopes.dart';
 import '../../../../core/result/result.dart';
 import '../../../../core/utils/excel_column_name.dart';
 import '../../../../domain/entities/employee.dart';
