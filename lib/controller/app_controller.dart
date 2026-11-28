@@ -2,8 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:googleapis/calendar/v3.dart' as calendar;
-import 'package:googleapis/drive/v3.dart' as drive;
-import 'package:googleapis/sheets/v4.dart' as sheets;
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/app_settings.dart';
