@@ -1,4 +1,3 @@
-import 'package:googleapis_auth/googleapis_auth.dart' as auth;
 import 'package:googleapis/calendar/v3.dart' as calendar;
 
 import '../../controller/app_controller.dart';
@@ -108,8 +107,7 @@ class AppDependencies {
     ImportedScheduleAdapter? importedScheduleAdapter,
     DashboardSummaryService? dashboardSummaryService,
     LegacyScheduleAdapter? legacyScheduleAdapter,
-    AuthorizedGoogleClientFactory? authorizedGoogleClientFactory,
-    GoogleSheetsImportDataSource Function(auth.AuthClient)?
+    GoogleSheetsImportDataSource Function(GoogleApiClient)?
     googleSheetsImportDataSourceFactory,
     Iterable<Rule>? scheduleRules,
     Iterable<legacy_rules.ScheduleRule>? legacyScheduleRules,
@@ -149,9 +147,6 @@ class AppDependencies {
            dashboardSummaryService ?? const DashboardSummaryService(),
        legacyScheduleAdapter =
            legacyScheduleAdapter ?? const LegacyScheduleAdapter(),
-       authorizedGoogleClientFactory =
-           authorizedGoogleClientFactory ??
-           const AuthorizedGoogleClientFactory(),
        googleSheetsImportDataSourceFactory =
            googleSheetsImportDataSourceFactory ??
            ((client) => GoogleSheetsImportDataSource(
@@ -213,8 +208,7 @@ class AppDependencies {
   final ImportedScheduleAdapter importedScheduleAdapter;
   final DashboardSummaryService dashboardSummaryService;
   final LegacyScheduleAdapter legacyScheduleAdapter;
-  final AuthorizedGoogleClientFactory authorizedGoogleClientFactory;
-  final GoogleSheetsImportDataSource Function(auth.AuthClient)
+  final GoogleSheetsImportDataSource Function(GoogleApiClient)
   googleSheetsImportDataSourceFactory;
   final List<Rule> scheduleRules;
   final List<legacy_rules.ScheduleRule> legacyScheduleRules;
@@ -464,17 +458,14 @@ class AppDependencies {
   /// feature session.
   Future<AuthorizedGoogleGatewaySession<T>> _createGoogleGatewaySession<T>({
     required List<String> scopes,
-    required T Function(auth.AuthClient client) createGateway,
+    required T Function(GoogleApiClient client) createGateway,
   }) async {
     final account = googleAuthService.account;
     if (account == null) {
       throw StateError('กรุณาเชื่อมต่อบัญชี Google ก่อนใช้งาน');
     }
 
-    final client = await authorizedGoogleClientFactory.create(
-      account: account,
-      scopes: scopes,
-    );
+    final client = await googleAuthService.clientFor(scopes);
     if (googleAuthService.account?.id != account.id) {
       client.close();
       throw StateError(
