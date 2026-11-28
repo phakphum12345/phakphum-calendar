@@ -562,7 +562,7 @@ class AppDependencies {
           throw StateError('History recovery requires a configured shared backend.');
         }
         final client = await googleAuthService.clientFor([
-          calendar.CalendarApi.calendarEventsScope,
+          GoogleScopes.calendarEvents,
         ]);
         try {
           final service = ResumeSyncService(
@@ -627,7 +627,7 @@ class AppDependencies {
   Future<ShiftCalendarWorkflowController>
   createAuthorizedCalendarWorkflowController() async {
     final client = await googleAuthService.clientFor([
-      calendar.CalendarApi.calendarEventsScope,
+      GoogleScopes.calendarEvents,
     ]);
     return createShiftCalendarWorkflowController(
       calendarSyncGatewayFactory(client),
