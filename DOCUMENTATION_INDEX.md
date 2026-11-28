@@ -29,6 +29,7 @@ This file is the central map of project documentation. Prefer updating an existi
 - [Synchronization reliability](docs/SYNC_RELIABILITY.md)
 - [Durable history and resume](docs/DURABLE_HISTORY_AND_RESUME.md)
 - [Google setup](docs/GOOGLE_SETUP.md)
+- [Google integration function-level acceptance matrix](docs/google/GOOGLE_FUNCTION_ACCEPTANCE_MATRIX.md) — per-operation implementation, code-test and live-provider acceptance.
 - [Platform support](docs/PLATFORM_SUPPORT.md)
 - [End-to-end roster and sync completion plan (2026-11-26)](docs/END_TO_END_SYNC_COMPLETION_PLAN_2026-11-26.md)
 
