@@ -40,7 +40,7 @@ The broad `drive` and `spreadsheets` scopes are not part of basic sign-in. The a
 
 ## Gateway and account isolation
 
-Production gateways are created from the signed-in account through `AppDependencies` and `GoogleAuthGateway.clientFor`. Each authorized gateway session records the account ID used to obtain its client and owns that client until the feature closes the session. A session is rejected if the active account changes while authorization is being obtained.
+Production gateways are created from the signed-in account through `AppDependencies` and `GoogleAuthGateway.clientFor`. Each authorized gateway session records the account ID used to obtain its client and owns that client until the feature closes the session. A session is rejected if the active account changes while authorization is being obtained. Scoped HTTP clients request fresh authorization headers for each API request without opening a new consent prompt; a missing/revoked grant or account switch fails with a reconnect-required error.
 
 The compatibility authentication service delegates to the same `GoogleAuthGateway`; it does not create a second `GoogleSignIn` lifecycle or request Calendar, Sheets, Drive or Contacts data scopes during identity sign-in. Existing legacy workflows also request their operation scopes through that same gateway.
 
