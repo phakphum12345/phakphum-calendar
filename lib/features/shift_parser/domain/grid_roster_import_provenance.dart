@@ -143,6 +143,7 @@ class GridRosterImportProvenance {
     required List<GridRosterAssignmentProvenance> assignments,
     required List<GridRosterProvenanceDiagnostic> diagnostics,
     this.acceptedScheduleFingerprint,
+    this.sourceRevisionId,
   }) : createdAtUtc = _asUtc(createdAtUtc),
        sections = List.unmodifiable(sections),
        assignments = List.unmodifiable(assignments),
@@ -154,6 +155,9 @@ class GridRosterImportProvenance {
     _requireText(targetScheduleRevision, 'targetScheduleRevision');
     if (acceptedScheduleFingerprint != null) {
       _requireText(acceptedScheduleFingerprint!, 'acceptedScheduleFingerprint');
+    }
+    if (sourceRevisionId != null) {
+      _requireText(sourceRevisionId!, 'sourceRevisionId');
     }
     final sectionIds = this.sections.map((section) => section.sectionId).toSet();
     if (sectionIds.length != this.sections.length) {
@@ -199,6 +203,7 @@ class GridRosterImportProvenance {
   final String targetScheduleRevision;
   final GridRosterImportLifecycle lifecycle;
   final String? acceptedScheduleFingerprint;
+  final String? sourceRevisionId;
   final List<GridRosterProvenanceSection> sections;
   final List<GridRosterAssignmentProvenance> assignments;
   final List<GridRosterProvenanceDiagnostic> diagnostics;
