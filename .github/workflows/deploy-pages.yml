@@ -1,7 +1,6 @@
 name: Build and Deploy Web
 
 on:
-  workflow_dispatch:
   push:
     branches: [main]
     paths:
@@ -97,7 +96,6 @@ jobs:
 
   deploy-pages:
     name: Deploy GitHub Pages
-    if: github.ref == 'refs/heads/main'
     needs: build-web
     runs-on: ubuntu-latest
     timeout-minutes: 10
