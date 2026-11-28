@@ -4,17 +4,14 @@ import 'package:phakphum_calendar/core/result/result.dart';
 import 'package:phakphum_calendar/domain/entities/department.dart';
 import 'package:phakphum_calendar/domain/entities/employee.dart';
 import 'package:phakphum_calendar/domain/entities/schedule.dart';
-import 'package:phakphum_calendar/domain/entities/schedule_month.dart';
 import 'package:phakphum_calendar/domain/entities/shift_assignment.dart';
 import 'package:phakphum_calendar/domain/entities/shift_template.dart';
 import 'package:phakphum_calendar/domain/repositories/employee_repository.dart';
-import 'package:phakphum_calendar/domain/repositories/schedule_repository.dart';
-import 'package:phakphum_calendar/domain/repositories/conditional_schedule_writer.dart';
-import 'package:phakphum_calendar/domain/repositories/schedule_revision_source.dart';
 import 'package:phakphum_calendar/domain/repositories/shift_template_repository.dart';
 import 'package:phakphum_calendar/features/schedule/data/legacy_schedule_adapter.dart';
 
 import 'support/canonical_schedule_fixture.dart';
+import 'support/in_memory_conditional_schedule_repository.dart';
 
 void main() {
   test('canonical schedule adapts to legacy view without becoming source', () {
@@ -144,54 +141,4 @@ class _ShiftTemplateRepository implements ShiftTemplateRepository {
       Success(template);
 }
 
-class _ScheduleRepository
-    implements ScheduleRepository, ScheduleRevisionSource, ConditionalScheduleWriter {
-  final saved = <Schedule>[];
-  int generation = 0;
-
-  @override
-  String? currentRevisionFor(String scheduleId) {
-    final existing = saved.where((item) => item.id == scheduleId);
-    return existing.isEmpty ? 'absent:$scheduleId' : 'revision-$generation';
-  }
-
-  @override
-  String? revisionForSnapshot(Schedule schedule) {
-    final existing = saved.where((item) => item.id == schedule.id);
-    return existing.isEmpty ? null : 'revision-$generation';
-  }
-
-  @override
-  String? revisionForAbsentSchedule(String scheduleId) =>
-      saved.any((item) => item.id == scheduleId) ? null : 'absent:$scheduleId';
-
-  @override
-  Future<Result<Schedule>> saveIfRevision(
-    Schedule schedule,
-    String expectedRevision,
-  ) async {
-    if (currentRevisionFor(schedule.id) != expectedRevision) {
-      return const ValidationFailure('revision conflict');
-    }
-    return save(schedule);
-  }
-
-  @override
-  Future<Result<void>> delete(String id) async => const Success(null);
-
-  @override
-  Future<Result<Schedule?>> findById(String id) async => const Success(null);
-
-  @override
-  Future<Result<ScheduleMonth?>> loadMonth(
-    String scheduleId,
-    DateTime month,
-  ) async => const Success(null);
-
-  @override
-  Future<Result<Schedule>> save(Schedule schedule) async {
-    saved.add(schedule);
-    generation++;
-    return Success(schedule);
-  }
-}
+class _ScheduleRepository extends InMemoryConditionalScheduleRepository {}
