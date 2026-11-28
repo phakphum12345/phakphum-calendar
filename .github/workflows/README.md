@@ -1,60 +1,212 @@
 # GitHub Actions workflows
 
-The delivery surface has independent workflows for Windows, Web, Android, iOS, macOS and Linux, plus backend, security, cross-platform and evidence gates.
+The active build and delivery surface covers **Windows, Web, Android, iOS, and Linux**:
 
-## Workflow roles
+- `ci-auto-detect.yml` — capability detection plus selective Dart/Flutter quality checks.
+- `windows.yml` — Windows x64 release ZIP + SHA-256 checksum.
+- `web.yml` — Flutter Web release + GitHub Pages deployment.
+- `android.yml` — Android release APK build artifact.
+- `ios.yml` — independent unsigned iOS release app build artifact.
+- `macos.yml` — independent macOS/Xcode ad-hoc-signed release app build + ZIP/SHA-256 artifacts.
+- `linux.yml` — Linux x64 release bundle archive.
+- `pull-request-gate.yml` — core PR evidence gate for Auto Detect CI, Windows, Web, Android, and Linux.
+- `ios-evidence-gate.yml` — non-blocking PR advisory report for independent iOS evidence.
+- `final-gate.yml` — post-merge gate for the same `main` commit; Auto Detect CI, Windows, and Web are required, while Android, iOS, and Linux remain best-effort on `main`.
 
-- \`ci-auto-detect.yml\` — capability detection and selective Dart/Flutter quality checks.
-- \`windows.yml\` — Windows x64 build/package evidence.
-- \`web.yml\` — Flutter Web build, downloadable artifact and guarded GitHub Pages deployment.
-- \`android.yml\` — Android APK build evidence.
-- \`ios.yml\` — unsigned iOS app build evidence.
-- \`macos.yml\` — independent macOS/Xcode build and ad-hoc artifact evidence.
-- \`linux.yml\` — Linux x64 build/package evidence.
-- \`laravel.yml\` — backend validation/tests; it does not deploy the API.
-- \`dependency-security.yml\` — dependency vulnerability scanning.
-- \`pull-request-gate.yml\` — core exact-head PR evidence gate.
-- \`ios-evidence-gate.yml\` — separate iOS advisory evidence.
-- \`cross-platform-runtime.yml\` — cross-shell launcher/runtime checks.
-- \`final-gate.yml\` — post-merge evidence collector for the exact main SHA.
+macOS is an independent ad-hoc-signed artifact workflow, not a required core PR gate. Broad repository validation, coverage gates, and integration-test gates
+are also not required delivery gates. Laravel Backend CI is active for backend changes
+but does not deploy the API. The Android, iOS, and Linux workflows build
+artifacts; mobile store distribution and signing are not configured.
 
-## Backend configuration guard
+## Support policy
 
-Production release artifacts and the Pages deployment require a valid HTTPS \`ORGANIZATION_API_BASE_URL\`. The guard behavior was updated in PR #215:
+For the current stabilization phase:
 
-- Pull-request builds can run build/test evidence without production backend configuration.
-- On main/manual platform runs, a missing or non-HTTPS backend URL is recorded as an explicit SKIPPED production artifact; it is not represented as a successful release.
-- The Web build artifact may be retained for inspection, but Pages deployment and published-site verification are skipped when the backend URL is invalid.
-- No placeholder URL is inserted, no local-only Schedule fallback is published as production, and no backend is deployed by these workflows.
-- When the valid HTTPS backend URL is configured, the production build/deployment path is eligible to run and must still pass its own checks.
+| Target | Status | CI/CD |
+| --- | --- | --- |
+| Windows x64 | Supported | `windows.yml` |
+| Web / GitHub Pages | Supported | `web.yml` |
+| Capability detection | Supported | `ci-auto-detect.yml` |
+| Core pull request evidence gate | Required evidence workflow | `pull-request-gate.yml` |
+| iOS advisory evidence report | Non-blocking diagnostic workflow | `ios-evidence-gate.yml` |
+| Post-merge final evidence gate | Supported | `final-gate.yml` |
+| Android | Build supported | `android.yml` |
+| iOS | Unsigned build supported | `ios.yml` |
+| macOS | Ad-hoc-signed build supported | `macos.yml` (independent Xcode workflow) |
+| Linux x64 | Build supported | `linux.yml` |
+| Backend/Laravel | CI supported | `laravel.yml` (tests only; no deployment) |
 
-A skipped production artifact or deployment is not a production release and must be reported as such.
+Mobile artifacts are CI builds, not store-ready packages: Android currently
+uses the debug signing configuration, and iOS is built without code signing.
 
-## Platform support and distribution boundaries
+## CI capability detection policy
 
-| Target | CI evidence | Distribution boundary |
-|---|---|---|
-| Windows x64 | Build/package workflow | Clean-machine install and production release acceptance still required |
-| Web | Build; Pages deployment only with valid HTTPS backend config | Exact deployed SHA and live health verification required |
-| Android | APK build | Debug/unsigned or CI artifact is not store-ready without production signing and device acceptance |
-| iOS | Unsigned build | Not installable for general distribution without signing/provisioning and device acceptance |
-| macOS | Xcode build/ad-hoc artifact | Not notarized distribution unless separately configured and verified |
-| Linux x64 | Build/package workflow | Clean-machine dependency/install acceptance still required |
-| Laravel backend | CI/tests | No automatic API deployment is performed |
+`ci-auto-detect.yml` is the lightweight source-of-truth guard for the current
+delivery surface. It detects whether the repository contains the Flutter/Dart
+project and whether platform source directories exist. It treats
+`integration_test/` as optional.
 
-## Evidence rules
+The workflow runs analysis and tests when the detected project capabilities
+require them. It does not run formatting, generate coverage, or build platform
+artifacts. It must not mutate source files or auto-format code.
 
-1. Verify base SHA and exact PR head SHA.
-2. Inspect all changed files, deletions, review decisions and unresolved threads.
-3. Require all repository-required checks to reach terminal success on the exact revision.
-4. Treat skipped, unknown, cancelled, missing, stale and pending checks as not passing.
-5. The PR gate and post-merge Final Gate are separate; neither substitutes for live provider/device acceptance.
-6. Android, iOS, Linux and macOS artifact results must be reported individually; an advisory report succeeding does not convert a failed or skipped platform build into PASS.
-7. Formatting changes must be committed explicitly; release workflows must not mutate source files.
+## Pull request gate policy
 
-## Deployment and security boundaries
+`pull-request-gate.yml` is the core pre-merge evidence collector. For the exact
+head SHA of a code/platform PR, it waits for and requires these five workflows:
 
-- Laravel CI validates source and tests only; it does not provision infrastructure, run production migrations or deploy the backend.
-- Production backend secrets, VAPID keys, OAuth settings, Google Calendar data and production deployments are outside CI and require controlled configuration.
-- Do not expose secrets in source, logs, client bundles or artifacts.
-- Record deployed SHA, environment, health checks, migration status and rollback evidence before declaring production readiness.
+1. Auto Detect CI
+2. Windows
+3. Web
+4. Android
+5. Linux
+
+This gate does not wait for a macOS runner. A failed core workflow fails the
+gate. Missing or still-running core evidence remains pending and fails if it
+does not complete within 30 minutes. If the PR head changes while the gate is
+waiting, the old run reports itself as superseded; the new head is evaluated by
+its own gate run.
+
+## Separate iOS advisory evidence
+
+`ios-evidence-gate.yml` independently observes `ios.yml` for the same PR number
+and exact head SHA. It waits up to 30 minutes, but never holds the core Pull
+Request Gate open. It reports one of these states in its job summary:
+
+- `PASS`: the unsigned iOS build completed successfully.
+- `FAIL`: the iOS build ran and failed; the original `ios.yml` check remains
+  failed and the report records the reason.
+- `SKIPPED`: no iOS run became available in the observation window, or the run
+  was cancelled before build evidence was produced (for example, runner
+  allocation did not happen).
+
+The advisory reporter itself exits successfully after publishing the report;
+that means the report was delivered, **not** that iOS passed. The original
+`ios.yml` result remains visible and is never rewritten as PASS or SKIPPED.
+
+**Core merge eligibility:** iOS `FAIL` or `SKIPPED` does not block continued
+core development or the core PR gate. Merge eligibility is based on the exact
+head SHA passing the core Pull Request Gate, clean review/code checks, and the
+repository's other required checks. iOS failures must remain visible and be
+tracked for follow-up; they are not silently converted into success. The
+workflow split does not change repository branch protection/rulesets, which
+must be checked separately before relying on automatic enforcement.
+
+Both evidence collectors use read-only repository, Actions, and pull-request
+permissions. They do not build artifacts themselves, write to the PR, or
+deploy anything. Platform build workflows remain independent so failures can
+be attributed to the correct runner and platform.
+
+## Final gate policy
+
+`final-gate.yml` is the post-merge evidence gate for matching `main` pushes
+and manual dispatches.
+
+It requires successful Auto Detect CI, Windows, and Web runs for the **same
+commit SHA**. Android, iOS, and Linux are optional artifact evidence on
+`main`; a missing or unsuccessful optional run is recorded as `SKIPPED` and
+does not fail this post-merge gate. A failed required workflow fails the gate.
+
+This post-merge policy does not replace the pre-merge policy: the core PR gate
+and all repository-required checks must pass; iOS is separately reported and
+is non-blocking.
+
+## Repository secrets
+
+- `GOOGLE_WEB_CLIENT_ID` — used by the Web deployment when Google Sign-In is enabled.
+- `GOOGLE_SERVER_CLIENT_ID` — optional server OAuth client used by the Windows build and Web build.
+
+`GOOGLE_IOS_CLIENT_ID` may be configured for the iOS build. OAuth secrets are
+optional for compilation; without them, Google sign-in is not configured for
+the resulting artifact.
+
+## Active delivery gates
+
+### Windows
+
+The Windows workflow installs dependencies, builds the release application,
+packages it as a ZIP, and produces a SHA-256 checksum. It runs manually or
+when relevant Windows, Flutter, asset, dependency, or workflow files change
+on `main`.
+
+### Web
+
+The Web workflow installs dependencies, builds the release site, uploads the
+build as a downloadable artifact, and deploys the same build to GitHub Pages
+from `main`. Production Pages deployment requires the HTTPS
+`ORGANIZATION_API_BASE_URL` repository variable. When that value is absent or
+not HTTPS, the workflow records an explicit SKIPPED deployment outcome and
+skips publication and published-site verification; it does not publish a
+local-only Schedule fallback.
+
+### Shared backend and dependency security
+
+Non-PR release builds for Android, iOS, macOS, Windows and Linux require the
+same HTTPS `ORGANIZATION_API_BASE_URL`. If the variable is absent or not HTTPS,
+production artifact steps are explicitly SKIPPED rather than failing the
+entire validation job. Pull-request builds remain available for compile/test
+evidence without requiring production configuration. The
+`dependency-security.yml` workflow scans both `pubspec.lock` and nested PHP
+`composer.lock` files with OSV-Scanner on pull requests, main pushes and weekly
+scheduled runs. Laravel CI separately runs `composer audit --locked`.
+
+### Final
+
+The delivery path is separated into pre-merge and post-merge evidence:
+
+**PR: Core Quality + Windows + Web + Android + Linux PASS → Merge eligibility (iOS advisory PASS / FAIL / SKIPPED) → main: core Final Gate PASS**
+
+## Failure-containment policy
+
+The platform build workflows remain independent:
+
+1. The core PR gate requires Auto Detect CI, Windows, Web, Android, and Linux evidence for the same PR head SHA.
+2. The iOS advisory report records PASS, FAIL, or SKIPPED for the same PR head SHA; it never blocks the core gate and never changes the original iOS workflow result.
+3. The post-merge main gate requires Auto Detect CI, Windows, and Web. Android, iOS, and Linux are best-effort on `main`; their status is explicitly reported as PASS or SKIPPED.
+4. Store-signing credentials must not be required for iOS or Android compile checks.
+5. Missing `integration_test/` must never be treated as a CI failure for the supported targets.
+6. Coverage artifacts are not required by any platform build workflow.
+7. Formatting and coverage remain developer-side checks. Auto Detect CI and Windows run analysis and unit tests.
+8. A workflow must not auto-commit generated formatting changes during a release gate. Formatting changes must be committed explicitly by the developer or a dedicated maintenance job.
+9. Capability detection must not mutate the source tree or introduce a new platform automatically.
+10. Every evidence collector must compare workflow runs using the same exact commit SHA.
+11. Missing, pending, skipped, and failed results must never be represented as PASS.
+
+## Simplification policy
+
+Keep each platform in a separate workflow so a native build failure is clearly
+attributed and artifacts can be downloaded independently.
+
+## Independent macOS / Xcode workflow
+
+`macos.yml` is a standalone macOS build pipeline. It starts on its own
+`workflow_dispatch`, relevant pull-request changes, and relevant pushes to
+`main`. It does not use `needs`, poll other workflow runs, or wait for the
+Windows, Linux, Android, Web, or iOS pipelines.
+
+The workflow uses a GitHub-hosted macOS runner (default `macos-15`; optionally
+overridable with the repository variable `MACOS_RUNNER_LABEL`), verifies the
+Xcode installation and Runner project scheme, installs Flutter dependencies,
+and runs a release build through Flutter/Xcode using the project's ad-hoc signing identity. It verifies the
+application bundle and publishes an ad-hoc ZIP plus SHA-256 checksum as a standalone
+artifact.
+
+The concurrency group is unique per run and does not cancel another macOS
+build. GitHub may still queue a run while no matching macOS runner capacity is
+available; that is runner allocation, not a dependency on another CI workflow.
+The project uses the ad-hoc signing identity (`CODE_SIGN_IDENTITY = "-"`). The artifact is not Developer ID-signed or notarized and is not a distribution-ready package. Signing and notarization require a separately approved
+release configuration and credentials.
+
+This workflow reports its own result. Its existence does not silently add
+macOS to the repository's required merge checks; branch protection/rulesets
+must be configured separately if macOS success is to become a required merge
+condition.
+
+
+## Current backend-gate behavior (PR #215, merged 2026-11-28)
+
+- PR builds run compile/test evidence without requiring the production backend URL.
+- Main/manual release workflows only build and upload production artifacts when `ORGANIZATION_API_BASE_URL` is a valid HTTPS URL.
+- When the URL is missing or invalid, the affected artifact/deployment steps are reported as SKIPPED; this is not a successful production release.
+- Web build artifacts may be retained for inspection, but GitHub Pages deployment and published-site verification are skipped without the valid backend URL.
+- The workflows do not configure or deploy the backend and do not inject placeholder URLs.
