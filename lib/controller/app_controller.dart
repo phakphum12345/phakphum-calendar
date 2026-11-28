@@ -792,8 +792,8 @@ class AppController extends ChangeNotifier implements ControllerState {
     final spreadsheetId = _sheetsService.parseSpreadsheetId(normalizedUrl);
     await _run('ตรวจและเลือกไฟล์ชีตหลักของบัญชีนี้', () async {
       final client = await auth.clientFor([
-        GoogleScopes.spreadsheetsReadOnly,
-        GoogleScopes.driveMetadataReadOnly,
+        ...GoogleScopes.spreadsheetRead,
+        ...GoogleScopes.driveFileDiscovery,
       ]);
       try {
         await _ownershipService.requireOwnedSpreadsheet(client, spreadsheetId);
@@ -1423,8 +1423,8 @@ class AppController extends ChangeNotifier implements ControllerState {
     }
     await _run('อ่านตารางเวรรายเดือน', () async {
       final client = await auth.clientFor([
-        GoogleScopes.spreadsheetsReadOnly,
-        GoogleScopes.driveMetadataReadOnly,
+        ...GoogleScopes.spreadsheetRead,
+        ...GoogleScopes.driveFileDiscovery,
       ]);
       try {
         final spreadsheetId = _sheetsService.parseSpreadsheetId(sourceUrl);
@@ -1672,9 +1672,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       throw StateError('กรุณาเชื่อมต่อบัญชี Google ก่อนตรวจเวรซ้ำ');
     }
     await _run('ตรวจหาเวรซ้ำใน Google Calendar', () async {
-      final client = await auth.clientFor([
-        GoogleScopes.calendarEventsReadOnly,
-      ]);
+      final client = await auth.clientFor(GoogleScopes.calendarRead);
       try {
         final duplicateIds = <String>{};
         for (final period in _activeRosterPeriods()) {
@@ -2327,9 +2325,7 @@ class AppController extends ChangeNotifier implements ControllerState {
       throw StateError('ไม่พบรหัสกิจกรรม Google Calendar ที่ต้องการลบ');
     }
     await _run('ลบกิจกรรมที่เลือกจาก Google Calendar', () async {
-      final client = await auth.clientFor([
-        GoogleScopes.calendarEvents,
-      ]);
+      final client = await auth.clientFor(GoogleScopes.calendarWrite);
       try {
         await _calendarService.deleteEvent(client, eventId: eventId);
         calendarPeriods.removeWhere((period) => period.id == eventId);
