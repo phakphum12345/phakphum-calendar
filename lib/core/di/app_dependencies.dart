@@ -80,7 +80,6 @@ import '../../services/settings_service.dart';
 import '../../services/sheets_service.dart';
 import '../../services/shift_alert_service.dart';
 import '../../services/shift_parser.dart';
-import '../google/authorized_google_client_factory.dart';
 import '../../l10n/l10n.dart';
 import '../../l10n/app_localizations_th.dart';
 import '../result/result.dart';
