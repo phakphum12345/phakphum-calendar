@@ -24,7 +24,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  test('Google integration gateways require the active Google account', () async {
+  test(
+    'Google integration gateways require the active Google account',
+    () async {
     final dependencies = AppDependencies.production();
 
     await expectLater(
@@ -47,7 +49,8 @@ void main() {
       dependencies.createGoogleContactsService(),
       throwsStateError,
     );
-  });
+    },
+  );
 
   test('composition root injects services into AppController', () async {
     final auth = _FakeGoogleAuthService();
